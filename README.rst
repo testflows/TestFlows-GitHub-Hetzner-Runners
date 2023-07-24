@@ -11,7 +11,7 @@ The **github-runners** service program starts and monitors queued up jobs for Gi
 When a new job is queued up, it creates a new Hetzner Cloud server instance
 that provides an ephemeral GitHub Actions runner. Each server instance is automatically
 powered off when job completes and then powered off servers are
-automatically deleted. Both **x86** and **arm64** runners are supported.
+automatically deleted. Both **x64** and **arm64** runners are supported.
 
 :❗Warning:
    This program is provided on "AS IS" basis without warranties or conditions of any kind. See LICENSE.
@@ -34,7 +34,7 @@ Features
 --------
 
 * cost efficient on-demand runners using Hetzner Cloud
-* supports both x86 and ARM64 runners
+* supports both x64 and ARM64 runners
 * supports specifying custom runner types using job labels
 * simple configuration
 
@@ -180,9 +180,9 @@ The Start-up Script
 The **startup** script installs GitHub Actions runner. After installation it configures the runner to start in an *--ephemeral* mode.
 The *--ephemeral* mode causes the runner to exit as soon as it completes a job. After the runner exits the server is powered off.
 
-The x86 **startup** script installs and configures x86 version of the runner.
+The x64 **startup** script installs and configures x86 version of the runner.
 
-:x86:
+:x64:
   
    .. code-block:: bash  
 
@@ -200,7 +200,7 @@ The x86 **startup** script installs and configures x86 version of the runner.
      bash -c "screen -d -m bash -c './run.sh; sudo poweroff'"
 
 
-The ARM64 **startup** script is similar to the x86 script but install an ARM64 version of the runner.
+The ARM64 **startup** script is similar to the x64 script but install an ARM64 version of the runner.
 
 :ARM64:
   
@@ -307,7 +307,7 @@ The following options are supported:
 * **--setup-script path**
   path to custom server setup script
 
-* **--startup-script path**
+* **--startup-x64-script path**
   path to custom server startup script
 
 * **--startup-arm64-script path**
