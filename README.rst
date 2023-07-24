@@ -304,8 +304,8 @@ The program is designed to handle the following failing conditions:
 Running as a Service
 -----------------------
 
-You can run **github-runners** as a service. For this you will need to install it using **root** user
-or **sudo** command.
+You can run **github-runners** as a service. For this you will need to install it using the **root** user
+or the **sudo** command.
 
 .. code-blocks:: bash
 
