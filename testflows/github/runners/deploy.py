@@ -60,7 +60,10 @@ def deploy(args, timeout=60):
         )
 
     with Action("Installing github-runners"):
-        ssh(server, f"'sudo -u runner pip3 install testflows.github.runners'")
+        ssh(
+            server,
+            f"'sudo -u runner pip3 install testflows.github.runners=={__version__}'",
+        )
 
     with Action("Installing service"):
         command = f"su - runner -c '"
