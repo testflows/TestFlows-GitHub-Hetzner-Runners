@@ -183,7 +183,7 @@ and start the service back up.
 
 .. code-block:: bash
 
-   sudo github-runners service uninstall
+   github-runners service uninstall
 
 Checking Status
 ================
@@ -192,7 +192,7 @@ After installation, you can check the status of the service using the **service 
 
 .. code-block:: bash
 
-   sudo github-runners service status:
+   github-runners service status:
 
 :service status:
 
@@ -223,8 +223,8 @@ You can start and stop the service using the **service start** and **service sto
 
 .. code-block:: bash
 
-   sudo github-runners service start
-   sudo github-runners service stop
+   github-runners service start
+   github-runners service stop
 
 or using **service** system utility
 
@@ -238,11 +238,13 @@ Checking Logs
 
 You can get the logs for the service using the **service logs** command.
 
+Use **-f, --follow** option to follow logs journal.
+
 .. code-block:: bash
 
-   sudo github-runners service logs
+   github-runners service logs -f
 
-:service logs:
+:followed service log:
 
    ::
 
@@ -263,6 +265,26 @@ which is equivalent to the following **journalctl** command:
 .. code-block:: bash
 
    journalctl -u github-runners.service -f
+
+You can dump the full log by omitting the **-f, --follow** option.
+
+.. code-block:: bash
+
+   github-runners service logs
+
+:full service log:
+
+   ::
+
+      Jul 24 14:24:42 user-node systemd[1]: Started Autoscaling GitHub Actions Runners.
+      Jul 24 14:24:42 user-node env[62771]: LANG=en_CA.UTF-8
+      Jul 24 14:24:42 user-node env[62771]: LANGUAGE=en_CA:en
+      Jul 24 14:24:42 user-node env[62771]: PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin
+      Jul 24 14:24:42 user-node env[62771]: INVOCATION_ID=dc7b778f95fa4ccf95e4a4592b50d9e1
+      Jul 24 14:24:42 user-node env[62771]: JOURNAL_STREAM=8:328542
+      Jul 24 14:24:42 user-node env[62771]: SYSTEMD_EXEC_PID=62771
+      ...
+
 
 ------------------
 Scaling Up Runners
@@ -535,6 +557,9 @@ The following options are supported:
 
       * **logs**
         get service logs
+
+        * **-f, --follow**
+          follow logs journal, default: *False*
 
       * **start**
         start service
