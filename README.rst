@@ -283,6 +283,12 @@ The following options are supported:
 * **-h, --help**
   show this help message and exit
 
+* **-v, --version**
+  show program's version number and exit
+
+* **--license**
+  show program's license and exit
+
 * **--github-token GITHUB_TOKEN**
   GitHub token, default: *$GITHUB_TOKEN* environment variable
 
@@ -297,6 +303,9 @@ The following options are supported:
 
 * **--image HETZNER_IMAGE**
   Hetzner Cloud server image name, default: ubuntu-20.04
+
+* **-m count, --max-runners count**
+  maximum number of active runners, default: unlimited
 
 * **-w count, --workers count**
   number of concurrent workers, default: 10

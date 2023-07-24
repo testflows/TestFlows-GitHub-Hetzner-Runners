@@ -119,6 +119,13 @@ def argparser():
     )
 
     parser.add_argument(
+        "-m", "--max-runners",
+        metavar="count",
+        type=count,
+        help="maximum number of active runners, default: unlimited",
+    )
+
+    parser.add_argument(
         "--hetzner-image",
         metavar="HETZNER_IMAGE",
         type=env_var("HETZNER_IMAGE"),
@@ -245,6 +252,7 @@ def main(args, scripts: Scripts, worker_pool: ThreadPoolExecutor, terminate_time
                     github_token=args.github_token,
                     github_repository=args.github_repository,
                     interval=args.scale_up_interval,
+                    max_servers=args.max_runners,
                 )
 
             with Action("Creating scale down service"):

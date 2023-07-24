@@ -15,12 +15,12 @@
 import os
 import time
 import logging
-import requests
 import threading
 
 from .actions import Action
 from .shell import shell
 from .scripts import Scripts
+from .request import request
 
 from hcloud import Client
 from hcloud.ssh_keys.domain import SSHKey
@@ -67,16 +67,18 @@ def server_setup(
             else:
                 time.sleep(5)
 
-    with Action("Get runner registration token"):
-        resp = requests.post(
+    with Action("Getting registration token for the runner"):
+        content, resp = request(
             f"https://api.github.com/repos/{github_repository}/actions/runners/registration-token",
             headers={
                 "Accept": "application/vnd.github+json",
                 "Authorization": f"Bearer {github_token}",
                 "X-GitHub-Api-Version": "2022-11-28",
             },
+            data={},
+            format="json",
         )
-        GITHUB_RUNNER_TOKEN = resp.json()["token"]
+        GITHUB_RUNNER_TOKEN = content["token"]
 
     with Action("Get current directory"):
         current_dir = os.path.dirname(__file__)
@@ -98,6 +100,7 @@ def server_setup(
 def create_server(
     client: Client,
     job: WorkflowJob,
+    name: str,
     server_type: ServerType,
     setup_script: str,
     startup_script: str,
@@ -112,7 +115,7 @@ def create_server(
 
     with Action("Create server"):
         response = client.servers.create(
-            name=f"gh-actions-runner-{job.run_id}",
+            name=name,
             server_type=server_type,
             image=image,
             ssh_keys=[ssh_key],
@@ -182,12 +185,16 @@ def scale_up(
     ssh_key: SSHKey,
     image: Image,
     interval: int,
+    max_servers: int,
 ):
     """Scale up service."""
     while True:
         if terminate.is_set():
             with Action("Terminating scale up service"):
                 break
+
+        with Action("Getting list of servers", level=logging.DEBUG):
+            servers: list[BoundServer] = client.servers.get_all()
 
         with Action("Getting workflow runs", level=logging.DEBUG):
             workflow_runs = repo.get_workflow_runs(branch="main", status="queued")
@@ -199,16 +206,37 @@ def scale_up(
                 for job in run.jobs():
                     if job.status == "queued":
                         with Action(f"Found queued job {job}"):
+                            server_name = f"gh-actions-runner-{job.run_id}"
                             server_type = get_server_type(job=job)
                             startup_script = get_startup_script(
                                 server_type=server_type, scripts=scripts
                             )
+
+                            if max_servers is not None:
+                                with Action(
+                                    f"Checking if maximum number of servers has been reached",
+                                    level=logging.DEBUG,
+                                ):
+                                    if len(servers) >= max_servers:
+                                        with Action(
+                                            f"Maximum number of servers {max_servers} has been reached"
+                                        ):
+                                            continue
+
+                            with Action(
+                                f"Checking if server already exists for {job}",
+                                level=logging.DEBUG,
+                            ) as action:
+                                if server_name in [server.name for server in servers]:
+                                    with Action(f"Server already exists for {job}"):
+                                        continue
 
                             futures.append(
                                 worker_pool.submit(
                                     create_server,
                                     client=client,
                                     job=job,
+                                    name=server_name,
                                     server_type=server_type,
                                     setup_script=scripts.setup,
                                     startup_script=startup_script,
