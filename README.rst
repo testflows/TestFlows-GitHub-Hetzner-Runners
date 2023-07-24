@@ -180,7 +180,7 @@ The Start-up Script
 The **startup** script installs GitHub Actions runner. After installation it configures the runner to start in an *--ephemeral* mode.
 The *--ephemeral* mode causes the runner to exit as soon as it completes a job. After the runner exits the server is powered off.
 
-The x64 **startup** script installs and configures x86 version of the runner.
+The x64 **startup** script installs and configures x64 version of the runner.
 
 :x64:
   
