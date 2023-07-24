@@ -1,0 +1,319 @@
+#!/usr/bin/env python3
+# Copyright 2023 Katteli Inc.
+# TestFlows.com Open-Source Software Testing Framework (http://testflows.com)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import os
+import sys
+import time
+import logging
+import threading
+
+from concurrent.futures import ThreadPoolExecutor, Future
+
+from hcloud import Client
+from hcloud.ssh_keys.domain import SSHKey
+from hcloud.images.domain import Image
+
+from github import Github
+from github.Repository import Repository
+
+from argparse import ArgumentParser, RawTextHelpFormatter, ArgumentError
+
+from testflows.github.runners import __version__
+from testflows.github.runners.actions import Action
+from testflows.github.runners.scale_up import scale_up
+from testflows.github.runners.scale_down import scale_down
+from testflows.github.runners.scripts import Scripts, scripts
+
+logger = logging.getLogger("testflows.github.runners")
+
+description = """Auto-scaling GitHub Actions runners service using Hetzner Cloud.
+
+    Service that starts and monitors queued up GitHub Actions workflows.
+    When a new job is queued up, it creates new Hetzner Cloud server instance
+    that provides an ephemeral GitHub Actions runner. Server is automatically
+    powered off when job completes and then powered off servers are
+    automatically deleted.
+
+    By default, uses `$GITHUB_TOKEN`, `$GITHUB_REPOSITORY`, and `$HETZNER_TOKEN`
+    environment variables or you can specify these values `--github-token`,
+    `--github-repository`, and `--hetzner-token` options.
+"""
+
+
+def count(v):
+    """Count argument type."""
+    v = int(v)
+    assert v >= 1
+    return v
+
+
+def env_var(name):
+    """Environment variable type."""
+
+    def option(v):
+        v = v if v else os.getenv(name)
+        if not v:
+            raise ArgumentError(f"invalid {name}")
+        return v
+
+    return option
+
+
+def argparser():
+    """Command line argument parser."""
+
+    parser = ArgumentParser(
+        "GitHub Actions runners scale up service",
+        description=description,
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    parser.add_argument(
+        "--github-token",
+        type=env_var("GITHUB_TOKEN"),
+        help="GitHub token, default: $GITHUB_TOKEN environment variable",
+        default="",
+    )
+
+    parser.add_argument(
+        "--github-repository",
+        type=env_var("GITHUB_REPOSITORY"),
+        help="GitHub repository, default: $GITHUB_REPOSITORY environment variable",
+        default="",
+    )
+
+    parser.add_argument(
+        "--hetzner-token",
+        type=env_var("HETZNER_TOKEN"),
+        help="Hetzner Cloud token, default: $HETZNER_TOKEN environment variable",
+        default="",
+    )
+
+    parser.add_argument(
+        "--hetzner-ssh-key",
+        metavar="HETZNER_SSH_KEY",
+        type=env_var("HETZNER_SSH_KEY"),
+        help="Hetzner Cloud SSH key name, default: $HETZNER_SSH_KEY environment variable",
+        default="",
+    )
+
+    parser.add_argument(
+        "--hetzner-image",
+        metavar="HETZNER_IMAGE",
+        type=env_var("HETZNER_IMAGE"),
+        help=(
+            "Hetzner Cloud server image name, default: ubuntu-20.04, "
+            "or if specified, $HETZNER_IMAGE environment variable value"
+        ),
+        default="ubuntu-20.04",
+    )
+
+    parser.add_argument(
+        "-w",
+        "--workers",
+        metavar="count",
+        type=count,
+        help="number of concurrent workers, default: 10",
+        default=10,
+    )
+
+    parser.add_argument(
+        "--logger-config",
+        metavar="path",
+        type=str,
+        help="custom logger configuration file",
+    )
+
+    parser.add_argument(
+        "--setup-script",
+        metavar="path",
+        type=str,
+        help="path to custom server setup script",
+    )
+
+    parser.add_argument(
+        "--startup-x64-script",
+        metavar="path",
+        type=str,
+        help="path to custom x64 server startup script",
+    )
+
+    parser.add_argument(
+        "--startup-arm64-script",
+        metavar="path",
+        type=str,
+        help="path to custom ARM64 server startup script",
+    )
+
+    parser.add_argument(
+        "--max-powered-off-time",
+        metavar="sec",
+        type=count,
+        help="maximum time after which a powered off server is deleted, default: 20 sec",
+        default=20,
+    )
+
+    parser.add_argument(
+        "--max-idle-runner-time",
+        metavar="sec",
+        type=count,
+        help="maximum time after which an idle runner is removed and its server deleted, default: 120 sec",
+        default=120,
+    )
+
+    parser.add_argument(
+        "--max-runner-registration-time",
+        metavar="sec",
+        type=count,
+        help="maximum time after which the server will be deleted if it fails to register a runner, default: 60 sec",
+        default=60,
+    )
+
+    parser.add_argument(
+        "--scale-up-interval",
+        metavar="sec",
+        type=count,
+        help="scale up service interval, default: 10 sec",
+        default=10,
+    )
+
+    parser.add_argument(
+        "--scale-down-interval",
+        metavar="sec",
+        type=count,
+        help="scale down service interval, default: 10 sec",
+        default=10,
+    )
+
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="enable debugging mode, default: False",
+        default=False,
+    )
+
+    return parser
+
+
+def main(args, scripts: Scripts, worker_pool: ThreadPoolExecutor, terminate_timeout=30):
+    """Auto-scale runners service."""
+
+    terminate  = threading.Event()
+
+    try:
+        with Action("Logging in to Hetzner Cloud"):
+            client = Client(token=args.hetzner_token)
+
+        with Action("Logging in to GitHub"):
+            github = Github(login_or_token=args.github_token)
+
+        with Action(f"Getting repository {args.github_repository}"):
+            repo: Repository = github.get_repo(args.github_repository)
+
+        try:
+            with Action("Creating scale up service"):
+                scale_up_service: Future = worker_pool.submit(
+                    scale_up,
+                    terminate=terminate,
+                    repo=repo,
+                    client=client,
+                    scripts=scripts,
+                    ssh_key=SSHKey(name=args.hetzner_ssh_key),
+                    image=Image(name=args.hetzner_image),
+                    worker_pool=worker_pool,
+                    github_token=args.github_token,
+                    github_repository=args.github_repository,
+                    interval=args.scale_up_interval,
+                )
+
+            with Action("Creating scale down service"):
+                scale_down_service: Future = worker_pool.submit(
+                    scale_down,
+                    terminate=terminate,
+                    repo=repo,
+                    client=client,
+                    max_powered_off_time=args.max_powered_off_time,
+                    max_idle_runner_time=args.max_idle_runner_time,
+                    max_runner_registration_time=args.max_runner_registration_time,
+                    interval=args.scale_down_interval,
+                )
+
+            while True:
+                time.sleep(1)
+
+                if scale_up_service.done():
+                    raise RuntimeError("scale-up service exited")
+
+                if scale_down_service.done():
+                    raise RuntimeError("scale-down service exited")
+
+        except BaseException:
+            with Action("Requesting all services to terminate"):
+                terminate.set()
+            raise
+
+        finally:
+            with Action("Waiting for scale up service to terminate", ignore_fail=True):
+                scale_down_service.result(timeout=terminate_timeout)
+
+            with Action(
+                "Waiting for scale down service to terminate", ignore_fail=True
+            ):
+                scale_up_service.result(timeout=terminate_timeout)
+
+    except KeyboardInterrupt as exc:
+        msg = "❗ KeyboardInterrupt"
+        if args.debug:
+            logger.exception(f"{msg}\n{exc}")
+        else:
+            logger.error(msg)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    args = argparser().parse_args()
+
+    logging_level = logging.INFO
+
+    if args.debug:
+        Action.debug = True
+        logging_level = logging.DEBUG
+
+    if args.logger_config:
+        logging.config.fileConfig(args.logger_config)
+    else:
+        logger.setLevel(logging_level)
+        handler = logging.StreamHandler(sys.stdout)
+        formatter = logging.Formatter(
+            "%(asctime)s %(levelname)6s %(threadName)10s %(funcName)15s %(message)s",
+            datefmt="%m/%d/%Y %I:%M:%S %p",
+        )
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+
+    if args.setup_script:
+        scripts.setup = args.setup_script
+
+    if args.startup_script:
+        scripts.startup_x64 = args.startup_x64_script
+
+    if args.startup_arm64_script:
+        scripts.startup_arm64 = args.startup_arm64_script
+
+    with scripts:
+        with ThreadPoolExecutor(
+            max_workers=args.workers + 2, thread_name_prefix="worker"
+        ) as worker_pool:
+            main(args, scripts, worker_pool)
