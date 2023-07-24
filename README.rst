@@ -55,7 +55,7 @@ Installation
 Quick Start
 ------------
 
-Set environment variables corresponding to your GitHub repository and Hetzner Cloud project.
+Set environment variables corresponding to your GitHub repository and Hetzner Cloud project
 
 .. code-block:: bash
 
@@ -63,9 +63,8 @@ Set environment variables corresponding to your GitHub repository and Hetzner Cl
    export GITHUB_REPOSITORY=vzakaznikov/github-runners
    export HETZNER_TOKEN=GJzdc...
    export HETZNER_SSH_KEY_NAME=user@user-node
-   export GITHUB_RUNNER_TOKEN=AJ6A...
 
-Start **github-runners** program.
+and then start **github-runners** program
 
 .. code-block:: bash
 
@@ -80,6 +79,12 @@ Start **github-runners** program.
    07/22/2023 08:20:37 PM   INFO MainThread            main 🍀 Creating scale down service
    07/22/2023 08:20:38 PM   INFO   worker_2   create_server 🍀 Create server
    ...
+
+or you can pass the required options inline as follows:
+
+.. code-block:: bash
+
+   github-runners --github-token <GITHUB_TOKEN> --github-repository <GITHUB_REPOSITORY> --hetzner-token <HETZNER_TOKEN> --hetzner-ssh-key <HEZNER_SSH_KEY
 
 -------------------------
 Installation From Sources
@@ -127,6 +132,12 @@ After installation, you can use **service install** and **service uninstall** co
 uninstall the service.
 
 .. code-block:: bash
+
+   export GITHUB_TOKEN=ghp_...
+   export GITHUB_REPOSITORY=testflows/github-runners
+   export HETZNER_TOKEN=GJzdc...
+   export HETZNER_SSH_KEY_NAME=user@user-node
+   export GITHUB_RUNNER_TOKEN=AJ6A...
 
    sudo github-runners service install
 
