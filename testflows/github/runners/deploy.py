@@ -25,7 +25,7 @@ from .actions import Action
 from .args import check
 from . import __version__
 
-from .server import wait_ready, wait_ssh_connection, ssh
+from .server import wait_ready, wait_ssh, ssh
 
 current_dir = os.path.dirname(__file__)
 
@@ -42,7 +42,7 @@ def deploy(args, timeout=60):
         response = client.servers.create(
             name="github-runners",
             server_type=ServerType("cpx11"),
-            image=Image(args.hetzner_image),
+            image=Image("ubuntu-20.04"),
             ssh_keys=[SSHKey(name=args.hetzner_ssh_key)],
         )
         server: BoundServer = response.server
@@ -51,7 +51,7 @@ def deploy(args, timeout=60):
         wait_ready(server=server, timeout=timeout, action=action)
 
     with Action("Wait for SSH connection to be ready"):
-        wait_ssh_connection(server=server, timeout=timeout)
+        wait_ssh(server=server, timeout=timeout)
 
     with Action("Executing setup.sh script"):
         ssh(
@@ -63,7 +63,7 @@ def deploy(args, timeout=60):
         ssh(server, f"'sudo -u runner pip3 install testflows.github.runners'")
 
     with Action("Installing service"):
-        command = f"'sudo -u runner "
+        command = f"su - runner -c '"
         command += f"GITHUB_TOKEN={args.github_token} "
         command += f"GITHUB_REPOSITORY={args.github_repository} "
         command += f"HETZNER_TOKEN={args.hetzner_token} "
@@ -95,6 +95,6 @@ def deploy(args, timeout=60):
             f" --scale-down-interval {args.scale_down_interval}"
         )
         command += f" --debug" if args.debug else ""
-        command += " service install'"
+        command += " service install -f'"
 
         ssh(server, command)

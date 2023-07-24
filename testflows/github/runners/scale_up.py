@@ -21,7 +21,7 @@ from .actions import Action
 from .scripts import Scripts
 from .request import request
 
-from .server import wait_ssh_connection, ssh, wait_ready
+from .server import wait_ssh, ssh, wait_ready
 
 from hcloud import Client
 from hcloud.ssh_keys.domain import SSHKey
@@ -46,7 +46,7 @@ def server_setup(
 ):
     """Setup new server instance."""
     with Action("Wait for SSH connection to be ready"):
-        wait_ssh_connection(server=server, timeout=timeout)
+        wait_ssh(server=server, timeout=timeout)
 
     with Action("Getting registration token for the runner"):
         content, resp = request(

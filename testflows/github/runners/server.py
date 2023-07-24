@@ -25,7 +25,7 @@ def ip_address(server: BoundServer):
     return server.public_net.primary_ipv4.ip
 
 
-def wait_ssh_connection(server: BoundServer, timeout: float):
+def wait_ssh(server: BoundServer, timeout: float):
     """Wait until SSH connection is ready."""
     ip = ip_address(server=server)
 
