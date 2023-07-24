@@ -28,13 +28,14 @@ from hcloud.images.domain import Image
 from github import Github
 from github.Repository import Repository
 
-from argparse import ArgumentParser, RawTextHelpFormatter, ArgumentError
+from argparse import ArgumentParser, RawTextHelpFormatter
 
 from testflows.github.runners import __version__, __license__
 from testflows.github.runners.actions import Action
 from testflows.github.runners.scale_up import scale_up
 from testflows.github.runners.scale_down import scale_down
 from testflows.github.runners.scripts import Scripts, scripts
+from testflows.github.runners.args import check
 import testflows.github.runners.service as service
 
 logger = logging.getLogger("testflows.github.runners")
@@ -65,8 +66,6 @@ def env_var(name):
 
     def option(v):
         v = v if v else os.getenv(name)
-        if not v:
-            raise ArgumentError(f"invalid {name}")
         return v
 
     return option
@@ -412,6 +411,8 @@ if __name__ == "__main__":
         args.func(args=args)
 
     else:
+        check(args)
+
         with ThreadPoolExecutor(
             max_workers=args.workers + 2, thread_name_prefix="worker"
         ) as worker_pool:

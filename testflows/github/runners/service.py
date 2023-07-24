@@ -20,10 +20,13 @@ SERVICE = f"/etc/systemd/system/{NAME}.service"
 SERVICE_BIN = "/usr/local/bin/github-runners"
 
 from .actions import Action
+from .args import check
 
 
 def install(args):
     """Install service."""
+    check(args)
+
     force = args.force
 
     current_dir = os.path.dirname(__file__)
