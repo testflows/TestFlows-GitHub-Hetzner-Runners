@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import time
 import logging
 import subprocess
 
@@ -20,16 +21,26 @@ logger = logging.getLogger("testflows.github.runners")
 
 def shell(cmd: str, shell: bool = True, check: bool = True):
     """Execute command."""
-    p = subprocess.run(
+    p = subprocess.Popen(
         cmd,
         shell=shell,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        check=check,
         bufsize=1,
         universal_newlines=True,
+        text=True,
+        encoding="utf-8",
     )
-    for line in p.stdout.splitlines():
-        logger.info(f"   > {line}", stacklevel=2)
+
+    for line in iter(p.stdout.readline, ""):
+        if line == "":
+            time.sleep(0.1)
+            continue
+        logger.info(f"   > {line.rstrip()}", stacklevel=2)
+
+    p.wait()
+
+    if check:
+        assert p.returncode == 0, f"{cmd} returned non-zero exit code {p.returncode}"
 
     return p.returncode

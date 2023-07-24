@@ -22,9 +22,10 @@ from hcloud.servers.client import BoundServer
 from hcloud.images.domain import Image
 
 from .actions import Action
-from .shell import shell
 from .args import check
 from . import __version__
+
+from .server import wait_ready, wait_ssh_connection, ssh
 
 current_dir = os.path.dirname(__file__)
 
@@ -40,58 +41,29 @@ def deploy(args, timeout=60):
     with Action(f"Creating new server"):
         response = client.servers.create(
             name="github-runners",
-            server_type=ServerType("cx11"),
+            server_type=ServerType("cpx11"),
             image=Image(args.hetzner_image),
             ssh_keys=[SSHKey(name=args.hetzner_ssh_key)],
         )
         server: BoundServer = response.server
 
-    with Action(f"Waiting for server {server.name}") as action:
-        start_time = time.time()
+    with Action(f"Waiting for server {server.name} to be ready") as action:
+        wait_ready(server=server, timeout=timeout, action=action)
 
-        while True:
-            status = server.status
-            action.note(f"{server.name} {status}")
-            if status == server.STATUS_RUNNING:
-                break
-            if time.time() - start_time >= timeout:
-                raise TimeoutError("waiting for server to start running")
-            time.sleep(1)
-            server.reload()
-
-    ip = server.public_net.primary_ipv4.ip
-    ssh = f'ssh -q -o "StrictHostKeyChecking no" root@{ip}'
-
-    with Action("SSH to server"):
-        attempt = -1
-        start_time = time.time()
-
-        while True:
-            attempt += 1
-
-            with Action(
-                f"Trying to connect to {server.name}@{ip}...{attempt}", ignore_fail=True
-            ):
-                returncode = shell(f"{ssh} hostname")
-                if returncode == 0:
-                    break
-
-            if time.time() - start_time >= timeout:
-                shell(f"{ssh} hostname")
-            else:
-                time.sleep(5)
+    with Action("Wait for SSH connection to be ready"):
+        wait_ssh_connection(server=server, timeout=timeout)
 
     with Action("Executing setup.sh script"):
-        shell(
-            f"{ssh} bash -s  < {os.path.join(current_dir, 'scripts', 'deploy', 'setup.sh')}"
+        ssh(
+            server,
+            f"bash -s  < {os.path.join(current_dir, 'scripts', 'deploy', 'setup.sh')}",
         )
 
     with Action("Installing github-runners"):
-        shell(f"{ssh} 'sudo -u runner pip3 install testflows.github.runners'")
+        ssh(server, f"'sudo -u runner pip3 install testflows.github.runners'")
 
     with Action("Installing service"):
-        command = f"{ssh} 'sudo -u runner "
-
+        command = f"'sudo -u runner "
         command += f"GITHUB_TOKEN={args.github_token} "
         command += f"GITHUB_REPOSITORY={args.github_repository} "
         command += f"HETZNER_TOKEN={args.hetzner_token} "
@@ -99,9 +71,7 @@ def deploy(args, timeout=60):
         command += f"HETZNER_IMAGE={args.hetzner_image} "
 
         command += "github-runners"
-
         command += f" --workers {args.workers}"
-
         command += f" --max-runners {args.max_runners}" if args.max_runners else ""
         command += (
             f" --logger-config {args.logger_config}" if args.logger_config else ""
@@ -127,4 +97,4 @@ def deploy(args, timeout=60):
         command += f" --debug" if args.debug else ""
         command += " service install'"
 
-        shell(command)
+        ssh(server, command)

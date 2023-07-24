@@ -18,9 +18,10 @@ import logging
 import threading
 
 from .actions import Action
-from .shell import shell
 from .scripts import Scripts
 from .request import request
+
+from .server import wait_ssh_connection, ssh, wait_ready
 
 from hcloud import Client
 from hcloud.ssh_keys.domain import SSHKey
@@ -44,28 +45,8 @@ def server_setup(
     timeout: float = 60,
 ):
     """Setup new server instance."""
-
-    ip = server.public_net.primary_ipv4.ip
-    ssh = f'ssh -q -o "StrictHostKeyChecking no" root@{ip}'
-
-    with Action("SSH to server"):
-        attempt = -1
-        start_time = time.time()
-
-        while True:
-            attempt += 1
-
-            with Action(
-                f"Trying to connect to {server.name}@{ip}...{attempt}", ignore_fail=True
-            ):
-                returncode = shell(f"{ssh} hostname")
-                if returncode == 0:
-                    break
-
-            if time.time() - start_time >= timeout:
-                shell(f"{ssh} hostname")
-            else:
-                time.sleep(5)
+    with Action("Wait for SSH connection to be ready"):
+        wait_ssh_connection(server=server, timeout=timeout)
 
     with Action("Getting registration token for the runner"):
         content, resp = request(
@@ -80,20 +61,21 @@ def server_setup(
         )
         GITHUB_RUNNER_TOKEN = content["token"]
 
-    with Action("Get current directory"):
+    with Action("Getting current directory"):
         current_dir = os.path.dirname(__file__)
 
     with Action("Executing setup.sh script"):
-        shell(f"{ssh} bash -s  < {setup_script}")
+        ssh(server, f"bash -s  < {setup_script}")
 
     with Action("Executing startup.sh script"):
-        shell(
-            f"{ssh} 'sudo -u runner "
+        ssh(
+            server,
+            f"'sudo -u runner "
             f"GITHUB_REPOSITORY=\"{os.getenv('GITHUB_REPOSITORY')}\" "
             f'GITHUB_RUNNER_TOKEN="{GITHUB_RUNNER_TOKEN}" '
             f"GITHUB_RUNNER_GROUP=Default "
             f'GITHUB_RUNNER_LABELS="{runner_labels}" '
-            f"bash -s' < {startup_script}"
+            f"bash -s' < {startup_script}",
         )
 
 
@@ -122,18 +104,8 @@ def create_server(
         )
         server: BoundServer = response.server
 
-    with Action(f"Waiting for server {server.name}") as action:
-        start_time = time.time()
-
-        while True:
-            status = server.status
-            action.note(f"{server.name} {status}")
-            if status == server.STATUS_RUNNING:
-                break
-            if time.time() - start_time >= timeout:
-                raise TimeoutError("waiting for server to start running")
-            time.sleep(1)
-            server.reload()
+    with Action(f"Waiting for server {server.name} to be ready") as action:
+        wait_ready(server=server, timeout=timeout, action=action)
 
     server_setup(
         server=response.server,
