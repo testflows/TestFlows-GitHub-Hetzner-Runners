@@ -1,5 +1,6 @@
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-ArtWork/master/images/logo.png
    :width: 20%
+   :target: https://testflows.com
    :alt: test bug
    :align: center
 
