@@ -428,6 +428,26 @@ The following options are supported:
   enable debugging mode, default: *False*
 
 * **commands:**
+  
   * *command*
+
     * **service**
       service commands
+
+      * **install**
+        install service
+
+      * **uninstall**
+        uninstall service
+
+      * **status**
+        get service status
+
+      * **logs**
+        get service logs
+
+      * **start**
+        start service
+
+      * **stop**
+        stop service
