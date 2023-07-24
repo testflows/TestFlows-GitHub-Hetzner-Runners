@@ -135,7 +135,7 @@ uninstall the service.
    export HETZNER_TOKEN=GJzdc...
    export HETZNER_SSH_KEY_NAME=user@user-node
 
-   sudo github-runners service install
+   github-runners service install
 
 The **/etc/systemd/system/github-runners.service** file is created with the following content.
 
