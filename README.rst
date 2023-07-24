@@ -1,3 +1,8 @@
+.. image:: https://raw.githubusercontent.com/testflows/TestFlows-ArtWork/master/images/logo.png
+   :width: 20%
+   :alt: test bug
+   :align: center
+
 ======================================================
 Autoscaling GitHub Actions Runners Using Hetzner Cloud
 ======================================================
@@ -44,9 +49,7 @@ Installation
 
 .. code-block:: bash
 
-   git clone https://github.com/vzakaznikov/github-runners.git
-   cd github-runners
-   pip3 install -r requirements.txt
+   pip3 install testflows.github.runners
 
 ------------
 Quick Start
@@ -66,7 +69,7 @@ Start **github-runners** program.
 
 .. code-block:: bash
 
-   ./github-runners
+   github-runners
 
 ::
 
@@ -77,6 +80,17 @@ Start **github-runners** program.
    07/22/2023 08:20:37 PM   INFO MainThread            main 🍀 Creating scale down service
    07/22/2023 08:20:38 PM   INFO   worker_2   create_server 🍀 Create server
    ...
+
+-------------------------
+Installation From Sources
+-------------------------
+
+For development you can install from sources as follows:
+
+.. code-blocks:: bash
+
+   git clone https://github.com/testflows/Github-Runners.git
+   ./package && ./install
 
 -------------------
 Basic Configuration
@@ -124,6 +138,17 @@ Also,
    There is no guarantee that a given runner will pick the the job with the exact **run_id** that caused it to be created.
    This is expected and because for each **queued** job a unique runner will be created the number of runners will be
    equal the number of jobs and therefore under normal conditions all jobs will executed as expected.
+
+Maximum Number of Runners
+=========================
+
+By default, the maximum number of runners and therefore server instances is not set and therefore is unlimited.
+You can set the maximum number of runners using the **--max-runners** option.
+
+.. code-blocks::bash
+
+   github-runners --max-runners 10
+
 
 New Server
 ==========
@@ -274,6 +299,61 @@ The program is designed to handle the following failing conditions:
 :Runner Created With a Mismatched Labels:
    The behavior will be the same as for the **Runner Never Gets a Job Assigned** case above.
 
+
+-----------------------
+Running as a Service
+-----------------------
+
+You can run **github-runners** as a service. For this you will need to install it using **root** user
+or **sudo** command.
+
+.. code-blocks:: bash
+
+   sudo pip3 install testflows.github.runners
+
+After installation, you can use **service install** and **service uninstall** commands to install and
+uninstall the service.
+
+.. code-blocks:: bash
+
+   sudo github-runners service install
+
+.. code-blocks:: bash
+
+   sudo github-runners service uninstall
+
+After installation, you can check the status of the server using the **service status** command.
+
+.. code-blocks:: bash
+
+   sudo github-runners service status
+
+You can start and stop the service using the **service start** and **service stop** commands as follows:
+
+.. code-block:: bash
+
+   sudo github-runners service start
+   sudo github-runners service stop
+
+or using **service** system utility
+
+.. code-blocks:: bash
+
+   sudo service github-runners start
+   sudo service github-runners stop
+
+You can get the logs for the service using the **service logs** command.
+
+.. code-blocks:: bash
+
+   sudo github-runners service logs
+
+which is equivalent to the following **journalctl** command:
+
+.. code-blocks:: bash
+
+   journalctl -u github-runners.service -f
+
 ---------------
 Program Options
 ---------------
@@ -339,3 +419,8 @@ The following options are supported:
 
 * **--debug**
   enable debugging mode, default: *False*
+
+* **commands:**
+  * *command*
+    * **service**
+      service commands
