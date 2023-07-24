@@ -549,6 +549,9 @@ The following options are supported:
       * **install**
         install service
 
+        * **-f, --force**
+          force installation if service already exists
+
       * **uninstall**
         uninstall service
 
