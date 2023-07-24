@@ -116,15 +116,17 @@ or you can specify these values using the following options:
 Running as a Service
 -----------------------
 
-You can run **github-runners** as a service. For this you will need to install it using the **root** user
-or the **sudo** command.
+You can run **github-runners** as a service.
 
-.. code-block:: bash
-
-   sudo pip3 install testflows.github.runners
+:✋ Note:
+   In order to install the service, the user that installed the module must have **sudo** privileges.
 
 After installation, you can use **service install** and **service uninstall** commands to install and
 uninstall the service.
+
+:✋ Note:
+   The options that are passed to the **github-runners <options> service install** command
+   will be the same options with which the service will be executed.
 
 .. code-block:: bash
 
@@ -134,6 +136,42 @@ uninstall the service.
    export HETZNER_SSH_KEY_NAME=user@user-node
 
    sudo github-runners service install
+
+The **/etc/systemd/system/github-runners.service** file is created with the following content.
+
+:✋ Note:
+   The service will use the *User* and the *Group* of the user executing the program.
+
+:/etc/systemd/system/github-runners.service:
+
+   ::
+
+      [Unit]
+      Description=Autoscaling GitHub Actions Runners
+      After=multi-user.target
+      [Service]
+      User=1000
+      Group=1000
+      Type=simple
+      Restart=always
+      Environment=GITHUB_TOKEN=ghp_...
+      Environment=GITHUB_REPOSITORY=testflows/github-runners
+      Environment=HETZNER_TOKEN=GJ..
+      Environment=HETZNER_SSH_KEY=user@user-node
+      Environment=HETZNER_IMAGE=ubuntu-20.04
+      ExecStart=/home/user/.local/lib/python3.10/site-packages/testflows/github/runners/bin/github-runners --workers 10 --max-powered-off-time 20 --max-idle-runner-time 120 --max-runner-registration-time 60 --scale-up-interval 10 --scale-down-interval 10
+      [Install]
+      WantedBy=multi-user.target
+
+If you want to modify service program options you can stop the service,
+edit the **/etc/systemd/system/github-runners.service** file by hand, then reload service daemon,
+and start the service back up.
+
+.. code-block:: bash
+   github-runners service stop
+   sudo vim /etc/systemd/system/github-runners.service
+   sudo systemctl daemon-reload
+   github-runners service start
 
 .. code-block:: bash
 
@@ -148,7 +186,7 @@ After installation, you can check the status of the service using the **service 
 :service status:
 
    ::
-   
+
       ● github-runners.service - Autoscaling GitHub Actions Runners
            Loaded: loaded (/etc/systemd/system/github-runners.service; enabled; vendor preset: enabled)
            Active: active (running) since Mon 2023-07-24 14:38:33 EDT; 1h 31min ago
@@ -158,7 +196,7 @@ After installation, you can check the status of the service using the **service 
               CPU: 8.274s
            CGroup: /system.slice/github-runners.service
                    └─66188 python3 /usr/local/bin/github-runners --workers 10 --max-powered-off-time 20 --max-idle-runner-time 120 --max->
-      
+
       Jul 24 14:38:33 user-node systemd[1]: Started Autoscaling GitHub Actions Runners.
       Jul 24 14:38:33 user-node github-runners[66188]: 07/24/2023 02:38:33 PM   INFO MainThread            main 🍀 Logging in to Hetzner >
       Jul 24 14:38:33 user-node github-runners[66188]: 07/24/2023 02:38:33 PM   INFO MainThread            main 🍀 Logging in to GitHub
@@ -463,7 +501,7 @@ The following options are supported:
   enable debugging mode, default: *False*
 
 * **commands:**
-  
+
   * *command*
 
     * **service**
