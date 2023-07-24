@@ -107,7 +107,6 @@ By default, the program uses the following environment variables:
 * **GITHUB_REPOSITORY**
 * **HETZNER_TOKEN**
 * **HETZNER_SSH_KEY**
-* **HETZNER_IMAGE**
 
 or you can specify these values using the following options:
 
@@ -115,7 +114,6 @@ or you can specify these values using the following options:
 * **--github-repository**
 * **--hetzner-token**
 * **--hetzner-ssh-key**
-* **--hetzner-image**
 
 -----------------------
 Running as a Service
