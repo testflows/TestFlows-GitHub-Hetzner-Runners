@@ -87,7 +87,7 @@ Installation From Sources
 
 For development, you can install from sources as follows:
 
-.. code-blocks:: bash
+.. code-block:: bash
 
    git clone https://github.com/testflows/Github-Runners.git
    ./package && ./install
@@ -119,24 +119,24 @@ Running as a Service
 You can run **github-runners** as a service. For this you will need to install it using the **root** user
 or the **sudo** command.
 
-.. code-blocks:: bash
+.. code-block:: bash
 
    sudo pip3 install testflows.github.runners
 
 After installation, you can use **service install** and **service uninstall** commands to install and
 uninstall the service.
 
-.. code-blocks:: bash
+.. code-block:: bash
 
    sudo github-runners service install
 
-.. code-blocks:: bash
+.. code-block:: bash
 
    sudo github-runners service uninstall
 
 After installation, you can check the status of the server using the **service status** command.
 
-.. code-blocks:: bash
+.. code-block:: bash
 
    sudo github-runners service status
 
@@ -149,20 +149,20 @@ You can start and stop the service using the **service start** and **service sto
 
 or using **service** system utility
 
-.. code-blocks:: bash
+.. code-block:: bash
 
    sudo service github-runners start
    sudo service github-runners stop
 
 You can get the logs for the service using the **service logs** command.
 
-.. code-blocks:: bash
+.. code-block:: bash
 
    sudo github-runners service logs
 
 which is equivalent to the following **journalctl** command:
 
-.. code-blocks:: bash
+.. code-block:: bash
 
    journalctl -u github-runners.service -f
 
