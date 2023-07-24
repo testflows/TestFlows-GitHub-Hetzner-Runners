@@ -203,7 +203,7 @@ Also,
 Maximum Number of Runners
 =========================
 
-By default, the maximum number of runners and therefore server instances is not set and therefore is unlimited.
+By default, the maximum number of runners and therefore the maximum number if server instances is not set and therefore is unlimited.
 You can set the maximum number of runners using the **--max-runners** option.
 
 .. code-blocks::bash
