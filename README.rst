@@ -121,6 +121,9 @@ You can run **github-runners** as a service.
 :✋ Note:
    In order to install the service, the user that installed the module must have **sudo** privileges.
 
+Installing and Uninstalling
+===========================
+
 After installation, you can use **service install** and **service uninstall** commands to install and
 uninstall the service.
 
@@ -141,6 +144,7 @@ The **/etc/systemd/system/github-runners.service** file is created with the foll
 
 :✋ Note:
    The service will use the *User* and the *Group* of the user executing the program.
+
 
 :/etc/systemd/system/github-runners.service:
 
@@ -163,11 +167,15 @@ The **/etc/systemd/system/github-runners.service** file is created with the foll
       [Install]
       WantedBy=multi-user.target
 
+Modifying Program Options
+=========================
+
 If you want to modify service program options you can stop the service,
 edit the **/etc/systemd/system/github-runners.service** file by hand, then reload service daemon,
 and start the service back up.
 
 .. code-block:: bash
+
    github-runners service stop
    sudo vim /etc/systemd/system/github-runners.service
    sudo systemctl daemon-reload
@@ -176,6 +184,9 @@ and start the service back up.
 .. code-block:: bash
 
    sudo github-runners service uninstall
+
+Checking Status
+================
 
 After installation, you can check the status of the service using the **service status** command.
 
@@ -205,6 +216,9 @@ After installation, you can check the status of the service using the **service 
       Jul 24 14:38:33 user-node github-runners[66188]: 07/24/2023 02:38:33 PM   INFO MainThread            main 🍀 Creating scale down se>
       lines 1-16/16 (END)
 
+Manual Start and Stop
+=====================
+
 You can start and stop the service using the **service start** and **service stop** commands as follows:
 
 .. code-block:: bash
@@ -218,6 +232,9 @@ or using **service** system utility
 
    sudo service github-runners start
    sudo service github-runners stop
+
+Checking Logs
+=============
 
 You can get the logs for the service using the **service logs** command.
 
