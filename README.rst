@@ -2,7 +2,7 @@
    :width: 20%
    :target: https://testflows.com
    :alt: test bug
-   :align: center
+   :align: left
 
 ======================================================
 Autoscaling GitHub Actions Runners Using Hetzner Cloud
@@ -11,7 +11,7 @@ Autoscaling GitHub Actions Runners Using Hetzner Cloud
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-ArtWork/master/images/test-machine.png
    :width: 30%
    :alt: test machine
-   :align: center
+   :align: left
 
 The **github-runners** service program starts and monitors queued up jobs for GitHub Actions workflows.
 When a new job is queued up, it creates a new Hetzner Cloud server instance
