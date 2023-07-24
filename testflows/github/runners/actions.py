@@ -30,7 +30,11 @@ class Action:
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         if exc_value is not None:
-            logger.log(msg=f"❌ Error {exc_value}", stacklevel=2, level=self.level)
+            msg = f"❌ Error: {exc_value}"
+            if not self.debug:
+                logger.log(msg=msg, stacklevel=2, level=self.level)
+            else:
+                logger.exception(msg=msg, stacklevel=3)
             if self.ignore_fail:
                 return True
             if self.debug:

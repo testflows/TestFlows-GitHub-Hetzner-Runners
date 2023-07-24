@@ -30,7 +30,7 @@ from github.Repository import Repository
 
 from argparse import ArgumentParser, RawTextHelpFormatter, ArgumentError
 
-from testflows.github.runners import __version__
+from testflows.github.runners import __version__, __license__
 from testflows.github.runners.actions import Action
 from testflows.github.runners.scale_up import scale_up
 from testflows.github.runners.scale_down import scale_down
@@ -78,6 +78,15 @@ def argparser():
         "GitHub Actions runners scale up service",
         description=description,
         formatter_class=RawTextHelpFormatter,
+    )
+
+    parser.add_argument("-v", "--version", action="version", version=f"{__version__}")
+
+    parser.add_argument(
+        "--license",
+        action="version",
+        help="show program's license and exit",
+        version=f"{__license__}",
     )
 
     parser.add_argument(
@@ -306,14 +315,13 @@ if __name__ == "__main__":
     if args.setup_script:
         scripts.setup = args.setup_script
 
-    if args.startup_script:
+    if args.startup_x64_script:
         scripts.startup_x64 = args.startup_x64_script
 
     if args.startup_arm64_script:
         scripts.startup_arm64 = args.startup_arm64_script
 
-    with scripts:
-        with ThreadPoolExecutor(
-            max_workers=args.workers + 2, thread_name_prefix="worker"
-        ) as worker_pool:
-            main(args, scripts, worker_pool)
+    with ThreadPoolExecutor(
+        max_workers=args.workers + 2, thread_name_prefix="worker"
+    ) as worker_pool:
+        main(args, scripts, worker_pool)

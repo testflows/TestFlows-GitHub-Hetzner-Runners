@@ -54,15 +54,17 @@ def server_setup(
 
         while True:
             attempt += 1
-            try:
-                with Action(
-                    f"Trying to connect to {ip}...{attempt}", exit_on_fail=False
-                ):
-                    shell(f"{ssh} hostname")
-                break
-            except Exception:
-                if time.time() - start_time >= timeout:
-                    raise
+
+            with Action(
+                f"Trying to connect to {server.name}@{ip}...{attempt}", ignore_fail=True
+            ):
+                returncode = shell(f"{ssh} hostname")
+                if returncode == 0:
+                    break
+
+            if time.time() - start_time >= timeout:
+                shell(f"{ssh} hostname")
+            else:
                 time.sleep(5)
 
     with Action("Get runner registration token"):
@@ -142,6 +144,7 @@ def create_server(
 
 def get_server_type(job: WorkflowJob, default="cx11", label_prefix="server-"):
     """Get server type for the specified job."""
+    server_type = None
     server_type_name = default
 
     if server_type is None:
@@ -153,7 +156,7 @@ def get_server_type(job: WorkflowJob, default="cx11", label_prefix="server-"):
     if server_type is None:
         server_type = ServerType(name=server_type_name)
 
-    return server_setup
+    return server_type
 
 
 def get_startup_script(server_type: ServerType, scripts: Scripts):

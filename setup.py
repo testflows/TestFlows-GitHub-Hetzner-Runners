@@ -40,6 +40,9 @@ setup(
         "testflows.github.runners",
         "testflows.github.runners.scripts",
     ],
+    package_data={
+        "testflows.github.runners.scripts": ["*.sh"],
+    },
     scripts=["testflows/github/runners/bin/github-runners"],
     zip_safe=False,
     install_requires=["PyGithub==1.59.0", "hcloud==1.25.0", "requests==2.28.2"],

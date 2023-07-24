@@ -165,7 +165,7 @@ def scale_down(
                             ignore_fail=True,
                         ) as action:
                             zombie_server.server.delete()
-                            zombie_server.pop(server_name)
+                            zombie_servers.pop(server_name)
 
         with Action(
             "Checking which idle runners need to be removed and their servers deleted",
