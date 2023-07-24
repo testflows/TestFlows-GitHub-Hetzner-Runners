@@ -135,7 +135,6 @@ uninstall the service.
    export GITHUB_REPOSITORY=testflows/github-runners
    export HETZNER_TOKEN=GJzdc...
    export HETZNER_SSH_KEY_NAME=user@user-node
-   export GITHUB_RUNNER_TOKEN=AJ6A...
 
    sudo github-runners service install
 
