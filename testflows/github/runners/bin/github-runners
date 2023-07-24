@@ -296,6 +296,12 @@ def argparser():
         description="Get service logs.",
         formatter_class=RawTextHelpFormatter
     )
+    logs_service_parser.add_argument(
+        "-f",
+        "--follow",
+        action="store_true",
+        help="follow the logs journal",
+    )
     logs_service_parser.set_defaults(func=service.logs)
 
     return parser
