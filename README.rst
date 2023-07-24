@@ -15,7 +15,8 @@ automatically deleted. Both **x64** and **arm64** runners are supported.
 
 :❗Warning:
    This program is provided on "AS IS" basis without warranties or conditions of any kind. See LICENSE.
-   Use it at your own risk. Manual monitoring is required to make sure server instances are cleaned up properly.
+   Use it at your own risk. Manual monitoring is required to make sure server instances are cleaned up properly
+   and costs are kept under control.
 
 Costs depend on the server type, number of jobs and execution time. For each job a new server instance is created
 to avoid any cleanup. Server instances are not shared between any jobs.
@@ -137,7 +138,7 @@ uninstall the service.
 
    sudo github-runners service uninstall
 
-After installation, you can check the status of the server using the **service status** command.
+After installation, you can check the status of the service using the **service status** command.
 
 .. code-block:: bash
 
