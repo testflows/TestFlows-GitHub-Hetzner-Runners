@@ -26,6 +26,7 @@ to avoid any cleanup. Server instances are not shared between any jobs.
    the same way as for a job that takes 59 minutes. Therefore, the minimal cost
    for any job is the cost of the server for 1 hour plus the cost for one public IPv4 address.
 
+
 .. contents:: Read more about:
    :backlinks: top
    :depth: 4
