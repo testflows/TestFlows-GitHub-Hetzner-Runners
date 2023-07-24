@@ -206,7 +206,7 @@ def scale_up(
                 for job in run.jobs():
                     if job.status == "queued":
                         with Action(f"Found queued job {job}"):
-                            server_name = f"gh-actions-runner-{job.run_id}"
+                            server_name = f"github-runner-{job.run_id}"
                             server_type = get_server_type(job=job)
                             startup_script = get_startup_script(
                                 server_type=server_type, scripts=scripts

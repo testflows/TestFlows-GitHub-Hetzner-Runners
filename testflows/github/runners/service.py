@@ -34,6 +34,8 @@ def install(args):
         if os.path.exists(SERVICE):
             if not force:
                 raise ValueError("service has already been installed")
+            with Action("Stopping service"):
+                os.system(f"sudo service {NAME} stop")
 
     with Action(f"Installing {SERVICE}"):
         binary = os.path.join(current_dir, "bin", "github-runners")

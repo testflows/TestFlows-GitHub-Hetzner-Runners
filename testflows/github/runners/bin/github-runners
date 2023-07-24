@@ -36,6 +36,8 @@ from testflows.github.runners.scale_up import scale_up
 from testflows.github.runners.scale_down import scale_down
 from testflows.github.runners.scripts import Scripts, scripts
 from testflows.github.runners.args import check
+from testflows.github.runners.deploy import deploy
+
 import testflows.github.runners.service as service
 
 logger = logging.getLogger("testflows.github.runners")
@@ -223,6 +225,14 @@ def argparser():
     commands = parser.add_subparsers(
         title="commands", metavar="command", description=None, help=None
     )
+
+    deploy_parser = commands.add_parser(
+        "deploy",
+        help="deploy application",
+        description="Deploy application as a service to a cloud instance.",
+        formatter_class=RawTextHelpFormatter
+    )
+    deploy_parser.set_defaults(func=deploy)
 
     service_parser = commands.add_parser(
         "service",

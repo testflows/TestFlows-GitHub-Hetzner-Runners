@@ -295,7 +295,7 @@ For each such job, a corresponding Hetzner Cloud server instance is created with
 
 ::
 
-   gh-actions-runner-{job.run_id}
+   github-runner-{job.run_id}
 
 The server is configured using default **setup** and **startup** scripts. The runner name is set
 to be the same as the server name so that servers can deleted for any idle runner that for some reason
