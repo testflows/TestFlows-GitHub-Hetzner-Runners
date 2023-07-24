@@ -143,7 +143,29 @@ After installation, you can check the status of the service using the **service 
 
 .. code-block:: bash
 
-   sudo github-runners service status
+   sudo github-runners service status:
+
+:service status:
+
+   ::
+   
+      ● github-runners.service - Autoscaling GitHub Actions Runners
+           Loaded: loaded (/etc/systemd/system/github-runners.service; enabled; vendor preset: enabled)
+           Active: active (running) since Mon 2023-07-24 14:38:33 EDT; 1h 31min ago
+         Main PID: 66188 (python3)
+            Tasks: 3 (limit: 37566)
+           Memory: 28.8M
+              CPU: 8.274s
+           CGroup: /system.slice/github-runners.service
+                   └─66188 python3 /usr/local/bin/github-runners --workers 10 --max-powered-off-time 20 --max-idle-runner-time 120 --max->
+      
+      Jul 24 14:38:33 user-node systemd[1]: Started Autoscaling GitHub Actions Runners.
+      Jul 24 14:38:33 user-node github-runners[66188]: 07/24/2023 02:38:33 PM   INFO MainThread            main 🍀 Logging in to Hetzner >
+      Jul 24 14:38:33 user-node github-runners[66188]: 07/24/2023 02:38:33 PM   INFO MainThread            main 🍀 Logging in to GitHub
+      Jul 24 14:38:33 user-node github-runners[66188]: 07/24/2023 02:38:33 PM   INFO MainThread            main 🍀 Getting repository vza>
+      Jul 24 14:38:33 user-node github-runners[66188]: 07/24/2023 02:38:33 PM   INFO MainThread            main 🍀 Creating scale up serv>
+      Jul 24 14:38:33 user-node github-runners[66188]: 07/24/2023 02:38:33 PM   INFO MainThread            main 🍀 Creating scale down se>
+      lines 1-16/16 (END)
 
 You can start and stop the service using the **service start** and **service stop** commands as follows:
 
@@ -164,6 +186,22 @@ You can get the logs for the service using the **service logs** command.
 .. code-block:: bash
 
    sudo github-runners service logs
+
+:service logs:
+
+   ::
+
+      sudo github-runners service logs
+      Jul 24 16:12:14 user-node systemd[1]: Stopping Autoscaling GitHub Actions Runners...
+      Jul 24 16:12:14 user-node systemd[1]: github-runners.service: Deactivated successfully.
+      Jul 24 16:12:14 user-node systemd[1]: Stopped Autoscaling GitHub Actions Runners.
+      Jul 24 16:12:14 user-node systemd[1]: github-runners.service: Consumed 8.454s CPU time.
+      Jul 24 16:12:17 user-node systemd[1]: Started Autoscaling GitHub Actions Runners.
+      Jul 24 16:12:18 user-node github-runners[74176]: 07/24/2023 04:12:18 PM   INFO MainThread            main 🍀 Logging in to Hetzner Cloud
+      Jul 24 16:12:18 user-node github-runners[74176]: 07/24/2023 04:12:18 PM   INFO MainThread            main 🍀 Logging in to GitHub
+      Jul 24 16:12:18 user-node github-runners[74176]: 07/24/2023 04:12:18 PM   INFO MainThread            main 🍀 Getting repository vzakaznikov/github-runners
+      Jul 24 16:12:18 user-node github-runners[74176]: 07/24/2023 04:12:18 PM   INFO MainThread            main 🍀 Creating scale up service
+      Jul 24 16:12:18 user-node github-runners[74176]: 07/24/2023 04:12:18 PM   INFO MainThread            main 🍀 Creating scale down service
 
 which is equivalent to the following **journalctl** command:
 
