@@ -84,7 +84,7 @@ or you can pass the required options inline as follows:
 
 .. code-block:: bash
 
-   github-runners --github-token <GITHUB_TOKEN> --github-repository <GITHUB_REPOSITORY> --hetzner-token <HETZNER_TOKEN> --hetzner-ssh-key <HEZNER_SSH_KEY
+   github-runners --github-token <GITHUB_TOKEN> --github-repository <GITHUB_REPOSITORY> --hetzner-token <HETZNER_TOKEN> --hetzner-ssh-key <HEZNER_SSH_KEY>
 
 -------------------------
 Installation From Sources
