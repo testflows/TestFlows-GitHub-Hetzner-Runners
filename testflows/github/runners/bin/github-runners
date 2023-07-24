@@ -35,6 +35,7 @@ from testflows.github.runners.actions import Action
 from testflows.github.runners.scale_up import scale_up
 from testflows.github.runners.scale_down import scale_down
 from testflows.github.runners.scripts import Scripts, scripts
+import testflows.github.runners.service as service
 
 logger = logging.getLogger("testflows.github.runners")
 
@@ -220,6 +221,84 @@ def argparser():
         default=False,
     )
 
+    commands = parser.add_subparsers(
+        title="commands", metavar="command", description=None, help=None
+    )
+
+    service_parser = commands.add_parser(
+        "service",
+        help="service commands",
+        description="Service commands.",
+        formatter_class=RawTextHelpFormatter
+    )
+
+    service_commands = service_parser.add_subparsers(
+        title="commands", metavar="command", description=None, help=None
+    )
+    service_commands.required = True
+
+    install_service_parser = service_commands.add_parser(
+        "install",
+        help="install",
+        description="Install service.",
+        formatter_class=RawTextHelpFormatter
+    )
+    install_service_parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="force service install",
+        default=False,
+    )
+    install_service_parser.set_defaults(func=service.install)
+
+    uninstall_service_parser = service_commands.add_parser(
+        "uninstall",
+        help="uninstall",
+        description="Uninstall service.",
+        formatter_class=RawTextHelpFormatter
+    )
+    uninstall_service_parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="force service uninstall",
+        default=False,
+    )
+    uninstall_service_parser.set_defaults(func=service.uninstall)
+
+    start_service_parser = service_commands.add_parser(
+        "start",
+        help="start",
+        description="Start service.",
+        formatter_class=RawTextHelpFormatter
+    )
+    start_service_parser.set_defaults(func=service.start)
+
+    stop_service_parser = service_commands.add_parser(
+        "stop",
+        help="stop",
+        description="Stop service.",
+        formatter_class=RawTextHelpFormatter
+    )
+    stop_service_parser.set_defaults(func=service.stop)
+
+    status_service_parser = service_commands.add_parser(
+        "status",
+        help="status",
+        description="Get service status.",
+        formatter_class=RawTextHelpFormatter
+    )
+    status_service_parser.set_defaults(func=service.status)
+
+    logs_service_parser = service_commands.add_parser(
+        "logs",
+        help="logs",
+        description="Get service logs.",
+        formatter_class=RawTextHelpFormatter
+    )
+    logs_service_parser.set_defaults(func=service.logs)
+
     return parser
 
 
@@ -329,7 +408,11 @@ if __name__ == "__main__":
     if args.startup_arm64_script:
         scripts.startup_arm64 = args.startup_arm64_script
 
-    with ThreadPoolExecutor(
-        max_workers=args.workers + 2, thread_name_prefix="worker"
-    ) as worker_pool:
-        main(args, scripts, worker_pool)
+    if hasattr(args, "func"):
+        args.func(args=args)
+
+    else:
+        with ThreadPoolExecutor(
+            max_workers=args.workers + 2, thread_name_prefix="worker"
+        ) as worker_pool:
+            main(args, scripts, worker_pool)

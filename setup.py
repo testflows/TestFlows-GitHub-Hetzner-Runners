@@ -38,10 +38,12 @@ setup(
     license="Apache-2.0",
     packages=[
         "testflows.github.runners",
+        "testflows.github.runners.bin",
         "testflows.github.runners.scripts",
     ],
     package_data={
         "testflows.github.runners.scripts": ["*.sh"],
+        "testflows.github.runners.bin": ["github-runners"],
     },
     scripts=["testflows/github/runners/bin/github-runners"],
     zip_safe=False,

@@ -137,9 +137,9 @@ the **setup** and **startup** scripts.
    custom server type. Where the **{hetzner-server-type}** must be a valid Hetzner Cloud server type name such as *cx11*, *cpx21* etc.
 
    For example,
-   
+
    .. code-block:: yaml
-   
+
        runs-on: [self-hosted, server-cpx21]
 
 :SSH Access:
@@ -161,13 +161,13 @@ The Setup Script
 The **setup** script created and configures **runner** user that has **sudo** privileges.
 
 :Setup:
-  
+
    .. code-block:: bash
-   
+
         set -x
-        
+
         echo "Create and configure runner user"
-        
+
         adduser runner --disabled-password --gecos ""
         echo "%wheel   ALL=(ALL:ALL) NOPASSWD:ALL" >> /etc/sudoers
         addgroup wheel
@@ -183,8 +183,8 @@ The *--ephemeral* mode causes the runner to exit as soon as it completes a job. 
 The x64 **startup** script installs and configures x64 version of the runner.
 
 :x64:
-  
-   .. code-block:: bash  
+
+   .. code-block:: bash
 
      set -x
      echo "Install runner"
@@ -192,10 +192,10 @@ The x64 **startup** script installs and configures x64 version of the runner.
      curl -o actions-runner-linux-x64-2.306.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.306.0/actions-runner-linux-x64-2.306.0.tar.gz
      echo "b0a090336f0d0a439dac7505475a1fb822f61bbb36420c7b3b3fe6b1bdc4dbaa  actions-runner-linux-x64-2.306.0.tar.gz" | shasum -a 256 -c
      tar xzf ./actions-runner-linux-x64-2.306.0.tar.gz
-     
+
      echo "Configure runner"
      ./config.sh --unattended --replace --url https://github.com/${GITHUB_REPOSITORY} --token ${GITHUB_RUNNER_TOKEN} --name "$(hostname)" --runnergroup "${GITHUB_RUNNER_GROUP}" --labels "${GITHUB_RUNNER_LABELS}" --work _work --ephemeral
-     
+
      echo "Start runner"
      bash -c "screen -d -m bash -c './run.sh; sudo poweroff'"
 
@@ -203,20 +203,20 @@ The x64 **startup** script installs and configures x64 version of the runner.
 The ARM64 **startup** script is similar to the x64 script but install an ARM64 version of the runner.
 
 :ARM64:
-  
+
    .. code-block:: bash
-   
+
      set -x
      echo "Install runner"
      cd /home/runner
-     
+
      curl -o actions-runner-linux-arm64-2.306.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.306.0/actions-runner-linux-arm64-2.306.0.tar.gz# Optional: Validate the hash
      echo "842a9046af8439aa9bcabfe096aacd998fc3af82b9afe2434ddd77b96f872a83  actions-runner-linux-arm64-2.306.0.tar.gz" | shasum -a 256 -c# Extract the installer
      tar xzf ./actions-runner-linux-arm64-2.306.0.tar.gz
-     
+
      echo "Configure runner"
      ./config.sh --unattended --replace --url https://github.com/${GITHUB_REPOSITORY} --token ${GITHUB_RUNNER_TOKEN} --name "$(hostname)" --runnergroup "${GITHUB_RUNNER_GROUP}" --labels "${GITHUB_RUNNER_LABELS}" --work _work --ephemeral
-     
+
      echo "Start runner"
      bash -c "screen -d -m bash -c './run.sh; sudo poweroff'"
 
