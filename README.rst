@@ -85,7 +85,7 @@ Start **github-runners** program.
 Installation From Sources
 -------------------------
 
-For development you can install from sources as follows:
+For development, you can install from sources as follows:
 
 .. code-blocks:: bash
 
