@@ -16,6 +16,7 @@
 import os
 import sys
 import time
+import hashlib
 import logging
 import threading
 
@@ -28,7 +29,7 @@ from hcloud.images.domain import Image
 from github import Github
 from github.Repository import Repository
 
-from argparse import ArgumentParser, RawTextHelpFormatter
+from argparse import ArgumentParser, RawTextHelpFormatter, FileType
 
 from testflows.github.runners import __version__, __license__
 from testflows.github.runners.actions import Action
@@ -113,15 +114,16 @@ def argparser():
     )
 
     parser.add_argument(
-        "--hetzner-ssh-key",
-        metavar="HETZNER_SSH_KEY",
-        type=env_var("HETZNER_SSH_KEY"),
-        help="Hetzner Cloud SSH key name, default: $HETZNER_SSH_KEY environment variable",
-        default="",
+        "--ssh-key",
+        metavar="path",
+        type=FileType("r", encoding="utf-8"),
+        help="path to public SSH key, default: ~/.ssh/id_rsa.pub",
+        default=os.path.expanduser("~/.ssh/id_rsa.pub"),
     )
 
     parser.add_argument(
-        "-m", "--max-runners",
+        "-m",
+        "--max-runners",
         metavar="count",
         type=count,
         help="maximum number of active runners, default: unlimited",
@@ -230,36 +232,41 @@ def argparser():
         "deploy",
         help="deploy application",
         description="Deploy application as a service to a cloud instance.",
-        formatter_class=RawTextHelpFormatter
+        formatter_class=RawTextHelpFormatter,
     )
     deploy_parser.add_argument(
-        "-n", "--name",
+        "-n",
+        "--name",
         metavar="name",
         type=str,
         help="deployment server name, default: github-runners",
         default="github-runners",
     )
     deploy_parser.add_argument(
-        "-f", "--force",
+        "-f",
+        "--force",
         action="store_true",
         help="force deployment if already exist",
     )
     deploy_parser.add_argument(
-        "-l", "--location",
+        "-l",
+        "--location",
         metavar="name",
         type=str,
         help="deployment server location, default: ash",
         default="ash",
     )
     deploy_parser.add_argument(
-        "-t", "--type",
+        "-t",
+        "--type",
         metavar="name",
         type=str,
         help="deployment server type, default: cpx11",
         default="cpx11",
     )
     deploy_parser.add_argument(
-        "-i", "--image",
+        "-i",
+        "--image",
         metavar="name",
         type=str,
         help="deployment server image, default: ubuntu-22.04",
@@ -271,7 +278,7 @@ def argparser():
         "service",
         help="service commands",
         description="Service commands.",
-        formatter_class=RawTextHelpFormatter
+        formatter_class=RawTextHelpFormatter,
     )
 
     service_commands = service_parser.add_subparsers(
@@ -283,7 +290,7 @@ def argparser():
         "install",
         help="install",
         description="Install service.",
-        formatter_class=RawTextHelpFormatter
+        formatter_class=RawTextHelpFormatter,
     )
     install_service_parser.add_argument(
         "-f",
@@ -298,7 +305,7 @@ def argparser():
         "uninstall",
         help="uninstall",
         description="Uninstall service.",
-        formatter_class=RawTextHelpFormatter
+        formatter_class=RawTextHelpFormatter,
     )
     uninstall_service_parser.add_argument(
         "-f",
@@ -313,7 +320,7 @@ def argparser():
         "start",
         help="start",
         description="Start service.",
-        formatter_class=RawTextHelpFormatter
+        formatter_class=RawTextHelpFormatter,
     )
     start_service_parser.set_defaults(func=service.start)
 
@@ -321,7 +328,7 @@ def argparser():
         "stop",
         help="stop",
         description="Stop service.",
-        formatter_class=RawTextHelpFormatter
+        formatter_class=RawTextHelpFormatter,
     )
     stop_service_parser.set_defaults(func=service.stop)
 
@@ -329,7 +336,7 @@ def argparser():
         "status",
         help="status",
         description="Get service status.",
-        formatter_class=RawTextHelpFormatter
+        formatter_class=RawTextHelpFormatter,
     )
     status_service_parser.set_defaults(func=service.status)
 
@@ -337,7 +344,7 @@ def argparser():
         "logs",
         help="logs",
         description="Get service logs.",
-        formatter_class=RawTextHelpFormatter
+        formatter_class=RawTextHelpFormatter,
     )
     logs_service_parser.add_argument(
         "-f",
@@ -353,7 +360,7 @@ def argparser():
 def main(args, scripts: Scripts, worker_pool: ThreadPoolExecutor, terminate_timeout=30):
     """Auto-scale runners service."""
 
-    terminate  = threading.Event()
+    terminate = threading.Event()
 
     try:
         with Action("Logging in to Hetzner Cloud"):
@@ -365,6 +372,17 @@ def main(args, scripts: Scripts, worker_pool: ThreadPoolExecutor, terminate_time
         with Action(f"Getting repository {args.github_repository}"):
             repo: Repository = github.get_repo(args.github_repository)
 
+        with Action(f"Checking if SSH key exists"):
+            public_key = args.ssh_key.read()
+            key_name = hashlib.md5(public_key.encode("utf-8")).hexdigest()
+            ssh_key = SSHKey(name=key_name, public_key=public_key)
+
+            if not client.ssh_keys.get_by_name(name=ssh_key.name):
+                with Action(f"Creating SSH key {ssh_key.name}"):
+                    client.ssh_keys.create(
+                        name=ssh_key.name, public_key=ssh_key.public_key
+                    )
+
         try:
             with Action("Creating scale up service"):
                 scale_up_service: Future = worker_pool.submit(
@@ -373,7 +391,7 @@ def main(args, scripts: Scripts, worker_pool: ThreadPoolExecutor, terminate_time
                     repo=repo,
                     client=client,
                     scripts=scripts,
-                    ssh_key=SSHKey(name=args.hetzner_ssh_key),
+                    ssh_key=ssh_key,
                     image=Image(name=args.hetzner_image),
                     worker_pool=worker_pool,
                     github_token=args.github_token,

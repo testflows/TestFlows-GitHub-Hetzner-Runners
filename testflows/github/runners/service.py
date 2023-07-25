@@ -51,15 +51,15 @@ def install(args):
             f"Environment=GITHUB_TOKEN={args.github_token}\n"
             f"Environment=GITHUB_REPOSITORY={args.github_repository}\n"
             f"Environment=HETZNER_TOKEN={args.hetzner_token}\n"
-            f"Environment=HETZNER_SSH_KEY={args.hetzner_ssh_key}\n"
-            f"Environment=HETZNER_IMAGE={args.hetzner_image}\n"
             f"ExecStart={binary}"
             f" --workers {args.workers}"
         )
+        contents += f" --ssh-key {args.ssh_key.name}"
         contents += f" --max-runners {args.max_runners}" if args.max_runners else ""
         contents += (
             f" --logger-config {args.logger_config}" if args.logger_config else ""
         )
+        contents += f" --hetzner-image {args.hetzner_image}"
         contents += f" --setup-script {args.setup_script}" if args.setup_script else ""
         contents += (
             f" --startup-x64-script {args.startup_x64_script}"

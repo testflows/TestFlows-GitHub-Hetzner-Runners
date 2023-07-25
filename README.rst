@@ -59,7 +59,6 @@ Set environment variables corresponding to your GitHub repository and Hetzner Cl
    export GITHUB_TOKEN=ghp_...
    export GITHUB_REPOSITORY=vzakaznikov/github-runners
    export HETZNER_TOKEN=GJzdc...
-   export HETZNER_SSH_KEY_NAME=user@user-node
 
 and then start **github-runners** program
 
@@ -81,7 +80,7 @@ or you can pass the required options inline as follows:
 
 .. code-block:: bash
 
-   github-runners --github-token <GITHUB_TOKEN> --github-repository <GITHUB_REPOSITORY> --hetzner-token <HETZNER_TOKEN> --hetzner-ssh-key <HEZNER_SSH_KEY>
+   github-runners --github-token <GITHUB_TOKEN> --github-repository <GITHUB_REPOSITORY> --hetzner-token <HETZNER_TOKEN>
 
 -------------------------
 Installation From Sources
@@ -103,14 +102,12 @@ By default, the program uses the following environment variables:
 * **GITHUB_TOKEN**
 * **GITHUB_REPOSITORY**
 * **HETZNER_TOKEN**
-* **HETZNER_SSH_KEY**
 
 or you can specify these values using the following options:
 
 * **--github-token**
 * **--github-repository**
 * **--hetzner-token**
-* **--hetzner-ssh-key**
 
 -----------------------
 Running as a Service
@@ -136,7 +133,6 @@ uninstall the service.
    export GITHUB_TOKEN=ghp_...
    export GITHUB_REPOSITORY=testflows/github-runners
    export HETZNER_TOKEN=GJzdc...
-   export HETZNER_SSH_KEY_NAME=user@user-node
 
    github-runners service install
 
@@ -161,7 +157,6 @@ The **/etc/systemd/system/github-runners.service** file is created with the foll
       Environment=GITHUB_TOKEN=ghp_...
       Environment=GITHUB_REPOSITORY=testflows/github-runners
       Environment=HETZNER_TOKEN=GJ..
-      Environment=HETZNER_SSH_KEY=user@user-node
       Environment=HETZNER_IMAGE=ubuntu-22.04
       ExecStart=/home/user/.local/lib/python3.10/site-packages/testflows/github/runners/bin/github-runners --workers 10 --max-powered-off-time 20 --max-idle-runner-time 120 --max-runner-registration-time 60 --scale-up-interval 10 --scale-down-interval 10
       [Install]
@@ -301,7 +296,6 @@ using the **deploy** command.
    export GITHUB_TOKEN=ghp_...
    export GITHUB_REPOSITORY=testflows/github-runners
    export HETZNER_TOKEN=GJzdc...
-   export HETZNER_SSH_KEY_NAME=user@user-node
 
    github-runners deploy
 
@@ -378,8 +372,8 @@ the **setup** and **startup** scripts.
 
 :SSH Access:
 
-   The server is configured to be accessed using *ssh* utility and the SSH key specified by name either using the **--hetzner-ssh-key**
-   option or the **HETZNER_SSH_KEY** environment variable.
+   The server is configured to be accessed using *ssh* utility and the SSH public key path is specified either using the **--ssh-key**
+   option.
 
 :OS Image:
 
@@ -532,8 +526,8 @@ The following options are supported:
 * **--hetzner-token HETZNER_TOKEN**
   Hetzner Cloud token, default: *$HETZNER_TOKEN* environment variable
 
-* **--ssh-key HETZNER_SSH_KEY**
-  Hetzner Cloud SSH key name, default: *$HETZNER_SSH_KEY* environment variable
+* **--ssh-key path**
+  public SSH key file, default: *~/.ssh/id_rsa.pub*
 
 * **--image HETZNER_IMAGE**
   Hetzner Cloud server image name, default: *ubuntu-22.04*

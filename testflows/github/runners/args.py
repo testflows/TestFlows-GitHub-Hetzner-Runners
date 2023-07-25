@@ -31,4 +31,3 @@ def check(args):
     _check("GITHUB_TOKEN", args.github_token)
     _check("GITHUB_REPOSITORY", args.github_repository)
     _check("HETZNER_TOKEN", args.hetzner_token)
-    _check("HETZNER_SSH_KEY", args.hetzner_ssh_key)
