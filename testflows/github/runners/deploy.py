@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import hashlib
 
 from hcloud import Client
 from hcloud.ssh_keys.domain import SSHKey
@@ -46,13 +47,22 @@ def deploy(args, timeout=60):
             with Action(f"Deleting server {name}"):
                 server.delete()
 
+    with Action(f"Checking if SSH key exists"):
+        public_key = args.ssh_key.read()
+        key_name = hashlib.md5(public_key.encode("utf-8")).hexdigest()
+        ssh_key = SSHKey(name=key_name, public_key=public_key)
+
+        if not client.ssh_keys.get_by_name(name=ssh_key.name):
+            with Action(f"Creating SSH key {ssh_key.name}"):
+                client.ssh_keys.create(name=ssh_key.name, public_key=ssh_key.public_key)
+
     with Action(f"Creating new server"):
         response = client.servers.create(
             name=name,
             server_type=ServerType(name=args.type),
             image=Image(name=args.image),
             location=Location(name=args.location),
-            ssh_keys=[SSHKey(name=args.hetzner_ssh_key)],
+            ssh_keys=[ssh_key],
         )
         server: BoundServer = response.server
 
