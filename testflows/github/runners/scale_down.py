@@ -19,6 +19,7 @@ import threading
 from dataclasses import dataclass
 
 from .actions import Action
+from .scale_up import runner_server_prefix
 
 from github.Repository import Repository
 from github.SelfHostedActionsRunner import SelfHostedActionsRunner
@@ -80,6 +81,11 @@ def scale_down(
 
         with Action("Getting list of servers", level=logging.DEBUG):
             servers: list[BoundServer] = client.servers.get_all()
+            servers = [
+                server
+                for server in servers
+                if server.name.startswith(runner_server_prefix)
+            ]
 
         with Action("Getting list of self-hosted runners", level=logging.DEBUG):
             runners: list[SelfHostedActionsRunner] = repo.get_self_hosted_runners()

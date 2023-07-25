@@ -34,6 +34,8 @@ from github.WorkflowJob import WorkflowJob
 
 from concurrent.futures import ThreadPoolExecutor, Future
 
+runner_server_prefix = "github-runner-"
+
 
 def server_setup(
     server: BoundServer,
@@ -167,6 +169,11 @@ def scale_up(
 
         with Action("Getting list of servers", level=logging.DEBUG):
             servers: list[BoundServer] = client.servers.get_all()
+            servers = [
+                server
+                for server in servers
+                if server.name.startswith(runner_server_prefix)
+            ]
 
         with Action("Getting workflow runs", level=logging.DEBUG):
             workflow_runs = repo.get_workflow_runs(branch="main", status="queued")
@@ -178,7 +185,7 @@ def scale_up(
                 for job in run.jobs():
                     if job.status == "queued":
                         with Action(f"Found queued job {job}"):
-                            server_name = f"github-runner-{job.run_id}"
+                            server_name = f"{runner_server_prefix}{job.run_id}"
                             server_type = get_server_type(job=job)
                             startup_script = get_startup_script(
                                 server_type=server_type, scripts=scripts
