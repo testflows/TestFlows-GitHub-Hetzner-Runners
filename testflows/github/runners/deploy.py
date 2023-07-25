@@ -92,7 +92,7 @@ def deploy(args, timeout=60):
 
         command += "github-runners"
         command += f" --workers {args.workers}"
-        command += f" --image {args.hetzner_image}"
+        command += f" --hetzner-image {args.hetzner_image}"
         command += f" --max-runners {args.max_runners}" if args.max_runners else ""
         command += (
             f" --logger-config {args.logger_config}" if args.logger_config else ""
