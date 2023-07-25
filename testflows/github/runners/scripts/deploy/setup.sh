@@ -15,4 +15,4 @@ usermod -aG wheel runner
 usermod -aG sudo runner
 
 echo "Generate SSH Key"
-sudo -u runner ssh-keygen -t rsa -q -f "$HOME/.ssh/id_rsa" -N ""
+sudo -u runner ssh-keygen -t rsa -q -f "/home/runner/.ssh/id_rsa" -N ""
