@@ -162,7 +162,7 @@ The **/etc/systemd/system/github-runners.service** file is created with the foll
       Environment=GITHUB_REPOSITORY=testflows/github-runners
       Environment=HETZNER_TOKEN=GJ..
       Environment=HETZNER_SSH_KEY=user@user-node
-      Environment=HETZNER_IMAGE=ubuntu-20.04
+      Environment=HETZNER_IMAGE=ubuntu-22.04
       ExecStart=/home/user/.local/lib/python3.10/site-packages/testflows/github/runners/bin/github-runners --workers 10 --max-powered-off-time 20 --max-idle-runner-time 120 --max-runner-registration-time 60 --scale-up-interval 10 --scale-down-interval 10
       [Install]
       WantedBy=multi-user.target
@@ -312,7 +312,7 @@ The **deploy** command will use the following default values:
 :type:
    *cpx11*
 :image:
-   *ubuntu-20.04*
+   *ubuntu-22.04*
 
 You can customize deployment server location, type, and image using the *--location*, *--type*, and *--image* options.
 
@@ -536,13 +536,13 @@ The following options are supported:
   Hetzner Cloud SSH key name, default: *$HETZNER_SSH_KEY* environment variable
 
 * **--image HETZNER_IMAGE**
-  Hetzner Cloud server image name, default: ubuntu-20.04
+  Hetzner Cloud server image name, default: *ubuntu-22.04*
 
 * **-m count, --max-runners count**
-  maximum number of active runners, default: unlimited
+  maximum number of active runners, default: *unlimited*
 
 * **-w count, --workers count**
-  number of concurrent workers, default: 10
+  number of concurrent workers, default: *10*
 
 * **--logger-config path**
   custom logger configuration file
@@ -594,7 +594,7 @@ The following options are supported:
         deployment server type, default: *cpx11*
 
       * **-i name, --image name**
-        deployment server image, default: *ubuntu-20.04*
+        deployment server image, default: *ubuntu-22.04*
 
     * **service**
       service commands

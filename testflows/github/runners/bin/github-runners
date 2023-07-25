@@ -132,10 +132,10 @@ def argparser():
         metavar="HETZNER_IMAGE",
         type=env_var("HETZNER_IMAGE"),
         help=(
-            "Hetzner Cloud server image name, default: ubuntu-20.04, "
+            "Hetzner Cloud server image name, default: ubuntu-22.04, "
             "or if specified, $HETZNER_IMAGE environment variable value"
         ),
-        default="ubuntu-20.04",
+        default="ubuntu-22.04",
     )
 
     parser.add_argument(
@@ -262,8 +262,8 @@ def argparser():
         "-i", "--image",
         metavar="name",
         type=str,
-        help="deployment server image, default: ubuntu-20.04",
-        default="ubuntu-20.04",
+        help="deployment server image, default: ubuntu-22.04",
+        default="ubuntu-22.04",
     )
     deploy_parser.set_defaults(func=deploy)
 
