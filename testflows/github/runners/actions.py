@@ -28,7 +28,7 @@ class Action:
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         if exc_value is not None:
-            msg = f"❌ Error: {exc_value}"
+            msg = f"❌ Error: {exc_type.__name__} {exc_value}"
             if not self.debug:
                 logger.log(msg=msg, stacklevel=2, level=logging.ERROR)
             else:

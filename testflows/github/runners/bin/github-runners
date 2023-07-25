@@ -408,7 +408,7 @@ if __name__ == "__main__":
         logger.setLevel(logging_level)
         handler = logging.StreamHandler(sys.stdout)
         formatter = logging.Formatter(
-            "%(asctime)s %(levelname)6s %(threadName)10s %(funcName)15s %(message)s",
+            "%(asctime)s %(levelname)8s %(threadName)10s %(funcName)15s %(message)s",
             datefmt="%m/%d/%Y %I:%M:%S %p",
         )
         handler.setFormatter(formatter)
@@ -424,7 +424,15 @@ if __name__ == "__main__":
         scripts.startup_arm64 = args.startup_arm64_script
 
     if hasattr(args, "func"):
-        args.func(args=args)
+        try:
+            args.func(args=args)
+        except KeyboardInterrupt:
+            if args.debug:
+                raise
+        except BaseException as exc:
+            if args.debug:
+                raise
+            logger.fatal(f"❗ Error: {exc}")
 
     else:
         check(args)
