@@ -319,7 +319,7 @@ You can customize deployment server location, type, and image using the *--locat
 Scaling Up Runners
 ------------------
 
-The program scale up runners by looking for any jobs that have **queued** status.
+The program scales up runners by looking for any jobs that have **queued** status.
 For each such job, a corresponding Hetzner Cloud server instance is created with the following name:
 
 ::
@@ -327,7 +327,7 @@ For each such job, a corresponding Hetzner Cloud server instance is created with
    github-runner-{job.run_id}
 
 The server is configured using default **setup** and **startup** scripts. The runner name is set
-to be the same as the server name so that servers can deleted for any idle runner that for some reason
+to be the same as the server name so that servers can be deleted for any idle runner that for some reason
 does not pick up a job for which it was created within the **max-idle-runner-time** period.
 
 :Note:
@@ -338,14 +338,14 @@ does not pick up a job for which it was created within the **max-idle-runner-tim
 Also,
 
 :Note:
-   There is no guarantee that a given runner will pick the the job with the exact **run_id** that caused it to be created.
+   There is no guarantee that a given runner will pick the job with the exact **run_id** that caused it to be created.
    This is expected and because for each **queued** job a unique runner will be created the number of runners will be
-   equal the number of jobs and therefore under normal conditions all jobs will executed as expected.
+   equal the number of jobs and therefore under normal conditions all jobs will be executed as expected.
 
 Maximum Number of Runners
 =========================
 
-By default, the maximum number of runners and therefore the maximum number if server instances is not set and therefore is unlimited.
+By default, the maximum number of runners and therefore the maximum number of server instances is not set and therefore is unlimited.
 You can set the maximum number of runners using the **--max-runners** option.
 
 .. code-blocks::bash
@@ -372,7 +372,7 @@ the **setup** and **startup** scripts.
 
 :SSH Access:
 
-   The server is configured to be accessed using *ssh* utility and the SSH public key path is specified either using the **--ssh-key**
+   The server is configured to be accessed using *ssh* utility and the SSH public key path is specified using the **--ssh-key**
    option.
 
 :OS Image:
@@ -381,12 +381,12 @@ the **setup** and **startup** scripts.
    environment variable.
 
 :Image Configuration:
-   Each new server instance is configured using `setup <#the-setup-script>`_ and `startup <#the-start-up-script>`_ scripts.
+   Each new server instance is configured using the `setup <#the-setup-script>`_ and the `startup <#the-start-up-script>`_ scripts.
 
 The Setup Script
 ================
 
-The **setup** script created and configures **runner** user that has **sudo** privileges.
+The **setup** script creates and configures **runner** user that has **sudo** privileges.
 
 :Setup:
 
