@@ -312,7 +312,7 @@ The **deploy** command will use the following default values:
 :type:
    *cpx11*
 :image:
-   *ubuntu-20.04
+   *ubuntu-20.04*
 
 You can customize deployment server location, type, and image using the *--location*, *--type*, and *--image* options.
 
