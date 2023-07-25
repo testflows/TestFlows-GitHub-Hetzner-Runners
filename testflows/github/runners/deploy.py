@@ -89,11 +89,10 @@ def deploy(args, timeout=60):
         command += f"GITHUB_TOKEN={args.github_token} "
         command += f"GITHUB_REPOSITORY={args.github_repository} "
         command += f"HETZNER_TOKEN={args.hetzner_token} "
-        command += f"HETZNER_SSH_KEY={args.hetzner_ssh_key} "
-        command += f"HETZNER_IMAGE={args.hetzner_image} "
 
         command += "github-runners"
         command += f" --workers {args.workers}"
+        command += f" --image {args.hetzner_image}"
         command += f" --max-runners {args.max_runners}" if args.max_runners else ""
         command += (
             f" --logger-config {args.logger_config}" if args.logger_config else ""
