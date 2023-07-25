@@ -75,7 +75,7 @@ def deploy(args, timeout=60):
         )
 
     with Action("Installing service"):
-        command = f"su - runner -c '"
+        command = f"\"su - runner -c '"
         command += f"GITHUB_TOKEN={args.github_token} "
         command += f"GITHUB_REPOSITORY={args.github_repository} "
         command += f"HETZNER_TOKEN={args.hetzner_token} "
@@ -107,6 +107,6 @@ def deploy(args, timeout=60):
             f" --scale-down-interval {args.scale_down_interval}"
         )
         command += f" --debug" if args.debug else ""
-        command += " service install -f'"
+        command += " service install -f'\""
 
         ssh(server, command)
