@@ -13,13 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import time
 
 from hcloud import Client
 from hcloud.ssh_keys.domain import SSHKey
 from hcloud.server_types.domain import ServerType
 from hcloud.servers.client import BoundServer
 from hcloud.images.domain import Image
+from hcloud.locations.domain import Location
 
 from .actions import Action
 from .args import check
@@ -35,19 +35,28 @@ def deploy(args, timeout=60):
     new Hetzner server instance."""
     check(args)
 
+    name = args.name
+
     with Action("Logging in to Hetzner Cloud"):
         client = Client(token=args.hetzner_token)
 
+    if args.force:
+        with Action(f"Checking if server {name} already exists", ignore_fail=True):
+            server: BoundServer = client.servers.get_by_name(name)
+            with Action(f"Deleting server {name}"):
+                server.delete()
+
     with Action(f"Creating new server"):
         response = client.servers.create(
-            name="github-runners",
-            server_type=ServerType("cpx11"),
-            image=Image("ubuntu-20.04"),
+            name=name,
+            server_type=ServerType(name=args.type),
+            image=Image(name=args.image),
+            location=Location(name=args.location),
             ssh_keys=[SSHKey(name=args.hetzner_ssh_key)],
         )
         server: BoundServer = response.server
 
-    with Action(f"Waiting for server {server.name} to be ready") as action:
+    with Action(f"Waiting for server to be ready") as action:
         wait_ready(server=server, timeout=timeout, action=action)
 
     with Action("Wait for SSH connection to be ready"):

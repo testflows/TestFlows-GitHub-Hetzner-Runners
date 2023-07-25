@@ -232,6 +232,39 @@ def argparser():
         description="Deploy application as a service to a cloud instance.",
         formatter_class=RawTextHelpFormatter
     )
+    deploy_parser.add_argument(
+        "-n", "--name",
+        metavar="name",
+        type=str,
+        help="deployment server name, default: github-runners",
+        default="github-runners",
+    )
+    deploy_parser.add_argument(
+        "-f", "--force",
+        action="store_true",
+        help="force deployment if already exist",
+    )
+    deploy_parser.add_argument(
+        "-l", "--location",
+        metavar="name",
+        type=str,
+        help="deployment server location, default: ash",
+        default="ash",
+    )
+    deploy_parser.add_argument(
+        "-t", "--type",
+        metavar="name",
+        type=str,
+        help="deployment server type, default: cpx11",
+        default="cpx11",
+    )
+    deploy_parser.add_argument(
+        "-i", "--image",
+        metavar="name",
+        type=str,
+        help="deployment server image, default: ubuntu-20.04",
+        default="ubuntu-20.04",
+    )
     deploy_parser.set_defaults(func=deploy)
 
     service_parser = commands.add_parser(

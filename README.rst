@@ -285,6 +285,41 @@ You can dump the full log by omitting the **-f, --follow** option.
       Jul 24 14:24:42 user-node env[62771]: SYSTEMD_EXEC_PID=62771
       ...
 
+-----------------------
+Deploying Application
+-----------------------
+
+You can deploy **github-runners** as a service to a new Hetzner Cloud server instance
+using the **deploy** command.
+
+:✋ Note:
+   The options that are passed to the **github-runners <options> deploy** command
+   will be the same options with which the service will be executed.
+
+.. code-block:: bash
+
+   export GITHUB_TOKEN=ghp_...
+   export GITHUB_REPOSITORY=testflows/github-runners
+   export HETZNER_TOKEN=GJzdc...
+   export HETZNER_SSH_KEY_NAME=user@user-node
+
+   github-runners deploy
+
+The **deploy** command will use the following default values:
+
+:location:
+   *ash*
+:type:
+   *cpx11*
+:image:
+   *ubuntu-20.04
+
+You can customize deployment server location, type, and image using the *--location*, *--type*, and *--image* options.
+
+.. code-block:: bash
+
+   github-runners deploy --location nbg1 --type cx11 --image ubuntu-22.04
+
 
 ------------------
 Scaling Up Runners
@@ -542,6 +577,24 @@ The following options are supported:
 * **commands:**
 
   * *command*
+
+    * **deploy**
+      deploy application
+
+      * **-n, --name**
+        deployment server name, default: *github-runners*
+
+      * **-f, --force**
+        force deployment if already exist
+
+      * **-l name, --location name**
+        deployment server location, default: *ash*
+
+      * **-t name, --type name**
+        deployment server type, default: *cpx11*
+
+      * **-i name, --image name**
+        deployment server image, default: *ubuntu-20.04*
 
     * **service**
       service commands
