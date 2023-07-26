@@ -615,7 +615,7 @@ if __name__ == "__main__":
         logger.setLevel(logging_level)
         handler = logging.StreamHandler(sys.stdout)
         formatter = logging.Formatter(
-            "%(asctime)s %(levelname)8s %(threadName)10s %(funcName)15s %(message)s",
+            "%(asctime)s %(levelname)8s %(threadName)16s %(funcName)15s %(message)s",
             datefmt="%m/%d/%Y %I:%M:%S %p",
         )
         handler.setFormatter(formatter)

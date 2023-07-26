@@ -15,23 +15,48 @@
 import json as json
 
 from http.client import HTTPResponse
-from urllib.request import urlopen, Request
+from urllib.request import urlopen, Request, HTTPError
 
 
-def request(url, headers=None, data=None, format=None, encoding="utf-8", timeout=60):
+def request(
+    url,
+    headers=None,
+    data=None,
+    format=None,
+    encoding="utf-8",
+    timeout=60,
+    process_error=True,
+):
     """Perform URL request."""
     if headers is None:
         headers = {}
 
-    request = Request(url, headers=headers, data=data)
+    r = Request(url, headers=headers, data=data)
 
-    with urlopen(request, timeout=timeout) as response:
-        response: HTTPResponse = response
+    try:
+        with urlopen(r, timeout=timeout) as response:
+            response: HTTPResponse = response
 
-        data = response.read()
-        if encoding:
-            data = data.decode(encoding)
-        if format == "json":
-            data = json.loads(data)
+            data = response.read()
+            if encoding:
+                data = data.decode(encoding)
+            if format == "json":
+                data = json.loads(data)
 
-        return data, response
+            return data, response
+    except HTTPError as exc:
+        if not process_error:
+            raise
+
+        if exc.getcode() in (307, 308):
+            # process 307 (Temporary Redirect") and 308 (Permanent Redirect)
+            error_data = json.loads(exc.read().decode(encoding))
+            return request(
+                url=error_data["url"],
+                headers=headers,
+                data=data,
+                format=format,
+                encoding=encoding,
+                timeout=timeout,
+                process_error=False,
+            )

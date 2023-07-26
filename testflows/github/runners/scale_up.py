@@ -23,7 +23,7 @@ from .request import request
 
 from .server import wait_ssh, ssh, wait_ready
 
-from hcloud import Client
+from hcloud import Client, APIException
 from hcloud.ssh_keys.domain import SSHKey
 from hcloud.server_types.domain import ServerType
 from hcloud.locations.domain import Location
@@ -111,7 +111,9 @@ def create_server(
     with Action(f"Waiting for server {server.name} to be ready") as action:
         wait_ready(server=server, timeout=timeout, action=action)
 
-    with ThreadPoolExecutor(max_workers=1, thread_name_prefix="worker-setup") as pool:
+    with ThreadPoolExecutor(
+        max_workers=1, thread_name_prefix=f"{threading.current_thread().name}-setup"
+    ) as pool:
 
         pool.submit(
             server_setup,
@@ -277,7 +279,11 @@ def scale_up(
 
         for future in futures:
             with Action("Waiting to finish creating server", ignore_fail=True):
-                future.result()
+                try:
+                    future.result()
+                except APIException as exc:
+                    with Action("Sleeping as we have: {exc}"):
+                        time.sleep(60)
 
         with Action(f"Sleeping until next interval {interval}s", level=logging.DEBUG):
             time.sleep(interval)
