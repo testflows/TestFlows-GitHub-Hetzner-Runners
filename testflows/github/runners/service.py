@@ -30,7 +30,7 @@ def command_options(args):
     --hetzner-token
     --ssh-key
     """
-    command = None
+    command = ""
     command += f" --workers {args.workers}"
     command += f" --default-type {args.default_type}"
     command += (
