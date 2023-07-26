@@ -152,14 +152,17 @@ SSH Key
 All server instances that are created are accessed via SSH using the **ssh** utility and therefore you must provide a valid SSH key
 using the **--ssh-key** option. If the **--ssh-key** option is no specified, then the *~/.ssh/id_rsa.pub* default key path will be used.
 
-:✋ Note:
-   The SSH key will be automatically added to your project using the MD5 hash of the public key as the SSH key name.
+The SSH key will be automatically added to your project using the MD5 hash of the public key as the SSH key name.
 
-:✋ Note:
-   Most GitHub users already have an SSH key associated with the account. If you want to know how to add an SSH key, see `Adding a new SSH key to your GitHub account    <https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account>`_ article.
+:❗Warning:
+   Given that each new SSH key is automatically added to your Hetzner project, you must manually delete them when no longer needed.
 
-:✋ Note:
-   If you need to generate a new SSH key, see `Generating a new SSH key and adding it to the ssh-agent <https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent>`_ article. 
+Most GitHub users already have an SSH key associated with the account. If you want to know how to add an SSH key, see `Adding a new SSH key to your GitHub account    <https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account>`_ article.
+
+Generating New SSH Key
+=======================
+
+If you need to generate a new SSH key, see `Generating a new SSH key and adding it to the ssh-agent <https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent>`_ article. 
 
 Cloud Deployment
 ================
