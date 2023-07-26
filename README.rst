@@ -148,7 +148,7 @@ SSH Key
 -------
 
 All server instances that are created are accessed via SSH using the **ssh** utility and therefore you must provide a valide SSH key
-using the **--ssh-key** option. If the **--ssh-key** option is no specified, then the `~/.ssh/id_rsa.pub` default key path will be used.
+using the **--ssh-key** option. If the **--ssh-key** option is no specified, then the *~/.ssh/id_rsa.pub* default key path will be used.
 
 :✋ Note:
    The SSH key will be automatically added to your project using the MD5 hash of the public key as the SSH key name.
