@@ -130,14 +130,29 @@ def argparser():
     )
 
     parser.add_argument(
-        "--hetzner-image",
-        metavar="HETZNER_IMAGE",
-        type=env_var("HETZNER_IMAGE"),
+        "--default-image",
+        metavar="name",
         help=(
-            "Hetzner Cloud server image name, default: ubuntu-22.04, "
-            "or if specified, $HETZNER_IMAGE environment variable value"
+            "default runner server image name, default: ubuntu-22.04"
         ),
         default="ubuntu-22.04",
+    )
+
+    parser.add_argument(
+        "--default-type",
+        metavar="name",
+        help=(
+            "default runner server type name, default: cx11"
+        ),
+        default="cx11",
+    )
+
+    parser.add_argument(
+        "--default-location",
+        metavar="name",
+        help=(
+            "default runner server location name, by default not specified"
+        ),
     )
 
     parser.add_argument(
@@ -531,7 +546,9 @@ def main(args, scripts: Scripts, worker_pool: ThreadPoolExecutor, terminate_time
                     client=client,
                     scripts=scripts,
                     ssh_key=ssh_key,
-                    image=Image(name=args.hetzner_image),
+                    default_type=args.default_type,
+                    default_image=args.default_image,
+                    default_location=args.default_location,
                     worker_pool=worker_pool,
                     github_token=args.github_token,
                     github_repository=args.github_repository,

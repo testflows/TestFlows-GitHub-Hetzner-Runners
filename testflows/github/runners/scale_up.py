@@ -26,6 +26,7 @@ from .server import wait_ssh, ssh, wait_ready
 from hcloud import Client
 from hcloud.ssh_keys.domain import SSHKey
 from hcloud.server_types.domain import ServerType
+from hcloud.locations.domain import Location
 from hcloud.servers.client import BoundServer
 from hcloud.images.domain import Image
 
@@ -86,12 +87,13 @@ def create_server(
     job: WorkflowJob,
     name: str,
     server_type: ServerType,
+    server_location: Location,
+    server_image: Image,
     setup_script: str,
     startup_script: str,
     github_token: str,
     github_repository: str,
     ssh_key: SSHKey,
-    image: Image,
     count=1,
     timeout=60,
 ):
@@ -101,7 +103,8 @@ def create_server(
         response = client.servers.create(
             name=name,
             server_type=server_type,
-            image=image,
+            location=server_location,
+            image=server_image,
             ssh_keys=[ssh_key],
         )
         server: BoundServer = response.server
@@ -119,10 +122,9 @@ def create_server(
     )
 
 
-def get_server_type(job: WorkflowJob, default="cx11", label_prefix="server-"):
+def get_server_type(job: WorkflowJob, default: str, label_prefix="type-"):
     """Get server type for the specified job."""
     server_type = None
-    server_type_name = default
 
     if server_type is None:
         for label in job.raw_data["labels"]:
@@ -131,9 +133,45 @@ def get_server_type(job: WorkflowJob, default="cx11", label_prefix="server-"):
                 server_type = ServerType(name=server_type_name)
 
     if server_type is None:
-        server_type = ServerType(name=server_type_name)
+        server_type = ServerType(name=default)
 
     return server_type
+
+
+def get_server_location(job: WorkflowJob, default: str = "", label_prefix="in-"):
+    """Get preferred server location for the specified job.
+
+    By default, location is set to `None` to avoid server type mismatching
+    the location as some server types are not available at some locations.
+    """
+    server_location: Location = None
+
+    if server_location is None:
+        for label in job.raw_data["labels"]:
+            if label.startswith(label_prefix):
+                server_location_name = label.split(label_prefix, 1)[-1].lower()
+                server_location = Location(name=server_location_name)
+
+    if server_location is None and default:
+        server_location = Location(name=default)
+
+    return server_location
+
+
+def get_server_image(job: WorkflowJob, default: str, label_prefix="image-"):
+    """Get preferred server image for the specified job."""
+    server_image: Image = None
+
+    if server_image is None:
+        for label in job.raw_data["labels"]:
+            if label.startswith(label_prefix):
+                server_image_name = label.split(label_prefix, 1)[-1].lower()
+                server_image = Image(name=server_image_name)
+
+    if server_image is None:
+        server_image = Image(name=default)
+
+    return server_image
 
 
 def get_startup_script(server_type: ServerType, scripts: Scripts):
@@ -157,7 +195,9 @@ def scale_up(
     github_token: str,
     github_repository: str,
     ssh_key: SSHKey,
-    image: Image,
+    default_type: str,
+    default_location: str,
+    default_image: str,
     interval: int,
     max_servers: int,
 ):
@@ -186,7 +226,13 @@ def scale_up(
                     if job.status == "queued":
                         with Action(f"Found queued job {job}"):
                             server_name = f"{runner_server_prefix}{job.run_id}"
-                            server_type = get_server_type(job=job)
+                            server_type = get_server_type(job=job, default=default_type)
+                            server_location = get_server_location(
+                                job=job, default=default_location
+                            )
+                            server_image = get_server_image(
+                                job=job, default=default_image
+                            )
                             startup_script = get_startup_script(
                                 server_type=server_type, scripts=scripts
                             )
@@ -217,6 +263,8 @@ def scale_up(
                                     job=job,
                                     name=server_name,
                                     server_type=server_type,
+                                    server_location=server_location,
+                                    server_image=server_image,
                                     setup_script=scripts.setup,
                                     startup_script=startup_script,
                                     github_token=github_token,

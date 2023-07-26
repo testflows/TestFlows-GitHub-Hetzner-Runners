@@ -22,6 +22,46 @@ from .actions import Action
 from .args import check
 
 
+def command_options(args):
+    """Build service install command options not including:
+
+    --github-token
+    --github-repository
+    --hetzner-token
+    --ssh-key
+    """
+    command = None
+    command += f" --workers {args.workers}"
+    command += f" --default-type {args.default_type}"
+    command += (
+        f" --default-location {args.default_location}" if args.default_location else ""
+    )
+    command += f" --default-image {args.default_image}"
+    command += f" --max-runners {args.max_runners}" if args.max_runners else ""
+    command += f" --logger-config {args.logger_config}" if args.logger_config else ""
+    command += f" --setup-script {args.setup_script}" if args.setup_script else ""
+    command += (
+        f" --startup-x64-script {args.startup_x64_script}"
+        if args.startup_x64_script
+        else ""
+    )
+    command += (
+        f" --startup-arm64-script {args.startup_arm64_script}"
+        if args.startup_arm64_script
+        else ""
+    )
+    command += (
+        f" --max-powered-off-time {args.max_powered_off_time}"
+        f" --max-idle-runner-time {args.max_idle_runner_time}"
+        f" --max-runner-registration-time {args.max_runner_registration_time}"
+        f" --scale-up-interval {args.scale_up_interval}"
+        f" --scale-down-interval {args.scale_down_interval}"
+    )
+    command += f" --debug" if args.debug else ""
+
+    return command
+
+
 def install(args):
     """Install service."""
     check(args)
@@ -55,30 +95,7 @@ def install(args):
             f" --workers {args.workers}"
         )
         contents += f" --ssh-key {args.ssh_key.name}"
-        contents += f" --max-runners {args.max_runners}" if args.max_runners else ""
-        contents += (
-            f" --logger-config {args.logger_config}" if args.logger_config else ""
-        )
-        contents += f" --hetzner-image {args.hetzner_image}"
-        contents += f" --setup-script {args.setup_script}" if args.setup_script else ""
-        contents += (
-            f" --startup-x64-script {args.startup_x64_script}"
-            if args.startup_x64_script
-            else ""
-        )
-        contents += (
-            f" --startup-arm64-script {args.startup_arm64_script}"
-            if args.startup_arm64_script
-            else ""
-        )
-        contents += (
-            f" --max-powered-off-time {args.max_powered_off_time}"
-            f" --max-idle-runner-time {args.max_idle_runner_time}"
-            f" --max-runner-registration-time {args.max_runner_registration_time}"
-            f" --scale-up-interval {args.scale_up_interval}"
-            f" --scale-down-interval {args.scale_down_interval}"
-        )
-        contents += f" --debug" if args.debug else ""
+        contents += command_options(args)
         contents += "\n" "[Install]\n" "WantedBy=multi-user.target\n"
 
         os.system(f"sudo bash -c \"cat > {SERVICE}\" <<'EOF'\n{contents}\nEOF")

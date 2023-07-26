@@ -27,6 +27,7 @@ from .args import check
 from . import __version__
 
 from .server import wait_ready, wait_ssh, ssh
+from .service import command_options
 
 current_dir = os.path.dirname(__file__)
 
@@ -109,31 +110,7 @@ def install(args, server: BoundServer = None):
         command += f"HETZNER_TOKEN={args.hetzner_token} "
 
         command += "github-runners"
-        command += f" --workers {args.workers}"
-        command += f" --hetzner-image {args.hetzner_image}"
-        command += f" --max-runners {args.max_runners}" if args.max_runners else ""
-        command += (
-            f" --logger-config {args.logger_config}" if args.logger_config else ""
-        )
-        command += f" --setup-script {args.setup_script}" if args.setup_script else ""
-        command += (
-            f" --startup-x64-script {args.startup_x64_script}"
-            if args.startup_x64_script
-            else ""
-        )
-        command += (
-            f" --startup-arm64-script {args.startup_arm64_script}"
-            if args.startup_arm64_script
-            else ""
-        )
-        command += (
-            f" --max-powered-off-time {args.max_powered_off_time}"
-            f" --max-idle-runner-time {args.max_idle_runner_time}"
-            f" --max-runner-registration-time {args.max_runner_registration_time}"
-            f" --scale-up-interval {args.scale_up_interval}"
-            f" --scale-down-interval {args.scale_down_interval}"
-        )
-        command += f" --debug" if args.debug else ""
+        command += command_options(args)
         command += " service install -f'\""
 
         ssh(server, command)
