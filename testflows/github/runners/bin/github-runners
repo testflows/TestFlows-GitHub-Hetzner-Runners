@@ -310,7 +310,7 @@ def argparser():
         metavar="path",
         dest="deploy_setup_script",
         type=str,
-        help="path to custom server setup script",
+        help="path to custom deployment server setup script",
     )
 
     deploy_cloud_parser.set_defaults(func=cloud.deploy)

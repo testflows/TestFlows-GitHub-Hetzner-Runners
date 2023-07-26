@@ -902,6 +902,9 @@ The following options are supported:
           where the type is either: 'system','snapshot','backup','app',
           default: *system:ubuntu-22.04*
 
+        * **--setup-script path**
+          path to custom deployment server setup script
+
       * **logs**
         get cloud service logs
 
