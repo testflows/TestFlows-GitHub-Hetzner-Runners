@@ -56,6 +56,7 @@ def command_options(args):
         f" --max-powered-off-time {args.max_powered_off_time}"
         f" --max-idle-runner-time {args.max_idle_runner_time}"
         f" --max-runner-registration-time {args.max_runner_registration_time}"
+        f" --max-server-ready-time {args.max_server_ready_time}"
         f" --scale-up-interval {args.scale_up_interval}"
         f" --scale-down-interval {args.scale_down_interval}"
     )

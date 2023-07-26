@@ -203,6 +203,14 @@ def argparser():
     )
 
     parser.add_argument(
+        "--max-server-ready-time",
+        metavar="sec",
+        type=args.count_type,
+        help="maximum time to wait for the server to be in the running state, default: 60 sec",
+        default=60,
+    )
+
+    parser.add_argument(
         "--scale-up-interval",
         metavar="sec",
         type=args.count_type,
@@ -548,6 +556,7 @@ def main(args, scripts: Scripts, worker_pool: ThreadPoolExecutor, terminate_time
                     github_repository=args.github_repository,
                     interval=args.scale_up_interval,
                     max_servers=args.max_runners,
+                    max_server_ready_time=args.max_server_ready_time,
                 )
 
             with Action("Creating scale down service"):

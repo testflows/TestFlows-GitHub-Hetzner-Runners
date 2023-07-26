@@ -32,7 +32,7 @@ from .service import command_options
 current_dir = os.path.dirname(__file__)
 
 
-def deploy(args, timeout=60):
+def deploy(args):
     """Deploy github-runners as a service to a
     new Hetzner server instance."""
     check(args)
@@ -77,10 +77,10 @@ def deploy(args, timeout=60):
         server: BoundServer = response.server
 
     with Action(f"Waiting for server to be ready") as action:
-        wait_ready(server=server, timeout=timeout, action=action)
+        wait_ready(server=server, timeout=args.max_server_ready_time, action=action)
 
     with Action("Wait for SSH connection to be ready"):
-        wait_ssh(server=server, timeout=timeout)
+        wait_ssh(server=server, timeout=args.max_server_ready_time)
 
     with Action("Executing setup.sh script"):
         ssh(

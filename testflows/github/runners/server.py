@@ -37,7 +37,7 @@ def wait_ssh(server: BoundServer, timeout: float):
         with Action(
             f"Trying to connect to {server.name}@{ip}...{attempt}", ignore_fail=True
         ):
-            returncode = ssh(server, "hostname")
+            returncode = ssh(server, "hostname", check=False)
             if returncode == 0:
                 break
         if time.time() - start_time >= timeout:

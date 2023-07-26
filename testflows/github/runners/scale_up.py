@@ -121,6 +121,7 @@ def create_server(
         github_token=github_token,
         github_repository=github_repository,
         runner_labels=",".join(job.raw_data["labels"]),
+        timeout=timeout,
     )
 
 
@@ -206,6 +207,7 @@ def scale_up(
     default_image: Image,
     interval: int,
     max_servers: int,
+    max_server_ready_time: int,
 ):
     """Scale up service."""
 
@@ -288,6 +290,7 @@ def scale_up(
                                         github_token=github_token,
                                         github_repository=github_repository,
                                         ssh_key=ssh_key,
+                                        timeout=max_server_ready_time,
                                     )
                                 )
 

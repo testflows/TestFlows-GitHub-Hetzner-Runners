@@ -863,6 +863,9 @@ The following options are supported:
 * **--max-runner-registration-time**
   maximum time after which the server will be deleted if its runner is not registered with GitHub, default: *60* sec
 
+* **--max-server-ready-time sec**
+  maximum time to wait for the server to be in the running state, default: *60* sec
+
 * **--scale-up-interval sec**
   scale up service interval, default: *10* sec
 
