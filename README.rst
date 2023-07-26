@@ -122,9 +122,10 @@ server type name such as *cx11*, *cpx21* etc.
 For example, to use AMD, 3 vCPU, 4GB RAM shared-cpu x64 instance, you can define the **runs-on**
 as follows:
 
-  .. code-block:: yaml
-     job-name:
-        runs-on: [self-hosted, server-cpx21]
+.. code-block:: yaml
+
+   job-name:
+      runs-on: [self-hosted, server-cpx21]
 
 -------------------
 Using ARM64 Runners
@@ -139,9 +140,10 @@ server type name such as *cax11*, *cax21* etc. which correspond to the Ampere Al
 For example, to use Ampere Altra, 4 vCPU, 8GB RAM shared-cpu ARM64 instance, you must define the **runs-on**
 as follows:
 
-  .. code-block:: yaml
-     job-name:
-        runs-on: [self-hosted, server-cax21]
+.. code-block:: yaml
+
+   job-name:
+      runs-on: [self-hosted, server-cax21]
 
 -------
 SSH Key
