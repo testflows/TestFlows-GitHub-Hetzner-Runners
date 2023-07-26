@@ -118,6 +118,9 @@ x64 Runners
 
 The default server type is **cx11** which is an Intel, 1 vCPU, 2GB RAM shared-cpu x64 instance.
 
+:✋ Note:
+   You can use **--default-type** option to set a different default server type.
+
 You can specify different x64 server instance type by using the **type-{name}** runner label.
 The **{name}** must be a valid `Hetzner Cloud <https://www.hetzner.com/cloud>`_
 server type name such as *cx11*, *cpx21* etc.
