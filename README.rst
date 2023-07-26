@@ -162,7 +162,7 @@ Most GitHub users already have an SSH key associated with the account. If you wa
 Generating New SSH Key
 =======================
 
-If you need to generate a new SSH key, see `Generating a new SSH key and adding it to the ssh-agent <https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent>`_ article. 
+If you need to generate a new SSH key, see `Generating a new SSH key and adding it to the ssh-agent <https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent>`_ article.
 
 Cloud Deployment
 ================
@@ -365,20 +365,20 @@ See **-h, --help** for all the available commands.
 ::
 
    usage: GitHub Actions runners scale up service cloud [-h] [-n server] command ...
-   
+
    Deploying and running application as a service on a cloud instance.
-   
+
    options:
      -h, --help            show this help message and exit
      -n server, --name server
                            deployment server name, default: github-runners
-   
+
    commands:
      command
        deploy              deploy cloud service
        logs                get cloud service logs
        status              get cloud service status
-       start               start cloud service 
+       start               start cloud service
        stop                stop cloud service
        install             install cloud service
        uninstall           uninstall cloud service
@@ -453,13 +453,13 @@ For example,
 :dump the full log:
 
    .. code-block:: bash
-   
+
       github-runners cloud logs
 
 :follow the logs journal:
 
    .. code-block:: bash
-   
+
       github-runners cloud logs -f
 
 
@@ -471,7 +471,7 @@ You can check the status of the **github-runners** service running on a cloud in
 For example,
 
 .. code-block:: bash
-   
+
    github-runners cloud status
 
 Stopping Cloud Service
@@ -480,7 +480,7 @@ Stopping Cloud Service
 You can manually stop the **github-runners** service running on a cloud instance using the **github-runners cloud stop** command.
 
 .. code-block:: bash
-   
+
    github-runners cloud stop
 
 Starting Cloud Service
@@ -490,7 +490,7 @@ You can manually start the **github-runners** service running on a cloud instanc
 using the **github-runners cloud start** command.
 
 .. code-block:: bash
-   
+
    github-runners cloud start
 
 Installing Cloud Service
@@ -507,7 +507,7 @@ the **github-runners cloud install** command.
 You can specify **-f, --force** option to force service re-installation if it is already installed.
 
 .. code-block:: bash
-   
+
    github-runners <options> cloud install -f
 
 
@@ -518,7 +518,7 @@ You can manually force uninstallation of the **github-runners** service running 
 the **github-runners cloud uninstall** command.
 
 .. code-block:: bash
-   
+
    github-runners cloud uninstall
 
 Upgrading Cloud Service
@@ -536,7 +536,7 @@ the specified version otherwise the version is upgraded to the latest available.
    after the package upgrade is complete.
 
 .. code-block:: bash
-   
+
    github-runners cloud upgrade --version <version>
 
 Deleting Cloud Service
@@ -555,12 +555,12 @@ For example,
 
 :default name:
    .. code-block:: bash
-   
+
       github-runners cloud delete
 
 :custom name:
    .. code-block:: bash
-   
+
       github-runners cloud --name <custom_name> delete
 
 ------------------
@@ -610,17 +610,18 @@ the **setup** and **startup** scripts.
 :Server Type:
 
    The default server type is **cx11** which is an Intel, 1 vCPU, 2GB RAM shared-cpu x64 instance.
-   
+
    You can specify different x64 server instance type by using the **server-{hetzner-server-type}** runner label.
    The **{hetzner-server-type}** must be a valid `Hetzner Cloud <https://www.hetzner.com/cloud>`_
    server type name such as *cx11*, *cpx21* etc.
-   
+
    For example, to use AMD, 3 vCPU, 4GB RAM shared-cpu x64 instance, you can define the **runs-on**
    as follows:
-   
-     .. code-block:: yaml
-        job-name:
-           runs-on: [self-hosted, server-cpx21]
+
+   .. code-block:: yaml
+
+      job-name:
+         runs-on: [self-hosted, server-cpx21]
 
 :SSH Access:
 
