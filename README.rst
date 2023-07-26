@@ -173,7 +173,7 @@ For example,
 Specifying Runner Image
 -----------------------
 
-By default, the default image of the server where the runner will be running is **ubuntu-22.04**. You can use the **--default-image**
+By default, the default image of the server for the runner is **ubuntu-22.04**. You can use the **--default-image**
 option to force specific default server image.
 
 You can also use the **image-{name}** runner label to specify server image for a specific job. Where **{name}** must be a valid
