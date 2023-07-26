@@ -14,9 +14,16 @@
 # limitations under the License.
 import os
 
+from dataclasses import dataclass
 from collections import namedtuple
 
-Scripts = namedtuple("Scripts", "setup, startup_x64 startup_arm64")
+
+@dataclass
+class Scripts:
+    setup: str
+    startup_x64: str
+    startup_arm64: str
+
 
 current_dir = os.path.dirname(__file__)
 
