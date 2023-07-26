@@ -344,15 +344,54 @@ You can dump the full log by omitting the **-f, --follow** option.
       Jul 24 14:24:42 user-node env[62771]: SYSTEMD_EXEC_PID=62771
       ...
 
------------------------
-Deploying Application
------------------------
+---------------------
+Running Cloud Service
+---------------------
 
-You can deploy **github-runners** as a service to a new Hetzner Cloud server instance
-using the **deploy** command.
+Instead of running **github-runners** program locally as a standalone application or as a service.
+You can easily deploy **github-runners** to run on a Hetzner Cloud instance.
+
+See **-h, --help** for all the available commands.
 
 :✋ Note:
-   The options that are passed to the **github-runners <options> deploy** command
+   By default, the server name where the **github-runners** service will be running
+   is **github-runners**. If you want to use a custom server name, then
+   you must use the **cloud --name** option for any **cloud** commands.
+
+.. code-block:: bash
+
+   github-runners cloud -h
+
+::
+
+   usage: GitHub Actions runners scale up service cloud [-h] [-n server] command ...
+   
+   Deploying and running application as a service on a cloud instance.
+   
+   options:
+     -h, --help            show this help message and exit
+     -n server, --name server
+                           deployment server name, default: github-runners
+   
+   commands:
+     command
+       deploy              deploy cloud service
+       logs                get cloud service logs
+       status              get cloud service status
+       start               start cloud service 
+       stop                stop cloud service
+       install             install cloud service
+       uninstall           uninstall cloud service
+       upgrade             upgrade cloud service
+
+Deployment
+==========
+
+You can deploy **github-runners** as a service to a new Hetzner Cloud server instance, that will be created for you automatically,
+using the **cloud deploy** command.
+
+:✋ Note:
+   The options that are passed to the **github-runners <options> cloud deploy** command
    will be the same options with which the service will be executed.
 
 .. code-block:: bash
@@ -378,6 +417,140 @@ You can customize deployment server location, type, and image using the *--locat
 
    github-runners deploy --location nbg1 --type cx11 --image ubuntu-22.04
 
+The cloud instance that runs the **github-runners** service can either be x64 or ARM64 instance. By default, **cpx11**
+AMD, 2 vCPU, 2GB RAM, shared-cpu x64 instance type is used.
+
+Using ARM64 Instance
+++++++++++++++++++++
+
+If you want to deploy the **github-runners** service to an ARM64 instance, then you must specify the instance
+type using the **--type** option.
+
+:✋ Note:
+   Currently Hetzner Cloud has ARM64 instances only available in Germany, Falkenstein (**fsn1**) location.
+
+For example, to use Ampere Altra, 4 vCPU, 8GB RAM shared-cpu ARM64 instance, you must specify **cax21**
+as the value of the **--type** as follows:
+
+.. code-block:: bash
+
+   github-runners deploy --location fsn1 --type cax21 --image ubuntu-22.04
+
+Using x64 Instance
+++++++++++++++++++
+
+By default, the **cpx11** AMD, 2 vCPU, 2GB RAM, shared-cpu x64 instance type is used. If you want to use
+a different x64 instance then specify desired type using the **--type** option.
+
+Cloud Service Logs
+===================
+
+You can check logs for the **github-runners** service running on a cloud instance using the **github-runners cloud logs** command.
+Specify **-f, --follow** if you want to follow the logs journal.
+
+For example,
+
+:dump the full log:
+
+   .. code-block:: bash
+   
+      github-runners cloud logs
+
+:follow the logs journal:
+
+   .. code-block:: bash
+   
+      github-runners cloud logs -f
+
+
+Cloud Service Status
+=====================
+
+You can check the status of the **github-runners** service running on a cloud instance using the **github-runners cloud status** command.
+
+For example,
+
+.. code-block:: bash
+   
+   github-runners cloud status
+
+Stopping Cloud Service
+======================
+
+You can manually stop the **github-runners** service running on a cloud instance using the **github-runners cloud stop** command.
+
+.. code-block:: bash
+   
+   github-runners cloud stop
+
+Starting Cloud Service
+======================
+
+You can manually start the **github-runners** service running on a cloud instance after it was being manually stopped
+using the **github-runners cloud start** command.
+
+.. code-block:: bash
+   
+   github-runners cloud start
+
+Installing Cloud Service
+========================
+
+You can manually force installation of the **github-runners** service running on a cloud instance using
+the **github-runners cloud install** command.
+
+:✋ Note:
+   Just like with the `github-runners <options> service install` command,
+   the options that are passed to the `github-runners <options> cloud install` command
+   will be the same options with which the service will be executed.
+
+You can specify **-f, --force** option to force service re-installation if it is already installed.
+
+.. code-block:: bash
+   
+   github-runners <options> cloud install -f
+
+
+Uninstalling Cloud Service
+==========================
+
+You can manually force uninstallation of the **github-runners** service running on a cloud instance using
+the **github-runners cloud uninstall** command.
+
+.. code-block:: bash
+   
+   github-runners cloud uninstall
+
+Upgrading Cloud Service
+========================
+
+You can manually upgrade the **github-runners** service package running on a cloud instance using
+the **github-runners cloud upgrade** command.
+
+If specific '--version' is specified then the *testflows.github.runners* package is upgraded to
+the specified version otherwise the version is upgraded to the latest available.
+
+:✋ Note:
+   The service is not re-installed during the package upgrade process.
+   Instead, it is stopped before the upgrade and then started back up
+   after the package upgrade is complete.
+
+.. code-block:: bash
+   
+   github-runners cloud upgrade --version <version>
+
+Deleting Cloud Service
+======================
+
+You can delete the **github-runners** service and the cloud instance that is running on using
+the **github-runners cloud delete** command.
+
+:✋ Note:
+   Make sure to specify the **cloud --name** option if you have deployed the service to a server with custom name.
+
+.. code-block:: bash
+   
+   github-runners cloud delete
 
 ------------------
 Scaling Up Runners
