@@ -100,7 +100,7 @@ def install(args, server: BoundServer = None):
         with Action("Logging in to Hetzner Cloud"):
             client = Client(token=args.hetzner_token)
 
-        with Action(f"Checking if server {server_name} already exists"):
+        with Action(f"Getting server {server_name}"):
             server: BoundServer = client.servers.get_by_name(server_name)
 
     with Action("Installing service"):
@@ -124,7 +124,7 @@ def upgrade(args):
     with Action("Logging in to Hetzner Cloud"):
         client = Client(token=args.hetzner_token)
 
-    with Action(f"Checking if server {server_name} already exists"):
+    with Action(f"Getting server {server_name}"):
         server: BoundServer = client.servers.get_by_name(server_name)
 
     stop(args, server=server)
@@ -152,7 +152,7 @@ def uninstall(args):
     with Action("Logging in to Hetzner Cloud"):
         client = Client(token=args.hetzner_token)
 
-    with Action(f"Checking if server {server_name} already exists"):
+    with Action(f"Getting server {server_name}"):
         server: BoundServer = client.servers.get_by_name(server_name)
 
     with Action("Uninstalling service"):
@@ -169,7 +169,7 @@ def delete(args):
     with Action("Logging in to Hetzner Cloud"):
         client = Client(token=args.hetzner_token)
 
-    with Action(f"Checking if server {server_name} already exists"):
+    with Action(f"Getting server {server_name}"):
         server: BoundServer = client.servers.get_by_name(server_name)
 
     with Action("Uninstalling service"):
@@ -185,8 +185,11 @@ def logs(args, server: BoundServer = None):
     if server is None:
         server_name = args.server_name
 
-        client = Client(token=args.hetzner_token)
-        server = client.servers.get_by_name(server_name)
+        with Action("Logging in to Hetzner Cloud"):
+            client = Client(token=args.hetzner_token)
+
+        with Action(f"Getting server {server_name}"):
+            server: BoundServer = client.servers.get_by_name(server_name)
 
     if server is None:
         raise ValueError("server not found")
@@ -207,7 +210,7 @@ def status(args, server: BoundServer = None):
         with Action("Logging in to Hetzner Cloud"):
             client = Client(token=args.hetzner_token)
 
-        with Action(f"Checking if server {server_name} already exists"):
+        with Action(f"Getting server {server_name}"):
             server = client.servers.get_by_name(server_name)
 
     with Action("Getting status"):
@@ -223,7 +226,7 @@ def start(args, server: BoundServer = None):
         with Action("Logging in to Hetzner Cloud"):
             client = Client(token=args.hetzner_token)
 
-        with Action(f"Checking if server {server_name} already exists"):
+        with Action(f"Getting server {server_name}"):
             server = client.servers.get_by_name(server_name)
 
     with Action("Starting service"):
@@ -239,7 +242,7 @@ def stop(args, server: BoundServer = None):
         with Action("Logging in to Hetzner Cloud"):
             client = Client(token=args.hetzner_token)
 
-        with Action(f"Checking if server {server_name} already exists"):
+        with Action(f"Getting server {server_name}"):
             server = client.servers.get_by_name(server_name)
 
     with Action("Stopping service"):
