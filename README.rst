@@ -542,15 +542,26 @@ the specified version otherwise the version is upgraded to the latest available.
 Deleting Cloud Service
 ======================
 
-You can delete the **github-runners** service and the cloud instance that is running on using
+You can delete the **github-runners** cloud service and the cloud instance that is running on using
 the **github-runners cloud delete** command.
 
-:✋ Note:
-   Make sure to specify the **cloud --name** option if you have deployed the service to a server with custom name.
+The **cloud delete** command, deletes the cloud service by first stopping the service and then deleting the server instance.
 
-.. code-block:: bash
+:❗Warning:
+   The default server name where the cloud service is deployed is **github-runners**.
+   Please make sure to specify the **cloud --name** option if you have deployed the service to a server with a different name.
+
+For example,
+
+:default name:
+   .. code-block:: bash
    
-   github-runners cloud delete
+      github-runners cloud delete
+
+:custom name:
+   .. code-block:: bash
+   
+      github-runners cloud --name <custom_name> delete
 
 ------------------
 Scaling Up Runners
