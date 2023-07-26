@@ -394,6 +394,19 @@ def argparser():
 
     upgrade_cloud_parser.set_defaults(func=cloud.upgrade)
 
+    delete_cloud_parser = cloud_commands.add_parser(
+        "delete",
+        help="delete cloud service",
+        description=(
+            "Delete cloud service.\n\n"
+            "Deletes `github-runners` service running on the cloud server instance\n"
+            "by first stopping the service and then deleting the server."
+        ),
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    delete_cloud_parser.set_defaults(func=cloud.delete)
+
     service_parser = commands.add_parser(
         "service",
         help="service commands",
