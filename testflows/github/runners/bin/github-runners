@@ -41,6 +41,7 @@ import testflows.github.runners.cloud as cloud
 import testflows.github.runners.service as service
 
 check_args = args.check
+check_image = args.check_image
 
 logger = logging.getLogger("testflows.github.runners")
 
@@ -115,10 +116,10 @@ def argparser():
 
     parser.add_argument(
         "--default-image",
-        metavar="type:name",
+        metavar="type:name_or_description",
         type=args.image_type,
         help=(
-            "default runner server image type and name,"
+            "default runner server image type and name or description,"
             "where the type is either: 'system','snapshot','backup','app',\n"
             "default: system:ubuntu-22.04"
         ),
@@ -286,10 +287,10 @@ def argparser():
     deploy_cloud_parser.add_argument(
         "-i",
         "--image",
-        metavar="type:name",
+        metavar="type:name_or_description",
         type=args.image_type,
         help=(
-            "deployment server image type and name,\n"
+            "deployment server image type and name or description,\n"
             "where the type is either: 'system','snapshot','backup','app',\n"
             "default: system:ubuntu-22.04"
         ),
@@ -515,6 +516,9 @@ def main(args, scripts: Scripts, worker_pool: ThreadPoolExecutor, terminate_time
         with Action(f"Getting repository {args.github_repository}"):
             repo: Repository = github.get_repo(args.github_repository)
 
+        with Action("Checking if default image exists"):
+            args.default_image = check_image(client=client, image=args.default_image)
+
         with Action(f"Checking if SSH key exists"):
             public_key = args.ssh_key.read()
             key_name = hashlib.md5(public_key.encode("utf-8")).hexdigest()
@@ -582,6 +586,13 @@ def main(args, scripts: Scripts, worker_pool: ThreadPoolExecutor, terminate_time
 
     except KeyboardInterrupt as exc:
         msg = "❗ KeyboardInterrupt"
+        if args.debug:
+            logger.exception(f"{msg}\n{exc}")
+        else:
+            logger.error(msg)
+        sys.exit(1)
+    except Exception as exc:
+        msg = f"❗ Error: {type(exc).__name__} {exc}"
         if args.debug:
             logger.exception(f"{msg}\n{exc}")
         else:

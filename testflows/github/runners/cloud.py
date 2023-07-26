@@ -23,7 +23,7 @@ from hcloud.images.domain import Image
 from hcloud.locations.domain import Location
 
 from .actions import Action
-from .args import check
+from .args import check, check_image
 from . import __version__
 
 from .server import wait_ready, wait_ssh, ssh
@@ -49,6 +49,12 @@ def deploy(args, timeout=60):
             server: BoundServer = client.servers.get_by_name(server_name)
             with Action(f"Deleting server {server_name}"):
                 server.delete()
+
+    with Action("Checking if default image exists"):
+        args.default_image = check_image(client=client, image=args.default_image)
+
+    with Action("Checking if server image exists"):
+        args.image = check_image(client=client, image=args.image)
 
     with Action(f"Checking if SSH key exists"):
         public_key = args.ssh_key.read()

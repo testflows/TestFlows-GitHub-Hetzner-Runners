@@ -20,6 +20,7 @@ import threading
 from .actions import Action
 from .scripts import Scripts
 from .request import request
+from .args import image_type, check_image
 
 from .server import wait_ssh, ssh, wait_ready
 
@@ -159,15 +160,19 @@ def get_server_location(job: WorkflowJob, default: Location = None, label_prefix
     return server_location
 
 
-def get_server_image(job: WorkflowJob, default: Image, label_prefix="image-"):
+def get_server_image(
+    client: Client, job: WorkflowJob, default: Image, label_prefix="image-"
+):
     """Get preferred server image for the specified job."""
     server_image: Image = None
 
     if server_image is None:
         for label in job.raw_data["labels"]:
             if label.startswith(label_prefix):
-                server_image_name = label.split(label_prefix, 1)[-1].lower()
-                server_image = Image(name=server_image_name)
+                server_image = check_image(
+                    client,
+                    image_type(label.split(label_prefix, 1)[-1].lower(), separator="-"),
+                )
 
     if server_image is None:
         server_image = default
@@ -241,7 +246,7 @@ def scale_up(
                                     job=job, default=default_location
                                 )
                                 server_image = get_server_image(
-                                    job=job, default=default_image
+                                    client=client, job=job, default=default_image
                                 )
                                 startup_script = get_startup_script(
                                     server_type=server_type, scripts=scripts

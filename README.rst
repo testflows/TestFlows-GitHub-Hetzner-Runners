@@ -831,8 +831,8 @@ The following options are supported:
 * **--default-location name**
   default runner server location name, default: not specified
 
-* **--default-image type:name**
-  default runner server image type and name,
+* **--default-image type:name_or_description**
+  default runner server image type and name or description,
   where type is either: 'system','snapshot','backup','app',
   default: *system:ubuntu-22.04*
 
@@ -894,8 +894,8 @@ The following options are supported:
         * **-t name, --type name**
           deployment server type, default: *cpx11*
 
-        * **-i type:name, --image type:name**
-          deployment server image type and name,
+        * **-i type:name_or_description, --image type:name_or_description**
+          deployment server image type and name or description,
           where the type is either: 'system','snapshot','backup','app',
           default: *system:ubuntu-22.04*
 

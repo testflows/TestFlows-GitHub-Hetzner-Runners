@@ -15,9 +15,14 @@
 import os
 import sys
 
+from hcloud import Client
 from hcloud.images.domain import Image
 from hcloud.locations.domain import Location
 from hcloud.server_types.domain import ServerType
+
+
+class ImageNotFoundError(Exception):
+    pass
 
 
 def count_type(v):
@@ -37,14 +42,18 @@ def env_var_type(name):
     return option
 
 
-def image_type(v):
+def image_type(v, separator=":"):
     """Image type argument."""
     try:
         image_type, image_name = v.split(":", 1)
         assert image_type in ("system", "snapshot", "backup", "app")
     except:
         raise ValueError(f"invalid image value {v}")
-    return Image(type=image_type, name=image_name)
+
+    if image_type == "system":
+        return Image(type=image_type, name=image_name)
+    else:
+        return Image(type=image_type, description=image_name)
 
 
 def location_type(v):
@@ -75,3 +84,21 @@ def check(args):
     _check("GITHUB_TOKEN", args.github_token)
     _check("GITHUB_REPOSITORY", args.github_repository)
     _check("HETZNER_TOKEN", args.hetzner_token)
+
+
+def check_image(client: Client, image: Image):
+    """Check if image exists.
+    If image type is not 'system' then use image description to find it.
+    """
+
+    if image.type == "system":
+        return client.images.get_by_name(image.name)
+    else:
+        try:
+            return [
+                i
+                for i in client.images.get_all(type=image.type)
+                if i.description == image.description
+            ][0]
+        except IndexError:
+            raise ImageNotFoundError(f"{image.type}:{image.description} not found")
