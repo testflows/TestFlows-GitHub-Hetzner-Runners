@@ -288,11 +288,7 @@ def scale_up(
 
             for future in futures:
                 with Action("Waiting to finish creating server", ignore_fail=True):
-                    try:
-                        future.result()
-                    except APIException as exc:
-                        with Action(f"Sleeping as we have: {exc}"):
-                            time.sleep(60)
+                    future.result()
 
             with Action(
                 f"Sleeping until next interval {interval}s", level=logging.DEBUG
