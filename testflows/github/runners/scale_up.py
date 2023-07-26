@@ -289,7 +289,7 @@ def scale_up(
                     try:
                         future.result()
                     except APIException as exc:
-                        with Action("Sleeping as we have: {exc}"):
+                        with Action(f"Sleeping as we have: {exc}"):
                             time.sleep(60)
 
             with Action(

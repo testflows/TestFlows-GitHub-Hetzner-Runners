@@ -19,7 +19,7 @@ import subprocess
 logger = logging.getLogger("testflows.github.runners")
 
 
-def shell(cmd: str, shell: bool = True, check: bool = True):
+def shell(cmd: str, shell: bool = True, check: bool = True, use_logger=True):
     """Execute command."""
     p = subprocess.Popen(
         cmd,
@@ -36,7 +36,10 @@ def shell(cmd: str, shell: bool = True, check: bool = True):
         if line == "":
             time.sleep(0.1)
             continue
-        logger.info(f"   > {line.rstrip()}", stacklevel=2)
+        if use_logger:
+            logger.info(f"   > {line.rstrip()}", stacklevel=2)
+        else:
+            print(line.rstrip())
 
     p.wait()
 

@@ -185,19 +185,18 @@ def logs(args, server: BoundServer = None):
     if server is None:
         server_name = args.server_name
 
-        with Action("Logging in to Hetzner Cloud"):
-            client = Client(token=args.hetzner_token)
+        client = Client(token=args.hetzner_token)
+        server = client.servers.get_by_name(server_name)
 
-        with Action(f"Checking if server {server_name} already exists"):
-            server = client.servers.get_by_name(server_name)
+    if server is None:
+        raise ValueError("server not found")
 
-    with Action("Getting logs"):
-        command = (
-            f"\"su - runner -c 'github-runners service logs"
-            + (" -f" if args.follow else "")
-            + "'\""
-        )
-        ssh(server, command)
+    command = (
+        f"\"su - runner -c 'github-runners service logs"
+        + (" -f" if args.follow else "")
+        + "'\""
+    )
+    ssh(server, command, use_logger=False)
 
 
 def status(args, server: BoundServer = None):
