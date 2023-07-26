@@ -25,6 +25,13 @@ class ImageNotFoundError(Exception):
     pass
 
 
+def path_type(v):
+    """Path argument type."""
+    v = os.path.abspath(os.path.expanduser(v))
+    os.path.exists(v)
+    return v
+
+
 def count_type(v):
     """Count argument type."""
     v = int(v)

@@ -153,28 +153,28 @@ def argparser():
     parser.add_argument(
         "--logger-config",
         metavar="path",
-        type=str,
+        type=args.path_type,
         help="custom logger configuration file",
     )
 
     parser.add_argument(
         "--setup-script",
         metavar="path",
-        type=str,
+        type=args.path_type,
         help="path to custom server setup script",
     )
 
     parser.add_argument(
         "--startup-x64-script",
         metavar="path",
-        type=str,
+        type=args.path_type,
         help="path to custom x64 server startup script",
     )
 
     parser.add_argument(
         "--startup-arm64-script",
         metavar="path",
-        type=str,
+        type=args.path_type,
         help="path to custom ARM64 server startup script",
     )
 
@@ -309,7 +309,7 @@ def argparser():
         "--setup-script",
         metavar="path",
         dest="deploy_setup_script",
-        type=str,
+        type=args.path_type,
         help="path to custom deployment server setup script",
     )
 
