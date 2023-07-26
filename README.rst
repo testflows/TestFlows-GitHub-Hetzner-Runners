@@ -611,21 +611,21 @@ For each such job, a corresponding Hetzner Cloud server instance is created with
 
 ::
 
-   github-runner-{job.run_id}
+   github-runner-{job.run_id}-{job.id}
 
 The server is configured using default **setup** and **startup** scripts. The runner name is set
 to be the same as the server name so that servers can be deleted for any idle runner that for some reason
 does not pick up a job for which it was created within the **max-idle-runner-time** period.
 
 :Note:
-   Given that the server name is fixed and specific for each *job.run_id*, if multiple `github-runners` are running in parallel then
+   Given that the server name is fixed and specific for each *job.run_id, job.id* tuple, if multiple `github-runners` are running in parallel then
    only 1 server will be created for a given `job` and any other attempts to create a server with the same name will be rejected
    by the Hetzner Cloud.
 
 Also,
 
 :Note:
-   There is no guarantee that a given runner will pick the job with the exact **run_id** that caused it to be created.
+   There is no guarantee that a given runner will pick the job with the exact **run_id, job.id** tuple that caused it to be created.
    This is expected and because for each **queued** job a unique runner will be created the number of runners will be
    equal the number of jobs and therefore under normal conditions all jobs will be executed as expected.
 
