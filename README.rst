@@ -115,8 +115,8 @@ Using x64 Runners
 
 The default server type is **cx11** which is an Intel, 1 vCPU, 2GB RAM shared-cpu x64 instance.
 
-You can specify different x64 server instance type by using the **server-{hetzner-server-type}** runner label.
-The **{hetzner-server-type}** must be a valid `Hetzner Cloud <https://www.hetzner.com/cloud>`_
+You can specify different x64 server instance type by using the **type-{name}** runner label.
+The **{name}** must be a valid `Hetzner Cloud <https://www.hetzner.com/cloud>`_
 server type name such as *cx11*, *cpx21* etc.
 
 For example, to use AMD, 3 vCPU, 4GB RAM shared-cpu x64 instance, you can define the **runs-on**
@@ -125,15 +125,15 @@ as follows:
 .. code-block:: yaml
 
    job-name:
-      runs-on: [self-hosted, server-cpx21]
+      runs-on: [self-hosted, type-cpx21]
 
 -------------------
 Using ARM64 Runners
 -------------------
 
 The default server type is **cx11** which is an Intel, 1 vCPU, 2GB RAM shared-cpu x64 instance.
-Therefore, in order to use ARM64 runners you must specify ARM64 server instance type by using the **server-{hetzner-server-type}** runner label.
-The **{hetzner-server-type}** must be a valid `Hetzner Cloud <https://www.hetzner.com/cloud>`_
+Therefore, in order to use ARM64 runners you must specify ARM64 server instance type by using the **type-{name}** runner label.
+The **{name}** must be a valid `Hetzner Cloud <https://www.hetzner.com/cloud>`_
 server type name such as *cax11*, *cax21* etc. which correspond to the Ampere Altra, 2 vCPU, 4GB RAM and
 4 vCPU, 8GB RAM shared-cpu ARM64 instances respectively.
 
@@ -143,7 +143,7 @@ as follows:
 .. code-block:: yaml
 
    job-name:
-      runs-on: [self-hosted, server-cax21]
+      runs-on: [self-hosted, type-cax21]
 
 -------
 SSH Key
@@ -221,7 +221,6 @@ The **/etc/systemd/system/github-runners.service** file is created with the foll
       Environment=GITHUB_TOKEN=ghp_...
       Environment=GITHUB_REPOSITORY=testflows/github-runners
       Environment=HETZNER_TOKEN=GJ..
-      Environment=HETZNER_IMAGE=ubuntu-22.04
       ExecStart=/home/user/.local/lib/python3.10/site-packages/testflows/github/runners/bin/github-runners --workers 10 --max-powered-off-time 20 --max-idle-runner-time 120 --max-runner-registration-time 60 --scale-up-interval 10 --scale-down-interval 10
       [Install]
       WantedBy=multi-user.target
@@ -589,8 +588,8 @@ the **setup** and **startup** scripts.
 
    The default server type is **cx11** which is an Intel, 1 vCPU, 2GB RAM shared-cpu x64 instance.
 
-   You can specify different x64 server instance type by using the **server-{hetzner-server-type}** runner label.
-   The **{hetzner-server-type}** must be a valid `Hetzner Cloud <https://www.hetzner.com/cloud>`_
+   You can specify different x64 server instance type by using the **type-{name}** runner label.
+   The **{name}** must be a valid `Hetzner Cloud <https://www.hetzner.com/cloud>`_
    server type name such as *cx11*, *cpx21* etc.
 
    For example, to use AMD, 3 vCPU, 4GB RAM shared-cpu x64 instance, you can define the **runs-on**
@@ -599,17 +598,21 @@ the **setup** and **startup** scripts.
    .. code-block:: yaml
 
       job-name:
-         runs-on: [self-hosted, server-cpx21]
+         runs-on: [self-hosted, type-cpx21]
+
+:Server Location:
+
+   The server location can bespecified by using the **--default-location** option or the **in-<name>** runner label.
+   By default, location is not set as some server types are not available in some locations.
+
+:Image:
+
+   The server is configured to have the image specified by the **--default-image** option or the **image-<name>** runner label.
 
 :SSH Access:
 
    The server is configured to be accessed using *ssh* utility and the SSH public key path is specified using the **--ssh-key**
    option.
-
-:OS Image:
-
-   The server is configured to have the OS image specified by the **--hetzner-image** option or the **HETZNER_IMAGE**
-   environment variable.
 
 :Image Configuration:
    Each new server instance is configured using the `setup <#the-setup-script>`_ and the `startup <#the-start-up-script>`_ scripts.
@@ -760,8 +763,14 @@ The following options are supported:
 * **--ssh-key path**
   public SSH key file, default: *~/.ssh/id_rsa.pub*
 
-* **--image HETZNER_IMAGE**
-  Hetzner Cloud server image name, default: *ubuntu-22.04*
+* **--default-type**
+  default runner server type name, default: *cx11*
+
+* **--default-location**
+  default runner server location name, default: not specified
+
+* **--default-image**
+  default runner server image name, default: *ubuntu-22.04*
 
 * **-m count, --max-runners count**
   maximum number of active runners, default: *unlimited*
