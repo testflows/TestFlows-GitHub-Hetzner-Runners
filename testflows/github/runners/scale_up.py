@@ -83,6 +83,7 @@ def server_setup(
 
 
 def create_server(
+    setup_worker_pool: ThreadPoolExecutor,
     client: Client,
     job: WorkflowJob,
     name: str,
@@ -111,19 +112,15 @@ def create_server(
     with Action(f"Waiting for server {server.name} to be ready") as action:
         wait_ready(server=server, timeout=timeout, action=action)
 
-    with ThreadPoolExecutor(
-        max_workers=1, thread_name_prefix=f"{threading.current_thread().name}-setup"
-    ) as pool:
-
-        pool.submit(
-            server_setup,
-            server=response.server,
-            setup_script=setup_script,
-            startup_script=startup_script,
-            github_token=github_token,
-            github_repository=github_repository,
-            runner_labels=",".join(job.raw_data["labels"]),
-        )
+    setup_worker_pool.submit(
+        server_setup,
+        server=response.server,
+        setup_script=setup_script,
+        startup_script=startup_script,
+        github_token=github_token,
+        github_repository=github_repository,
+        runner_labels=",".join(job.raw_data["labels"]),
+    )
 
 
 def get_server_type(job: WorkflowJob, default: str, label_prefix="type-"):
@@ -206,84 +203,96 @@ def scale_up(
     max_servers: int,
 ):
     """Scale up service."""
-    while True:
-        if terminate.is_set():
-            with Action("Terminating scale up service"):
-                break
 
-        with Action("Getting list of servers", level=logging.DEBUG):
-            servers: list[BoundServer] = client.servers.get_all()
-            servers = [
-                server
-                for server in servers
-                if server.name.startswith(runner_server_prefix)
-            ]
+    with ThreadPoolExecutor(
+        max_workers=worker_pool._max_workers, thread_name_prefix=f"setup-worker"
+    ) as setup_worker_pool:
 
-        with Action("Getting workflow runs", level=logging.DEBUG):
-            workflow_runs = repo.get_workflow_runs(branch="main", status="queued")
+        while True:
+            if terminate.is_set():
+                with Action("Terminating scale up service"):
+                    break
 
-        futures: list[Future] = []
+            with Action("Getting list of servers", level=logging.DEBUG):
+                servers: list[BoundServer] = client.servers.get_all()
+                servers = [
+                    server
+                    for server in servers
+                    if server.name.startswith(runner_server_prefix)
+                ]
 
-        with Action("Looking for queued jobs", level=logging.DEBUG) as action:
-            for run in workflow_runs:
-                for job in run.jobs():
-                    if job.status == "queued":
-                        with Action(f"Found queued job {job}"):
-                            server_name = f"{runner_server_prefix}{job.run_id}"
-                            server_type = get_server_type(job=job, default=default_type)
-                            server_location = get_server_location(
-                                job=job, default=default_location
-                            )
-                            server_image = get_server_image(
-                                job=job, default=default_image
-                            )
-                            startup_script = get_startup_script(
-                                server_type=server_type, scripts=scripts
-                            )
+            with Action("Getting workflow runs", level=logging.DEBUG):
+                workflow_runs = repo.get_workflow_runs(branch="main", status="queued")
 
-                            if max_servers is not None:
+            futures: list[Future] = []
+
+            with Action("Looking for queued jobs", level=logging.DEBUG) as action:
+                for run in workflow_runs:
+                    for job in run.jobs():
+                        if job.status == "queued":
+                            with Action(f"Found queued job {job}"):
+                                server_name = f"{runner_server_prefix}{job.run_id}"
+                                server_type = get_server_type(
+                                    job=job, default=default_type
+                                )
+                                server_location = get_server_location(
+                                    job=job, default=default_location
+                                )
+                                server_image = get_server_image(
+                                    job=job, default=default_image
+                                )
+                                startup_script = get_startup_script(
+                                    server_type=server_type, scripts=scripts
+                                )
+
+                                if max_servers is not None:
+                                    with Action(
+                                        f"Checking if maximum number of servers has been reached",
+                                        level=logging.DEBUG,
+                                    ):
+                                        if len(servers) >= max_servers:
+                                            with Action(
+                                                f"Maximum number of servers {max_servers} has been reached"
+                                            ):
+                                                continue
+
                                 with Action(
-                                    f"Checking if maximum number of servers has been reached",
+                                    f"Checking if server already exists for {job}",
                                     level=logging.DEBUG,
-                                ):
-                                    if len(servers) >= max_servers:
-                                        with Action(
-                                            f"Maximum number of servers {max_servers} has been reached"
-                                        ):
+                                ) as action:
+                                    if server_name in [
+                                        server.name for server in servers
+                                    ]:
+                                        with Action(f"Server already exists for {job}"):
                                             continue
 
-                            with Action(
-                                f"Checking if server already exists for {job}",
-                                level=logging.DEBUG,
-                            ) as action:
-                                if server_name in [server.name for server in servers]:
-                                    with Action(f"Server already exists for {job}"):
-                                        continue
-
-                            futures.append(
-                                worker_pool.submit(
-                                    create_server,
-                                    client=client,
-                                    job=job,
-                                    name=server_name,
-                                    server_type=server_type,
-                                    server_location=server_location,
-                                    server_image=server_image,
-                                    setup_script=scripts.setup,
-                                    startup_script=startup_script,
-                                    github_token=github_token,
-                                    github_repository=github_repository,
-                                    ssh_key=ssh_key,
+                                futures.append(
+                                    worker_pool.submit(
+                                        create_server,
+                                        setup_worker_pool=setup_worker_pool,
+                                        client=client,
+                                        job=job,
+                                        name=server_name,
+                                        server_type=server_type,
+                                        server_location=server_location,
+                                        server_image=server_image,
+                                        setup_script=scripts.setup,
+                                        startup_script=startup_script,
+                                        github_token=github_token,
+                                        github_repository=github_repository,
+                                        ssh_key=ssh_key,
+                                    )
                                 )
-                            )
 
-        for future in futures:
-            with Action("Waiting to finish creating server", ignore_fail=True):
-                try:
-                    future.result()
-                except APIException as exc:
-                    with Action("Sleeping as we have: {exc}"):
-                        time.sleep(60)
+            for future in futures:
+                with Action("Waiting to finish creating server", ignore_fail=True):
+                    try:
+                        future.result()
+                    except APIException as exc:
+                        with Action("Sleeping as we have: {exc}"):
+                            time.sleep(60)
 
-        with Action(f"Sleeping until next interval {interval}s", level=logging.DEBUG):
-            time.sleep(interval)
+            with Action(
+                f"Sleeping until next interval {interval}s", level=logging.DEBUG
+            ):
+                time.sleep(interval)

@@ -647,4 +647,4 @@ if __name__ == "__main__":
         with ThreadPoolExecutor(
             max_workers=args.workers + 2, thread_name_prefix="worker"
         ) as worker_pool:
-            main(args, scripts, worker_pool)
+            main(args=args, scripts=scripts, worker_pool=worker_pool)
