@@ -344,9 +344,9 @@ You can dump the full log by omitting the **-f, --follow** option.
       Jul 24 14:24:42 user-node env[62771]: SYSTEMD_EXEC_PID=62771
       ...
 
----------------------
-Running Cloud Service
----------------------
+--------------------------
+Running as a Cloud Service
+--------------------------
 
 Instead of running **github-runners** program locally as a standalone application or as a service.
 You can easily deploy **github-runners** to run on a Hetzner Cloud instance.
