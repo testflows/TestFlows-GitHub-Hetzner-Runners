@@ -53,6 +53,12 @@ def ssh(server: BoundServer, cmd: str, *args, **kwargs):
     return shell(f"{ssh_command} {cmd}", *args, **kwargs)
 
 
+def scp(source: str, destination: str, *args, **kwargs):
+    """Execute copy over SSH."""
+    scp_command = f'scp -q -o "StrictHostKeyChecking no" {source} {destination}'
+    return shell(f"{scp_command}", *args, **kwargs)
+
+
 def wait_ready(server: BoundServer, timeout: float, action: Action = None):
     """Wait for server to be ready."""
     start_time = time.time()

@@ -16,3 +16,6 @@ usermod -aG sudo ubuntu
 
 echo "Generate SSH Key"
 sudo -u ubuntu ssh-keygen -t rsa -q -f "/home/ubuntu/.ssh/id_rsa" -N ""
+
+echo "Create scripts folder"
+mkdir -p /home/ubuntu/scripts

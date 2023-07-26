@@ -305,6 +305,14 @@ def argparser():
         default="system:ubuntu-22.04",
     )
 
+    deploy_cloud_parser.add_argument(
+        "--setup-script",
+        metavar="path",
+        dest="deploy_setup_script",
+        type=str,
+        help="path to custom server setup script",
+    )
+
     deploy_cloud_parser.set_defaults(func=cloud.deploy)
 
     logs_cloud_parser = cloud_commands.add_parser(

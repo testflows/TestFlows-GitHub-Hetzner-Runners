@@ -26,7 +26,7 @@ from .actions import Action
 from .args import check, check_image
 from . import __version__
 
-from .server import wait_ready, wait_ssh, ssh
+from .server import wait_ready, wait_ssh, ssh, scp, ip_address
 from .service import command_options
 
 current_dir = os.path.dirname(__file__)
@@ -38,6 +38,9 @@ def deploy(args):
     check(args)
 
     server_name = args.server_name
+    deploy_setup_script = args.deploy_setup_script or os.path.join(
+        current_dir, "scripts", "deploy", "setup.sh"
+    )
 
     with Action("Logging in to Hetzner Cloud"):
         client = Client(token=args.hetzner_token)
@@ -85,7 +88,7 @@ def deploy(args):
     with Action("Executing setup.sh script"):
         ssh(
             server,
-            f"bash -s  < {os.path.join(current_dir, 'scripts', 'deploy', 'setup.sh')}",
+            f"bash -s  < {deploy_setup_script}",
         )
 
     with Action("Installing github-runners"):
@@ -93,6 +96,19 @@ def deploy(args):
             server,
             f"'sudo -u ubuntu pip3 install testflows.github.runners=={__version__}'",
         )
+
+    with Action("Copying any custom scripts"):
+        ip = ip_address(server)
+        for script in [
+            args.setup_script,
+            args.startup_x64_script,
+            args.startup_arm64_script,
+        ]:
+            if script:
+                with Action(f"Copying custom script {script}"):
+                    scp(
+                        source=script, destination=f"ubuntu@{ip}:/home/ubuntu/scripts/."
+                    )
 
     install(args, server=server)
 
