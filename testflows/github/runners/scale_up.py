@@ -218,14 +218,6 @@ def scale_up(
                 with Action("Terminating scale up service"):
                     break
 
-            with Action("Getting list of servers", level=logging.DEBUG):
-                servers: list[BoundServer] = client.servers.get_all()
-                servers = [
-                    server
-                    for server in servers
-                    if server.name.startswith(runner_server_prefix)
-                ]
-
             with Action("Getting workflow runs", level=logging.DEBUG):
                 workflow_runs = repo.get_workflow_runs(branch="main", status="queued")
 
@@ -234,6 +226,14 @@ def scale_up(
             with Action("Looking for queued jobs", level=logging.DEBUG) as action:
                 for run in workflow_runs:
                     for job in run.jobs():
+                        with Action("Getting list of servers", level=logging.DEBUG):
+                            servers: list[BoundServer] = client.servers.get_all()
+                            servers = [
+                                server
+                                for server in servers
+                                if server.name.startswith(runner_server_prefix)
+                            ]
+
                         if job.status == "queued":
                             with Action(f"Found queued job {job}"):
                                 server_name = (
