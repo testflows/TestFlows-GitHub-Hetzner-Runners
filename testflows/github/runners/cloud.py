@@ -106,9 +106,10 @@ def deploy(args):
         ]:
             if script:
                 with Action(f"Copying custom script {script}"):
-                    scp(
-                        source=script, destination=f"ubuntu@{ip}:/home/ubuntu/scripts/."
-                    )
+                    scp(source=script, destination=f"root@{ip}:/home/ubuntu/scripts/.")
+
+    with Action("Fixing ownership of any copied scripts"):
+        ssh(server, "chown ubuntu:ubuntu /home/ubuntu/scripts/*")
 
     install(args, server=server)
 
