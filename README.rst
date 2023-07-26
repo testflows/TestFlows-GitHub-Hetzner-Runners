@@ -581,17 +581,17 @@ The following options are supported:
       * **deploy**
         deploy cloud service
 
-         * **-f, --force**
-         force deployment if already exist
+        * **-f, --force**
+          force deployment if already exist
 
-         * **-l name, --location name**
-         deployment server location, default: *ash*
+        * **-l name, --location name**
+          deployment server location, default: *ash*
 
-         * **-t name, --type name**
-         deployment server type, default: *cpx11*
+        * **-t name, --type name**
+          deployment server type, default: *cpx11*
 
-         * **-i name, --image name**
-         deployment server image, default: *ubuntu-22.04*
+        * **-i name, --image name**
+          deployment server image, default: *ubuntu-22.04*
 
       * **logs**
         get cloud service logs
