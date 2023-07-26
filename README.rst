@@ -572,23 +572,56 @@ The following options are supported:
 
   * *command*
 
-    * **deploy**
-      deploy application
+    * **cloud**
+      cloud service commands
 
-      * **-n, --name**
+      * **-n server, --name server**
         deployment server name, default: *github-runners*
 
-      * **-f, --force**
-        force deployment if already exist
+      * **deploy**
+        deploy cloud service
 
-      * **-l name, --location name**
-        deployment server location, default: *ash*
+         * **-f, --force**
+         force deployment if already exist
 
-      * **-t name, --type name**
-        deployment server type, default: *cpx11*
+         * **-l name, --location name**
+         deployment server location, default: *ash*
 
-      * **-i name, --image name**
-        deployment server image, default: *ubuntu-22.04*
+         * **-t name, --type name**
+         deployment server type, default: *cpx11*
+
+         * **-i name, --image name**
+         deployment server image, default: *ubuntu-22.04*
+
+      * **logs**
+        get cloud service logs
+
+        * **-f, --follow**
+          follow logs journal, default: *False*
+
+      * **status**
+        get cloud service status
+
+      * **start**
+        start cloud service
+
+      * **stop**
+        stop cloud service
+
+      * **install**
+        install cloud service
+
+        * **-f, --force**
+          force installation if service already exists
+
+      * **uninstall**
+        uninstall cloud service
+
+      * **upgrade**
+        upgrade cloud service
+
+        * **--version version**
+          package version, default: *the latest*
 
     * **service**
       service commands

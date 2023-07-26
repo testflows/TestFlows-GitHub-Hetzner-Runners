@@ -37,8 +37,8 @@ from testflows.github.runners.scale_up import scale_up
 from testflows.github.runners.scale_down import scale_down
 from testflows.github.runners.scripts import Scripts, scripts
 from testflows.github.runners.args import check
-from testflows.github.runners.deploy import deploy
 
+import testflows.github.runners.cloud as cloud
 import testflows.github.runners.service as service
 
 logger = logging.getLogger("testflows.github.runners")
@@ -228,27 +228,44 @@ def argparser():
         title="commands", metavar="command", description=None, help=None
     )
 
-    deploy_parser = commands.add_parser(
-        "deploy",
-        help="deploy application",
-        description="Deploy application as a service to a cloud instance.",
+    cloud_parser = commands.add_parser(
+        "cloud",
+        help="cloud service commands",
+        description="Deploying and running application as a service on a cloud instance.",
         formatter_class=RawTextHelpFormatter,
     )
-    deploy_parser.add_argument(
+
+    cloud_parser.add_argument(
         "-n",
         "--name",
-        metavar="name",
+        metavar="server",
+        dest="server_name",
         type=str,
         help="deployment server name, default: github-runners",
         default="github-runners",
     )
-    deploy_parser.add_argument(
+
+    cloud_commands = cloud_parser.add_subparsers(
+        title="commands", metavar="command", description=None, help=None
+    )
+
+    cloud_commands.required = True
+
+    deploy_cloud_parser = cloud_commands.add_parser(
+        "deploy",
+        help="deploy cloud service",
+        description="Deploy application as a service to a new server instance.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    deploy_cloud_parser.add_argument(
         "-f",
         "--force",
         action="store_true",
         help="force deployment if already exist",
     )
-    deploy_parser.add_argument(
+
+    deploy_cloud_parser.add_argument(
         "-l",
         "--location",
         metavar="name",
@@ -256,7 +273,8 @@ def argparser():
         help="deployment server location, default: ash",
         default="ash",
     )
-    deploy_parser.add_argument(
+
+    deploy_cloud_parser.add_argument(
         "-t",
         "--type",
         metavar="name",
@@ -264,7 +282,8 @@ def argparser():
         help="deployment server type, default: cpx11",
         default="cpx11",
     )
-    deploy_parser.add_argument(
+
+    deploy_cloud_parser.add_argument(
         "-i",
         "--image",
         metavar="name",
@@ -272,7 +291,108 @@ def argparser():
         help="deployment server image, default: ubuntu-22.04",
         default="ubuntu-22.04",
     )
-    deploy_parser.set_defaults(func=deploy)
+
+    deploy_cloud_parser.set_defaults(func=cloud.deploy)
+
+    logs_cloud_parser = cloud_commands.add_parser(
+        "logs",
+        help="get cloud service logs",
+        description="Get cloud service logs.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    logs_cloud_parser.add_argument(
+        "-f",
+        "--follow",
+        action="store_true",
+        help="follow the logs journal",
+    )
+
+    logs_cloud_parser.set_defaults(func=cloud.logs)
+
+    status_cloud_parser = cloud_commands.add_parser(
+        "status",
+        help="get cloud service status",
+        description="Get cloud service status.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    status_cloud_parser.set_defaults(func=cloud.status)
+
+    start_cloud_parser = cloud_commands.add_parser(
+        "start",
+        help="start cloud service ",
+        description="Start cloud service.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    start_cloud_parser.set_defaults(func=cloud.start)
+
+    stop_cloud_parser = cloud_commands.add_parser(
+        "stop",
+        help="stop cloud service",
+        description="Stop cloud service.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    stop_cloud_parser.set_defaults(func=cloud.stop)
+
+    install_cloud_parser = cloud_commands.add_parser(
+        "install",
+        help="install cloud service",
+        description=(
+            "Install cloud service.\n\n"
+            "The `github-runners <options> service install` command will be executed on the cloud server instance.\n\n"
+            "Note: Just like with the `github-runners <options> service install` command,\n"
+            "      the options that are passed to the `github-runners <options> cloud install` command\n"
+            "      will be the same options with which the service will be executed."
+        ),
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    install_cloud_parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="force service install",
+        default=False,
+    )
+
+    install_cloud_parser.set_defaults(func=cloud.install)
+
+    uninstall_cloud_parser = cloud_commands.add_parser(
+        "uninstall",
+        help="uninstall cloud service",
+        description="Uninstall cloud service.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    uninstall_cloud_parser.set_defaults(func=cloud.uninstall)
+
+    upgrade_cloud_parser = cloud_commands.add_parser(
+        "upgrade",
+        help="upgrade cloud service",
+        description=(
+            "Upgrade cloud service application.\n\n"
+            "If specific '--version' is specified then the `testflows.github.runners`\n"
+            "package is upgraded to the specified version otherwise the version is\n"
+            "upgraded to the latest available.\n\n"
+            "Note: The service is not re-installed during the package upgrade process.\n"
+            "      Instead, it is stopped before the upgrade and then started back up\n"
+            "      after the package upgrade is complete."
+        ),
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    upgrade_cloud_parser.add_argument(
+        "--version",
+        type=str,
+        metavar="version",
+        dest="upgrade_version",
+        help="package version, default: the latest",
+    )
+
+    upgrade_cloud_parser.set_defaults(func=cloud.upgrade)
 
     service_parser = commands.add_parser(
         "service",
@@ -284,12 +404,18 @@ def argparser():
     service_commands = service_parser.add_subparsers(
         title="commands", metavar="command", description=None, help=None
     )
+
     service_commands.required = True
 
     install_service_parser = service_commands.add_parser(
         "install",
         help="install",
-        description="Install service.",
+        description=(
+            "Install service.\n\n"
+            "The `/etc/systemd/system/github-runners.service` file will be created and service will be started.\n\n"
+            "Note: The options that are passed to the `github-runners <options> service install` command\n"
+            "      will be the same options with which the service will be executed."
+        ),
         formatter_class=RawTextHelpFormatter,
     )
     install_service_parser.add_argument(

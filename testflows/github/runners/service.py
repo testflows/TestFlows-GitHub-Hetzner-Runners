@@ -112,7 +112,7 @@ def uninstall(args):
 
 
 def logs(args):
-    """Get service logs"""
+    """Get service logs."""
     os.system(
         f'sudo bash -c "journalctl -u {NAME}.service'
         + (" -f" if args.follow else "")
