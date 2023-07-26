@@ -109,9 +109,12 @@ or you can specify these values using the following options:
 * **--github-repository**
 * **--hetzner-token**
 
------------------
-Using x64 Runners
------------------
+----------------------
+Specifying Runner Type
+----------------------
+
+x64 Runners
+============
 
 The default server type is **cx11** which is an Intel, 1 vCPU, 2GB RAM shared-cpu x64 instance.
 
@@ -127,9 +130,8 @@ as follows:
    job-name:
       runs-on: [self-hosted, type-cpx21]
 
--------------------
-Using ARM64 Runners
--------------------
+ARM64 Runners
+==============
 
 The default server type is **cx11** which is an Intel, 1 vCPU, 2GB RAM shared-cpu x64 instance.
 Therefore, in order to use ARM64 runners you must specify ARM64 server instance type by using the **type-{name}** runner label.
@@ -144,6 +146,42 @@ as follows:
 
    job-name:
       runs-on: [self-hosted, type-cax21]
+
+---------------------------
+Specifying Runner Location
+---------------------------
+
+By default the default location of the server where the runner will be running is not specified. You can use the **--default-location**
+option to force specific default server location.
+
+You can also use the **in-{name}** runner label to specify server location for a specific job. Where **{name}** must be a valid
+`Hetzner Cloud <https://docs.hetzner.com/cloud/general/locations/>`_ location such as *ash* for US, Ashburn, VA or 
+*fsn1* for Germany, Falkenstein.
+
+For example,
+
+.. code-block:: yaml
+
+   job-name:
+      runs-on: [self-hosted, type-cx11, in-ash]
+
+
+-----------------------
+Specifying Runner Image
+-----------------------
+
+By default the default image of the server where the runner will be running is **ubuntu-22.04**. You can use the **--default-image**
+option to force specific default server image.
+
+You can also use the **image-{name}** runner label to specify server image for a specific job. Where **{name}** must be a valid
+Hetzner Cloud image such as *ubuntu-22.04* for *ubuntu-20.04*.
+
+For example,
+
+.. code-block:: yaml
+
+   job-name:
+      runs-on: [self-hosted, type-cx11, in-ash, image-ubuntu-20.04]
 
 -------
 SSH Key
