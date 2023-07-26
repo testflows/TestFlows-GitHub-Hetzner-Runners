@@ -32,11 +32,13 @@ def command_options(args):
     """
     command = ""
     command += f" --workers {args.workers}"
-    command += f" --default-type {args.default_type}"
+    command += f" --default-type {args.default_type.name}"
     command += (
-        f" --default-location {args.default_location}" if args.default_location else ""
+        f" --default-location {args.default_location.name}"
+        if args.default_location
+        else None
     )
-    command += f" --default-image {args.default_image}"
+    command += f" --default-image {args.default_image.type}:{args.default_image.name}"
     command += f" --max-runners {args.max_runners}" if args.max_runners else ""
     command += f" --logger-config {args.logger_config}" if args.logger_config else ""
     command += f" --setup-script {args.setup_script}" if args.setup_script else ""

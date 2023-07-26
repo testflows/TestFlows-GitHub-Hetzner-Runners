@@ -1,6 +1,7 @@
 set -x
 echo "Install runner"
-cd /home/runner
+cd /home/ubuntu
+
 curl -o actions-runner-linux-x64-2.306.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.306.0/actions-runner-linux-x64-2.306.0.tar.gz
 echo "b0a090336f0d0a439dac7505475a1fb822f61bbb36420c7b3b3fe6b1bdc4dbaa  actions-runner-linux-x64-2.306.0.tar.gz" | shasum -a 256 -c
 tar xzf ./actions-runner-linux-x64-2.306.0.tar.gz

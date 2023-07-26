@@ -12,7 +12,51 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
 import sys
+
+from hcloud.images.domain import Image
+from hcloud.locations.domain import Location
+from hcloud.server_types.domain import ServerType
+
+
+def count_type(v):
+    """Count argument type."""
+    v = int(v)
+    assert v >= 1
+    return v
+
+
+def env_var_type(name):
+    """Environment variable type."""
+
+    def option(v):
+        v = v if v else os.getenv(name)
+        return v
+
+    return option
+
+
+def image_type(v):
+    """Image type argument."""
+    try:
+        image_type, image_name = v.split(":", 1)
+        assert image_type in ("system", "snapshot", "backup", "app")
+    except:
+        raise ValueError(f"invalid image value {v}")
+    return Image(type=image_type, name=image_name)
+
+
+def location_type(v):
+    """Location type argument."""
+    if v is not None:
+        return Location(name=v)
+    return None
+
+
+def server_type(v):
+    """Server type argument."""
+    return ServerType(name=v)
 
 
 def check(args):

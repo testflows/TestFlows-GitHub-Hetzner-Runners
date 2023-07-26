@@ -1,9 +1,9 @@
 set -x
 
-echo "Create and configure runner user"
+echo "Create and configure ubuntu user"
 
-adduser runner --disabled-password --gecos ""
+adduser ubuntu --disabled-password --gecos ""
 echo "%wheel   ALL=(ALL:ALL) NOPASSWD:ALL" >> /etc/sudoers
 addgroup wheel
-usermod -aG wheel runner
-usermod -aG sudo runner
+usermod -aG wheel ubuntu
+usermod -aG sudo ubuntu

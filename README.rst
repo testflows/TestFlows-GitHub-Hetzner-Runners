@@ -177,15 +177,15 @@ Specifying Runner Image
 By default, the default image of the server for the runner is **ubuntu-22.04**. You can use the **--default-image**
 option to force specific default server image.
 
-You can also use the **image-{name}** runner label to specify server image for a specific job. Where **{name}** must be a valid
-Hetzner Cloud image such as *ubuntu-22.04* or *ubuntu-20.04*.
+You can also use the **image-{type}-{name}** runner label to specify server image for a specific job. Where the **{name}** must be a valid
+Hetzner Cloud image such as *ubuntu-22.04* or *ubuntu-20.04*, and the **{type}** is either *system*, *snapshot*, *backup*, or *app*.
 
 For example,
 
 .. code-block:: yaml
 
    job-name:
-      runs-on: [self-hosted, type-cx11, in-ash, image-ubuntu-20.04]
+      runs-on: [self-hosted, type-cx11, in-ash, image-system-ubuntu-20.04]
 
 -------
 SSH Key
@@ -439,16 +439,16 @@ The **cloud deploy** command uses the following setup script.
       apt-get -y install python3-pip
       apt-get -y install openssh-client
 
-      echo "Create and configure runner user"
+      echo "Create and configure ubuntu user"
 
-      adduser runner --disabled-password --gecos ""
+      adduser ubuntu --disabled-password --gecos ""
       echo "%wheel   ALL=(ALL:ALL) NOPASSWD:ALL" >> /etc/sudoers
       addgroup wheel
-      usermod -aG wheel runner
-      usermod -aG sudo runner
+      usermod -aG wheel ubuntu
+      usermod -aG sudo ubuntu
 
       echo "Generate SSH Key"
-      sudo -u runner ssh-keygen -t rsa -q -f "/home/runner/.ssh/id_rsa" -N ""
+      sudo -u ubuntu ssh-keygen -t rsa -q -f "/home/ubuntu/.ssh/id_rsa" -N ""
 
 You can customize deployment server location, type, and image using the *--location*, *--type*, and *--image* options.
 
@@ -669,7 +669,7 @@ the **setup** and **startup** scripts.
 
 :Image:
 
-   The server is configured to have the image specified by the **--default-image** option or the **image-<name>** runner label.
+   The server is configured to have the image specified by the **--default-image** option or the **image-{type}-{name}** runner label.
 
 :SSH Access:
 
@@ -690,13 +690,13 @@ The **setup** script creates and configures **runner** user that has **sudo** pr
 
         set -x
 
-        echo "Create and configure runner user"
+        echo "Create and configure ubuntu user"
 
-        adduser runner --disabled-password --gecos ""
+        adduser ubuntu --disabled-password --gecos ""
         echo "%wheel   ALL=(ALL:ALL) NOPASSWD:ALL" >> /etc/sudoers
         addgroup wheel
-        usermod -aG wheel runner
-        usermod -aG sudo runner
+        usermod -aG wheel ubuntu
+        usermod -aG sudo ubuntu
 
 The Start-up Script
 ===================
@@ -712,7 +712,7 @@ The x64 **startup** script installs and configures x64 version of the runner.
 
      set -x
      echo "Install runner"
-     cd /home/runner
+     cd /home/ubuntu
      curl -o actions-runner-linux-x64-2.306.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.306.0/actions-runner-linux-x64-2.306.0.tar.gz
      echo "b0a090336f0d0a439dac7505475a1fb822f61bbb36420c7b3b3fe6b1bdc4dbaa  actions-runner-linux-x64-2.306.0.tar.gz" | shasum -a 256 -c
      tar xzf ./actions-runner-linux-x64-2.306.0.tar.gz
@@ -732,7 +732,7 @@ The ARM64 **startup** script is similar to the x64 script but install an ARM64 v
 
      set -x
      echo "Install runner"
-     cd /home/runner
+     cd /home/ubuntu
 
      curl -o actions-runner-linux-arm64-2.306.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.306.0/actions-runner-linux-arm64-2.306.0.tar.gz# Optional: Validate the hash
      echo "842a9046af8439aa9bcabfe096aacd998fc3af82b9afe2434ddd77b96f872a83  actions-runner-linux-arm64-2.306.0.tar.gz" | shasum -a 256 -c# Extract the installer
@@ -825,14 +825,14 @@ The following options are supported:
 * **--ssh-key path**
   public SSH key file, default: *~/.ssh/id_rsa.pub*
 
-* **--default-type**
+* **--default-type name**
   default runner server type name, default: *cx11*
 
-* **--default-location**
+* **--default-location name**
   default runner server location name, default: not specified
 
-* **--default-image**
-  default runner server image name, default: *ubuntu-22.04*
+* **--default-image type:name**
+  default runner server image name, default: *system:ubuntu-22.04*
 
 * **-m count, --max-runners count**
   maximum number of active runners, default: *unlimited*
@@ -892,8 +892,8 @@ The following options are supported:
         * **-t name, --type name**
           deployment server type, default: *cpx11*
 
-        * **-i name, --image name**
-          deployment server image, default: *ubuntu-22.04*
+        * **-i type:name, --image type:name**
+          deployment server image type and name, default: *system:ubuntu-22.04*
 
       * **logs**
         get cloud service logs

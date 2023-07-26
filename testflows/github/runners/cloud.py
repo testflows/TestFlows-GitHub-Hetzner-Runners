@@ -62,9 +62,9 @@ def deploy(args, timeout=60):
     with Action(f"Creating new server"):
         response = client.servers.create(
             name=server_name,
-            server_type=ServerType(name=args.type),
-            image=Image(name=args.image),
-            location=Location(name=args.location),
+            server_type=args.type,
+            image=args.image,
+            location=args.location,
             ssh_keys=[ssh_key],
         )
         server: BoundServer = response.server
@@ -84,7 +84,7 @@ def deploy(args, timeout=60):
     with Action("Installing github-runners"):
         ssh(
             server,
-            f"'sudo -u runner pip3 install testflows.github.runners=={__version__}'",
+            f"'sudo -u ubuntu pip3 install testflows.github.runners=={__version__}'",
         )
 
     install(args, server=server)
@@ -104,7 +104,7 @@ def install(args, server: BoundServer = None):
             server: BoundServer = client.servers.get_by_name(server_name)
 
     with Action("Installing service"):
-        command = f"\"su - runner -c '"
+        command = f"\"su - ubuntu -c '"
         command += f"GITHUB_TOKEN={args.github_token} "
         command += f"GITHUB_REPOSITORY={args.github_repository} "
         command += f"HETZNER_TOKEN={args.hetzner_token} "
@@ -133,13 +133,13 @@ def upgrade(args):
         with Action(f"Upgrading github-runners to version {upgrade_version}"):
             ssh(
                 server,
-                f"'sudo -u runner pip3 install testflows.github.runners=={upgrade_version}'",
+                f"'sudo -u ubuntu pip3 install testflows.github.runners=={upgrade_version}'",
             )
     else:
         with Action(f"Upgrading github-runners the latest version"):
             ssh(
                 server,
-                f"'sudo -u runner pip3 install --upgrade testflows.github.runners'",
+                f"'sudo -u ubuntu pip3 install --upgrade testflows.github.runners'",
             )
 
     start(args, server=server)
@@ -156,7 +156,7 @@ def uninstall(args):
         server: BoundServer = client.servers.get_by_name(server_name)
 
     with Action("Uninstalling service"):
-        command = f"\"su - runner -c 'github-runners service uninstall'\""
+        command = f"\"su - ubuntu -c 'github-runners service uninstall'\""
         ssh(server, command)
 
 
@@ -173,7 +173,7 @@ def delete(args):
         server: BoundServer = client.servers.get_by_name(server_name)
 
     with Action("Uninstalling service"):
-        command = f"\"su - runner -c 'github-runners service uninstall'\""
+        command = f"\"su - ubuntu -c 'github-runners service uninstall'\""
         ssh(server, command)
 
     with Action(f"Deleting server {server_name}"):
@@ -195,7 +195,7 @@ def logs(args, server: BoundServer = None):
         raise ValueError("server not found")
 
     command = (
-        f"\"su - runner -c 'github-runners service logs"
+        f"\"su - ubuntu -c 'github-runners service logs"
         + (" -f" if args.follow else "")
         + "'\""
     )
@@ -214,7 +214,7 @@ def status(args, server: BoundServer = None):
             server = client.servers.get_by_name(server_name)
 
     with Action("Getting status"):
-        command = f"\"su - runner -c 'github-runners service status'\""
+        command = f"\"su - ubuntu -c 'github-runners service status'\""
         ssh(server, command)
 
 
@@ -230,7 +230,7 @@ def start(args, server: BoundServer = None):
             server = client.servers.get_by_name(server_name)
 
     with Action("Starting service"):
-        command = f"\"su - runner -c 'github-runners service start'\""
+        command = f"\"su - ubuntu -c 'github-runners service start'\""
         ssh(server, command)
 
 
@@ -246,5 +246,5 @@ def stop(args, server: BoundServer = None):
             server = client.servers.get_by_name(server_name)
 
     with Action("Stopping service"):
-        command = f"\"su - runner -c 'github-runners service stop'\""
+        command = f"\"su - ubuntu -c 'github-runners service stop'\""
         ssh(server, command)

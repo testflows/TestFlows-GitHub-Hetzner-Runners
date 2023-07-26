@@ -123,7 +123,7 @@ def create_server(
     )
 
 
-def get_server_type(job: WorkflowJob, default: str, label_prefix="type-"):
+def get_server_type(job: WorkflowJob, default: ServerType, label_prefix="type-"):
     """Get server type for the specified job."""
     server_type = None
 
@@ -134,12 +134,12 @@ def get_server_type(job: WorkflowJob, default: str, label_prefix="type-"):
                 server_type = ServerType(name=server_type_name)
 
     if server_type is None:
-        server_type = ServerType(name=default)
+        server_type = default
 
     return server_type
 
 
-def get_server_location(job: WorkflowJob, default: str = "", label_prefix="in-"):
+def get_server_location(job: WorkflowJob, default: Location = None, label_prefix="in-"):
     """Get preferred server location for the specified job.
 
     By default, location is set to `None` to avoid server type mismatching
@@ -154,12 +154,12 @@ def get_server_location(job: WorkflowJob, default: str = "", label_prefix="in-")
                 server_location = Location(name=server_location_name)
 
     if server_location is None and default:
-        server_location = Location(name=default)
+        server_location = default
 
     return server_location
 
 
-def get_server_image(job: WorkflowJob, default: str, label_prefix="image-"):
+def get_server_image(job: WorkflowJob, default: Image, label_prefix="image-"):
     """Get preferred server image for the specified job."""
     server_image: Image = None
 
@@ -170,7 +170,7 @@ def get_server_image(job: WorkflowJob, default: str, label_prefix="image-"):
                 server_image = Image(name=server_image_name)
 
     if server_image is None:
-        server_image = Image(name=default)
+        server_image = default
 
     return server_image
 
@@ -196,9 +196,9 @@ def scale_up(
     github_token: str,
     github_repository: str,
     ssh_key: SSHKey,
-    default_type: str,
-    default_location: str,
-    default_image: str,
+    default_type: ServerType,
+    default_location: Location,
+    default_image: Image,
     interval: int,
     max_servers: int,
 ):

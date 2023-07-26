@@ -24,7 +24,6 @@ from concurrent.futures import ThreadPoolExecutor, Future
 
 from hcloud import Client
 from hcloud.ssh_keys.domain import SSHKey
-from hcloud.images.domain import Image
 
 from github import Github
 from github.Repository import Repository
@@ -36,10 +35,12 @@ from testflows.github.runners.actions import Action
 from testflows.github.runners.scale_up import scale_up
 from testflows.github.runners.scale_down import scale_down
 from testflows.github.runners.scripts import Scripts, scripts
-from testflows.github.runners.args import check
 
+import testflows.github.runners.args as args
 import testflows.github.runners.cloud as cloud
 import testflows.github.runners.service as service
+
+check_args = args.check
 
 logger = logging.getLogger("testflows.github.runners")
 
@@ -55,24 +56,6 @@ description = """Auto-scaling GitHub Actions runners service using Hetzner Cloud
     environment variables or you can specify these values `--github-token`,
     `--github-repository`, and `--hetzner-token` options.
 """
-
-
-def count(v):
-    """Count argument type."""
-    v = int(v)
-    assert v >= 1
-    return v
-
-
-def env_var(name):
-    """Environment variable type."""
-
-    def option(v):
-        v = v if v else os.getenv(name)
-        return v
-
-    return option
-
 
 def argparser():
     """Command line argument parser."""
@@ -94,21 +77,21 @@ def argparser():
 
     parser.add_argument(
         "--github-token",
-        type=env_var("GITHUB_TOKEN"),
+        type=args.env_var_type("GITHUB_TOKEN"),
         help="GitHub token, default: $GITHUB_TOKEN environment variable",
         default="",
     )
 
     parser.add_argument(
         "--github-repository",
-        type=env_var("GITHUB_REPOSITORY"),
+        type=args.env_var_type("GITHUB_REPOSITORY"),
         help="GitHub repository, default: $GITHUB_REPOSITORY environment variable",
         default="",
     )
 
     parser.add_argument(
         "--hetzner-token",
-        type=env_var("HETZNER_TOKEN"),
+        type=args.env_var_type("HETZNER_TOKEN"),
         help="Hetzner Cloud token, default: $HETZNER_TOKEN environment variable",
         default="",
     )
@@ -125,22 +108,26 @@ def argparser():
         "-m",
         "--max-runners",
         metavar="count",
-        type=count,
+        type=args.count_type,
         help="maximum number of active runners, default: unlimited",
     )
 
     parser.add_argument(
         "--default-image",
-        metavar="name",
+        metavar="type:name",
+        type=args.image_type,
         help=(
-            "default runner server image name, default: ubuntu-22.04"
+            "default runner server image type and name, \n"
+            "where type is either: 'system','snapshot','backup','app',\n "
+            "default: system:ubuntu-22.04"
         ),
-        default="ubuntu-22.04",
+        default="system:ubuntu-22.04",
     )
 
     parser.add_argument(
         "--default-type",
         metavar="name",
+        type=args.server_type,
         help=(
             "default runner server type name, default: cx11"
         ),
@@ -150,6 +137,7 @@ def argparser():
     parser.add_argument(
         "--default-location",
         metavar="name",
+        type=args.location_type,
         help=(
             "default runner server location name, by default not specified"
         ),
@@ -159,7 +147,7 @@ def argparser():
         "-w",
         "--workers",
         metavar="count",
-        type=count,
+        type=args.count_type,
         help="number of concurrent workers, default: 10",
         default=10,
     )
@@ -195,7 +183,7 @@ def argparser():
     parser.add_argument(
         "--max-powered-off-time",
         metavar="sec",
-        type=count,
+        type=args.count_type,
         help="maximum time after which a powered off server is deleted, default: 20 sec",
         default=20,
     )
@@ -203,7 +191,7 @@ def argparser():
     parser.add_argument(
         "--max-idle-runner-time",
         metavar="sec",
-        type=count,
+        type=args.count_type,
         help="maximum time after which an idle runner is removed and its server deleted, default: 120 sec",
         default=120,
     )
@@ -211,7 +199,7 @@ def argparser():
     parser.add_argument(
         "--max-runner-registration-time",
         metavar="sec",
-        type=count,
+        type=args.count_type,
         help="maximum time after which the server will be deleted if it fails to register a runner, default: 60 sec",
         default=60,
     )
@@ -219,7 +207,7 @@ def argparser():
     parser.add_argument(
         "--scale-up-interval",
         metavar="sec",
-        type=count,
+        type=args.count_type,
         help="scale up service interval, default: 10 sec",
         default=10,
     )
@@ -227,7 +215,7 @@ def argparser():
     parser.add_argument(
         "--scale-down-interval",
         metavar="sec",
-        type=count,
+        type=args.count_type,
         help="scale down service interval, default: 10 sec",
         default=10,
     )
@@ -284,7 +272,7 @@ def argparser():
         "-l",
         "--location",
         metavar="name",
-        type=str,
+        type=args.location_type,
         help="deployment server location, default: ash",
         default="ash",
     )
@@ -293,7 +281,7 @@ def argparser():
         "-t",
         "--type",
         metavar="name",
-        type=str,
+        type=args.server_type,
         help="deployment server type, default: cpx11",
         default="cpx11",
     )
@@ -302,9 +290,9 @@ def argparser():
         "-i",
         "--image",
         metavar="name",
-        type=str,
-        help="deployment server image, default: ubuntu-22.04",
-        default="ubuntu-22.04",
+        type=args.image_type,
+        help="deployment server image type and name, default: system:ubuntu-22.04",
+        default="system:ubuntu-22.04",
     )
 
     deploy_cloud_parser.set_defaults(func=cloud.deploy)
@@ -642,7 +630,7 @@ if __name__ == "__main__":
             logger.fatal(f"❗ Error: {exc}")
 
     else:
-        check(args)
+        check_args(args)
 
         with ThreadPoolExecutor(
             max_workers=args.workers + 2, thread_name_prefix="worker"

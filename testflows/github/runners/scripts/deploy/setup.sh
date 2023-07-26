@@ -6,13 +6,13 @@ apt-get update
 apt-get -y install python3-pip
 apt-get -y install openssh-client
 
-echo "Create and configure runner user"
+echo "Create and configure ubuntu user"
 
-adduser runner --disabled-password --gecos ""
+adduser ubuntu --disabled-password --gecos ""
 echo "%wheel   ALL=(ALL:ALL) NOPASSWD:ALL" >> /etc/sudoers
 addgroup wheel
-usermod -aG wheel runner
-usermod -aG sudo runner
+usermod -aG wheel ubuntu
+usermod -aG sudo ubuntu
 
 echo "Generate SSH Key"
-sudo -u runner ssh-keygen -t rsa -q -f "/home/runner/.ssh/id_rsa" -N ""
+sudo -u ubuntu ssh-keygen -t rsa -q -f "/home/ubuntu/.ssh/id_rsa" -N ""
