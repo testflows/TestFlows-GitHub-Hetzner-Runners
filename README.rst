@@ -430,6 +430,29 @@ The **deploy** command will use the following default values:
 :image:
    *ubuntu-22.04*
 
+The **cloud deploy** command uses the following setup script.
+
+:setup script:
+   .. code-block:: bash
+
+      set -x
+      
+      apt-get update
+      
+      apt-get -y install python3-pip
+      apt-get -y install openssh-client
+      
+      echo "Create and configure runner user"
+      
+      adduser runner --disabled-password --gecos ""
+      echo "%wheel   ALL=(ALL:ALL) NOPASSWD:ALL" >> /etc/sudoers
+      addgroup wheel
+      usermod -aG wheel runner
+      usermod -aG sudo runner
+      
+      echo "Generate SSH Key"
+      sudo -u runner ssh-keygen -t rsa -q -f "/home/runner/.ssh/id_rsa" -N ""
+
 You can customize deployment server location, type, and image using the *--location*, *--type*, and *--image* options.
 
 .. code-block:: bash
