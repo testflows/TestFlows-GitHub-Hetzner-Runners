@@ -94,7 +94,6 @@ def create_server(
     github_token: str,
     github_repository: str,
     ssh_key: SSHKey,
-    count=1,
     timeout=60,
 ):
     """Create specified number of server instances."""
@@ -112,14 +111,17 @@ def create_server(
     with Action(f"Waiting for server {server.name} to be ready") as action:
         wait_ready(server=server, timeout=timeout, action=action)
 
-    server_setup(
-        server=response.server,
-        setup_script=setup_script,
-        startup_script=startup_script,
-        github_token=github_token,
-        github_repository=github_repository,
-        runner_labels=",".join(job.raw_data["labels"]),
-    )
+    with ThreadPoolExecutor(max_workers=1, thread_name_prefix="worker-setup") as pool:
+
+        pool.submit(
+            server_setup,
+            server=response.server,
+            setup_script=setup_script,
+            startup_script=startup_script,
+            github_token=github_token,
+            github_repository=github_repository,
+            runner_labels=",".join(job.raw_data["labels"]),
+        )
 
 
 def get_server_type(job: WorkflowJob, default: str, label_prefix="type-"):
