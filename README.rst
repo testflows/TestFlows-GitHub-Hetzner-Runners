@@ -109,6 +109,59 @@ or you can specify these values using the following options:
 * **--github-repository**
 * **--hetzner-token**
 
+-----------------
+Using x64 Runners
+-----------------
+
+The default server type is **cx11** which is an Intel, 1 vCPU, 2GB RAM shared-cpu x64 instance.
+
+You can specify different x64 server instance type by using the **server-{hetzner-server-type}** runner label.
+The **{hetzner-server-type}** must be a valid `Hetzner Cloud <https://www.hetzner.com/cloud>`_
+server type name such as *cx11*, *cpx21* etc.
+
+For example, to use AMD, 3 vCPU, 4GB RAM shared-cpu x64 instance, you can define the **runs-on**
+as follows:
+
+  .. code-block:: yaml
+     job-name:
+        runs-on: [self-hosted, server-cpx21]
+
+-------------------
+Using ARM64 Runners
+-------------------
+
+The default server type is **cx11** which is an Intel, 1 vCPU, 2GB RAM shared-cpu x64 instance.
+Therefore, in order to use ARM64 runners you must specify ARM64 server instance type by using the **server-{hetzner-server-type}** runner label.
+The **{hetzner-server-type}** must be a valid `Hetzner Cloud <https://www.hetzner.com/cloud>`_
+server type name such as *cax11*, *cax21* etc. which correspond to the Ampere Altra, 2 vCPU, 4GB RAM and
+4 vCPU, 8GB RAM shared-cpu ARM64 instances respectively.
+
+For example, to use Ampere Altra, 4 vCPU, 8GB RAM shared-cpu ARM64 instance, you must define the **runs-on**
+as follows:
+
+  .. code-block:: yaml
+     job-name:
+        runs-on: [self-hosted, server-cax21]
+
+-------
+SSH Key
+-------
+
+All server instances that are created are accessed via SSH using the **ssh** utility and therefore you must provide a valide SSH key
+using the **--ssh-key** option. If the **--ssh-key** option is no specified, then the `~/.ssh/id_rsa.pub` default key path will be used.
+
+:✋ Note:
+   The SSH key will be automatically added to your project using the MD5 hash of the public key as the SSH key name.
+
+Cloud Deployment
+================
+
+If you are deploying the **github-runners** program as a cloud service using the **github-runners <options> cloud deploy** command, then
+after provisoning a new cloud server instance that will host the **github-runners** service, a new SSH key will be
+auto-generated to access the runners. The auto-generated key will be placed in */home/runner/.ssh/id_rsa*, where **runner**
+is the user under which the **github-runners** service runs on the cloud instance. The auto-generated SSH key will be automatically
+added to your project using the MD5 hash of the public key as the SSH key name.
+
 -----------------------
 Running as a Service
 -----------------------
@@ -361,14 +414,18 @@ the **setup** and **startup** scripts.
 
 :Server Type:
 
-   The default server type is **cx11**. However, a job **server-{hetzner-server-type}** label can be used to specify
-   custom server type. Where the **{hetzner-server-type}** must be a valid Hetzner Cloud server type name such as *cx11*, *cpx21* etc.
-
-   For example,
-
-   .. code-block:: yaml
-
-       runs-on: [self-hosted, server-cpx21]
+   The default server type is **cx11** which is an Intel, 1 vCPU, 2GB RAM shared-cpu x64 instance.
+   
+   You can specify different x64 server instance type by using the **server-{hetzner-server-type}** runner label.
+   The **{hetzner-server-type}** must be a valid `Hetzner Cloud <https://www.hetzner.com/cloud>`_
+   server type name such as *cx11*, *cpx21* etc.
+   
+   For example, to use AMD, 3 vCPU, 4GB RAM shared-cpu x64 instance, you can define the **runs-on**
+   as follows:
+   
+     .. code-block:: yaml
+        job-name:
+           runs-on: [self-hosted, server-cpx21]
 
 :SSH Access:
 
