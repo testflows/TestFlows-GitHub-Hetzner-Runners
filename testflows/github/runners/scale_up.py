@@ -270,7 +270,6 @@ def scale_up(
                                     github_token=github_token,
                                     github_repository=github_repository,
                                     ssh_key=ssh_key,
-                                    image=image,
                                 )
                             )
 
