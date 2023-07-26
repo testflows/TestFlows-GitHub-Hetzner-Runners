@@ -231,7 +231,9 @@ def scale_up(
                     for job in run.jobs():
                         if job.status == "queued":
                             with Action(f"Found queued job {job}"):
-                                server_name = f"{runner_server_prefix}{job.run_id}"
+                                server_name = (
+                                    f"{runner_server_prefix}{job.run_id}-{job.id}"
+                                )
                                 server_type = get_server_type(
                                     job=job, default=default_type
                                 )
