@@ -362,28 +362,6 @@ See **-h, --help** for all the available commands.
 
    github-runners cloud -h
 
-::
-
-   usage: GitHub Actions runners scale up service cloud [-h] [-n server] command ...
-
-   Deploying and running application as a service on a cloud instance.
-
-   options:
-     -h, --help            show this help message and exit
-     -n server, --name server
-                           deployment server name, default: github-runners
-
-   commands:
-     command
-       deploy              deploy cloud service
-       logs                get cloud service logs
-       status              get cloud service status
-       start               start cloud service
-       stop                stop cloud service
-       install             install cloud service
-       uninstall           uninstall cloud service
-       upgrade             upgrade cloud service
-
 Deployment
 ==========
 
