@@ -177,7 +177,7 @@ By default, the default image of the server for the runner is **ubuntu-22.04**. 
 option to force specific default server image.
 
 You can also use the **image-{name}** runner label to specify server image for a specific job. Where **{name}** must be a valid
-Hetzner Cloud image such as *ubuntu-22.04* for *ubuntu-20.04*.
+Hetzner Cloud image such as *ubuntu-22.04* or *ubuntu-20.04*.
 
 For example,
 
