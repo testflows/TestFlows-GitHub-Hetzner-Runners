@@ -36,9 +36,9 @@ def command_options(args):
     command += (
         f" --default-location {args.default_location.name}"
         if args.default_location
-        else None
+        else ""
     )
-    command += f" --default-image {args.default_image.type}:{args.default_image.name}"
+    command += f" --default-image {args.default_image.type}:{args.default_image.name or args.default_image.description}"
     command += f" --max-runners {args.max_runners}" if args.max_runners else ""
     command += f" --logger-config {args.logger_config}" if args.logger_config else ""
     command += f" --setup-script {args.setup_script}" if args.setup_script else ""
