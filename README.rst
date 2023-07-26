@@ -39,6 +39,7 @@ Features
 * supports both x64 and ARM64 runners
 * supports specifying custom runner types using job labels
 * simple configuration
+* self-contained and can deploy and manage itself on a cloud instance
 
 ------------
 Installation
