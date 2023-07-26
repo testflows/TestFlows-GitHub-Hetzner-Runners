@@ -96,7 +96,7 @@ def install(args):
             f"ExecStart={binary}"
             f" --workers {args.workers}"
         )
-        contents += f" --ssh-key {args.ssh_key.name}"
+        contents += f" --ssh-key {args.ssh_key}"
         contents += command_options(args)
         contents += "\n" "[Install]\n" "WantedBy=multi-user.target\n"
 

@@ -57,7 +57,8 @@ def deploy(args, timeout=60):
         args.image = check_image(client=client, image=args.image)
 
     with Action(f"Checking if SSH key exists"):
-        public_key = args.ssh_key.read()
+        with open(args.ssh_key, "r", encoding="utf-8") as ssh_key_file:
+            public_key = ssh_key_file.read()
         key_name = hashlib.md5(public_key.encode("utf-8")).hexdigest()
         ssh_key = SSHKey(name=key_name, public_key=public_key)
 

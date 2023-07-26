@@ -28,7 +28,7 @@ from hcloud.ssh_keys.domain import SSHKey
 from github import Github
 from github.Repository import Repository
 
-from argparse import ArgumentParser, RawTextHelpFormatter, FileType
+from argparse import ArgumentParser, RawTextHelpFormatter
 
 from testflows.github.runners import __version__, __license__
 from testflows.github.runners.actions import Action
@@ -101,7 +101,7 @@ def argparser():
     parser.add_argument(
         "--ssh-key",
         metavar="path",
-        type=FileType("r", encoding="utf-8"),
+        type=str,
         help="path to public SSH key, default: ~/.ssh/id_rsa.pub",
         default=os.path.expanduser("~/.ssh/id_rsa.pub"),
     )
@@ -520,7 +520,8 @@ def main(args, scripts: Scripts, worker_pool: ThreadPoolExecutor, terminate_time
             args.default_image = check_image(client=client, image=args.default_image)
 
         with Action(f"Checking if SSH key exists"):
-            public_key = args.ssh_key.read()
+            with open(args.ssh_key, "r", encoding="utf-8") as ssh_key_file:
+                public_key = ssh_key_file.read()
             key_name = hashlib.md5(public_key.encode("utf-8")).hexdigest()
             ssh_key = SSHKey(name=key_name, public_key=public_key)
 
