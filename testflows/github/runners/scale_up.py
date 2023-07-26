@@ -74,7 +74,7 @@ def server_setup(
     with Action("Executing startup.sh script"):
         ssh(
             server,
-            f"'sudo -u runner "
+            f"'sudo -u ubuntu "
             f"GITHUB_REPOSITORY=\"{os.getenv('GITHUB_REPOSITORY')}\" "
             f'GITHUB_RUNNER_TOKEN="{GITHUB_RUNNER_TOKEN}" '
             f"GITHUB_RUNNER_GROUP=Default "
