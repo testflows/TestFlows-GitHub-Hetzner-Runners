@@ -832,7 +832,9 @@ The following options are supported:
   default runner server location name, default: not specified
 
 * **--default-image type:name**
-  default runner server image name, default: *system:ubuntu-22.04*
+  default runner server image type and name,
+  where type is either: 'system','snapshot','backup','app',
+  default: *system:ubuntu-22.04*
 
 * **-m count, --max-runners count**
   maximum number of active runners, default: *unlimited*
@@ -893,7 +895,9 @@ The following options are supported:
           deployment server type, default: *cpx11*
 
         * **-i type:name, --image type:name**
-          deployment server image type and name, default: *system:ubuntu-22.04*
+          deployment server image type and name,
+          where the type is either: 'system','snapshot','backup','app',
+          default: *system:ubuntu-22.04*
 
       * **logs**
         get cloud service logs
