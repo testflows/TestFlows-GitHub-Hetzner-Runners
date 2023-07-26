@@ -123,8 +123,8 @@ The default server type is **cx11** which is an Intel, 1 vCPU, 2GB RAM shared-cp
    You can use **--default-type** option to set a different default server type.
 
 You can specify different x64 server instance type by using the **type-{name}** runner label.
-The **{name}** must be a valid `Hetzner Cloud <https://www.hetzner.com/cloud>`_
-server type name such as *cx11*, *cpx21* etc.
+The **{name}** must be a valid `Hetzner Cloud server type <https://www.hetzner.com/cloud>`_
+name such as *cx11*, *cpx21* etc.
 
 For example, to use AMD, 3 vCPU, 4GB RAM shared-cpu x64 instance, you can define the **runs-on**
 as follows:
@@ -139,8 +139,8 @@ ARM64 Runners
 
 The default, the server type is **cx11**, which is an Intel, 1 vCPU, 2GB RAM shared-cpu x64 instance.
 Therefore, in order to use ARM64 runners you must specify ARM64 server instance type by using the **type-{name}** runner label.
-The **{name}** must be a valid `Hetzner Cloud <https://www.hetzner.com/cloud>`_
-server type name such as *cax11*, *cax21* etc. which correspond to the Ampere Altra, 2 vCPU, 4GB RAM and
+The **{name}** must be a valid `ARM64 Hetzner Cloud server type <https://www.hetzner.com/cloud>`_
+name such as *cax11*, *cax21* etc. which correspond to the Ampere Altra, 2 vCPU, 4GB RAM and
 4 vCPU, 8GB RAM shared-cpu ARM64 instances respectively.
 
 For example, to use Ampere Altra, 4 vCPU, 8GB RAM shared-cpu ARM64 instance, you must define the **runs-on**
@@ -159,7 +159,7 @@ By default, the default location of the server where the runner will be running 
 option to force specific default server location.
 
 You can also use the **in-{name}** runner label to specify server location for a specific job. Where **{name}** must be a valid
-`Hetzner Cloud <https://docs.hetzner.com/cloud/general/locations/>`_ location such as *ash* for US, Ashburn, VA or 
+`Hetzner Cloud location <https://docs.hetzner.com/cloud/general/locations/>`_ name such as *ash* for US, Ashburn, VA or
 *fsn1* for Germany, Falkenstein.
 
 For example,
