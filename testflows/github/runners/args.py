@@ -57,9 +57,10 @@ def image_type(v, separator=":"):
     except:
         raise ValueError(f"invalid image value {v}")
 
-    if image_type == "system":
+    if image_type in ("system", "app"):
         return Image(type=image_type, name=image_name)
     else:
+        # backup or snapshot uses description
         return Image(type=image_type, description=image_name)
 
 
