@@ -124,7 +124,7 @@ def scale_down(
 
         with Action("Looking for idle runners", level=logging.DEBUG):
             for runner in runners:
-                if runner.status in ("idle", "online"):
+                if runner.status == "online" and not runner.busy:
                     if runner.name not in idle_runners:
                         with Action(f"Found new idle runner {runner.name}"):
                             idle_runners[runner.name] = IdleRunner(
