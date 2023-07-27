@@ -110,9 +110,9 @@ or you can specify these values using the following options:
 * **--github-repository**
 * **--hetzner-token**
 
----------------------------------
-Setting Maximum Number of Runners
----------------------------------
+------------------------------------
+Specifying Maximum Number of Runners
+------------------------------------
 The default maximum number of runners is **10**. You can set a different value
 based on your Hetzner Cloud limits using the **-m count, --max-runners count** option. For example,
 
