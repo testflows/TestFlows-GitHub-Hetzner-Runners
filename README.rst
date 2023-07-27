@@ -1,7 +1,12 @@
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-ArtWork/master/images/logo.png
    :width: 20%
+   :align: left
    :target: https://testflows.com
-   :alt: test bug
+   :alt: TestFlows Open-source Testing Framework
+
+.. image:: https://badge.fury.io/py/testflows.github.runners.svg
+    :target: https://pypi.org/project/testflows.github.runners/
+    :align: right
 
 ======================================================
 Autoscaling GitHub Actions Runners Using Hetzner Cloud
