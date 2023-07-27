@@ -110,6 +110,15 @@ or you can specify these values using the following options:
 * **--github-repository**
 * **--hetzner-token**
 
+---------------------------------
+Setting Maximum Number of Runners
+---------------------------------
+The default maximum number of runners is **10**. You can set a different value
+based on your Hetzner Cloud limits using the **-m count, --max-runners count** option. For example,
+
+.. code-block:: bash
+   github-runners --max-runners 40
+
 ----------------------
 Specifying Runner Type
 ----------------------
@@ -182,10 +191,28 @@ Hetzner Cloud image such as *ubuntu-22.04* or *ubuntu-20.04*, and the **{type}**
 
 For example,
 
-.. code-block:: yaml
+:ubuntu-20.04:
 
-   job-name:
-      runs-on: [self-hosted, type-cx11, in-ash, image-system-ubuntu-20.04]
+   .. code-block:: yaml
+
+      job-name:
+         runs-on: [self-hosted, type-cx11, in-ash, image-system-ubuntu-20.04]
+
+
+:docker-ce app:
+   .. code-block:: yaml
+
+      job-name:
+         runs-on: [self-hosted, type-cx11, in-ash, image-app-docker-ce]
+
+:snapshot:
+   For snapshots, specify **description** as the name. Snapshot descriptions
+   must be unique.
+
+   .. code-block:: yaml
+
+      job-name:
+         runs-on: [self-hosted, type-cx11, in-ash, image-snapshot-snapshot_description]
 
 -------
 SSH Key
@@ -837,7 +864,7 @@ The following options are supported:
   default: *system:ubuntu-22.04*
 
 * **-m count, --max-runners count**
-  maximum number of active runners, default: *unlimited*
+  maximum number of active runners, default: *10*
 
 * **-w count, --workers count**
   number of concurrent workers, default: *10*
@@ -855,22 +882,22 @@ The following options are supported:
   path to custom ARM64 server startup script
 
 * **--max-powered-off-time sec**
-  maximum time after which a powered off server is deleted, default: *20* sec
+  maximum time after which a powered off server is deleted, default: *60* sec
 
 * **--max-idle-runner-time sec**
   maximum time after which an idle runner is removed and its server deleted, default: *120* sec
 
 * **--max-runner-registration-time**
-  maximum time after which the server will be deleted if its runner is not registered with GitHub, default: *60* sec
+  maximum time after which the server will be deleted if its runner is not registered with GitHub, default: *120* sec
 
 * **--max-server-ready-time sec**
-  maximum time to wait for the server to be in the running state, default: *60* sec
+  maximum time to wait for the server to be in the running state, default: *120* sec
 
 * **--scale-up-interval sec**
-  scale up service interval, default: *10* sec
+  scale up service interval, default: *15* sec
 
 * **--scale-down-interval sec**
-  scale down service interval, default: *10* sec
+  scale down service interval, default: *15* sec
 
 * **--debug**
   enable debugging mode, default: *False*
