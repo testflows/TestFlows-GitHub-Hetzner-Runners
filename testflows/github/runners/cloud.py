@@ -50,7 +50,7 @@ def deploy(args, redeploy=False):
         with Action(f"Getting server {server_name}"):
             server: BoundServer = client.servers.get_by_name(server_name)
 
-        uninstall(server=server)
+        uninstall(args=args, server=server)
 
         with Action("Cleaning copied scripts"):
             ssh(server, f"rm -rf {deploy_scripts_folder}*")
