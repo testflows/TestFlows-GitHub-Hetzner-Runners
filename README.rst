@@ -618,8 +618,8 @@ the **github-runners cloud uninstall** command.
 
    github-runners cloud uninstall
 
-Upgrading Cloud Service
-========================
+Upgrading Cloud Service Package
+===============================
 
 You can manually upgrade the **github-runners** service package running on a cloud instance using
 the **github-runners cloud upgrade** command.
@@ -635,6 +635,23 @@ the specified version otherwise the version is upgraded to the latest available.
 .. code-block:: bash
 
    github-runners cloud upgrade --version <version>
+
+The service is not re-installed during the package upgrade process.
+Instead, it is stopped before the upgrade and then started back up
+
+Changing Cloud Service Options
+==============================
+
+If you need to change cloud service options such as the **--setup-script** or the **--max-runners** etc.,
+you can do complete service teardown using the **cloud delete** and then the **cloud deploy** commands.
+
+When needed, you can also SSH into the cloud service manually and perform changes manually.
+
+:✋ Note:
+   Complete teardown will not affect any current jobs as the service is designed to
+   be restartable. However, some servers might be left in an unfinished state
+   but they will be cleaned up when the service is restarted.
+
 
 Deleting Cloud Service
 ======================
@@ -659,6 +676,28 @@ For example,
    .. code-block:: bash
 
       github-runners cloud --name <custom_name> delete
+
+SSH in to Cloud Service
+==============================
+
+You can open SSH client to the cloud service using the **cloud ssh** command. For example,
+
+.. code-block:: bash
+
+   github-runners cloud ssh
+
+You can also manually SSH in to the cloud service using the **ssh** utility. For convenience, you can
+retrieve the SSH client command using the **cloud ssh command** command. For example,
+
+.. code-block:: bash
+
+   github-runners cloud ssh command
+
+The output will contain the full **ssh** command including the IP address of the cloud service server.
+
+::
+
+   ssh -q -o "StrictHostKeyChecking no" root@5.161.87.21
 
 ------------------
 Scaling Up Runners
