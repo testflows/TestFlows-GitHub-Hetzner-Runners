@@ -176,9 +176,9 @@ def deploy(args, redeploy=False):
     install(args, server=server)
 
 
-def redeploy(args, server: BoundServer = None):
+def redeploy(args):
     """Redeploy service on a existing cloud instance."""
-    deploy(args=args, server=server, redeploy=True)
+    deploy(args=args, redeploy=True)
 
 
 def install(args, server: BoundServer = None):
