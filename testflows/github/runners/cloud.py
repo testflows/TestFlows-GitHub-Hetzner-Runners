@@ -42,9 +42,6 @@ def deploy(args, redeploy=False):
     version = args.version or __version__
 
     server_name = args.server_name
-    deploy_setup_script = args.deploy_setup_script or os.path.join(
-        current_dir, "scripts", "deploy", "setup.sh"
-    )
 
     with Action("Logging in to Hetzner Cloud"):
         client = Client(token=args.hetzner_token)
@@ -62,6 +59,10 @@ def deploy(args, redeploy=False):
             ssh(server, f"rm -rf {deploy_configs_folder}*")
 
     else:
+        deploy_setup_script = args.deploy_setup_script or os.path.join(
+            current_dir, "scripts", "deploy", "setup.sh"
+        )
+
         if args.force:
             with Action(
                 f"Checking if server {server_name} already exists", ignore_fail=True
