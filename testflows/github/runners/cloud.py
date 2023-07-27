@@ -26,7 +26,7 @@ from .actions import Action
 from .args import check, check_image
 from . import __version__
 
-from .server import wait_ready, wait_ssh, ssh, scp, ip_address
+from .server import wait_ready, wait_ssh, ssh, scp, ip_address, ssh_command
 from .service import command_options
 
 current_dir = os.path.dirname(__file__)
@@ -313,3 +313,30 @@ def stop(args, server: BoundServer = None):
     with Action("Stopping service"):
         command = f"\"su - ubuntu -c 'github-runners service stop'\""
         ssh(server, command)
+
+
+def ssh_client(args):
+    """Open ssh client to github-runners service running
+    on Hetzner server instance.
+    """
+    server_name = args.server_name
+
+    with Action("Logging in to Hetzner Cloud"):
+        client = Client(token=args.hetzner_token)
+
+    with Action(f"Getting server {server_name}"):
+        server: BoundServer = client.servers.get_by_name(server_name)
+
+    with Action("Opening SSH client"):
+        os.system(ssh_command(server=server))
+
+
+def ssh_client_command(args):
+    """Return ssh command to connect to github-runners service running
+    on Hetzner server instance.
+    """
+    server_name = args.server_name
+
+    client = Client(token=args.hetzner_token)
+    server: BoundServer = client.servers.get_by_name(server_name)
+    print(ssh_command(server=server))

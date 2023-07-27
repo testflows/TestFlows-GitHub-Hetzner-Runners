@@ -359,6 +359,28 @@ def argparser():
 
     stop_cloud_parser.set_defaults(func=cloud.stop)
 
+    ssh_cloud_parser = cloud_commands.add_parser(
+        "ssh",
+        help="ssh to cloud service",
+        description="Open SSH client to cloud service.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    ssh_cloud_parser.set_defaults(func=cloud.ssh_client)
+
+    ssh_cloud_commands = ssh_cloud_parser.add_subparsers(
+        title="commands", metavar="command", description=None, help=None
+    )
+
+    ssh_client_command_cloud_parser = ssh_cloud_commands.add_parser(
+        "command",
+        help="print ssh command to cloud service",
+        description="Get SSH command to connect to cloud service.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    ssh_client_command_cloud_parser.set_defaults(func=cloud.ssh_client_command)
+
     install_cloud_parser = cloud_commands.add_parser(
         "install",
         help="install cloud service",

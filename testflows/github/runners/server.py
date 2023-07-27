@@ -46,11 +46,15 @@ def wait_ssh(server: BoundServer, timeout: float):
             time.sleep(5)
 
 
+def ssh_command(server: BoundServer):
+    """Return ssh command."""
+    ip = ip_address(server=server)
+    return f'ssh -q -o "StrictHostKeyChecking no" root@{ip}'
+
+
 def ssh(server: BoundServer, cmd: str, *args, **kwargs):
     """Execute command over SSH."""
-    ip = ip_address(server=server)
-    ssh_command = f'ssh -q -o "StrictHostKeyChecking no" root@{ip}'
-    return shell(f"{ssh_command} {cmd}", *args, **kwargs)
+    return shell(f"{ssh_command(server=server)} {cmd}", *args, **kwargs)
 
 
 def scp(source: str, destination: str, *args, **kwargs):
