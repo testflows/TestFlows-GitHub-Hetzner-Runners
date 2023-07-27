@@ -30,6 +30,8 @@ from .server import wait_ready, wait_ssh, ssh, scp, ip_address
 from .service import command_options
 
 current_dir = os.path.dirname(__file__)
+deploy_scripts_folder = "/home/ubuntu/.github-runners/scripts/"
+deploy_configs_folder = "/home/ubuntu/.github-runners/configs/"
 
 
 def deploy(args):
@@ -104,10 +106,10 @@ def deploy(args):
             with Action(f"Copying custom setup script {args.setup_script}"):
                 scp(
                     source=args.setup_script,
-                    destination=f"root@{ip}:/home/ubuntu/github-runners.scripts/.",
+                    destination=f"root@{ip}:{deploy_scripts_folder}.",
                 )
                 args.setup_script = os.path.join(
-                    "/home/ubuntu/github-runners.scripts/",
+                    deploy_scripts_folder,
                     os.path.basename(args.setup_script),
                 )
 
@@ -115,10 +117,10 @@ def deploy(args):
             with Action(f"Copying custom setup script {args.startup_x64_script}"):
                 scp(
                     source=args.setup_script,
-                    destination=f"root@{ip}:/home/ubuntu/github-runners.scripts/.",
+                    destination=f"root@{ip}:{deploy_scripts_folder}.",
                 )
                 args.startup_x64_script = os.path.join(
-                    "/home/ubuntu/github-runners.scripts/",
+                    deploy_scripts_folder,
                     os.path.basename(args.startup_x64_script),
                 )
 
@@ -126,29 +128,29 @@ def deploy(args):
             with Action(f"Copying custom setup script {args.startup_arm64_script}"):
                 scp(
                     source=args.setup_script,
-                    destination=f"root@{ip}:/home/ubuntu/github-runners.scripts/.",
+                    destination=f"root@{ip}:{deploy_scripts_folder}.",
                 )
                 args.startup_arm64_script = os.path.join(
-                    "/home/ubuntu/github-runners.scripts/",
+                    deploy_scripts_folder,
                     os.path.basename(args.startup_arm64_script),
                 )
 
     with Action("Fixing ownership of any copied scripts"):
-        ssh(server, "chown ubuntu:ubuntu /home/ubuntu/github-runners.scripts/*")
+        ssh(server, f"chown -R ubuntu:ubuntu {deploy_scripts_folder}")
 
     if args.logger_config:
         with Action(f"Copying custom logger config {args.logger_config}"):
             scp(
                 source=args.logger_config,
-                destination=f"root@{ip}:/home/ubuntu/github-runners.configs/.",
+                destination=f"root@{ip}:{deploy_configs_folder}.",
             )
             args.logger_config = os.path.join(
-                "/home/ubuntu/github-runners.configs/",
+                deploy_configs_folder,
                 os.path.basename(args.logger_config),
             )
 
     with Action("Fixing ownership of any copied configs"):
-        ssh(server, "chown ubuntu:ubuntu /home/ubuntu/github-runners.configs/*")
+        ssh(server, f"chown -R ubuntu:ubuntu {deploy_configs_folder}")
 
     install(args, server=server)
 
