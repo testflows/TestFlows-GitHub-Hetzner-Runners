@@ -178,25 +178,22 @@ def scale_down(
             level=logging.DEBUG,
         ):
 
-            for idle_runner in idle_runners:
+            for idle_runner_name in list(idle_runners.keys()):
+                idle_runner = idle_runners[idle_runner_name]
 
                 if idle_runner.observed_interval != current_interval:
-                    with Action(
-                        f"Forgetting about idle runner {idle_runner.runner.name}"
-                    ):
-                        idle_runners.pop(idle_runner.runner.name)
+                    with Action(f"Forgetting about idle runner {idle_runner_name}"):
+                        idle_runners.pop(idle_runner_name)
 
                 else:
                     if time.time() - idle_runner.time > max_idle_runner_time:
                         runner_server = None
 
                         with Action(
-                            f"Try to find server for the runner {idle_runner.runner.name}",
+                            f"Try to find server for the runner {idle_runner_name}",
                             ignore_fail=True,
                         ):
-                            runner_server = client.servers.get_by_name(
-                                idle_runner.runner.name
-                            )
+                            runner_server = client.servers.get_by_name(idle_runner_name)
 
                         if runner_server is not None:
                             with Action(
@@ -208,7 +205,7 @@ def scale_down(
 
                         if runner_server is None:
                             with Action(
-                                f"Removing self-hosted runner {idle_runner.runner.name}",
+                                f"Removing self-hosted runner {idle_runner_name}",
                                 ignore_fail=True,
                             ):
                                 repo.remove_self_hosted_runner(idle_runner.runner)
