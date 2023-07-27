@@ -237,15 +237,16 @@ def upgrade(args):
     start(args, server=server)
 
 
-def uninstall(args):
+def uninstall(args, server: BoundServer = None):
     """Uninstall github-runners service from a cloud instance."""
-    server_name = args.server_name
+    if server is None:
+        server_name = args.server_name
 
-    with Action("Logging in to Hetzner Cloud"):
-        client = Client(token=args.hetzner_token)
+        with Action("Logging in to Hetzner Cloud"):
+            client = Client(token=args.hetzner_token)
 
-    with Action(f"Getting server {server_name}"):
-        server: BoundServer = client.servers.get_by_name(server_name)
+        with Action(f"Getting server {server_name}"):
+            server: BoundServer = client.servers.get_by_name(server_name)
 
     with Action("Uninstalling service"):
         command = f"\"su - ubuntu -c 'github-runners service uninstall'\""
