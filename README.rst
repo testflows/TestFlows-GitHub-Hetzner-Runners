@@ -476,6 +476,14 @@ using the **cloud deploy** command.
 
    github-runners deploy
 
+You can specify the version of the package to be installed using the **--version** option. By default, the current local package
+version will be installed on the cloud service server. You can also pass *latest* as the value to install the latest available
+version.
+
+.. code-block:: bash
+
+   github-runners deploy --version latest
+
 The **deploy** command will use the following default values:
 
 :location:
@@ -539,6 +547,22 @@ Using x64 Instance
 By default, the **cpx11** AMD, 2 vCPU, 2GB RAM, shared-cpu x64 instance type is used. If you want to use
 a different x64 instance then specify desired type using the **--type** option.
 
+Redeploying Cloud Service
+=========================
+
+You can change cloud service configuration or cloud service package version without deleting the existing cloud service server
+using the **cloud redeploy** command.
+
+.. code-block:: bash
+
+   github-runners <options> cloud redeploy
+
+:✋ Note:
+   The options that are passed to the **github-runners <options> cloud redeploy** command
+   will be the same options with which the service will be executed.
+
+You can specify the version of the package to be installed using the **--version** option.
+
 Cloud Service Logs
 ===================
 
@@ -558,7 +582,6 @@ For example,
    .. code-block:: bash
 
       github-runners cloud logs -f
-
 
 Cloud Service Status
 =====================
@@ -643,9 +666,20 @@ Changing Cloud Service Options
 ==============================
 
 If you need to change cloud service options such as the **--setup-script** or the **--max-runners** etc.,
-you can do complete service teardown using the **cloud delete** and then the **cloud deploy** commands.
+you can keep the existing server and use **cloud redeploy** command.
+
+.. code-block:: bash
+
+   github-runners <options> cloud redeploy --version latest
 
 When needed, you can also SSH into the cloud service manually and perform changes manually.
+
+You can do complete service teardown using the **cloud delete** and then the **cloud deploy** commands.
+
+.. code-block:: bash
+
+   github-runners cloud delete
+   github-runners <options> cloud deploy --version latest
 
 :✋ Note:
    Complete teardown will not affect any current jobs as the service is designed to
