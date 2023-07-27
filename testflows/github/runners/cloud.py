@@ -84,7 +84,9 @@ def deploy(args, redeploy=False):
 
             if not client.ssh_keys.get_by_name(name=ssh_key.name):
                 with Action(f"Creating SSH key {ssh_key.name}"):
-                    client.ssh_keys.create(name=ssh_key.name, public_key=ssh_key.public_key)
+                    client.ssh_keys.create(
+                        name=ssh_key.name, public_key=ssh_key.public_key
+                    )
 
         with Action(f"Creating new server"):
             response = client.servers.create(
@@ -205,23 +207,7 @@ def install(args, server: BoundServer = None):
         ssh(server, command)
 
 
-def upgrade_package(server, version=None):
-    """Upgrade github-runners application package on a cloud instance."""
-    if version:
-        with Action(f"Upgrading github-runners to version {version}"):
-            ssh(
-                server,
-                f"'sudo -u ubuntu pip3 install testflows.github.runners=={version}'",
-            )
-    else:
-        with Action(f"Upgrading github-runners the latest version"):
-            ssh(
-                server,
-                f"'sudo -u ubuntu pip3 install --upgrade testflows.github.runners'",
-            )
-
-
-def upgrade(args, install_service=False):
+def upgrade(args):
     """Upgrade github-runners application on a cloud instance."""
     server_name = args.server_name
     upgrade_version = args.upgrade_version
@@ -234,7 +220,18 @@ def upgrade(args, install_service=False):
 
     stop(args, server=server)
 
-    upgrade_package(server=server, version=upgrade_version)
+    if upgrade_version:
+        with Action(f"Upgrading github-runners to version {upgrade_version}"):
+            ssh(
+                server,
+                f"'sudo -u ubuntu pip3 install testflows.github.runners=={upgrade_version}'",
+            )
+    else:
+        with Action(f"Upgrading github-runners the latest version"):
+            ssh(
+                server,
+                f"'sudo -u ubuntu pip3 install --upgrade testflows.github.runners'",
+            )
 
     start(args, server=server)
 
