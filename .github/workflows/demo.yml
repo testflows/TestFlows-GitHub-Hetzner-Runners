@@ -16,3 +16,8 @@ jobs:
         run: |
           ls ${{ github.workspace }}
       - run: echo "🍏 This job's status is ${{ job.status }}."
+  
+  Explore-GitHub-Actions-with-Docker:
+    runs-on: [self-hosted image-app-docker-ce]
+    steps:
+      - run: docker run hello-world
