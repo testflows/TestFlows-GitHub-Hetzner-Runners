@@ -99,9 +99,10 @@ def check_image(client: Client, image: Image):
     If image type is not 'system' then use image description to find it.
     """
 
-    if image.type == "system":
+    if image.type in ("system", "app"):
         return client.images.get_by_name(image.name)
     else:
+        # backup or snapshot
         try:
             return [
                 i
