@@ -215,6 +215,36 @@ For example,
       job-name:
          runs-on: [self-hosted, type-cx11, in-ash, image-snapshot-snapshot_description]
 
+--------------------------------------------
+Specifying Custom Runner Server Setup Script
+--------------------------------------------
+
+You can specify custom runner server setup script using the **--setup-script** option.
+
+For example,
+
+:custom_setup.sh:
+   .. code-block:: bash
+   
+      #!/bin/bash
+      set -x
+      echo "Create and configure ubuntu user"
+      adduser ubuntu --disabled-password --gecos ""
+      echo "%wheel   ALL=(ALL:ALL) NOPASSWD:ALL" >> /etc/sudoers
+      addgroup wheel
+      addgroup docker
+      usermod -aG wheel ubuntu
+      usermod -aG sudo ubuntu
+      usermod -aG docker ubuntu
+      # custom setup 
+      apt-get -y update
+      apt-get -y install ca-certificates curl gnupg lsb-release python3-pip git unzip
+
+:command:
+   .. code-block:: bash
+
+      github-runners --setup-script ./custom_setup.sh
+
 -------
 SSH Key
 -------
