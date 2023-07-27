@@ -962,6 +962,12 @@ The following options are supported:
         * **--version version**
           package version, default: *the latest*
 
+      * **ssh**
+        ssh to cloud service
+
+        * **command**
+          print ssh command to cloud service
+
     * **service**
       service commands
 
