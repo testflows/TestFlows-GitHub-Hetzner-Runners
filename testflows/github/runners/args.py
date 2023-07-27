@@ -52,7 +52,7 @@ def env_var_type(name):
 def image_type(v, separator=":"):
     """Image type argument."""
     try:
-        image_type, image_name = v.split(":", 1)
+        image_type, image_name = v.split(separator, 1)
         assert image_type in ("system", "snapshot", "backup", "app")
     except:
         raise ValueError(f"invalid image value {v}")
