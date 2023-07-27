@@ -276,6 +276,16 @@ def argparser():
     )
 
     deploy_cloud_parser.add_argument(
+        "--version",
+        metavar="number|latest",
+        type=str,
+        help=(
+            f"service package version to deploy, either version number or 'latest',\n"
+            f"default: this version {__version__}"
+        ),
+    )
+
+    deploy_cloud_parser.add_argument(
         "-l",
         "--location",
         metavar="name",
@@ -315,6 +325,25 @@ def argparser():
     )
 
     deploy_cloud_parser.set_defaults(func=cloud.deploy)
+
+    redeploy_cloud_parser = cloud_commands.add_parser(
+        "redeploy",
+        help="redeploy on the same cloud service server",
+        description="Redeploy application as a service on the existing server instance.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    redeploy_cloud_parser.add_argument(
+        "--version",
+        metavar="number|latest",
+        type=str,
+        help=(
+            f"service package version to deploy, either version number or 'latest',\n"
+            f"default: this version {__version__}"
+        ),
+    )
+
+    redeploy_cloud_parser.set_defaults(func=cloud.redeploy)
 
     logs_cloud_parser = cloud_commands.add_parser(
         "logs",

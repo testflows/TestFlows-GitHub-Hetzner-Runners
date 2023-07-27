@@ -34,10 +34,12 @@ deploy_scripts_folder = "/home/ubuntu/.github-runners/scripts/"
 deploy_configs_folder = "/home/ubuntu/.github-runners/configs/"
 
 
-def deploy(args):
-    """Deploy github-runners as a service to a
+def deploy(args, redeploy=False):
+    """Deploy or redeploy github-runners as a service to a
     new Hetzner server instance."""
     check(args)
+
+    version = args.version or __version__
 
     server_name = args.server_name
     deploy_setup_script = args.deploy_setup_script or os.path.join(
@@ -47,57 +49,74 @@ def deploy(args):
     with Action("Logging in to Hetzner Cloud"):
         client = Client(token=args.hetzner_token)
 
-    if args.force:
-        with Action(
-            f"Checking if server {server_name} already exists", ignore_fail=True
-        ):
+    if redeploy:
+        with Action(f"Getting server {server_name}"):
             server: BoundServer = client.servers.get_by_name(server_name)
-            with Action(f"Deleting server {server_name}"):
-                server.delete()
 
-    with Action("Checking if default image exists"):
-        args.default_image = check_image(client=client, image=args.default_image)
+        uninstall(server=server)
 
-    with Action("Checking if server image exists"):
-        args.image = check_image(client=client, image=args.image)
+        with Action("Cleaning copied scripts"):
+            ssh(server, f"rm -rf {deploy_scripts_folder}*")
 
-    with Action(f"Checking if SSH key exists"):
-        with open(args.ssh_key, "r", encoding="utf-8") as ssh_key_file:
-            public_key = ssh_key_file.read()
-        key_name = hashlib.md5(public_key.encode("utf-8")).hexdigest()
-        ssh_key = SSHKey(name=key_name, public_key=public_key)
+        with Action("Cleaning copied configs"):
+            ssh(server, f"rm -rf {deploy_configs_folder}*")
 
-        if not client.ssh_keys.get_by_name(name=ssh_key.name):
-            with Action(f"Creating SSH key {ssh_key.name}"):
-                client.ssh_keys.create(name=ssh_key.name, public_key=ssh_key.public_key)
+    else:
+        if args.force:
+            with Action(
+                f"Checking if server {server_name} already exists", ignore_fail=True
+            ):
+                server: BoundServer = client.servers.get_by_name(server_name)
+                with Action(f"Deleting server {server_name}"):
+                    server.delete()
 
-    with Action(f"Creating new server"):
-        response = client.servers.create(
-            name=server_name,
-            server_type=args.type,
-            image=args.image,
-            location=args.location,
-            ssh_keys=[ssh_key],
-        )
-        server: BoundServer = response.server
+        with Action("Checking if default image exists"):
+            args.default_image = check_image(client=client, image=args.default_image)
 
-    with Action(f"Waiting for server to be ready") as action:
-        wait_ready(server=server, timeout=args.max_server_ready_time, action=action)
+        with Action("Checking if server image exists"):
+            args.image = check_image(client=client, image=args.image)
 
-    with Action("Wait for SSH connection to be ready"):
-        wait_ssh(server=server, timeout=args.max_server_ready_time)
+        with Action(f"Checking if SSH key exists"):
+            with open(args.ssh_key, "r", encoding="utf-8") as ssh_key_file:
+                public_key = ssh_key_file.read()
+            key_name = hashlib.md5(public_key.encode("utf-8")).hexdigest()
+            ssh_key = SSHKey(name=key_name, public_key=public_key)
 
-    with Action("Executing setup.sh script"):
-        ssh(
-            server,
-            f"bash -s  < {deploy_setup_script}",
-        )
+            if not client.ssh_keys.get_by_name(name=ssh_key.name):
+                with Action(f"Creating SSH key {ssh_key.name}"):
+                    client.ssh_keys.create(name=ssh_key.name, public_key=ssh_key.public_key)
 
-    with Action("Installing github-runners"):
-        ssh(
-            server,
-            f"'sudo -u ubuntu pip3 install testflows.github.runners=={__version__}'",
-        )
+        with Action(f"Creating new server"):
+            response = client.servers.create(
+                name=server_name,
+                server_type=args.type,
+                image=args.image,
+                location=args.location,
+                ssh_keys=[ssh_key],
+            )
+            server: BoundServer = response.server
+
+        with Action(f"Waiting for server to be ready") as action:
+            wait_ready(server=server, timeout=args.max_server_ready_time, action=action)
+
+        with Action("Wait for SSH connection to be ready"):
+            wait_ssh(server=server, timeout=args.max_server_ready_time)
+
+        with Action("Executing setup.sh script"):
+            ssh(
+                server,
+                f"bash -s  < {deploy_setup_script}",
+            )
+
+    with Action(f"Installing github-runners {version}"):
+        command = f"'sudo -u ubuntu pip3 install testflows.github.runners=={version}'"
+
+        if version.strip().lower() == "latest":
+            command = f"'sudo -u ubuntu pip3 install testflows.github.runners'"
+            if redeploy:
+                command.replace("pip3 install", "pip3 install --upgrade")
+
+        ssh(server, command)
 
     with Action("Copying any custom scripts"):
         ip = ip_address(server)
@@ -155,6 +174,11 @@ def deploy(args):
     install(args, server=server)
 
 
+def redeploy(args, server: BoundServer = None):
+    """Redeploy service on a existing cloud instance."""
+    deploy(args=args, server=server, redeploy=True)
+
+
 def install(args, server: BoundServer = None):
     """Install service on a cloud instance."""
     if server is None:
@@ -181,7 +205,23 @@ def install(args, server: BoundServer = None):
         ssh(server, command)
 
 
-def upgrade(args):
+def upgrade_package(server, version=None):
+    """Upgrade github-runners application package on a cloud instance."""
+    if version:
+        with Action(f"Upgrading github-runners to version {version}"):
+            ssh(
+                server,
+                f"'sudo -u ubuntu pip3 install testflows.github.runners=={version}'",
+            )
+    else:
+        with Action(f"Upgrading github-runners the latest version"):
+            ssh(
+                server,
+                f"'sudo -u ubuntu pip3 install --upgrade testflows.github.runners'",
+            )
+
+
+def upgrade(args, install_service=False):
     """Upgrade github-runners application on a cloud instance."""
     server_name = args.server_name
     upgrade_version = args.upgrade_version
@@ -194,18 +234,7 @@ def upgrade(args):
 
     stop(args, server=server)
 
-    if upgrade_version:
-        with Action(f"Upgrading github-runners to version {upgrade_version}"):
-            ssh(
-                server,
-                f"'sudo -u ubuntu pip3 install testflows.github.runners=={upgrade_version}'",
-            )
-    else:
-        with Action(f"Upgrading github-runners the latest version"):
-            ssh(
-                server,
-                f"'sudo -u ubuntu pip3 install --upgrade testflows.github.runners'",
-            )
+    upgrade_package(server=server, version=upgrade_version)
 
     start(args, server=server)
 

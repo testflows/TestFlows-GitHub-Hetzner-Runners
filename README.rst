@@ -225,7 +225,7 @@ For example,
 
 :custom_setup.sh:
    .. code-block:: bash
-   
+
       #!/bin/bash
       set -x
       echo "Create and configure ubuntu user"
@@ -236,7 +236,7 @@ For example,
       usermod -aG wheel ubuntu
       usermod -aG sudo ubuntu
       usermod -aG docker ubuntu
-      # custom setup 
+      # custom setup
       apt-get -y update
       apt-get -y install ca-certificates curl gnupg lsb-release python3-pip git unzip
 
@@ -988,6 +988,10 @@ The following options are supported:
         * **-f, --force**
           force deployment if already exist
 
+        * **--version number|latest**
+          service package version to deploy, either version number or 'latest',
+          default: current package version
+
         * **-l name, --location name**
           deployment server location, default: *ash*
 
@@ -1001,6 +1005,13 @@ The following options are supported:
 
         * **--setup-script path**
           path to custom deployment server setup script
+
+      * **redeploy**
+        redeploy on the same cloud service server
+
+        * **--version number|latest**
+          service package version to deploy, either version number or 'latest',
+          default: current package version
 
       * **logs**
         get cloud service logs
