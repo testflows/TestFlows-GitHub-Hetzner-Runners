@@ -4,8 +4,12 @@
    :target: https://testflows.com
    :alt: TestFlows Open-source Testing Framework
 
+----
+
 :PyPi:
    `Versions <https://pypi.org/project/testflows.github.runners/>`_
+:License:
+   `Apache-2.0 <https://github.com/testflows/TestFlows-GitHub-Runners/blob/main/LICENSE>`_
 
 ======================================================
 Autoscaling GitHub Actions Runners Using Hetzner Cloud
