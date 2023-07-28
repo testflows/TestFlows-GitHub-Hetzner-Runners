@@ -132,18 +132,18 @@ def scale_down(
             with Action("Looking for idle runners", level=logging.DEBUG):
                 for runner in runners:
                     if runner.status == "online" and not runner.busy:
-                        if (
-                            runner.name.startswith(runner_name_prefix)
-                            and runner.name not in idle_runners
-                        ):
-                            with Action(f"Found new idle runner {runner.name}"):
-                                idle_runners[runner.name] = IdleRunner(
-                                    time=time.time(),
-                                    runner=runner,
-                                    observed_interval=current_interval,
-                                )
-                        idle_runners[runner.name].runner = runner
-                        idle_runners[runner.name].observed_interval = current_interval
+                        if runner.name.startswith(runner_name_prefix):
+                            if runner.name not in idle_runners:
+                                with Action(f"Found new idle runner {runner.name}"):
+                                    idle_runners[runner.name] = IdleRunner(
+                                        time=time.time(),
+                                        runner=runner,
+                                        observed_interval=current_interval,
+                                    )
+                            idle_runners[runner.name].runner = runner
+                            idle_runners[
+                                runner.name
+                            ].observed_interval = current_interval
 
             with Action(
                 "Checking which powered off servers need to be deleted",
