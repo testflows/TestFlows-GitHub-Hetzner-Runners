@@ -36,8 +36,8 @@ from github.WorkflowJob import WorkflowJob
 
 from concurrent.futures import ThreadPoolExecutor, Future
 
-runner_server_prefix = "github-runner-"
-runner_name_prefix = runner_server_prefix
+server_name_prefix = "github-runner-"
+runner_name_prefix = server_name_prefix
 
 
 def server_setup(
@@ -234,10 +234,10 @@ def scale_up(
                             servers = [
                                 server
                                 for server in servers
-                                if server.name.startswith(runner_server_prefix)
+                                if server.name.startswith(server_name_prefix)
                             ]
 
-                        server_name = f"{runner_server_prefix}{job.run_id}-{job.id}"
+                        server_name = f"{server_name_prefix}{job.run_id}-{job.id}"
 
                         if job.status != "completed":
                             if server_name in [server.name for server in servers]:

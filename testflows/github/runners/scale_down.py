@@ -19,7 +19,7 @@ import threading
 from dataclasses import dataclass
 
 from .actions import Action
-from .scale_up import runner_server_prefix, runner_name_prefix
+from .scale_up import server_name_prefix, runner_name_prefix
 
 from github.Repository import Repository
 from github.SelfHostedActionsRunner import SelfHostedActionsRunner
@@ -84,7 +84,7 @@ def scale_down(
             servers = [
                 server
                 for server in servers
-                if server.name.startswith(runner_server_prefix)
+                if server.name.startswith(server_name_prefix)
             ]
 
         with Action("Getting list of self-hosted runners", level=logging.DEBUG):
