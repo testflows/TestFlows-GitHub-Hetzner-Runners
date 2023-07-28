@@ -4,9 +4,8 @@
    :target: https://testflows.com
    :alt: TestFlows Open-source Testing Framework
 
-.. image:: https://badge.fury.io/py/testflows.github.runners.svg
-    :target: https://pypi.org/project/testflows.github.runners/
-    :align: right
+:PyPi:
+   `Versions <https://pypi.org/project/testflows.github.runners/>`_
 
 ======================================================
 Autoscaling GitHub Actions Runners Using Hetzner Cloud
