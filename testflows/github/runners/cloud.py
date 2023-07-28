@@ -136,9 +136,9 @@ def deploy(args, redeploy=False):
                 )
 
         if args.startup_x64_script:
-            with Action(f"Copying custom setup script {args.startup_x64_script}"):
+            with Action(f"Copying custom startup x64 script {args.startup_x64_script}"):
                 scp(
-                    source=args.setup_script,
+                    source=args.startup_x64_script,
                     destination=f"root@{ip}:{deploy_scripts_folder}.",
                 )
                 args.startup_x64_script = os.path.join(
@@ -147,9 +147,11 @@ def deploy(args, redeploy=False):
                 )
 
         if args.startup_arm64_script:
-            with Action(f"Copying custom setup script {args.startup_arm64_script}"):
+            with Action(
+                f"Copying custom startup ARM64 script {args.startup_arm64_script}"
+            ):
                 scp(
-                    source=args.setup_script,
+                    source=args.startup_arm64_script,
                     destination=f"root@{ip}:{deploy_scripts_folder}.",
                 )
                 args.startup_arm64_script = os.path.join(
