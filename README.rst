@@ -40,11 +40,27 @@ to avoid any cleanup. Server instances are not shared between any jobs.
 Features
 --------
 
-* cost efficient on-demand runners using Hetzner Cloud
+* very cost efficient on-demand runners using Hetzner Cloud
 * supports both x64 and ARM64 runners
-* supports specifying custom runner types using job labels
+* supports specifying custom runner server types, images, and locations using job labels
 * simple configuration
-* self-contained and can deploy and manage itself on a cloud instance
+* self-contained and it can deploy, redeploy, and manage itself on a cloud instance
+
+-----------
+Limitations
+-----------
+
+* *Group runners are not supported*
+
+  However, you can run individual services for each repository using different Hetzner Cloud projects.
+
+* *Unique Hetzner Cloud project must be used for each repository*
+
+  However, unique projects allow to easily keep track of runner costs per repository.
+
+* *Idle runner pool is not supported*
+
+  Given that runner servers are created for each job, currently, idle runner pool is not supported.. 
 
 ------------
 Installation
@@ -839,6 +855,9 @@ The Start-up Script
 
 The **startup** script installs GitHub Actions runner. After installation it configures the runner to start in an *--ephemeral* mode.
 The *--ephemeral* mode causes the runner to exit as soon as it completes a job. After the runner exits the server is powered off.
+
+:✋ Note:
+   The **startup** script is executed as **ubuntu** user and therefore you must use **sudo** for any commands that need *root* privileges.
 
 The x64 **startup** script installs and configures x64 version of the runner.
 
