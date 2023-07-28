@@ -39,6 +39,8 @@ to avoid any cleanup. Server instances are not shared between any jobs.
    :backlinks: top
    :depth: 4
 
+----
+
 --------
 Features
 --------
@@ -48,6 +50,8 @@ Features
 * supports specifying custom runner server types, images, and locations using job labels
 * simple configuration
 * self-contained and it can deploy, redeploy, and manage itself on a cloud instance
+
+----
 
 -----------
 Limitations
@@ -65,6 +69,8 @@ Limitations
 
   Given that runner servers are created for each job, currently, idle runner pool is not supported.. 
 
+----
+
 ------------
 Installation
 ------------
@@ -72,6 +78,8 @@ Installation
 .. code-block:: bash
 
    pip3 install testflows.github.runners
+
+----
 
 ------------
 Quick Start
@@ -107,6 +115,8 @@ or you can pass the required options inline as follows:
 
    github-runners --github-token <GITHUB_TOKEN> --github-repository <GITHUB_REPOSITORY> --hetzner-token <HETZNER_TOKEN>
 
+----
+
 -------------------------
 Installation From Sources
 -------------------------
@@ -117,6 +127,8 @@ For development, you can install from sources as follows:
 
    git clone https://github.com/testflows/Github-Runners.git
    ./package && ./install
+
+----
 
 -------------------
 Basic Configuration
@@ -134,6 +146,8 @@ or you can specify these values using the following options:
 * **--github-repository**
 * **--hetzner-token**
 
+----
+
 ------------------------------------
 Specifying Maximum Number of Runners
 ------------------------------------
@@ -143,6 +157,8 @@ based on your Hetzner Cloud limits using the **-m count, --max-runners count** o
 .. code-block:: bash
 
    github-runners --max-runners 40
+
+----
 
 ----------------------
 Specifying Runner Type
@@ -185,6 +201,8 @@ as follows:
    job-name:
       runs-on: [self-hosted, type-cax21]
 
+----
+
 ---------------------------
 Specifying Runner Location
 ---------------------------
@@ -203,6 +221,7 @@ For example,
    job-name:
       runs-on: [self-hosted, type-cx11, in-ash]
 
+----
 
 -----------------------
 Specifying Runner Image
@@ -242,6 +261,8 @@ For example,
       job-name:
          runs-on: [self-hosted, type-cx11, in-ash, image-snapshot-snapshot_description]
 
+----
+
 --------------------------------------------
 Specifying Custom Runner Server Setup Script
 --------------------------------------------
@@ -272,6 +293,8 @@ For example,
 
       github-runners --setup-script ./custom_setup.sh
 
+----
+
 -------
 SSH Key
 -------
@@ -300,6 +323,8 @@ auto-generated to access the runners. The auto-generated key will be placed in *
 is the user under which the **github-runners** service runs on the cloud instance. The auto-generated SSH key will be automatically
 added to your project using the MD5 hash of the public key as the SSH key name.
 
+----
+
 -----------------------
 Running as a Service
 -----------------------
@@ -308,6 +333,8 @@ You can run **github-runners** as a service.
 
 :✋ Note:
    In order to install the service, the user that installed the module must have **sudo** privileges.
+
+----
 
 Installing and Uninstalling
 ===========================
@@ -352,6 +379,8 @@ The **/etc/systemd/system/github-runners.service** file is created with the foll
       [Install]
       WantedBy=multi-user.target
 
+----
+
 Modifying Program Options
 =========================
 
@@ -366,6 +395,7 @@ and start the service back up.
    sudo systemctl daemon-reload
    github-runners service start
 
+----
 
 Checking Status
 ================
@@ -398,6 +428,8 @@ After installation, you can check the status of the service using the **service 
       Jul 24 14:38:33 user-node github-runners[66188]: 07/24/2023 02:38:33 PM   INFO MainThread            main 🍀 Creating scale down se>
       lines 1-16/16 (END)
 
+----
+
 Manual Start and Stop
 =====================
 
@@ -414,6 +446,8 @@ or using **service** system utility
 
    sudo service github-runners start
    sudo service github-runners stop
+
+----
 
 Checking Logs
 =============
@@ -467,6 +501,8 @@ You can dump the full log by omitting the **-f, --follow** option.
       Jul 24 14:24:42 user-node env[62771]: SYSTEMD_EXEC_PID=62771
       ...
 
+----
+
 --------------------------
 Running as a Cloud Service
 --------------------------
@@ -484,6 +520,8 @@ See **-h, --help** for all the available commands.
 .. code-block:: bash
 
    github-runners cloud -h
+
+----
 
 Deployment
 ==========
@@ -574,6 +612,8 @@ Using x64 Instance
 By default, the **cpx11** AMD, 2 vCPU, 2GB RAM, shared-cpu x64 instance type is used. If you want to use
 a different x64 instance then specify desired type using the **--type** option.
 
+----
+
 Redeploying Cloud Service
 =========================
 
@@ -589,6 +629,8 @@ using the **cloud redeploy** command.
    will be the same options with which the service will be executed.
 
 You can specify the version of the package to be installed using the **--version** option.
+
+----
 
 Cloud Service Logs
 ===================
@@ -610,6 +652,8 @@ For example,
 
       github-runners cloud logs -f
 
+----
+
 Cloud Service Status
 =====================
 
@@ -621,6 +665,8 @@ For example,
 
    github-runners cloud status
 
+----
+
 Stopping Cloud Service
 ======================
 
@@ -629,6 +675,8 @@ You can manually stop the **github-runners** service running on a cloud instance
 .. code-block:: bash
 
    github-runners cloud stop
+
+----
 
 Starting Cloud Service
 ======================
@@ -639,6 +687,8 @@ using the **github-runners cloud start** command.
 .. code-block:: bash
 
    github-runners cloud start
+
+----
 
 Installing Cloud Service
 ========================
@@ -657,6 +707,7 @@ You can specify **-f, --force** option to force service re-installation if it is
 
    github-runners <options> cloud install -f
 
+----
 
 Uninstalling Cloud Service
 ==========================
@@ -667,6 +718,8 @@ the **github-runners cloud uninstall** command.
 .. code-block:: bash
 
    github-runners cloud uninstall
+
+----
 
 Upgrading Cloud Service Package
 ===============================
@@ -688,6 +741,8 @@ the specified version otherwise the version is upgraded to the latest available.
 
 The service is not re-installed during the package upgrade process.
 Instead, it is stopped before the upgrade and then started back up
+
+----
 
 Changing Cloud Service Options
 ==============================
@@ -713,6 +768,7 @@ You can do complete service teardown using the **cloud delete** and then the **c
    be restartable. However, some servers might be left in an unfinished state
    but they will be cleaned up when the service is restarted.
 
+----
 
 Deleting Cloud Service
 ======================
@@ -738,6 +794,8 @@ For example,
 
       github-runners cloud --name <custom_name> delete
 
+----
+
 SSH in to Cloud Service
 ==============================
 
@@ -759,6 +817,8 @@ The output will contain the full **ssh** command including the IP address of the
 ::
 
    ssh -q -o "StrictHostKeyChecking no" root@5.161.87.21
+
+----
 
 ------------------
 Scaling Up Runners
@@ -787,6 +847,8 @@ Also,
    This is expected and because for each **queued** job a unique runner will be created the number of runners will be
    equal the number of jobs and therefore under normal conditions all jobs will be executed as expected.
 
+----
+
 Maximum Number of Runners
 =========================
 
@@ -797,6 +859,7 @@ You can set the maximum number of runners using the **--max-runners** option.
 
    github-runners --max-runners 10
 
+----
 
 New Server
 ==========
@@ -837,6 +900,8 @@ the **setup** and **startup** scripts.
 :Image Configuration:
    Each new server instance is configured using the `setup <#the-setup-script>`_ and the `startup <#the-start-up-script>`_ scripts.
 
+----
+
 The Setup Script
 ================
 
@@ -855,6 +920,8 @@ The **setup** script creates and configures **runner** user that has **sudo** pr
         addgroup wheel
         usermod -aG wheel ubuntu
         usermod -aG sudo ubuntu
+
+----
 
 The Start-up Script
 ===================
@@ -905,6 +972,8 @@ The ARM64 **startup** script is similar to the x64 script but install an ARM64 v
      echo "Start runner"
      bash -c "screen -d -m bash -c './run.sh; sudo poweroff'"
 
+----
+
 --------------------
 Scaling Down Runners
 --------------------
@@ -934,6 +1003,8 @@ The scale down service will delete any zombie servers. A zombie server is define
 the **max-runner-registration-time**. The **max-runner-registration-time** can be specified using the **--max-runner-registration-time** option
 which by default is set to *60* sec.
 
+----
+
 ---------------------------
 Handling Failing Conditions
 ---------------------------
@@ -958,6 +1029,8 @@ The program is designed to handle the following failing conditions:
 
 :Runner Created With a Mismatched Labels:
    The behavior will be the same as for the **Runner Never Gets a Job Assigned** case above.
+
+----
 
 ---------------
 Program Options
