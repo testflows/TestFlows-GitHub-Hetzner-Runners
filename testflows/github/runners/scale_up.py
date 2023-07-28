@@ -21,6 +21,7 @@ from .actions import Action
 from .scripts import Scripts
 from .request import request
 from .args import image_type, check_image
+from .logger import logger
 
 from .server import wait_ssh, ssh, wait_ready
 
@@ -209,6 +210,7 @@ def scale_up(
     interval: int,
     max_servers: int,
     max_server_ready_time: int,
+    debug: bool = False,
 ):
     """Scale up service."""
 
@@ -221,80 +223,90 @@ def scale_up(
                 with Action("Terminating scale up service"):
                     break
 
-            with Action("Getting workflow runs", level=logging.DEBUG):
-                workflow_runs = repo.get_workflow_runs(branch="main", status="queued")
+            try:
+                with Action("Getting workflow runs", level=logging.DEBUG):
+                    workflow_runs = repo.get_workflow_runs(
+                        branch="main", status="queued"
+                    )
 
-            futures: list[Future] = []
+                futures: list[Future] = []
 
-            with Action("Looking for jobs", level=logging.DEBUG) as action:
-                for run in workflow_runs:
-                    for job in run.jobs():
-                        with Action("Getting list of servers", level=logging.DEBUG):
-                            servers: list[BoundServer] = client.servers.get_all()
-                            servers = [
-                                server
-                                for server in servers
-                                if server.name.startswith(server_name_prefix)
-                            ]
+                with Action("Looking for jobs", level=logging.DEBUG) as action:
+                    for run in workflow_runs:
+                        for job in run.jobs():
+                            with Action("Getting list of servers", level=logging.DEBUG):
+                                servers: list[BoundServer] = client.servers.get_all()
+                                servers = [
+                                    server
+                                    for server in servers
+                                    if server.name.startswith(server_name_prefix)
+                                ]
 
-                        server_name = f"{server_name_prefix}{job.run_id}-{job.id}"
+                            server_name = f"{server_name_prefix}{job.run_id}-{job.id}"
 
-                        if job.status != "completed":
-                            if server_name in [server.name for server in servers]:
+                            if job.status != "completed":
+                                if server_name in [server.name for server in servers]:
+                                    with Action(
+                                        f"Server already exists for {job.status} {job}",
+                                        level=logging.DEBUG,
+                                    ):
+                                        continue
+
                                 with Action(
-                                    f"Server already exists for {job.status} {job}",
-                                    level=logging.DEBUG,
+                                    f"Found job for which server was not created {job}"
                                 ):
-                                    continue
-
-                            with Action(
-                                f"Found job for which server was not created {job}"
-                            ):
-                                server_type = get_server_type(
-                                    job=job, default=default_type
-                                )
-                                server_location = get_server_location(
-                                    job=job, default=default_location
-                                )
-                                server_image = get_server_image(
-                                    client=client, job=job, default=default_image
-                                )
-                                startup_script = get_startup_script(
-                                    server_type=server_type, scripts=scripts
-                                )
-
-                                if max_servers is not None:
-                                    if len(servers) >= max_servers:
-                                        with Action(
-                                            f"Maximum number of servers {max_servers} has been reached"
-                                        ):
-                                            break
-
-                                futures.append(
-                                    worker_pool.submit(
-                                        create_server,
-                                        setup_worker_pool=setup_worker_pool,
-                                        client=client,
-                                        job=job,
-                                        name=server_name,
-                                        server_type=server_type,
-                                        server_location=server_location,
-                                        server_image=server_image,
-                                        setup_script=scripts.setup,
-                                        startup_script=startup_script,
-                                        github_token=github_token,
-                                        github_repository=github_repository,
-                                        ssh_key=ssh_key,
-                                        timeout=max_server_ready_time,
+                                    server_type = get_server_type(
+                                        job=job, default=default_type
                                     )
-                                )
-                    else:
-                        continue
-                    break
+                                    server_location = get_server_location(
+                                        job=job, default=default_location
+                                    )
+                                    server_image = get_server_image(
+                                        client=client, job=job, default=default_image
+                                    )
+                                    startup_script = get_startup_script(
+                                        server_type=server_type, scripts=scripts
+                                    )
 
-            for future in futures:
-                with Action("Waiting to finish creating servers", ignore_fail=True):
-                    future.result()
+                                    if max_servers is not None:
+                                        if len(servers) >= max_servers:
+                                            with Action(
+                                                f"Maximum number of servers {max_servers} has been reached"
+                                            ):
+                                                break
+
+                                    futures.append(
+                                        worker_pool.submit(
+                                            create_server,
+                                            setup_worker_pool=setup_worker_pool,
+                                            client=client,
+                                            job=job,
+                                            name=server_name,
+                                            server_type=server_type,
+                                            server_location=server_location,
+                                            server_image=server_image,
+                                            setup_script=scripts.setup,
+                                            startup_script=startup_script,
+                                            github_token=github_token,
+                                            github_repository=github_repository,
+                                            ssh_key=ssh_key,
+                                            timeout=max_server_ready_time,
+                                        )
+                                    )
+                        else:
+                            continue
+                        break
+
+                for future in futures:
+                    with Action("Waiting to finish creating servers", ignore_fail=True):
+                        future.result()
+
+            except Exception as exc:
+                msg = f"❗ Error: {type(exc).__name__} {exc}"
+                if debug:
+                    logger.exception(f"{msg}\n{exc}")
+                else:
+                    logger.error(msg)
 
             with Action(
                 f"Sleeping until next interval {interval}s", level=logging.DEBUG

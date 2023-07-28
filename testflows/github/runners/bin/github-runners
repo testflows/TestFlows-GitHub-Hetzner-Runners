@@ -35,6 +35,7 @@ from testflows.github.runners.actions import Action
 from testflows.github.runners.scale_up import scale_up
 from testflows.github.runners.scale_down import scale_down
 from testflows.github.runners.scripts import Scripts, scripts
+from testflows.github.runners.logger import logger
 
 import testflows.github.runners.args as args
 import testflows.github.runners.cloud as cloud
@@ -42,8 +43,6 @@ import testflows.github.runners.service as service
 
 check_args = args.check
 check_image = args.check_image
-
-logger = logging.getLogger("testflows.github.runners")
 
 description = """Auto-scaling GitHub Actions runners service using Hetzner Cloud.
 
@@ -617,6 +616,7 @@ def main(args, scripts: Scripts, worker_pool: ThreadPoolExecutor, terminate_time
                     interval=args.scale_up_interval,
                     max_servers=args.max_runners,
                     max_server_ready_time=args.max_server_ready_time,
+                    debug=args.debug,
                 )
 
             with Action("Creating scale down service"):
@@ -629,6 +629,7 @@ def main(args, scripts: Scripts, worker_pool: ThreadPoolExecutor, terminate_time
                     max_idle_runner_time=args.max_idle_runner_time,
                     max_runner_registration_time=args.max_runner_registration_time,
                     interval=args.scale_down_interval,
+                    debug=args.debug,
                 )
 
             while True:
