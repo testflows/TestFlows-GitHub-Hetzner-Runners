@@ -34,6 +34,7 @@ from hcloud.images.domain import Image
 
 from github.Repository import Repository
 from github.WorkflowJob import WorkflowJob
+from github.WorkflowRun import WorkflowRun
 
 from concurrent.futures import ThreadPoolExecutor, Future
 
@@ -89,6 +90,7 @@ def create_server(
     setup_worker_pool: ThreadPoolExecutor,
     client: Client,
     job: WorkflowJob,
+    labels: list[str],
     name: str,
     server_type: ServerType,
     server_location: Location,
@@ -122,7 +124,7 @@ def create_server(
         startup_script=startup_script,
         github_token=github_token,
         github_repository=github_repository,
-        runner_labels=",".join(job.raw_data["labels"]),
+        runner_labels=",".join(labels),
         timeout=timeout,
     )
 
@@ -225,15 +227,15 @@ def scale_up(
 
             try:
                 with Action("Getting workflow runs", level=logging.DEBUG):
-                    workflow_runs = repo.get_workflow_runs(
-                        branch="main", status="queued"
-                    )
+                    workflow_runs = repo.get_workflow_runs(status="queued")
 
                 futures: list[Future] = []
 
                 with Action("Looking for jobs", level=logging.DEBUG) as action:
                     for run in workflow_runs:
                         for job in run.jobs():
+                            labels = job.raw_data["labels"]
+
                             with Action("Getting list of servers", level=logging.DEBUG):
                                 servers: list[BoundServer] = client.servers.get_all()
                                 servers = [
@@ -251,6 +253,33 @@ def scale_up(
                                         level=logging.DEBUG,
                                     ):
                                         continue
+
+                                if job.status == "in_progress":
+                                    victim_job = None
+
+                                    with Action(
+                                        f"Finding a job from which {job} stole the runner"
+                                    ):
+                                        victim_runner_name = job.raw_data["runner_name"]
+                                        (
+                                            victim_run_id,
+                                            victim_job_id,
+                                        ) = victim_runner_name.rsplit("-", 2)[-2:]
+                                        victim_run: WorkflowRun = repo.get_workflow_run(
+                                            victim_run_id
+                                        )
+
+                                        for victim_run_job in victim_run.jobs():
+                                            if victim_run_job.id == victim_job_id:
+                                                victim_job = victim_run_job
+                                                break
+
+                                        if victim_job is None:
+                                            raise ValueError(
+                                                f"victim job {victim_run_id}-{victim_job_id} was not found"
+                                            )
+
+                                        labels = victim_job.raw_data["labels"]
 
                                 with Action(
                                     f"Found job for which server was not created {job}"
@@ -281,6 +310,7 @@ def scale_up(
                                             setup_worker_pool=setup_worker_pool,
                                             client=client,
                                             job=job,
+                                            labels=labels,
                                             name=server_name,
                                             server_type=server_type,
                                             server_location=server_location,
