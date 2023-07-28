@@ -19,7 +19,7 @@ import threading
 from dataclasses import dataclass
 
 from .actions import Action
-from .scale_up import runner_server_prefix
+from .scale_up import runner_server_prefix, runner_name_prefix
 
 from github.Repository import Repository
 from github.SelfHostedActionsRunner import SelfHostedActionsRunner
@@ -125,7 +125,10 @@ def scale_down(
         with Action("Looking for idle runners", level=logging.DEBUG):
             for runner in runners:
                 if runner.status == "online" and not runner.busy:
-                    if runner.name not in idle_runners:
+                    if (
+                        runner.name.startswith(runner_name_prefix)
+                        and runner.name not in idle_runners
+                    ):
                         with Action(f"Found new idle runner {runner.name}"):
                             idle_runners[runner.name] = IdleRunner(
                                 time=time.time(),

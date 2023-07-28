@@ -37,6 +37,7 @@ from github.WorkflowJob import WorkflowJob
 from concurrent.futures import ThreadPoolExecutor, Future
 
 runner_server_prefix = "github-runner-"
+runner_name_prefix = runner_server_prefix
 
 
 def server_setup(
