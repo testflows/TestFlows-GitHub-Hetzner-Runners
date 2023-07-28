@@ -35,6 +35,7 @@ from hcloud.images.domain import Image
 from github.Repository import Repository
 from github.WorkflowJob import WorkflowJob
 from github.WorkflowRun import WorkflowRun
+from github.SelfHostedActionsRunner import SelfHostedActionsRunner
 
 from concurrent.futures import ThreadPoolExecutor, Future
 
@@ -255,31 +256,12 @@ def scale_up(
                                         continue
 
                                 if job.status == "in_progress":
-                                    victim_job = None
-
                                     with Action(
-                                        f"Finding a job from which {job} stole the runner"
+                                        f"Finding labels for the job from which {job} stole the runner"
                                     ):
-                                        victim_runner_name = job.raw_data["runner_name"]
-                                        (
-                                            victim_run_id,
-                                            victim_job_id,
-                                        ) = victim_runner_name.rsplit("-", 2)[-2:]
-                                        victim_run: WorkflowRun = repo.get_workflow_run(
-                                            victim_run_id
-                                        )
-
-                                        for victim_run_job in victim_run.jobs():
-                                            if victim_run_job.id == victim_job_id:
-                                                victim_job = victim_run_job
-                                                break
-
-                                        if victim_job is None:
-                                            raise ValueError(
-                                                f"victim job {victim_run_id}-{victim_job_id} was not found"
-                                            )
-
-                                        labels = victim_job.raw_data["labels"]
+                                        labels = repo.get_self_hosted_runner(
+                                            job.raw_data["runner_id"]
+                                        ).labels()
 
                                 with Action(
                                     f"Found job for which server was not created {job}"
