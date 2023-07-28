@@ -225,6 +225,9 @@ For example,
 
 
 :docker-ce app:
+   :✋ Note:
+      Currently Docker CE application does not support ARM64 architecture.
+
    .. code-block:: yaml
 
       job-name:
