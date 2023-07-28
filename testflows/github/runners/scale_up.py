@@ -226,7 +226,7 @@ def scale_up(
 
             futures: list[Future] = []
 
-            with Action("Looking for queued jobs", level=logging.DEBUG) as action:
+            with Action("Looking for jobs", level=logging.DEBUG) as action:
                 for run in workflow_runs:
                     for job in run.jobs():
                         with Action("Getting list of servers", level=logging.DEBUG):
@@ -237,11 +237,19 @@ def scale_up(
                                 if server.name.startswith(runner_server_prefix)
                             ]
 
-                        if job.status == "queued":
-                            with Action(f"Found queued job {job}"):
-                                server_name = (
-                                    f"{runner_server_prefix}{job.run_id}-{job.id}"
-                                )
+                        server_name = f"{runner_server_prefix}{job.run_id}-{job.id}"
+
+                        if job.status != "completed":
+                            if server_name in [server.name for server in servers]:
+                                with Action(
+                                    f"Server already exists for {job.status} {job}",
+                                    level=logging.DEBUG,
+                                ):
+                                    continue
+
+                            with Action(
+                                f"Found job for which server was not created {job}"
+                            ):
                                 server_type = get_server_type(
                                     job=job, default=default_type
                                 )
@@ -256,25 +264,11 @@ def scale_up(
                                 )
 
                                 if max_servers is not None:
-                                    with Action(
-                                        f"Checking if maximum number of servers has been reached",
-                                        level=logging.DEBUG,
-                                    ):
-                                        if len(servers) >= max_servers:
-                                            with Action(
-                                                f"Maximum number of servers {max_servers} has been reached"
-                                            ):
-                                                continue
-
-                                with Action(
-                                    f"Checking if server already exists for {job}",
-                                    level=logging.DEBUG,
-                                ) as action:
-                                    if server_name in [
-                                        server.name for server in servers
-                                    ]:
-                                        with Action(f"Server already exists for {job}"):
-                                            continue
+                                    if len(servers) >= max_servers:
+                                        with Action(
+                                            f"Maximum number of servers {max_servers} has been reached"
+                                        ):
+                                            break
 
                                 futures.append(
                                     worker_pool.submit(
@@ -294,9 +288,12 @@ def scale_up(
                                         timeout=max_server_ready_time,
                                     )
                                 )
+                    else:
+                        continue
+                    break
 
             for future in futures:
-                with Action("Waiting to finish creating server", ignore_fail=True):
+                with Action("Waiting to finish creating servers", ignore_fail=True):
                     future.result()
 
             with Action(
