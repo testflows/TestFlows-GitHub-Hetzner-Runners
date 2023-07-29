@@ -313,7 +313,7 @@ Specifying Standby Runners
 You can define standby runner groups to be always ready to pick your jobs using a custom configuration file.
 
 :✋ Note:
-   Standby runner groups can only be defined using a configuration file. 
+   Standby runner groups can only be defined using a configuration file.
    See `Using Configuration File`_ for more details.
 
 Standby runners are always active and allow the jobs to be picked up immediately.
@@ -327,7 +327,7 @@ that has *labels*, *count*, and *replenish_immediately* attributes.
       * **count: count**
       * **replenish_immediately: bool**
 
-where 
+where
 
 * **labels** specifies a list of labels with which standby runners in this group should be created
 * **count** specifies how many runners should be created for the group
@@ -359,7 +359,7 @@ Specifying Logger Configuration
 You can specify custom logger configuration using a configuration file.
 
 :✋ Note:
-   Custom logger configuration can only be specified using a configuration file. 
+   Custom logger configuration can only be specified using a configuration file.
    See `Using Configuration File`_ for more details.
 
 The logger configuration is specified by passing a dictionary as the value to the **logger_config** attribute of the `Config class`_.
@@ -394,7 +394,7 @@ For example,
                  "testflows.github.runners": {"level": "INFO", "handlers": ["default"]},
              },
          }
-     ) 
+     )
 
 ------------------------
 Using Configuration File
@@ -405,6 +405,11 @@ configuration file. The configuration file is Python file that must define the *
 object of the `Config class`_.
 
 :✋ Note:
+   When you mix command line options and custom configuration file,
+   explicit command line options take precedence over the values that are defined
+   for the same parameters in the configuration file.
+
+:✨ Why:
    Defining configuration file in Python instead of YAML or something else
    has a few advantages. For example, you can edit it with
    any Python IDE that provides a convenience of autocompletion and hints.

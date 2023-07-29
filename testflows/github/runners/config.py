@@ -64,11 +64,11 @@ class Config:
     scale_up_interval: count = 15
     scale_down_interval: count = 15
     debug: bool = False
-    config_file: path = None
     # special
     logger_config: dict = None
     cloud: cloud = cloud()
     standby_runners: list[standby_runner] = None
+    config_file: path = None
 
     def __post_init__(self):
         if self.standby_runners is None:
@@ -77,7 +77,7 @@ class Config:
     def update(self, args):
         """Update configuration file using command line arguments."""
         for attr in vars(self):
-            if attr in ["logger_config", "cloud", "standby_runners"]:
+            if attr in ["config_file", "logger_config", "cloud", "standby_runners"]:
                 continue
 
             arg_value = getattr(args, attr)
