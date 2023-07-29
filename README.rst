@@ -53,7 +53,7 @@ Features
 * self-contained program that you can use to deploy, redeploy, and manage the service on a cloud instance
 * supports both x64 and ARM64 runners
 * supports auto-replenishable fixed standby runner pools for jobs to be picked up immediately
-* simpler alternative to `Recommended autoscaling solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_
+* simpler alternative to what GitHub lists in `Recommended autoscaling solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_
 
 ----
 
