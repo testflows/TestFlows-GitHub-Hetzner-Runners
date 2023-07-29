@@ -406,7 +406,7 @@ You can delete all runners, including standby runners, and their servers using t
 
 :✋ Note:
    The **delete** command will not delete cloud service server. If you also want to delete it,
-   you also need to execute **cloud delete** command.
+   you also need to execute **cloud delete** command. For more information, see `Deleting Cloud Service`_ section.
 
 .. code-block:: bash
 
