@@ -311,7 +311,10 @@ Defining Standby Runners
 ------------------------
 
 You can define standby runner groups to be always ready to pick your jobs using a custom configuration file.
-See `Using Configuration File`_ for more details.
+
+:✋ Note:
+   Standby runner groups can only be defined using a configuration file. 
+   See `Using Configuration File`_ for more details.
 
 Standby runners are always active and allow the jobs to be picked up immediately.
 
