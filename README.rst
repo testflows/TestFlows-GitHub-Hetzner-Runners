@@ -446,8 +446,8 @@ You can pass your custom configuration file using the *-c path, --config path** 
 
    github-runners -c config.py
 
-Schema
-======
+Configuration Schema
+=====================
 
 The `Config` object has the following schema:
 
