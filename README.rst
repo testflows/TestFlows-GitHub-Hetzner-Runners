@@ -362,7 +362,7 @@ You can specify custom logger configuration using a configuration file.
    Custom logger configuration can only be specified using a configuration file. 
    See `Using Configuration File`_ for more details.
 
-The logger configuration is specified by passing a dictionary as the value to the **logger_config** attribute of the `Config <https://github.com/testflows/TestFlows-GitHub-Runners/blob/main/testflows/github/runners/config.py#L45>`_ .
+The logger configuration is specified by passing a dictionary as the value to the **logger_config** attribute of the `Config class`_.
 See for information about the logger configuration dictionary, see `Configuration dictionary schema <https://docs.python.org/3/library/logging.config.html#logging-config-dictschema>`_ in Python documentation.
 
 For example,
@@ -402,7 +402,7 @@ Using Configuration File
 
 Instead of passing configuration options using command line arguments, you can use
 configuration file. The configuration file is Python file that must define the **config**
-object of the `Config <https://github.com/testflows/TestFlows-GitHub-Runners/blob/main/testflows/github/runners/config.py#L45>`_ class.
+object of the `Config class`_.
 
 :✋ Note:
    Defining configuration file in Python instead of YAML or something else
@@ -449,7 +449,7 @@ You can pass your custom configuration file using the *-c path, --config path** 
 Configuration Schema
 =====================
 
-The `Config` object has the following schema:
+The `Config class`_ has the following schema:
 
 :schema:
    * **github_token: str**
@@ -1411,3 +1411,5 @@ Table of Contents
 .. contents:: Index:
    :backlinks: top
    :depth: 4
+
+.. _Config class: https://github.com/testflows/TestFlows-GitHub-Runners/blob/main/testflows/github/runners/config.py#L45
