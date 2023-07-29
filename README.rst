@@ -318,9 +318,12 @@ object of the *Config* type.
    has an advantage of being able to edit it with
    any Python IDE that provides a convenience of autocompletion and hints.
 
+
 For example,
 
 :config.py:
+
+   Simple configuration file. You can find a complete example in `examples/config.py <https://github.com/testflows/TestFlows-GitHub-Runners/blob/main/examples/config.py>`_.
 
    .. code-block:: python3
 
@@ -341,7 +344,7 @@ For example,
          ],
       )
 
-You can sanity check your configuration file by executing directly:
+You can sanity check your configuration file by executing it directly:
 
 .. code-block:: bash
 
