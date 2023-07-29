@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import time
+import copy
 import logging
 import threading
 
@@ -136,19 +137,23 @@ def scale_down(
                             zombie_servers.pop(server.name, None)
 
             with Action("Looking for unused runners", level=logging.DEBUG):
+                _standby_runners = copy.deepcopy(standby_runners)
                 for runner in runners:
                     if runner.status == "online" and not runner.busy:
                         if runner.name.startswith(runner_name_prefix):
                             # skip any specified standby runners
                             if runner.name.startswith(standby_runner_name_prefix):
                                 found = False
-                                for standby_runner in standby_runners:
+                                for standby_runner in _standby_runners:
                                     if set(standby_runner.labels).issubset(
                                         set(
                                             [label["name"] for label in runner.labels()]
                                         )
                                     ):
-                                        found = True
+                                        standby_runner.count -= 1
+                                        # check if we have too many
+                                        if standby_runner.count > -1:
+                                            found = True
                                         break
                                 if found:
                                     continue
