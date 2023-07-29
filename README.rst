@@ -307,6 +307,49 @@ For example,
 ----
 
 ------------------------
+Defining Standby Runners
+------------------------
+
+You can define standby runner groups to be always ready to pick your jobs using a custom configuration file.
+See `Using Configuration File`_ for more details.
+
+Standby runners are always active and allow the jobs to be picked up immediately.
+
+More than one standby runner group can be specified. Each group is defined using the **standby_runner** object
+that has *labels*, *count*, and *replenish_immediately* attributes.
+
+:schema:
+   * **standby_runners: list[standby_runner]**
+      * **labels: list[str]**
+      * **count: count**
+      * **replenish_immediately: bool**
+
+where 
+
+* **labels** specifies a list of labels with which standby runners in this group should be created
+* **count** specifies how many runners should be created for the group
+* **replenish_immediately** specifies if the sandby runners should be replenished as soon as any become busy after picking up a job
+
+For example,
+
+:config.py:
+   .. code-block:: python3
+
+      from testflows.github.runners.config import *
+
+      config = Config(
+         standby_runners=[
+            standby_runner(
+                  labels=["type-cx21"],
+                  count=2,
+                  replenish_immediately=True,
+            )
+         ],
+      )
+
+----
+
+------------------------
 Using Configuration File
 ------------------------
 
