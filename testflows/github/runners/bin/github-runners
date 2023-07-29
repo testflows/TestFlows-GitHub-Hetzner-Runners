@@ -18,6 +18,7 @@ import time
 import hashlib
 import logging
 import threading
+import logging.config
 
 from concurrent.futures import ThreadPoolExecutor, Future
 

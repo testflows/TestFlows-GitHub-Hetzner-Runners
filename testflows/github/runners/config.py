@@ -70,6 +70,10 @@ class Config:
     cloud: cloud = cloud()
     standby_runners: list[standby_runner] = None
 
+    def __post_init__(self):
+        if self.standby_runners is None:
+            self.standby_runners = []
+
     def update(self, args):
         """Update configuration file using command line arguments."""
         for attr in vars(self):

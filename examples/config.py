@@ -33,10 +33,10 @@ config = Config(
     github_token=os.getenv("GITHUB_TOKEN"),
     github_repository=os.getenv("GITHUB_REPOSITORY"),
     hetzner_token=os.getenv("HETZNER_TOKEN"),
-    ssh_key="~/.ssh/id_rsa.pub",
+    ssh_key=os.path.expanduser("~/.ssh/id_rsa.pub"),
     max_runners=count(10),
     default_image=image("system:ubuntu-22.04"),
-    default_server_type=server_type("cx11"),
+    default_server_type=server_type("cpx11"),
     default_location=location("ash"),
     workers=count(10),
     setup_script=None,
@@ -61,7 +61,7 @@ config = Config(
     ),
     standby_runners=[
         standby_runner(
-            labels=["type-cpx21"], count=count(1), replenish_immediately=True
+            labels=["type-cpx21"], count=count(3), replenish_immediately=True
         )
     ],
 )
