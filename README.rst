@@ -396,6 +396,32 @@ For example,
          }
      )
 
+----
+
+--------------------------------------
+Deleting All Runners And Their Servers
+--------------------------------------
+
+You can delete all runners, including standby runners, and their servers using the **delete** command.
+
+:✋ Note:
+   The **delete** command will not delete cloud service server. If you also want to delete it,
+   you also need to execute **cloud delete** command.
+
+.. code-block:: bash
+
+   github-runners delete
+
+::
+
+   07/29/2023 07:43:16 PM     INFO       MainThread             all 🍀 Logging in to Hetzner Cloud
+   07/29/2023 07:43:16 PM     INFO       MainThread             all 🍀 Logging in to GitHub
+   07/29/2023 07:43:16 PM     INFO       MainThread             all 🍀 Getting repository testflows/testflows-github-runners
+   07/29/2023 07:43:17 PM     INFO       MainThread             all 🍀 Getting list of self-hosted runners
+   07/29/2023 07:43:17 PM     INFO       MainThread             all 🍀 Getting list of servers
+
+----
+
 ------------------------
 Using Configuration File
 ------------------------
@@ -1308,6 +1334,9 @@ The following options are supported:
 * **commands:**
 
   * *command*
+
+    * **delete**
+      delete all servers
 
     * **cloud**
       cloud service commands

@@ -26,12 +26,13 @@ def request(
     encoding="utf-8",
     timeout=60,
     process_error=True,
+    method=None,
 ):
     """Perform URL request."""
     if headers is None:
         headers = {}
 
-    r = Request(url, headers=headers, data=data)
+    r = Request(url, headers=headers, data=data, method=method)
 
     try:
         with urlopen(r, timeout=timeout) as response:

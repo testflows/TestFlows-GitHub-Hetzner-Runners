@@ -41,6 +41,7 @@ from testflows.github.runners.config import Config, check_image
 import testflows.github.runners.args as args
 import testflows.github.runners.cloud as cloud
 import testflows.github.runners.service as service
+import testflows.github.runners.delete as delete
 
 
 description = """Auto-scaling GitHub Actions runners service using Hetzner Cloud.
@@ -224,6 +225,19 @@ def argparser():
     commands = parser.add_subparsers(
         title="commands", metavar="command", description=None, help=None
     )
+
+    delete_parser = commands.add_parser(
+        "delete",
+        help="delete all servers",
+        description=(
+            f"Delete all servers that provide runners and including any standby runners.\n\n"
+            "Note that cloud service server is not delete. If you have one use\n"
+            "'cloud delete' command to delete it."
+        ),
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    delete_parser.set_defaults(func=delete.all)
 
     cloud_parser = commands.add_parser(
         "cloud",
