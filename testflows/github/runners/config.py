@@ -29,7 +29,7 @@ class standby_runner:
 
 @dataclass
 class deploy:
-    server_type: server_type = "cpx11"
+    server_type: server_type = server_type("cpx11")
     image: image = image("system:ubuntu-22.04")
     location: location = None
     setup_script: path = None
