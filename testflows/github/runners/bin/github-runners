@@ -13,7 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
 import sys
 import time
 import hashlib
@@ -36,13 +35,12 @@ from testflows.github.runners.scale_up import scale_up
 from testflows.github.runners.scale_down import scale_down
 from testflows.github.runners.scripts import Scripts, scripts
 from testflows.github.runners.logger import logger
+from testflows.github.runners.config import Config, check_image
 
 import testflows.github.runners.args as args
 import testflows.github.runners.cloud as cloud
 import testflows.github.runners.service as service
 
-check_args = args.check
-check_image = args.check_image
 
 description = """Auto-scaling GitHub Actions runners service using Hetzner Cloud.
 
@@ -77,24 +75,31 @@ def argparser():
     )
 
     parser.add_argument(
+        "-c",
+        "--config",
+        metavar="path",
+        dest="config_file",
+        type=args.config_type,
+        help="program configuration file",
+        default=None,
+    )
+
+    parser.add_argument(
         "--github-token",
-        type=args.env_var_type("GITHUB_TOKEN"),
+        type=str,
         help="GitHub token, default: $GITHUB_TOKEN environment variable",
-        default="",
     )
 
     parser.add_argument(
         "--github-repository",
-        type=args.env_var_type("GITHUB_REPOSITORY"),
+        type=str,
         help="GitHub repository, default: $GITHUB_REPOSITORY environment variable",
-        default="",
     )
 
     parser.add_argument(
         "--hetzner-token",
-        type=args.env_var_type("HETZNER_TOKEN"),
+        type=str,
         help="Hetzner Cloud token, default: $HETZNER_TOKEN environment variable",
-        default="",
     )
 
     parser.add_argument(
@@ -102,7 +107,6 @@ def argparser():
         metavar="path",
         type=str,
         help="path to public SSH key, default: ~/.ssh/id_rsa.pub",
-        default=os.path.expanduser("~/.ssh/id_rsa.pub"),
     )
 
     parser.add_argument(
@@ -111,7 +115,6 @@ def argparser():
         metavar="count",
         type=args.count_type,
         help="maximum number of active runners, default: 10",
-        default=10,
     )
 
     parser.add_argument(
@@ -123,15 +126,14 @@ def argparser():
             "where the type is either: 'system','snapshot','backup','app',\n"
             "default: system:ubuntu-22.04"
         ),
-        default="system:ubuntu-22.04",
     )
 
     parser.add_argument(
         "--default-type",
+        dest="default_server_type",
         metavar="name",
         type=args.server_type,
         help=("default runner server type name, default: cx11"),
-        default="cx11",
     )
 
     parser.add_argument(
@@ -147,14 +149,6 @@ def argparser():
         metavar="count",
         type=args.count_type,
         help="number of concurrent workers, default: 10",
-        default=10,
-    )
-
-    parser.add_argument(
-        "--logger-config",
-        metavar="path",
-        type=args.path_type,
-        help="custom logger configuration file",
     )
 
     parser.add_argument(
@@ -183,15 +177,13 @@ def argparser():
         metavar="sec",
         type=args.count_type,
         help="maximum time after which a powered off server is deleted, default: 60 sec",
-        default=60,
     )
 
     parser.add_argument(
-        "--max-idle-runner-time",
+        "--max-unused-runner-time",
         metavar="sec",
         type=args.count_type,
-        help="maximum time after which an idle runner is removed and its server deleted, default: 120 sec",
-        default=120,
+        help="maximum time after which an unused runner is removed and its server deleted, default: 120 sec",
     )
 
     parser.add_argument(
@@ -199,7 +191,6 @@ def argparser():
         metavar="sec",
         type=args.count_type,
         help="maximum time after which the server will be deleted if it fails to register a runner, default: 120 sec",
-        default=120,
     )
 
     parser.add_argument(
@@ -207,7 +198,6 @@ def argparser():
         metavar="sec",
         type=args.count_type,
         help="maximum time to wait for the server to be in the running state, default: 120 sec",
-        default=120,
     )
 
     parser.add_argument(
@@ -215,7 +205,6 @@ def argparser():
         metavar="sec",
         type=args.count_type,
         help="scale up service interval, default: 15 sec",
-        default=15,
     )
 
     parser.add_argument(
@@ -223,14 +212,12 @@ def argparser():
         metavar="sec",
         type=args.count_type,
         help="scale down service interval, default: 15 sec",
-        default=15,
     )
 
     parser.add_argument(
         "--debug",
         action="store_true",
         help="enable debugging mode, default: False",
-        default=False,
     )
 
     commands = parser.add_subparsers(
@@ -248,10 +235,9 @@ def argparser():
         "-n",
         "--name",
         metavar="server",
-        dest="server_name",
+        dest="cloud_server_name",
         type=str,
         help="deployment server name, default: github-runners",
-        default="github-runners",
     )
 
     cloud_commands = cloud_parser.add_subparsers(
@@ -288,37 +274,37 @@ def argparser():
         "-l",
         "--location",
         metavar="name",
+        dest="cloud_deploy_location",
         type=args.location_type,
-        help="deployment server location, default: ash",
-        default="ash",
+        help="deployment server location",
     )
 
     deploy_cloud_parser.add_argument(
         "-t",
         "--type",
         metavar="name",
+        dest="cloud_deploy_server_type",
         type=args.server_type,
         help="deployment server type, default: cpx11",
-        default="cpx11",
     )
 
     deploy_cloud_parser.add_argument(
         "-i",
         "--image",
         metavar="type:name_or_description",
+        dest="cloud_deploy_image",
         type=args.image_type,
         help=(
             "deployment server image type and name or description,\n"
             "where the type is either: 'system','snapshot','backup','app',\n"
             "default: system:ubuntu-22.04"
         ),
-        default="system:ubuntu-22.04",
     )
 
     deploy_cloud_parser.add_argument(
         "--setup-script",
         metavar="path",
-        dest="deploy_setup_script",
+        dest="cloud_deploy_setup_script",
         type=args.path_type,
         help="path to custom deployment server setup script",
     )
@@ -568,26 +554,30 @@ def argparser():
     return parser
 
 
-def main(args, scripts: Scripts, worker_pool: ThreadPoolExecutor, terminate_timeout=30):
+def main(
+    config, scripts: Scripts, worker_pool: ThreadPoolExecutor, terminate_timeout=30
+):
     """Auto-scale runners service."""
 
     terminate = threading.Event()
 
     try:
         with Action("Logging in to Hetzner Cloud"):
-            client = Client(token=args.hetzner_token)
+            client = Client(token=config.hetzner_token)
 
         with Action("Logging in to GitHub"):
-            github = Github(login_or_token=args.github_token)
+            github = Github(login_or_token=config.github_token)
 
-        with Action(f"Getting repository {args.github_repository}"):
-            repo: Repository = github.get_repo(args.github_repository)
+        with Action(f"Getting repository {config.github_repository}"):
+            repo: Repository = github.get_repo(config.github_repository)
 
         with Action("Checking if default image exists"):
-            args.default_image = check_image(client=client, image=args.default_image)
+            config.default_image = check_image(
+                client=client, image=config.default_image
+            )
 
         with Action(f"Checking if SSH key exists"):
-            with open(args.ssh_key, "r", encoding="utf-8") as ssh_key_file:
+            with open(config.ssh_key, "r", encoding="utf-8") as ssh_key_file:
                 public_key = ssh_key_file.read()
             key_name = hashlib.md5(public_key.encode("utf-8")).hexdigest()
             ssh_key = SSHKey(name=key_name, public_key=public_key)
@@ -607,16 +597,17 @@ def main(args, scripts: Scripts, worker_pool: ThreadPoolExecutor, terminate_time
                     client=client,
                     scripts=scripts,
                     ssh_key=ssh_key,
-                    default_type=args.default_type,
-                    default_image=args.default_image,
-                    default_location=args.default_location,
+                    default_server_type=config.default_server_type,
+                    default_image=config.default_image,
+                    default_location=config.default_location,
                     worker_pool=worker_pool,
-                    github_token=args.github_token,
-                    github_repository=args.github_repository,
-                    interval=args.scale_up_interval,
-                    max_servers=args.max_runners,
-                    max_server_ready_time=args.max_server_ready_time,
-                    debug=args.debug,
+                    github_token=config.github_token,
+                    github_repository=config.github_repository,
+                    interval=config.scale_up_interval,
+                    max_servers=config.max_runners,
+                    max_server_ready_time=config.max_server_ready_time,
+                    debug=config.debug,
+                    standby_runners=config.standby_runners,
                 )
 
             with Action("Creating scale down service"):
@@ -625,11 +616,12 @@ def main(args, scripts: Scripts, worker_pool: ThreadPoolExecutor, terminate_time
                     terminate=terminate,
                     repo=repo,
                     client=client,
-                    max_powered_off_time=args.max_powered_off_time,
-                    max_idle_runner_time=args.max_idle_runner_time,
-                    max_runner_registration_time=args.max_runner_registration_time,
-                    interval=args.scale_down_interval,
-                    debug=args.debug,
+                    max_powered_off_time=config.max_powered_off_time,
+                    max_unused_runner_time=config.max_unused_runner_time,
+                    max_runner_registration_time=config.max_runner_registration_time,
+                    interval=config.scale_down_interval,
+                    debug=config.debug,
+                    standby_runners=config.standby_runners,
                 )
 
             while True:
@@ -657,14 +649,15 @@ def main(args, scripts: Scripts, worker_pool: ThreadPoolExecutor, terminate_time
 
     except KeyboardInterrupt as exc:
         msg = "❗ KeyboardInterrupt"
-        if args.debug:
+        if config.debug:
             logger.exception(f"{msg}\n{exc}")
         else:
             logger.error(msg)
         sys.exit(1)
+
     except Exception as exc:
         msg = f"❗ Error: {type(exc).__name__} {exc}"
-        if args.debug:
+        if config.debug:
             logger.exception(f"{msg}\n{exc}")
         else:
             logger.error(msg)
@@ -676,12 +669,19 @@ if __name__ == "__main__":
 
     logging_level = logging.INFO
 
-    if args.debug:
+    if args.config_file:
+        config = args.config_file
+    else:
+        config = Config()
+
+    config.update(args)
+
+    if config.debug:
         Action.debug = True
         logging_level = logging.DEBUG
 
-    if args.logger_config:
-        logging.config.fileConfig(args.logger_config)
+    if config.logger_config:
+        logging.config.dictConfig(config.logger_config)
     else:
         logger.setLevel(logging_level)
         handler = logging.StreamHandler(sys.stdout)
@@ -692,30 +692,30 @@ if __name__ == "__main__":
         handler.setFormatter(formatter)
         logger.addHandler(handler)
 
-    if args.setup_script:
-        scripts.setup = args.setup_script
+    if config.setup_script:
+        scripts.setup = config.setup_script
 
-    if args.startup_x64_script:
-        scripts.startup_x64 = args.startup_x64_script
+    if config.startup_x64_script:
+        scripts.startup_x64 = config.startup_x64_script
 
-    if args.startup_arm64_script:
-        scripts.startup_arm64 = args.startup_arm64_script
+    if config.startup_arm64_script:
+        scripts.startup_arm64 = config.startup_arm64_script
 
     if hasattr(args, "func"):
         try:
-            args.func(args=args)
+            args.func(args=args, config=config)
         except KeyboardInterrupt:
-            if args.debug:
+            if config.debug:
                 raise
         except BaseException as exc:
-            if args.debug:
+            if config.debug:
                 raise
             logger.fatal(f"❗ Error: {exc}")
 
     else:
-        check_args(args)
+        config.check()
 
         with ThreadPoolExecutor(
-            max_workers=args.workers + 2, thread_name_prefix="worker"
+            max_workers=config.workers + 2, thread_name_prefix="worker"
         ) as worker_pool:
-            main(args=args, scripts=scripts, worker_pool=worker_pool)
+            main(config=config, scripts=scripts, worker_pool=worker_pool)

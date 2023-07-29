@@ -13,17 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import sys
 import hashlib
 
 from hcloud import Client
 from hcloud.ssh_keys.domain import SSHKey
-from hcloud.server_types.domain import ServerType
 from hcloud.servers.client import BoundServer
-from hcloud.images.domain import Image
-from hcloud.locations.domain import Location
 
 from .actions import Action
-from .args import check, check_image
+from .config import Config, check_image
 from . import __version__
 
 from .server import wait_ready, wait_ssh, ssh, scp, ip_address, ssh_command
@@ -34,23 +32,21 @@ deploy_scripts_folder = "/home/ubuntu/.github-runners/scripts/"
 deploy_configs_folder = "/home/ubuntu/.github-runners/configs/"
 
 
-def deploy(args, redeploy=False):
+def deploy(args, config: Config, redeploy=False):
     """Deploy or redeploy github-runners as a service to a
     new Hetzner server instance."""
-    check(args)
-
+    config.check()
     version = args.version or __version__
-
-    server_name = args.server_name
+    server_name = config.cloud.server_name
 
     with Action("Logging in to Hetzner Cloud"):
-        client = Client(token=args.hetzner_token)
+        client = Client(token=config.hetzner_token)
 
     if redeploy:
         with Action(f"Getting server {server_name}"):
             server: BoundServer = client.servers.get_by_name(server_name)
 
-        uninstall(args=args, server=server)
+        uninstall(args=args, config=config, server=server)
 
         with Action("Cleaning copied scripts"):
             ssh(server, f"rm -rf {deploy_scripts_folder}*")
@@ -59,7 +55,7 @@ def deploy(args, redeploy=False):
             ssh(server, f"rm -rf {deploy_configs_folder}*")
 
     else:
-        deploy_setup_script = args.deploy_setup_script or os.path.join(
+        deploy_setup_script = config.cloud.deploy.setup_script or os.path.join(
             current_dir, "scripts", "deploy", "setup.sh"
         )
 
@@ -72,13 +68,17 @@ def deploy(args, redeploy=False):
                     server.delete()
 
         with Action("Checking if default image exists"):
-            args.default_image = check_image(client=client, image=args.default_image)
+            config.default_image = check_image(
+                client=client, image=config.default_image
+            )
 
         with Action("Checking if server image exists"):
-            args.image = check_image(client=client, image=args.image)
+            config.cloud.deploy.image = check_image(
+                client=client, image=config.cloud.deploy.image
+            )
 
         with Action(f"Checking if SSH key exists"):
-            with open(args.ssh_key, "r", encoding="utf-8") as ssh_key_file:
+            with open(config.ssh_key, "r", encoding="utf-8") as ssh_key_file:
                 public_key = ssh_key_file.read()
             key_name = hashlib.md5(public_key.encode("utf-8")).hexdigest()
             ssh_key = SSHKey(name=key_name, public_key=public_key)
@@ -92,18 +92,20 @@ def deploy(args, redeploy=False):
         with Action(f"Creating new server"):
             response = client.servers.create(
                 name=server_name,
-                server_type=args.type,
-                image=args.image,
-                location=args.location,
+                server_type=config.cloud.deploy.server_type,
+                image=config.cloud.deploy.image,
+                location=config.cloud.deploy.location,
                 ssh_keys=[ssh_key],
             )
             server: BoundServer = response.server
 
         with Action(f"Waiting for server to be ready") as action:
-            wait_ready(server=server, timeout=args.max_server_ready_time, action=action)
+            wait_ready(
+                server=server, timeout=config.max_server_ready_time, action=action
+            )
 
         with Action("Wait for SSH connection to be ready"):
-            wait_ssh(server=server, timeout=args.max_server_ready_time)
+            wait_ssh(server=server, timeout=config.max_server_ready_time)
 
         with Action("Executing setup.sh script"):
             ssh(
@@ -124,104 +126,106 @@ def deploy(args, redeploy=False):
     with Action("Copying any custom scripts"):
         ip = ip_address(server)
 
-        if args.setup_script:
-            with Action(f"Copying custom setup script {args.setup_script}"):
+        if config.setup_script:
+            with Action(f"Copying custom setup script {config.setup_script}"):
                 scp(
-                    source=args.setup_script,
+                    source=config.setup_script,
                     destination=f"root@{ip}:{deploy_scripts_folder}.",
                 )
-                args.setup_script = os.path.join(
+                config.setup_script = os.path.join(
                     deploy_scripts_folder,
-                    os.path.basename(args.setup_script),
+                    os.path.basename(config.setup_script),
                 )
 
-        if args.startup_x64_script:
-            with Action(f"Copying custom startup x64 script {args.startup_x64_script}"):
-                scp(
-                    source=args.startup_x64_script,
-                    destination=f"root@{ip}:{deploy_scripts_folder}.",
-                )
-                args.startup_x64_script = os.path.join(
-                    deploy_scripts_folder,
-                    os.path.basename(args.startup_x64_script),
-                )
-
-        if args.startup_arm64_script:
+        if config.startup_x64_script:
             with Action(
-                f"Copying custom startup ARM64 script {args.startup_arm64_script}"
+                f"Copying custom startup x64 script {config.startup_x64_script}"
             ):
                 scp(
-                    source=args.startup_arm64_script,
+                    source=config.startup_x64_script,
                     destination=f"root@{ip}:{deploy_scripts_folder}.",
                 )
-                args.startup_arm64_script = os.path.join(
+                config.startup_x64_script = os.path.join(
                     deploy_scripts_folder,
-                    os.path.basename(args.startup_arm64_script),
+                    os.path.basename(config.startup_x64_script),
+                )
+
+        if config.startup_arm64_script:
+            with Action(
+                f"Copying custom startup ARM64 script {config.startup_arm64_script}"
+            ):
+                scp(
+                    source=config.startup_arm64_script,
+                    destination=f"root@{ip}:{deploy_scripts_folder}.",
+                )
+                config.startup_arm64_script = os.path.join(
+                    deploy_scripts_folder,
+                    os.path.basename(config.startup_arm64_script),
                 )
 
     with Action("Fixing ownership of any copied scripts"):
         ssh(server, f"chown -R ubuntu:ubuntu {deploy_scripts_folder}")
 
-    if args.logger_config:
-        with Action(f"Copying custom logger config {args.logger_config}"):
+    if config.config_file:
+        with Action(f"Copying config file {config.config_file}"):
             scp(
-                source=args.logger_config,
+                source=config.config_file,
                 destination=f"root@{ip}:{deploy_configs_folder}.",
             )
-            args.logger_config = os.path.join(
+            config.config_file = os.path.join(
                 deploy_configs_folder,
-                os.path.basename(args.logger_config),
+                os.path.basename(config.config_file),
             )
 
     with Action("Fixing ownership of any copied configs"):
         ssh(server, f"chown -R ubuntu:ubuntu {deploy_configs_folder}")
 
-    install(args, server=server)
+    install(args, config=config, server=server)
 
 
-def redeploy(args):
+def redeploy(args, config: Config):
     """Redeploy service on a existing cloud instance."""
-    deploy(args=args, redeploy=True)
+    deploy(args=args, config=config, redeploy=True)
 
 
-def install(args, server: BoundServer = None):
+def install(args, config: Config, server: BoundServer = None):
     """Install service on a cloud instance."""
     if server is None:
-        check(args)
-
-        server_name = args.server_name
+        config.check()
+        server_name = config.cloud.server_name
 
         with Action("Logging in to Hetzner Cloud"):
-            client = Client(token=args.hetzner_token)
+            client = Client(token=config.hetzner_token)
 
         with Action(f"Getting server {server_name}"):
             server: BoundServer = client.servers.get_by_name(server_name)
 
     with Action("Installing service"):
         command = f"\"su - ubuntu -c '"
-        command += f"GITHUB_TOKEN={args.github_token} "
-        command += f"GITHUB_REPOSITORY={args.github_repository} "
-        command += f"HETZNER_TOKEN={args.hetzner_token} "
+        command += f"GITHUB_TOKEN={config.github_token} "
+        command += f"GITHUB_REPOSITORY={config.github_repository} "
+        command += f"HETZNER_TOKEN={config.hetzner_token} "
 
         command += "github-runners"
-        command += command_options(args)
+        command += command_options(config)
         command += " service install -f'\""
 
         ssh(server, command)
 
 
-def upgrade(args):
+def upgrade(args, config: Config):
     """Upgrade github-runners application on a cloud instance."""
-    server_name = args.server_name
+    config.check("hetzner_token")
+    server_name = config.cloud.server_name
     upgrade_version = args.upgrade_version
 
     with Action("Logging in to Hetzner Cloud"):
-        client = Client(token=args.hetzner_token)
+        client = Client(token=config.hetzner_token)
 
     with Action(f"Getting server {server_name}"):
         server: BoundServer = client.servers.get_by_name(server_name)
 
-    stop(args, server=server)
+    stop(args, config=config, server=server)
 
     if upgrade_version:
         with Action(f"Upgrading github-runners to version {upgrade_version}"):
@@ -236,16 +240,17 @@ def upgrade(args):
                 f"'sudo -u ubuntu pip3 install --upgrade testflows.github.runners'",
             )
 
-    start(args, server=server)
+    start(args, config=config, server=server)
 
 
-def uninstall(args, server: BoundServer = None):
+def uninstall(args, config: Config, server: BoundServer = None):
     """Uninstall github-runners service from a cloud instance."""
     if server is None:
-        server_name = args.server_name
+        config.check("hetzner_token")
+        server_name = config.cloud.server_name
 
         with Action("Logging in to Hetzner Cloud"):
-            client = Client(token=args.hetzner_token)
+            client = Client(token=config.hetzner_token)
 
         with Action(f"Getting server {server_name}"):
             server: BoundServer = client.servers.get_by_name(server_name)
@@ -255,14 +260,15 @@ def uninstall(args, server: BoundServer = None):
         ssh(server, command)
 
 
-def delete(args):
+def delete(args, config: Config):
     """Delete github-runners service running
     on Hetzner server instance by stopping the service
     and deleting the server."""
-    server_name = args.server_name
+    config.check("hetzner_token")
+    server_name = config.cloud.server_name
 
     with Action("Logging in to Hetzner Cloud"):
-        client = Client(token=args.hetzner_token)
+        client = Client(token=config.hetzner_token)
 
     with Action(f"Getting server {server_name}"):
         server: BoundServer = client.servers.get_by_name(server_name)
@@ -275,13 +281,14 @@ def delete(args):
         server.delete()
 
 
-def logs(args, server: BoundServer = None):
+def logs(args, config: Config, server: BoundServer = None):
     """Get cloud server service logs."""
     if server is None:
-        server_name = args.server_name
+        config.check("hetzner_token")
+        server_name = config.cloud.server_name
 
         with Action("Logging in to Hetzner Cloud"):
-            client = Client(token=args.hetzner_token)
+            client = Client(token=config.hetzner_token)
 
         with Action(f"Getting server {server_name}"):
             server: BoundServer = client.servers.get_by_name(server_name)
@@ -297,13 +304,14 @@ def logs(args, server: BoundServer = None):
     ssh(server, command, use_logger=False)
 
 
-def status(args, server: BoundServer = None):
+def status(args, config: Config, server: BoundServer = None):
     """Get cloud server service status."""
     if server is None:
-        server_name = args.server_name
+        config.check("hetzner_token")
+        server_name = config.cloud.server_name
 
         with Action("Logging in to Hetzner Cloud"):
-            client = Client(token=args.hetzner_token)
+            client = Client(token=config.hetzner_token)
 
         with Action(f"Getting server {server_name}"):
             server = client.servers.get_by_name(server_name)
@@ -313,13 +321,14 @@ def status(args, server: BoundServer = None):
         ssh(server, command)
 
 
-def start(args, server: BoundServer = None):
+def start(args, config: Config, server: BoundServer = None):
     """Start cloud server service."""
     if server is None:
-        server_name = args.server_name
+        config.check("hetzner_token")
+        server_name = config.cloud.server_name
 
         with Action("Logging in to Hetzner Cloud"):
-            client = Client(token=args.hetzner_token)
+            client = Client(token=config.hetzner_token)
 
         with Action(f"Getting server {server_name}"):
             server = client.servers.get_by_name(server_name)
@@ -329,13 +338,14 @@ def start(args, server: BoundServer = None):
         ssh(server, command)
 
 
-def stop(args, server: BoundServer = None):
+def stop(args, config: Config, server: BoundServer = None):
     """Stop cloud server service."""
     if server is None:
-        server_name = args.server_name
+        config.check("hetzner_token")
+        server_name = config.cloud.server_name
 
         with Action("Logging in to Hetzner Cloud"):
-            client = Client(token=args.hetzner_token)
+            client = Client(token=config.hetzner_token)
 
         with Action(f"Getting server {server_name}"):
             server = client.servers.get_by_name(server_name)
@@ -345,14 +355,15 @@ def stop(args, server: BoundServer = None):
         ssh(server, command)
 
 
-def ssh_client(args):
+def ssh_client(args, config: Config):
     """Open ssh client to github-runners service running
     on Hetzner server instance.
     """
-    server_name = args.server_name
+    config.check("hetzner_token")
+    server_name = config.cloud.server_name
 
     with Action("Logging in to Hetzner Cloud"):
-        client = Client(token=args.hetzner_token)
+        client = Client(token=config.hetzner_token)
 
     with Action(f"Getting server {server_name}"):
         server: BoundServer = client.servers.get_by_name(server_name)
@@ -361,12 +372,13 @@ def ssh_client(args):
         os.system(ssh_command(server=server))
 
 
-def ssh_client_command(args):
+def ssh_client_command(args, config: Config):
     """Return ssh command to connect to github-runners service running
     on Hetzner server instance.
     """
-    server_name = args.server_name
+    config.check("hetzner_token")
+    server_name = config.cloud.server_name
 
-    client = Client(token=args.hetzner_token)
+    client = Client(token=config.hetzner_token)
     server: BoundServer = client.servers.get_by_name(server_name)
-    print(ssh_command(server=server))
+    print(ssh_command(server=server), file=sys.stdout)

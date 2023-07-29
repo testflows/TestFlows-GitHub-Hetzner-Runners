@@ -15,6 +15,8 @@
 Autoscaling GitHub Actions Runners Using Hetzner Cloud
 ======================================================
 
+A simple alternative to Github's `Recommended autoscaling solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_.
+
 The **github-runners** service program starts and monitors queued up jobs for GitHub Actions workflows.
 When a new job is queued up, it creates a new Hetzner Cloud server instance
 that provides an ephemeral GitHub Actions runner. Each server instance is automatically
@@ -45,11 +47,13 @@ to avoid any cleanup. Server instances are not shared between any jobs.
 Features
 --------
 
-* very cost efficient on-demand runners using Hetzner Cloud
-* supports both x64 and ARM64 runners
+* cost efficient on-demand runners using `Hetzner Cloud <https://www.hetzner.com/cloud>`_
+* simple configuration, no Webhooks, no need for AWS lambdas, and no need to setup any GitHub application
 * supports specifying custom runner server types, images, and locations using job labels
-* simple configuration
-* self-contained and it can deploy, redeploy, and manage itself on a cloud instance
+* self-contained program that you can use to deploy, redeploy, and manage the service on a cloud instance
+* supports both x64 and ARM64 runners
+* supports auto-replenishable fixed standby runner pools for jobs to be picked up immediately
+* simpler alternative to `Recommended autoscaling solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_
 
 ----
 
@@ -65,11 +69,15 @@ Limitations
 
   However, unique projects allow to easily keep track of runner costs per repository.
 
-* *Idle runner pool is not supported*
-
-  Given that runner servers are created for each job, currently, idle runner pool is not supported.. 
-
 ----
+
+-------------
+Prerequisites
+-------------
+
+* Python >= 3.7
+* `Hetzner Cloud <https://www.hetzner.com/cloud>_` account
+* GitHub API token with admin privileges to manage self-hosted runners
 
 ------------
 Installation
@@ -295,6 +303,89 @@ For example,
 
 ----
 
+------------------------
+Using Configuration File
+------------------------
+
+Instead of passing configuration options using command line arguments, you can use
+configuration file. The configuration file is Python file that must define the **config**
+object of the *Config* type.
+
+:✋ Note:
+   Defining configuration file in Python instead of YAML or something else
+   has an advantage of being able to edit it with
+   any Python IDE that provides a convenience of autocompletion and hints.
+
+For example,
+
+:config.py:
+
+   .. code-block:: python3
+
+      from testflows.github.runners.config import *
+
+      config = Config(
+         github_token=os.getenv("GITHUB_TOKEN"),
+         github_repository=os.getenv("GITHUB_REPOSITORY"),
+         hetzner_token=os.getenv("HETZNER_TOKEN"),
+         default_server_type=server_type("cx11"),
+         cloud=cloud(server_name="my-github-runners-service"),
+         standby_runners=[
+            standby_runner(
+                  labels=["type-cx21"],
+                  count=2,
+                  replenish_immediately=True,
+            )
+         ],
+      )
+
+You can sanity check your configuration file by executing directly:
+
+.. code-block:: bash
+
+   python3 config.py
+
+
+Schema
+======
+
+The `Config` object has the following schema:
+
+:schema:
+   * **github_token: str**
+   * **github_repository: str**
+   * **hetzner_token: str**
+   * **ssh_key: str**
+   * **max_runners**
+   * **default_image: image**
+   * **default_server_type: server_type**
+   * **default_location: location**
+   * **workers: count**
+   * **setup_script: path**
+   * **startup_x64_script: path**
+   * **startup_arm64_script: path**
+   * **max_powered_off_time: count**
+   * **max_unused_runner_time: count**
+   * **max_runner_registration_time: count**
+   * **max_server_ready_time: count**
+   * **scale_up_interval: count**
+   * **scale_down_interval: count**
+   * **debug: bool**
+   * **logger_config: dict**
+   * **cloud: cloud**
+      * **server_name: str**
+      * **deploy: deploy**
+         * **server_type: server_type**
+         * **image: image**
+         * **location: location**
+         * **setup_script: path**
+   * **standby_runners: list[standby_runner]**
+      * **labels: list[str]**
+      * **count: count**
+      * **replenish_immediately: bool**
+
+----
+
 -------
 SSH Key
 -------
@@ -375,7 +466,7 @@ The **/etc/systemd/system/github-runners.service** file is created with the foll
       Environment=GITHUB_TOKEN=ghp_...
       Environment=GITHUB_REPOSITORY=testflows/github-runners
       Environment=HETZNER_TOKEN=GJ..
-      ExecStart=/home/user/.local/lib/python3.10/site-packages/testflows/github/runners/bin/github-runners --workers 10 --max-powered-off-time 20 --max-idle-runner-time 120 --max-runner-registration-time 60 --scale-up-interval 10 --scale-down-interval 10
+      ExecStart=/home/user/.local/lib/python3.10/site-packages/testflows/github/runners/bin/github-runners --workers 10 --max-powered-off-time 20 --max-unused-runner-time 120 --max-runner-registration-time 60 --scale-up-interval 10 --scale-down-interval 10
       [Install]
       WantedBy=multi-user.target
 
@@ -418,7 +509,7 @@ After installation, you can check the status of the service using the **service 
            Memory: 28.8M
               CPU: 8.274s
            CGroup: /system.slice/github-runners.service
-                   └─66188 python3 /usr/local/bin/github-runners --workers 10 --max-powered-off-time 20 --max-idle-runner-time 120 --max->
+                   └─66188 python3 /usr/local/bin/github-runners --workers 10 --max-powered-off-time 20 --max-unused-runner-time 120 --max->
 
       Jul 24 14:38:33 user-node systemd[1]: Started Autoscaling GitHub Actions Runners.
       Jul 24 14:38:33 user-node github-runners[66188]: 07/24/2023 02:38:33 PM   INFO MainThread            main 🍀 Logging in to Hetzner >
@@ -832,8 +923,8 @@ For each such job, a corresponding Hetzner Cloud server instance is created with
    github-runner-{job.run_id}-{job.id}
 
 The server is configured using default **setup** and **startup** scripts. The runner name is set
-to be the same as the server name so that servers can be deleted for any idle runner that for some reason
-does not pick up a job for which it was created within the **max-idle-runner-time** period.
+to be the same as the server name so that servers can be deleted for any unused runner that for some reason
+does not pick up a job for which it was created within the **max-unused-runner-time** period.
 
 :Note:
    Given that the server name is fixed and specific for each *job.run_id, job.id* tuple, if multiple `github-runners` are running in parallel then
@@ -987,13 +1078,13 @@ that the `startup <#the-start-up-script>`_ script starts an ephemeral runner whi
 The powered off servers are deleted after the **max-powered-off-time** interval which
 can be specified using the **--max-powered-off-time** option which by default is set to *20* sec.
 
-Idle Runners
-============
+Unused Runners
+==============
 
-The scale down service also monitors all the runners that have **idle** status and tries to delete any servers associated with such
-runners if the runner is **idle** for more than the **max-idle-runner-time** period. This is needed in case a runner never gets a job
+The scale down service also monitors all the runners that have **unused** status and tries to delete any servers associated with such
+runners if the runner is **unused** for more than the **max-unused-runner-time** period. This is needed in case a runner never gets a job
 assigned to it and the server will stay in the power on state. This cycle relies on the fact that the runner's name
-is the same as server's name. The **max-idle-runner-time** can be specified using the **--max-idle-runner-time** option which by default
+is the same as server's name. The **max-unused-runner-time** can be specified using the **--max-unused-runner-time** option which by default
 is set to *120* sec.
 
 Zombie Servers
@@ -1025,7 +1116,7 @@ The program is designed to handle the following failing conditions:
    If creation of the server fails for some reason then the scale up service will retry the operation in the next interval as the job's status will remain **queued**.
 
 :Runner Never Gets a Job Assigned:
-   If the runner never gets a job assigned, then the scale down service will remove the runner and delete its server after the **max-idle-runner-time** period.
+   If the runner never gets a job assigned, then the scale down service will remove the runner and delete its server after the **max-unused-runner-time** period.
 
 :Runner Created With a Mismatched Labels:
    The behavior will be the same as for the **Runner Never Gets a Job Assigned** case above.
@@ -1046,6 +1137,9 @@ The following options are supported:
 
 * **--license**
   show program's license and exit
+
+* **-c path, --config path**
+  program configuration file
 
 * **--github-token GITHUB_TOKEN**
   GitHub token, default: *$GITHUB_TOKEN* environment variable
@@ -1076,9 +1170,6 @@ The following options are supported:
 * **-w count, --workers count**
   number of concurrent workers, default: *10*
 
-* **--logger-config path**
-  custom logger configuration file
-
 * **--setup-script path**
   path to custom server setup script
 
@@ -1091,8 +1182,8 @@ The following options are supported:
 * **--max-powered-off-time sec**
   maximum time after which a powered off server is deleted, default: *60* sec
 
-* **--max-idle-runner-time sec**
-  maximum time after which an idle runner is removed and its server deleted, default: *120* sec
+* **--max-unused-runner-time sec**
+  maximum time after which an unused runner is removed and its server deleted, default: *120* sec
 
 * **--max-runner-registration-time**
   maximum time after which the server will be deleted if its runner is not registered with GitHub, default: *120* sec

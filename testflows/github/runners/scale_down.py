@@ -19,7 +19,12 @@ import threading
 from dataclasses import dataclass
 
 from .actions import Action
-from .scale_up import server_name_prefix, runner_name_prefix
+from .scale_up import (
+    server_name_prefix,
+    runner_name_prefix,
+    standby_runner_name_prefix,
+    StandbyRunner,
+)
 from .logger import logger
 
 from github.Repository import Repository
@@ -48,8 +53,8 @@ class ZombieServer:
 
 
 @dataclass
-class IdleRunner:
-    """Idle self-hosted runner."""
+class UnusedRunner:
+    """Unused self-hosted runner."""
 
     time: float
     runner: SelfHostedActionsRunner
@@ -61,17 +66,18 @@ def scale_down(
     repo: Repository,
     client: Client,
     max_powered_off_time: int,
-    max_idle_runner_time: int,
+    max_unused_runner_time: int,
     max_runner_registration_time: int,
     interval: int,
     debug: bool = False,
+    standby_runners: list[StandbyRunner] = None,
 ):
     """Scale down service by deleting any powered off server,
-    any server that has stale idle runner, or any server that failed to register its
+    any server that has unused runner, or any server that failed to register its
     runner (zombie server).
     """
     powered_off_servers: dict[str, PoweredOffServer] = {}
-    idle_runners: dict[str, IdleRunner] = {}
+    unused_runners: dict[str, UnusedRunner] = {}
     zombie_servers: dict[str, ZombieServer] = {}
 
     while True:
@@ -129,19 +135,32 @@ def scale_down(
                         else:
                             zombie_servers.pop(server.name, None)
 
-            with Action("Looking for idle runners", level=logging.DEBUG):
+            with Action("Looking for unused runners", level=logging.DEBUG):
                 for runner in runners:
                     if runner.status == "online" and not runner.busy:
                         if runner.name.startswith(runner_name_prefix):
-                            if runner.name not in idle_runners:
-                                with Action(f"Found new idle runner {runner.name}"):
-                                    idle_runners[runner.name] = IdleRunner(
+                            # skip any specified standby runners
+                            if runner.name.startswith(standby_runner_name_prefix):
+                                found = False
+                                for standby_runner in standby_runners:
+                                    if set(standby_runner.labels).issubset(
+                                        set(
+                                            [label["name"] for label in runner.labels()]
+                                        )
+                                    ):
+                                        found = True
+                                        break
+                                if found:
+                                    continue
+                            if runner.name not in unused_runners:
+                                with Action(f"Found new unused runner {runner.name}"):
+                                    unused_runners[runner.name] = UnusedRunner(
                                         time=time.time(),
                                         runner=runner,
                                         observed_interval=current_interval,
                                     )
-                            idle_runners[runner.name].runner = runner
-                            idle_runners[
+                            unused_runners[runner.name].runner = runner
+                            unused_runners[
                                 runner.name
                             ].observed_interval = current_interval
 
@@ -190,32 +209,30 @@ def scale_down(
                                 zombie_servers.pop(server_name)
 
             with Action(
-                "Checking which idle runners need to be removed and their servers deleted",
+                "Checking which unused runners need to be removed",
                 level=logging.DEBUG,
             ):
 
-                for idle_runner_name in list(idle_runners.keys()):
-                    idle_runner = idle_runners[idle_runner_name]
+                for runner_name in list(unused_runners.keys()):
+                    unused_runner = unused_runners[runner_name]
 
-                    if idle_runner.observed_interval != current_interval:
-                        with Action(f"Forgetting about idle runner {idle_runner_name}"):
-                            idle_runners.pop(idle_runner_name)
+                    if unused_runner.observed_interval != current_interval:
+                        with Action(f"Forgetting about unused runner {runner_name}"):
+                            unused_runners.pop(runner_name)
 
                     else:
-                        if time.time() - idle_runner.time > max_idle_runner_time:
+                        if time.time() - unused_runner.time > max_unused_runner_time:
                             runner_server = None
 
                             with Action(
-                                f"Try to find server for the runner {idle_runner_name}",
+                                f"Try to find server for the runner {runner_name}",
                                 ignore_fail=True,
                             ):
-                                runner_server = client.servers.get_by_name(
-                                    idle_runner_name
-                                )
+                                runner_server = client.servers.get_by_name(runner_name)
 
                             if runner_server is not None:
                                 with Action(
-                                    f"Deleting idle runner server {runner_server.name}",
+                                    f"Deleting unused runner server {runner_server.name}",
                                     ignore_fail=True,
                                 ):
                                     runner_server.delete()
@@ -223,10 +240,11 @@ def scale_down(
 
                             if runner_server is None:
                                 with Action(
-                                    f"Removing self-hosted runner {idle_runner_name}",
+                                    f"Removing self-hosted runner {runner_name}",
                                     ignore_fail=True,
                                 ):
-                                    repo.remove_self_hosted_runner(idle_runner.runner)
+                                    repo.remove_self_hosted_runner(unused_runner.runner)
+
         except Exception as exc:
             msg = f"❗ Error: {type(exc).__name__} {exc}"
             if debug:

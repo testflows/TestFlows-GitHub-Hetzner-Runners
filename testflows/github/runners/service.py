@@ -19,10 +19,9 @@ NAME = "github-runners"
 SERVICE = f"/etc/systemd/system/{NAME}.service"
 
 from .actions import Action
-from .args import check
 
 
-def command_options(args):
+def command_options(config):
     """Build service install command options not including:
 
     --github-token
@@ -31,46 +30,47 @@ def command_options(args):
     --ssh-key
     """
     command = ""
-    command += f" --workers {args.workers}"
-    command += f" --default-type {args.default_type.name}"
+    command += f" --github-token $GITHUB_TOKEN"
+    command += f" --github-repository $GITHUB_REPOSITORY"
+    command += f" --hetzner-token $HETZNER_TOKEN"
+    command += f" --config {config.config_file}" if config.config_file else ""
+    command += f" --workers {config.workers}"
+    command += f" --default-type {config.default_server_type.name}"
     command += (
-        f" --default-location {args.default_location.name}"
-        if args.default_location
+        f" --default-location {config.default_location.name}"
+        if config.default_location
         else ""
     )
-    command += f" --default-image {args.default_image.type}:{args.default_image.name or args.default_image.description}"
-    command += f" --max-runners {args.max_runners}" if args.max_runners else ""
-    command += f" --logger-config {args.logger_config}" if args.logger_config else ""
-    command += f" --setup-script {args.setup_script}" if args.setup_script else ""
+    command += f" --default-image {config.default_image.type}:{config.default_image.name or config.default_image.description}"
+    command += f" --max-runners {config.max_runners}" if config.max_runners else ""
+    command += f" --setup-script {config.setup_script}" if config.setup_script else ""
     command += (
-        f" --startup-x64-script {args.startup_x64_script}"
-        if args.startup_x64_script
+        f" --startup-x64-script {config.startup_x64_script}"
+        if config.startup_x64_script
         else ""
     )
     command += (
-        f" --startup-arm64-script {args.startup_arm64_script}"
-        if args.startup_arm64_script
+        f" --startup-arm64-script {config.startup_arm64_script}"
+        if config.startup_arm64_script
         else ""
     )
     command += (
-        f" --max-powered-off-time {args.max_powered_off_time}"
-        f" --max-idle-runner-time {args.max_idle_runner_time}"
-        f" --max-runner-registration-time {args.max_runner_registration_time}"
-        f" --max-server-ready-time {args.max_server_ready_time}"
-        f" --scale-up-interval {args.scale_up_interval}"
-        f" --scale-down-interval {args.scale_down_interval}"
+        f" --max-powered-off-time {config.max_powered_off_time}"
+        f" --max-unused-runner-time {config.max_unused_runner_time}"
+        f" --max-runner-registration-time {config.max_runner_registration_time}"
+        f" --max-server-ready-time {config.max_server_ready_time}"
+        f" --scale-up-interval {config.scale_up_interval}"
+        f" --scale-down-interval {config.scale_down_interval}"
     )
-    command += f" --debug" if args.debug else ""
+    command += f" --debug" if config.debug else ""
 
     return command
 
 
-def install(args):
+def install(args, config):
     """Install service."""
-    check(args)
-
+    config.check()
     force = args.force
-
     current_dir = os.path.dirname(__file__)
 
     with Action("Checking if service is already installed"):
@@ -91,14 +91,13 @@ def install(args):
             f"Group={os.getgid()}\n"
             "Type=simple\n"
             "Restart=always\n"
-            f"Environment=GITHUB_TOKEN={args.github_token}\n"
-            f"Environment=GITHUB_REPOSITORY={args.github_repository}\n"
-            f"Environment=HETZNER_TOKEN={args.hetzner_token}\n"
+            f"Environment=GITHUB_TOKEN={config.github_token}\n"
+            f"Environment=GITHUB_REPOSITORY={config.github_repository}\n"
+            f"Environment=HETZNER_TOKEN={config.hetzner_token}\n"
             f"ExecStart={binary}"
-            f" --workers {args.workers}"
         )
-        contents += f" --ssh-key {args.ssh_key}"
-        contents += command_options(args)
+        contents += f" --ssh-key {config.ssh_key}"
+        contents += command_options(config)
         contents += "\n" "[Install]\n" "WantedBy=multi-user.target\n"
 
         os.system(f"sudo bash -c \"cat > {SERVICE}\" <<'EOF'\n{contents}\nEOF")
@@ -114,10 +113,8 @@ def install(args):
         os.system(f"sudo service {NAME} start")
 
 
-def uninstall(args):
+def uninstall(args, config=None):
     """Uninstall service."""
-    force = args.force
-
     with Action("Stopping service"):
         os.system(f"sudo service {NAME} stop")
 
@@ -131,7 +128,7 @@ def uninstall(args):
         os.system("sudo systemctl daemon-reload")
 
 
-def logs(args):
+def logs(args, config=None):
     """Get service logs."""
     os.system(
         f'sudo bash -c "journalctl -u {NAME}.service'
@@ -140,16 +137,16 @@ def logs(args):
     )
 
 
-def start(args):
+def start(args, config=None):
     """Start service."""
     os.system(f"sudo service {NAME} start")
 
 
-def stop(args):
+def stop(args, config=None):
     """Stop service."""
     os.system(f"sudo service {NAME} stop")
 
 
-def status(args):
+def status(args, config=None):
     """Get service status."""
     os.system(f"sudo service {NAME} status")
