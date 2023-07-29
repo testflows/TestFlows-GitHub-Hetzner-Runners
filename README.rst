@@ -318,7 +318,7 @@ You can define standby runner groups to be always ready to pick your jobs using 
 
 Standby runners are always active and allow the jobs to be picked up immediately.
 
-More than one standby runner group can be specified. Each group is defined using the **standby_runner** object
+More than one standby runner group can be specified in the **standby_runners**. Each group is defined using the **standby_runner** object
 that has *labels*, *count*, and *replenish_immediately* attributes.
 
 :schema:
@@ -362,7 +362,7 @@ You can specify custom logger configuration using a configuration file.
    Custom logger configuration can only be specified using a configuration file. 
    See `Using Configuration File`_ for more details.
 
-The logger configuration is specified by passing a dictionary as the value to the **logger_config** attribute of the *Config*.
+The logger configuration is specified by passing a dictionary as the value to the **logger_config** attribute of the `Config <https://github.com/testflows/TestFlows-GitHub-Runners/blob/main/testflows/github/runners/config.py#L45>_` .
 See for information about the logger configuration dictionary, see `Configuration dictionary schema <https://docs.python.org/3/library/logging.config.html#logging-config-dictschema>`_ in Python documentation.
 
 For example,
@@ -402,13 +402,12 @@ Using Configuration File
 
 Instead of passing configuration options using command line arguments, you can use
 configuration file. The configuration file is Python file that must define the **config**
-object of the *Config* type.
+object of the `Config <https://github.com/testflows/TestFlows-GitHub-Runners/blob/main/testflows/github/runners/config.py#L45>_` class.
 
 :✋ Note:
    Defining configuration file in Python instead of YAML or something else
-   has an advantage of being able to edit it with
+   has a few advantages. For example, you can edit it with
    any Python IDE that provides a convenience of autocompletion and hints.
-
 
 For example,
 
