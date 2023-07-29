@@ -306,9 +306,9 @@ For example,
 
 ----
 
-------------------------
-Defining Standby Runners
-------------------------
+--------------------------
+Specifying Standby Runners
+--------------------------
 
 You can define standby runner groups to be always ready to pick your jobs using a custom configuration file.
 
@@ -351,6 +351,50 @@ For example,
       )
 
 ----
+
+-------------------------------
+Specifying Logger Configuration
+-------------------------------
+
+You can specify custom logger configuration using a configuration file.
+
+:✋ Note:
+   Custom logger configuration can only be specified using a configuration file. 
+   See `Using Configuration File`_ for more details.
+
+The logger configuration is specified by passing a dictionary as the value to the **logger_config** attribute of the *Config*.
+See for information about the logger configuration dictionary, see `Configuration dictionary schema <https://docs.python.org/3/library/logging.config.html#logging-config-dictschema>`_ in Python documentation.
+
+For example,
+
+:config.py:
+   .. code-block:: python3
+
+      from testflows.github.runners.config import *
+
+      config = Config(
+         logger_config = {
+             "version": 1,
+             "disable_existing_loggers": False,
+             "formatters": {
+                 "standard": {
+                     "format": "%(asctime)s %(levelname)8s %(threadName)16s %(funcName)15s %(message)s",
+                     "datefmt": "%m/%d/%Y %I:%M:%S %p",
+                 },
+             },
+             "handlers": {
+                 "default": {
+                     "level": "INFO",
+                     "formatter": "standard",
+                     "class": "logging.StreamHandler",
+                     "stream": "ext://sys.stdout",
+                 },
+             },
+             "loggers": {
+                 "testflows.github.runners": {"level": "INFO", "handlers": ["default"]},
+             },
+         }
+     ) 
 
 ------------------------
 Using Configuration File
