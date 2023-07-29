@@ -40,7 +40,7 @@ to avoid any cleanup. Server instances are not shared between any jobs.
 
 :🔍 Tip:
    You can easily navigate this documentation page by clicking on any title to jump to the `Table of Contents`_.
-   Try it out and remember if you get lost, just click any title!
+   Try it out, and remember, if you get lost just click any title!
 
 ----
 
