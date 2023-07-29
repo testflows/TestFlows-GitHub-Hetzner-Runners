@@ -76,7 +76,7 @@ Prerequisites
 -------------
 
 * Python >= 3.7
-* `Hetzner Cloud <https://www.hetzner.com/cloud>_` account
+* `Hetzner Cloud <https://www.hetzner.com/cloud>`_ account
 * GitHub API token with admin privileges to manage self-hosted runners
 
 ------------
