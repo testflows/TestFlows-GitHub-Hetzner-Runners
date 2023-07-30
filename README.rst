@@ -1,5 +1,5 @@
-.. image:: https://raw.githubusercontent.com/testflows/TestFlows-ArtWork/master/images/logo.svg
-   :width: 25%
+.. image:: https://raw.githubusercontent.com/testflows/TestFlows-ArtWork/master/images/logo.png
+   :width: 340px
    :align: center
    :target: https://testflows.com
    :alt: TestFlows Open-source Testing Framework
