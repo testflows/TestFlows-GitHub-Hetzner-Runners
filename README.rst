@@ -62,13 +62,13 @@ Features
 Limitations
 -----------
 
-* *Group runners are not supported*
+* **Group runners are not supported**
 
-  However, you can run individual services for each repository using different Hetzner Cloud projects.
+     However, you can run individual services for each repository using different Hetzner Cloud projects.
 
-* *Unique Hetzner Cloud project must be used for each repository*
+* **Unique Hetzner Cloud project must be used for each repository**
 
-  However, unique projects allow to easily keep track of runner costs per repository.
+     However, unique projects allow to easily keep track of runner costs per repository.
 
 ----
 
