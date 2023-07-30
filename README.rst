@@ -363,7 +363,7 @@ You can specify custom logger configuration using a configuration file.
    See `Using Configuration File`_ for more details.
 
 The logger configuration is specified by passing a dictionary as the value to the **logger_config** attribute of the `Config class`_.
-See for information about the logger configuration dictionary, see `Configuration dictionary schema <https://docs.python.org/3/library/logging.config.html#logging-config-dictschema>`_ in Python documentation.
+For more information about the logger configuration dictionary, see `Configuration dictionary schema <https://docs.python.org/3/library/logging.config.html#logging-config-dictschema>`_ in Python documentation.
 
 For example,
 
