@@ -23,6 +23,12 @@ that provides an ephemeral GitHub Actions runner. Each server instance is automa
 powered off when job completes and then powered off servers are
 automatically deleted. Both **x64** and **arm64** runners are supported.
 
+.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/intro.gif
+   :width: 100%
+   :align: center
+   :alt: TestFlows GitHub Runners
+
+
 :❗Warning:
    This program is provided on "AS IS" basis without warranties or conditions of any kind. See LICENSE.
    Use it at your own risk. Manual monitoring is required to make sure server instances are cleaned up properly
