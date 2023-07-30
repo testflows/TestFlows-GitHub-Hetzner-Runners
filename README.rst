@@ -24,7 +24,6 @@ powered off when job completes and then powered off servers are
 automatically deleted. Both **x64** and **arm64** runners are supported.
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/intro.gif
-   :width: 100%
    :align: center
    :alt: TestFlows GitHub Runners
 
