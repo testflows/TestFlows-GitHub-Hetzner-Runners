@@ -476,7 +476,7 @@ You can sanity check your configuration file by executing it directly:
 
    python3 config.py
 
-You can pass your custom configuration file using the *-c path, --config path** command line option.
+You can pass your custom configuration file using the **-c path, --config path** command line option.
 
 .. code-block:: bash
 
