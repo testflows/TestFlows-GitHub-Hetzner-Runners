@@ -57,7 +57,10 @@ Features
 * simple configuration, no Webhooks, no need for AWS lambdas, and no need to setup any GitHub application
 * supports specifying custom runner server types, images, and locations using job labels
 * self-contained program that you can use to deploy, redeploy, and manage the service on a cloud instance
-* supports both x64 and ARM64 runners
+* supports x64 (x86) and ARM64 runners
+* supports using any Hetzner Cloud server types
+* supports runners with pre-installed Docker
+* supports using any standard Hetzner Cloud images and applications
 * supports auto-replenishable fixed standby runner pools for jobs to be picked up immediately
 * simpler alternative to what GitHub lists in `Recommended autoscaling solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_
 
