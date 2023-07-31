@@ -17,6 +17,10 @@ Autoscaling GitHub Actions Runners Using Hetzner Cloud
 
 A simple alternative to Github's `Recommended autoscaling solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_.
 
+:🔍 Tip:
+   You can easily navigate this documentation page by clicking on any title to jump to the `Table of Contents`_.
+   Try it out, and remember, if you get lost just click any title!
+
 The **github-runners** service program starts and monitors queued up jobs for GitHub Actions workflows.
 When a new job is queued up, it creates a new Hetzner Cloud server instance
 that provides an ephemeral GitHub Actions runner. Each server instance is automatically
@@ -41,14 +45,6 @@ to avoid any cleanup. Server instances are not shared between any jobs.
    Currently Hetzner Cloud server instances are billed on hourly basis. So a job that takes 1 min will be billed
    the same way as for a job that takes 59 minutes. Therefore, the minimal cost
    for any job is the cost of the server for 1 hour plus the cost for one public IPv4 address.
-
-----
-
-:🔍 Tip:
-   You can easily navigate this documentation page by clicking on any title to jump to the `Table of Contents`_.
-   Try it out, and remember, if you get lost just click any title!
-
-----
 
 --------
 Features
