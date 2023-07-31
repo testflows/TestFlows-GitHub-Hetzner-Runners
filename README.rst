@@ -150,7 +150,7 @@ for a GitHub repository and a Hetzner Cloud project that we'll create.
 Installing TestFlows Github Runners
 ====================================
 
-❶ Before we get started, you will need to install **github-runners**. See `Installation`_ for more details.
+❶ Before we get started, you will need to install **github-runners**. See the `Installation`_ section for more details.
 
 .. code-block:: bash
 
@@ -262,6 +262,7 @@ With the GitHub repository and GitHub and Hetzner Cloud tokens in hand, we can d
 to Hetzner Cloud instance. This way the service is not running on your local machine.
 
 The deployment we'll create a **github-runners** instance in your Hetzner Cloud project on which the service will be running.
+See the `Running as a Cloud Service`_ section for details.
 
 ❶ To deploy the service run the **github-runners cloud deploy** command and specify your
 GitHub repository, GitHub and Hetzner Cloud tokens using
@@ -297,7 +298,7 @@ As you can see our job was executed and completed using our own self-hosted runn
 :✋ Note:
 
    If you run into any issues you can check cloud service logs using the
-   **github-runners cloud logs -f** command. For other cloud service commands see `Running as a Cloud Service`_ section.
+   **github-runners cloud logs -f** command. For other cloud service commands see the `Running as a Cloud Service`_ section.
    
    .. code-block:: bash
    
