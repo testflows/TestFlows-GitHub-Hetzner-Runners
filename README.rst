@@ -234,7 +234,7 @@ The repository name will have the following format:
    
    vzakaznikov/demo-testflows-github-runners
 
-❷ Now, create an example GitHub Actions workflow as described in `Quickstart for GitHub Actions <https://docs.github.com/en/actions/quickstart>`_.
+❷ Now, create an example GitHub Actions workflow as described in the `Quickstart for GitHub Actions <https://docs.github.com/en/actions/quickstart>`_ article.
 Note that we need to modify the example YAML configuration and specify that our job will run on a runner with the **self-hosted** and the **type-cpx21**
 labels.
 
