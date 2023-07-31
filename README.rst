@@ -28,7 +28,7 @@ powered off when job completes and then powered off servers are
 automatically deleted. Both **x64** (*x86*) and **arm64** (*arm*) runners are supported.
 See `Features`_ and `Limitations`_ for more details.
 
-.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/intro.gif
+.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/docs/images/intro.gif
    :align: center
    :alt: TestFlows GitHub Runners
 
@@ -98,10 +98,10 @@ is part of the **PATH**.
 
 .. code-block:: bash
 
-   which github-runners 
+   which github-runners
 
 ::
-   
+
    ~/.local/bin/github-runners
 
 If your **PATH** is missing this folder, on Ubuntu, modify your *~/.profile* and add the following section:
@@ -152,7 +152,7 @@ Alternatively, you can pass the required options using the command line as follo
 Getting Started Tutorial
 ========================
 
-:✅ Launch your first self-hosted runner in: 
+:✅ Launch your first self-hosted runner in:
    5 minutes
 
 This tutorial will guide you on how to use the **github-runners** program to provide autoscaling GitHub Actions runners
@@ -178,23 +178,23 @@ Installing TestFlows Github Runners
 
    1.3.230731.1173142
 
-:✋ Note: 
+:✋ Note:
    The **github-runners** utility is installed in to the *~/.local/bin/* folder. Please make sure that this folder
    is part of the **PATH**.
 
    .. code-block:: bash
 
-      which github-runners 
+      which github-runners
 
    ::
-      
+
       ~/.local/bin/github-runners
 
    If your **PATH** is missing this folder, on Ubuntu, you can modify your *~/.profile* and add the following section:
 
    :~/.profile:
       .. code-block:: bash
-   
+
          # set PATH so it includes user's private bin if it exists
          if [ -d "$HOME/.local/bin" ] ; then
              PATH="$HOME/.local/bin:$PATH"
@@ -213,13 +213,13 @@ Before using the **github-runners**, you need a GitHub repository with a GitHub 
 
 The repository name will have the following format:
 
-:: 
+::
 
    <username>/demo-testflows-github-runners
 
 :For me, my GitHub repository is:
    ::
-   
+
    vzakaznikov/demo-testflows-github-runners
 
 ❷ Now, create an example GitHub Actions workflow as described in the `Quickstart for GitHub Actions <https://docs.github.com/en/actions/quickstart>`_ article.
@@ -236,7 +236,7 @@ So, the complete *demo.yml* that uses self-hosted runner is as follows:
 :demo.yml:
 
    .. code-block:: yaml
-   
+
       name: GitHub Actions Demo
       run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
       on: [push]
@@ -261,14 +261,14 @@ So, the complete *demo.yml* that uses self-hosted runner is as follows:
 
 :For me, my *demo* GitHub token is:
    ::
-   
+
       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
 
 You should now have your GitHub repository ready.
 
 See these steps in action:
 
-.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/github_create_repo_and_token.gif
+.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/docs/images/github_create_repo_and_token.gif
    :align: center
    :alt: Creating GitHub Repository and Token
 
@@ -291,7 +291,7 @@ You should now have your Hetzner Cloud project ready.
 
 See these steps in action:
 
-.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/hetzner_create_project_and_token.gif
+.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/docs/images/hetzner_create_project_and_token.gif
    :align: center
    :alt: Creating GitHub Repository and Token
 
@@ -320,7 +320,7 @@ You should now have the cloud service up and running.
 
 See these steps in action:
 
-.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/cloud_deploy.gif
+.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/docs/images/cloud_deploy.gif
    :align: center
    :alt: Deploying Cloud Service
 
@@ -333,7 +333,7 @@ spins up a new runner to complete any queued up GitHub Actions jobs in your GitH
 
 See this step in action:
 
-.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/github_job_completed.gif
+.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/docs/images/github_job_completed.gif
    :align: center
    :alt: Waiting For GitHub Actions Job to Complete
 
@@ -343,9 +343,9 @@ As you can see our job was executed and completed using our own self-hosted runn
 
    If you run into any issues you can check cloud service logs using the
    **github-runners cloud logs -f** command. For other cloud service commands see the `Running as a Cloud Service`_ section.
-   
+
    .. code-block:: bash
-   
+
       github-runners cloud logs -f
 
 =========================
