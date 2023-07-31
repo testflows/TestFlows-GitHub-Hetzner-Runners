@@ -270,6 +270,7 @@ See these steps in action:
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/docs/images/github_create_repo_and_token.gif
    :align: center
+   :width: 790px
    :alt: Creating GitHub Repository and Token
 
 ----------------------------------------
@@ -293,6 +294,7 @@ See these steps in action:
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/docs/images/hetzner_create_project_and_token.gif
    :align: center
+   :width: 790px
    :alt: Creating GitHub Repository and Token
 
 ----------------------
@@ -322,6 +324,7 @@ See these steps in action:
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/docs/images/cloud_deploy.gif
    :align: center
+   :width: 790px
    :alt: Deploying Cloud Service
 
 ------------------------------------------
@@ -335,6 +338,7 @@ See this step in action:
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/docs/images/github_job_completed.gif
    :align: center
+   :width: 790px
    :alt: Waiting For GitHub Actions Job to Complete
 
 As you can see our job was executed and completed using our own self-hosted runner!
