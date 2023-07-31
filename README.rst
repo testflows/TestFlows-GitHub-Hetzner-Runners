@@ -276,7 +276,7 @@ So, the complete *demo.yml* that uses self-hosted runner is as follows:
    
       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
 
-----
+You should now have your GitHub repository ready.
 
 See these steps in action:
 
@@ -300,7 +300,7 @@ Next you will need to create a Hetzner Cloud project and an API token that we ca
 
       5Up04IHuY8mC7l0JxKwh3Aps4ghGIyL0NJ9rGlhyAmmkddzuRreR1YstTSTFCG0N
 
-----
+You should now have your Hetzner Cloud project ready.
 
 See these steps in action:
 
@@ -330,7 +330,7 @@ GitHub repository, GitHub and Hetzner Cloud tokens using
    export GITHUB_TOKEN=
    github-runners cloud deploy
 
-----
+You should now have the cloud service up and running.
 
 See these steps in action:
 
@@ -345,8 +345,6 @@ Waiting for GitHub Actions Job to Complete
 
 ❶ The **github-runners** cloud service is now running. So, now you can just seat back and wait until **github-runners**
 spins up a new runner to complete any queued up GitHub Actions jobs in your GitHub repository.
-
-----
 
 See this step in action:
 
