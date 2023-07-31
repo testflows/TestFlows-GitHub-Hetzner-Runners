@@ -172,6 +172,8 @@ Getting Started Tutorial
 This tutorial will guide you on how to use the **github-runners** program to provide autoscaling GitHub Actions runners
 for a GitHub repository and a Hetzner Cloud project that you'll create.
 
+----
+
 Installing TestFlows Github Runners
 ====================================
 
@@ -215,6 +217,8 @@ Installing TestFlows Github Runners
 
 In order to launch the **github-runners** program, we'll need to specify GitHub repository as well as GitHub and
 Hetzner Cloud tokens. So, let's create these.
+
+----
 
 Creating GitHub Repository with Actions Workflow and Token
 ==========================================================
@@ -351,8 +355,6 @@ See this step in action:
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/github_job_completed.gif
    :align: center
    :alt: Waiting For GitHub Actions Job to Complete
-
-----
 
 As you can see our job was executed and completed using our own self-hosted runner!
 
