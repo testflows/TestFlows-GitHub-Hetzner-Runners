@@ -327,7 +327,7 @@ See these steps in action:
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/docs/images/cloud_deploy.gif
    :align: center
-   :width: 790px
+   :width: 625px
    :alt: Deploying Cloud Service
 
 ------------------------------------------
