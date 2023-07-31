@@ -217,10 +217,11 @@ The repository name will have the following format:
 
    <username>/demo-testflows-github-runners
 
-:For me, my GitHub repository is:
-   ::
+For me, my GitHub repository is:
 
-      vzakaznikov/demo-testflows-github-runners
+::
+
+   vzakaznikov/demo-testflows-github-runners
 
 ❷ Now, create an example GitHub Actions workflow as described in the `Quickstart for GitHub Actions <https://docs.github.com/en/actions/quickstart>`_ article.
 Note that we need to modify the example YAML configuration and specify that our job will run on a runner with the **self-hosted** and the **type-cpx21**
@@ -259,10 +260,11 @@ So, the complete *demo.yml* that uses self-hosted runner is as follows:
 
 ❸ Finally, you will need to create a GitHub API token with the **workflow** privileges. Make sure to save the token!
 
-:For me, my *demo* GitHub token is:
-   ::
+For me, my *demo* GitHub token is:
 
-      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
+::
+
+   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
 
 You should now have your GitHub repository ready.
 
@@ -283,10 +285,11 @@ Next you will need to create a Hetzner Cloud project and an API token that we ca
 
 ❷ Now, create an API token and save it.
 
-:For me, the Hetzner Cloud token for my *Demo GitHub Runners* project is:
-   ::
-
-      5Up04IHuY8mC7l0JxKwh3Aps4ghGIyL0NJ9rGlhyAmmkddzuRreR1YstTSTFCG0N
+For me, the Hetzner Cloud token for my *Demo GitHub Runners* project is:
+   
+::
+   
+   5Up04IHuY8mC7l0JxKwh3Aps4ghGIyL0NJ9rGlhyAmmkddzuRreR1YstTSTFCG0N
 
 You should now have your Hetzner Cloud project ready.
 
