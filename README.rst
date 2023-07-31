@@ -630,11 +630,9 @@ For example,
          }
      )
 
-----
-
---------------------------------------
+======================================
 Deleting All Runners And Their Servers
---------------------------------------
+======================================
 
 You can delete all runners, including standby runners, and their servers using the **delete** command.
 
@@ -654,11 +652,9 @@ You can delete all runners, including standby runners, and their servers using t
    07/29/2023 07:43:17 PM     INFO       MainThread             all 🍀 Getting list of self-hosted runners
    07/29/2023 07:43:17 PM     INFO       MainThread             all 🍀 Getting list of servers
 
-----
-
-------------------------
+========================
 Using Configuration File
-------------------------
+========================
 
 Instead of passing configuration options using command line arguments, you can use
 configuration file. The configuration file is Python file that must define the **config**
@@ -711,8 +707,9 @@ You can pass your custom configuration file using the **-c path, --config path**
 
    github-runners -c config.py
 
+--------------------
 Configuration Schema
-=====================
+--------------------
 
 The `Config class`_ has the following schema:
 
@@ -749,11 +746,9 @@ The `Config class`_ has the following schema:
       * **count: count**
       * **replenish_immediately: bool**
 
-----
-
--------
-SSH Key
--------
+==================
+Specifying SSH Key
+==================
 
 All server instances that are created are accessed via SSH using the **ssh** utility and therefore you must provide a valid SSH key
 using the **--ssh-key** option. If the **--ssh-key** option is no specified, then the *~/.ssh/id_rsa.pub* default key path will be used.
@@ -765,13 +760,15 @@ The SSH key will be automatically added to your project using the MD5 hash of th
 
 Most GitHub users already have an SSH key associated with the account. If you want to know how to add an SSH key, see `Adding a new SSH key to your GitHub account    <https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account>`_ article.
 
+----------------------
 Generating New SSH Key
-=======================
+----------------------
 
 If you need to generate a new SSH key, see `Generating a new SSH key and adding it to the ssh-agent <https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent>`_ article.
 
-Cloud Deployment
-================
+----------------------------
+SSH Keys in Cloud Deployment
+----------------------------
 
 If you are deploying the **github-runners** program as a cloud service using the **github-runners <options> cloud deploy** command, then
 after provisoning a new cloud server instance that will host the **github-runners** service, a new SSH key will be
@@ -779,21 +776,18 @@ auto-generated to access the runners. The auto-generated key will be placed in *
 is the user under which the **github-runners** service runs on the cloud instance. The auto-generated SSH key will be automatically
 added to your project using the MD5 hash of the public key as the SSH key name.
 
-----
-
------------------------
+====================
 Running as a Service
------------------------
+====================
 
 You can run **github-runners** as a service.
 
 :✋ Note:
    In order to install the service, the user that installed the module must have **sudo** privileges.
 
-----
-
+---------------------------
 Installing and Uninstalling
-===========================
+---------------------------
 
 After installation, you can use **service install** and **service uninstall** commands to install and
 uninstall the service.
@@ -835,10 +829,9 @@ The **/etc/systemd/system/github-runners.service** file is created with the foll
       [Install]
       WantedBy=multi-user.target
 
-----
-
+-------------------------
 Modifying Program Options
-=========================
+-------------------------
 
 If you want to modify service program options you can stop the service,
 edit the **/etc/systemd/system/github-runners.service** file by hand, then reload service daemon,
@@ -851,10 +844,9 @@ and start the service back up.
    sudo systemctl daemon-reload
    github-runners service start
 
-----
-
+---------------
 Checking Status
-================
+---------------
 
 After installation, you can check the status of the service using the **service status** command.
 
@@ -884,10 +876,9 @@ After installation, you can check the status of the service using the **service 
       Jul 24 14:38:33 user-node github-runners[66188]: 07/24/2023 02:38:33 PM   INFO MainThread            main 🍀 Creating scale down se>
       lines 1-16/16 (END)
 
-----
-
+---------------------
 Manual Start and Stop
-=====================
+---------------------
 
 You can start and stop the service using the **service start** and **service stop** commands as follows:
 
@@ -903,10 +894,9 @@ or using **service** system utility
    sudo service github-runners start
    sudo service github-runners stop
 
-----
-
+-------------
 Checking Logs
-=============
+-------------
 
 You can get the logs for the service using the **service logs** command.
 
@@ -957,11 +947,9 @@ You can dump the full log by omitting the **-f, --follow** option.
       Jul 24 14:24:42 user-node env[62771]: SYSTEMD_EXEC_PID=62771
       ...
 
-----
-
---------------------------
+==========================
 Running as a Cloud Service
---------------------------
+==========================
 
 Instead of running **github-runners** program locally as a standalone application or as a service.
 You can easily deploy **github-runners** to run on a Hetzner Cloud instance.
@@ -977,10 +965,9 @@ See **-h, --help** for all the available commands.
 
    github-runners cloud -h
 
-----
-
-Deployment
-==========
+---------
+Deploying
+---------
 
 You can deploy **github-runners** as a service to a new Hetzner Cloud server instance, that will be created for you automatically,
 using the **cloud deploy** command.
@@ -1047,7 +1034,7 @@ The cloud instance that runs the **github-runners** service can either be x64 or
 AMD, 2 vCPU, 2GB RAM, shared-cpu x64 instance type is used.
 
 Using ARM64 Instance
-++++++++++++++++++++
+====================
 
 If you want to deploy the **github-runners** service to an ARM64 instance, then you must specify the instance
 type using the **--type** option.
@@ -1063,15 +1050,14 @@ as the value of the **--type** as follows:
    github-runners deploy --location fsn1 --type cax21 --image ubuntu-22.04
 
 Using x64 Instance
-++++++++++++++++++
+=================
 
 By default, the **cpx11** AMD, 2 vCPU, 2GB RAM, shared-cpu x64 instance type is used. If you want to use
 a different x64 instance then specify desired type using the **--type** option.
 
-----
-
+-------------------------
 Redeploying Cloud Service
-=========================
+-------------------------
 
 You can change cloud service configuration or cloud service package version without deleting the existing cloud service server
 using the **cloud redeploy** command.
@@ -1086,10 +1072,9 @@ using the **cloud redeploy** command.
 
 You can specify the version of the package to be installed using the **--version** option.
 
-----
-
+------------------
 Cloud Service Logs
-===================
+------------------
 
 You can check logs for the **github-runners** service running on a cloud instance using the **github-runners cloud logs** command.
 Specify **-f, --follow** if you want to follow the logs journal.
@@ -1108,10 +1093,9 @@ For example,
 
       github-runners cloud logs -f
 
-----
-
+--------------------
 Cloud Service Status
-=====================
+--------------------
 
 You can check the status of the **github-runners** service running on a cloud instance using the **github-runners cloud status** command.
 
@@ -1121,10 +1105,9 @@ For example,
 
    github-runners cloud status
 
-----
-
+----------------------
 Stopping Cloud Service
-======================
+----------------------
 
 You can manually stop the **github-runners** service running on a cloud instance using the **github-runners cloud stop** command.
 
@@ -1132,10 +1115,9 @@ You can manually stop the **github-runners** service running on a cloud instance
 
    github-runners cloud stop
 
-----
-
+----------------------
 Starting Cloud Service
-======================
+----------------------
 
 You can manually start the **github-runners** service running on a cloud instance after it was being manually stopped
 using the **github-runners cloud start** command.
@@ -1144,10 +1126,9 @@ using the **github-runners cloud start** command.
 
    github-runners cloud start
 
-----
-
+------------------------
 Installing Cloud Service
-========================
+------------------------
 
 You can manually force installation of the **github-runners** service running on a cloud instance using
 the **github-runners cloud install** command.
@@ -1163,10 +1144,9 @@ You can specify **-f, --force** option to force service re-installation if it is
 
    github-runners <options> cloud install -f
 
-----
-
+--------------------------
 Uninstalling Cloud Service
-==========================
+--------------------------
 
 You can manually force uninstallation of the **github-runners** service running on a cloud instance using
 the **github-runners cloud uninstall** command.
@@ -1175,10 +1155,9 @@ the **github-runners cloud uninstall** command.
 
    github-runners cloud uninstall
 
-----
-
+-------------------------------
 Upgrading Cloud Service Package
-===============================
+-------------------------------
 
 You can manually upgrade the **github-runners** service package running on a cloud instance using
 the **github-runners cloud upgrade** command.
@@ -1198,10 +1177,9 @@ the specified version otherwise the version is upgraded to the latest available.
 The service is not re-installed during the package upgrade process.
 Instead, it is stopped before the upgrade and then started back up
 
-----
-
+------------------------------
 Changing Cloud Service Options
-==============================
+------------------------------
 
 If you need to change cloud service options such as the **--setup-script** or the **--max-runners** etc.,
 you can keep the existing server and use **cloud redeploy** command.
@@ -1224,10 +1202,9 @@ You can do complete service teardown using the **cloud delete** and then the **c
    be restartable. However, some servers might be left in an unfinished state
    but they will be cleaned up when the service is restarted.
 
-----
-
+----------------------
 Deleting Cloud Service
-======================
+----------------------
 
 You can delete the **github-runners** cloud service and the cloud instance that is running on using
 the **github-runners cloud delete** command.
@@ -1250,10 +1227,9 @@ For example,
 
       github-runners cloud --name <custom_name> delete
 
-----
-
+-----------------------
 SSH in to Cloud Service
-==============================
+-----------------------
 
 You can open SSH client to the cloud service using the **cloud ssh** command. For example,
 
@@ -1274,11 +1250,9 @@ The output will contain the full **ssh** command including the IP address of the
 
    ssh -q -o "StrictHostKeyChecking no" root@5.161.87.21
 
-----
-
-------------------
+==================
 Scaling Up Runners
-------------------
+==================
 
 The program scales up runners by looking for any jobs that have **queued** status.
 For each such job, a corresponding Hetzner Cloud server instance is created with the following name:
@@ -1303,10 +1277,9 @@ Also,
    This is expected and because for each **queued** job a unique runner will be created the number of runners will be
    equal the number of jobs and therefore under normal conditions all jobs will be executed as expected.
 
-----
-
+-------------------------
 Maximum Number of Runners
-=========================
+-------------------------
 
 By default, the maximum number of runners and therefore the maximum number of server instances is not set and therefore is unlimited.
 You can set the maximum number of runners using the **--max-runners** option.
@@ -1315,10 +1288,9 @@ You can set the maximum number of runners using the **--max-runners** option.
 
    github-runners --max-runners 10
 
-----
-
+----------
 New Server
-==========
+----------
 
 The new server is accessed using SSH. It boots up with the specified OS image and is configured using
 the **setup** and **startup** scripts.
@@ -1356,10 +1328,9 @@ the **setup** and **startup** scripts.
 :Image Configuration:
    Each new server instance is configured using the `setup <#the-setup-script>`_ and the `startup <#the-start-up-script>`_ scripts.
 
-----
-
+----------------
 The Setup Script
-================
+----------------
 
 The **setup** script creates and configures **runner** user that has **sudo** privileges.
 
@@ -1377,10 +1348,9 @@ The **setup** script creates and configures **runner** user that has **sudo** pr
         usermod -aG wheel ubuntu
         usermod -aG sudo ubuntu
 
-----
-
+-------------------
 The Start-up Script
-===================
+-------------------
 
 The **startup** script installs GitHub Actions runner. After installation it configures the runner to start in an *--ephemeral* mode.
 The *--ephemeral* mode causes the runner to exit as soon as it completes a job. After the runner exits the server is powered off.
@@ -1428,14 +1398,13 @@ The ARM64 **startup** script is similar to the x64 script but install an ARM64 v
      echo "Start runner"
      bash -c "screen -d -m bash -c './run.sh; sudo poweroff'"
 
-----
-
---------------------
+====================
 Scaling Down Runners
---------------------
+====================
 
+-------------------
 Powered Off Servers
-===================
+-------------------
 
 The program scales down runners by first cleaning up powered off servers. The scale down service relies on the fact
 that the `startup <#the-start-up-script>`_ script starts an ephemeral runner which will pick up only 1 job and then will power itself off after the job is complete.
@@ -1443,8 +1412,9 @@ that the `startup <#the-start-up-script>`_ script starts an ephemeral runner whi
 The powered off servers are deleted after the **max-powered-off-time** interval which
 can be specified using the **--max-powered-off-time** option which by default is set to *20* sec.
 
+--------------
 Unused Runners
-==============
+--------------
 
 The scale down service also monitors all the runners that have **unused** status and tries to delete any servers associated with such
 runners if the runner is **unused** for more than the **max-unused-runner-time** period. This is needed in case a runner never gets a job
@@ -1452,18 +1422,17 @@ assigned to it and the server will stay in the power on state. This cycle relies
 is the same as server's name. The **max-unused-runner-time** can be specified using the **--max-unused-runner-time** option which by default
 is set to *120* sec.
 
+--------------
 Zombie Servers
-==============
+--------------
 
 The scale down service will delete any zombie servers. A zombie server is defined as as any server that fails to register its runner within
 the **max-runner-registration-time**. The **max-runner-registration-time** can be specified using the **--max-runner-registration-time** option
 which by default is set to *60* sec.
 
-----
-
----------------------------
+===========================
 Handling Failing Conditions
----------------------------
+===========================
 
 The program is designed to handle the following failing conditions:
 
@@ -1486,11 +1455,9 @@ The program is designed to handle the following failing conditions:
 :Runner Created With a Mismatched Labels:
    The behavior will be the same as for the **Runner Never Gets a Job Assigned** case above.
 
-----
-
----------------
+===============
 Program Options
----------------
+===============
 
 The following options are supported:
 
@@ -1674,13 +1641,11 @@ The following options are supported:
       * **stop**
         stop service
 
-----
-
------------------
+=================
 Table of Contents
------------------
+=================
 
-.. contents:: Index:
+.. contents::
    :backlinks: top
    :depth: 4
 
