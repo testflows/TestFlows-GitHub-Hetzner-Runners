@@ -71,13 +71,11 @@ Features
 Limitations
 -----------
 
-* **Group runners are not supported**
+**Group runners are not supported**
+  ✎ However, you can run individual services for each repository using different Hetzner Cloud projects.
 
-     However, you can run individual services for each repository using different Hetzner Cloud projects.
-
-* **Unique Hetzner Cloud project must be used for each repository**
-
-     However, unique projects allow to easily keep track of runner costs per repository.
+**Unique Hetzner Cloud project must be used for each repository**
+   ✎ However, unique projects allow to easily keep track of runner costs per repository.
 
 ----
 
@@ -105,7 +103,7 @@ Check that the **github-runners** utility was installed correctly by executing t
 
    github-runners -v
 
-The **github-runners** utility is installed in the *~/.local/bin/* folder. Please make sure that this folder
+The **github-runners** utility is installed in to the *~/.local/bin/* folder. Please make sure that this folder
 is part of the **PATH**.
 
 .. code-block:: bash
@@ -132,7 +130,7 @@ If your **PATH** is missing this folder, on Ubuntu, modify your *~/.profile* and
 Quick Start
 ------------
 
-Set environment variables corresponding to your GitHub repository and Hetzner Cloud project
+Set environment variables corresponding to your GitHub repository and Hetzner Cloud project.
 
 .. code-block:: bash
 
@@ -140,7 +138,7 @@ Set environment variables corresponding to your GitHub repository and Hetzner Cl
    export GITHUB_REPOSITORY=vzakaznikov/github-runners
    export HETZNER_TOKEN=GJzdc...
 
-and then start **github-runners** program
+Then, start **github-runners** program:
 
 .. code-block:: bash
 
@@ -156,7 +154,7 @@ and then start **github-runners** program
    07/22/2023 08:20:38 PM   INFO   worker_2   create_server 🍀 Create server
    ...
 
-or you can pass the required options inline as follows:
+Alternatively, you can pass the required options using the command line as follows:
 
 .. code-block:: bash
 
@@ -194,7 +192,7 @@ Installing TestFlows Github Runners
    1.3.230731.1173142
 
 :✋ Note: 
-   The **github-runners** utility is installed in the *~/.local/bin/* folder. Please make sure that this folder
+   The **github-runners** utility is installed in to the *~/.local/bin/* folder. Please make sure that this folder
    is part of the **PATH**.
 
    .. code-block:: bash
