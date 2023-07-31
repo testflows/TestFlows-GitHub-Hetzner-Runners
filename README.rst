@@ -196,7 +196,7 @@ labels.
      Explore-GitHub-Actions:
        runs-on: [self-hosted, type-cpx21]
 
-So, the complete *demo.yml* for us will be as follows.
+So, the complete *demo.yml* that uses self-hosted runner is as follows:
 
 :demo.yml:
 
