@@ -325,9 +325,9 @@ GitHub repository, GitHub and Hetzner Cloud tokens using
 
 .. code-block:: bash
 
-   export GITHUB_REPOSITORY=vzakaznikov/demo-testflows-github-runners
-   export HETZNER_TOKEN=1zEWPj4GlN0xrSQepuLPKtLbFhsgTfpa4bOJE2zNAznUybWPR39LCNJsEHefESzE
-   export GITHUB_TOKEN=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
+   export GITHUB_REPOSITORY=
+   export HETZNER_TOKEN=
+   export GITHUB_TOKEN=
    github-runners cloud deploy
 
 ----
