@@ -138,7 +138,7 @@ Set environment variables corresponding to your GitHub repository and Hetzner Cl
    export GITHUB_REPOSITORY=vzakaznikov/github-runners
    export HETZNER_TOKEN=GJzdc...
 
-Then, start **github-runners** program:
+Then, start the **github-runners** program:
 
 .. code-block:: bash
 
