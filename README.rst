@@ -99,6 +99,33 @@ Installation
 
    pip3 install testflows.github.runners
 
+Check that the **github-runners** utility was installed correctly by executing the **github-runners -v** command.
+
+.. code-block:: bash
+
+   github-runners -v
+
+The **github-runners** utility is installed in the *~/.local/bin/* folder. Please make sure that this folder
+is part of the **PATH**.
+
+.. code-block:: bash
+
+   which github-runners 
+
+::
+   
+   ~/.local/bin/github-runners
+
+If your **PATH** is missing this folder, on Ubuntu, modify your *~/.profile* and add the following section:
+
+:~/.profile:
+   .. code-block:: bash
+
+      # set PATH so it includes user's private bin if it exists
+      if [ -d "$HOME/.local/bin" ] ; then
+          PATH="$HOME/.local/bin:$PATH"
+      fi
+
 ----
 
 ------------
@@ -145,18 +172,18 @@ Getting Started Tutorial
    5 minutes
 
 This tutorial will guide you on how to use the **github-runners** program to provide autoscaling GitHub Actions runners
-for a GitHub repository and a Hetzner Cloud project that we'll create.
+for a GitHub repository and a Hetzner Cloud project that you'll create.
 
 Installing TestFlows Github Runners
 ====================================
 
-❶ Before we get started, you will need to install **github-runners**. See the `Installation`_ section for more details.
+❶ Before we get started, you will need to install **testflows.github.runners** Python package. See the `Installation`_ section for more details.
 
 .. code-block:: bash
 
   pip3 install testflows.github.runners
 
-❷ Check that the **github-runners** was installed correctly by executing the **github-runners -v** command.
+❷ Check that the **github-runners** utility was installed correctly by executing the **github-runners -v** command.
 
 .. code-block:: bash
 
@@ -165,6 +192,28 @@ Installing TestFlows Github Runners
 ::
 
    1.3.230731.1173142
+
+:✋ Note: 
+   The **github-runners** utility is installed in the *~/.local/bin/* folder. Please make sure that this folder
+   is part of the **PATH**.
+
+   .. code-block:: bash
+
+      which github-runners 
+
+   ::
+      
+      ~/.local/bin/github-runners
+
+   If your **PATH** is missing this folder, on Ubuntu, you can modify your *~/.profile* and add the following section:
+
+   :~/.profile:
+      .. code-block:: bash
+   
+         # set PATH so it includes user's private bin if it exists
+         if [ -d "$HOME/.local/bin" ] ; then
+             PATH="$HOME/.local/bin:$PATH"
+         fi
 
 In order to launch the **github-runners** program, we'll need to specify GitHub repository as well as GitHub and
 Hetzner Cloud tokens. So, let's create these.
