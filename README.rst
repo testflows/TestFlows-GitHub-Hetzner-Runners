@@ -46,9 +46,9 @@ to avoid any cleanup. Server instances are not shared between any jobs.
    the same way as for a job that takes 59 minutes. Therefore, the minimal cost
    for any job is the cost of the server for 1 hour plus the cost for one public IPv4 address.
 
---------
+========
 Features
---------
+========
 
 * cost efficient on-demand runners using `Hetzner Cloud <https://www.hetzner.com/cloud>`_
 * simple configuration, no Webhooks, no need for AWS lambdas, and no need to setup any GitHub application
@@ -61,11 +61,9 @@ Features
 * supports auto-replenishable fixed standby runner pools for jobs to be picked up immediately
 * simpler alternative to what GitHub lists in `Recommended autoscaling solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_
 
-----
-
------------
+===========
 Limitations
------------
+===========
 
 **Group runners are not supported**
   ✎ However, you can run individual services for each repository using different Hetzner Cloud projects.
@@ -73,21 +71,17 @@ Limitations
 **Unique Hetzner Cloud project must be used for each repository**
    ✎ However, unique projects allow to easily keep track of runner costs per repository.
 
-----
-
--------------
+=============
 Prerequisites
--------------
+=============
 
 * Python >= 3.7
 * `Hetzner Cloud <https://www.hetzner.com/cloud>`_ account
 * GitHub API token with admin privileges to manage self-hosted runners
 
-----
-
-------------
+============
 Installation
-------------
+============
 
 .. code-block:: bash
 
@@ -120,11 +114,9 @@ If your **PATH** is missing this folder, on Ubuntu, modify your *~/.profile* and
           PATH="$HOME/.local/bin:$PATH"
       fi
 
-----
-
-------------
+===========
 Quick Start
-------------
+===========
 
 Set environment variables corresponding to your GitHub repository and Hetzner Cloud project.
 
@@ -156,11 +148,9 @@ Alternatively, you can pass the required options using the command line as follo
 
    github-runners --github-token <GITHUB_TOKEN> --github-repository <GITHUB_REPOSITORY> --hetzner-token <HETZNER_TOKEN>
 
-----
-
-------------------------
+========================
 Getting Started Tutorial
-------------------------
+========================
 
 :✅ Launch your first self-hosted runner in: 
    5 minutes
@@ -168,10 +158,9 @@ Getting Started Tutorial
 This tutorial will guide you on how to use the **github-runners** program to provide autoscaling GitHub Actions runners
 for a GitHub repository and a Hetzner Cloud project that you'll create.
 
-----
-
+-----------------------------------
 Installing TestFlows Github Runners
-====================================
+-----------------------------------
 
 ❶ Before we get started, you will need to install **testflows.github.runners** Python package. See the `Installation`_ section for more details.
 
@@ -214,10 +203,9 @@ Installing TestFlows Github Runners
 In order to launch the **github-runners** program, we'll need to specify GitHub repository as well as GitHub and
 Hetzner Cloud tokens. So, let's create these.
 
-----
-
+----------------------------------------------------------
 Creating GitHub Repository with Actions Workflow and Token
-==========================================================
+----------------------------------------------------------
 
 Before using the **github-runners**, you need a GitHub repository with a GitHub Actions workflow set up.
 
@@ -284,10 +272,9 @@ See these steps in action:
    :align: center
    :alt: Creating GitHub Repository and Token
 
-----
-
+----------------------------------------
 Creating Hetzner Cloud Project and Token
-========================================
+----------------------------------------
 
 Next you will need to create a Hetzner Cloud project and an API token that we can use to create an manage Hetzner Cloud server instances.
 
@@ -308,10 +295,9 @@ See these steps in action:
    :align: center
    :alt: Creating GitHub Repository and Token
 
-----
-
+----------------------
 Creating Cloud Service
-======================
+----------------------
 
 With the GitHub repository and GitHub and Hetzner Cloud tokens in hand, we can deploy the **github-runners** service
 to Hetzner Cloud instance. This way the service is not running on your local machine.
@@ -338,10 +324,9 @@ See these steps in action:
    :align: center
    :alt: Deploying Cloud Service
 
-----
-
+------------------------------------------
 Waiting for GitHub Actions Job to Complete
-==========================================
+------------------------------------------
 
 ❶ The **github-runners** cloud service is now running. So, now you can just seat back and wait until **github-runners**
 spins up a new runner to complete any queued up GitHub Actions jobs in your GitHub repository.
@@ -363,11 +348,9 @@ As you can see our job was executed and completed using our own self-hosted runn
    
       github-runners cloud logs -f
 
-----
-
--------------------------
+=========================
 Installation From Sources
--------------------------
+=========================
 
 For development, you can install from sources as follows:
 
@@ -376,11 +359,9 @@ For development, you can install from sources as follows:
    git clone https://github.com/testflows/Github-Runners.git
    ./package && ./install
 
-----
-
--------------------
+===================
 Basic Configuration
--------------------
+===================
 
 By default, the program uses the following environment variables:
 
@@ -394,11 +375,10 @@ or you can specify these values using the following options:
 * **--github-repository**
 * **--hetzner-token**
 
-----
-
-------------------------------------
+====================================
 Specifying Maximum Number of Runners
-------------------------------------
+====================================
+
 The default maximum number of runners is **10**. You can set a different value
 based on your Hetzner Cloud limits using the **-m count, --max-runners count** option. For example,
 
@@ -406,11 +386,9 @@ based on your Hetzner Cloud limits using the **-m count, --max-runners count** o
 
    github-runners --max-runners 40
 
-----
-
--------------------------------
+===============================
 Jobs That Require Docker Engine
--------------------------------
+===============================
 
 For jobs that require Docker to be installed, you can use the standard `Hetzner Docker CE application <https://docs.hetzner.com/cloud/apps/list/docker-ce/>`_
 which can be specified using the **image-** label. See `Specifying Runner Image`_ for more details about specifying custom runner images.
@@ -431,14 +409,13 @@ For example
       job-name:
          runs-on: [self-hosted, type-cax11, image-arm-app-docker-ce]
 
-----
-
-----------------------
+======================
 Specifying Runner Type
-----------------------
+======================
 
+-----------
 x64 Runners
-============
+-----------
 
 The default server type is **cx11** which is an Intel, 1 vCPU, 2GB RAM shared-cpu x64 instance.
 
@@ -457,8 +434,9 @@ as follows:
    job-name:
       runs-on: [self-hosted, type-cpx21]
 
+-------------
 ARM64 Runners
-==============
+-------------
 
 The default, the server type is **cx11**, which is an Intel, 1 vCPU, 2GB RAM shared-cpu x64 instance.
 Therefore, in order to use ARM64 runners you must specify ARM64 server instance type by using the **type-{name}** runner label.
@@ -474,11 +452,9 @@ as follows:
    job-name:
       runs-on: [self-hosted, type-cax21]
 
-----
-
----------------------------
+==========================
 Specifying Runner Location
----------------------------
+==========================
 
 By default, the default location of the server where the runner will be running is not specified. You can use the **--default-location**
 option to force specific default server location.
@@ -494,11 +470,9 @@ For example,
    job-name:
       runs-on: [self-hosted, type-cx11, in-ash]
 
-----
-
------------------------
+=======================
 Specifying Runner Image
------------------------
+=======================
 
 By default, the default image of the server for the runner is **ubuntu-22.04**. You can use the **--default-image**
 option to force specific default server image.
@@ -538,11 +512,9 @@ For example,
       job-name:
          runs-on: [self-hosted, type-cx11, in-ash, image-x86-snapshot-snapshot_description]
 
-----
-
---------------------------------------------
+============================================
 Specifying Custom Runner Server Setup Script
---------------------------------------------
+============================================
 
 You can specify custom runner server setup script using the **--setup-script** option.
 
@@ -570,11 +542,9 @@ For example,
 
       github-runners --setup-script ./custom_setup.sh
 
-----
-
---------------------------
+==========================
 Specifying Standby Runners
---------------------------
+==========================
 
 You can define standby runner groups to be always ready to pick your jobs using a custom configuration file.
 
@@ -616,11 +586,9 @@ For example,
          ],
       )
 
-----
-
--------------------------------
+===============================
 Specifying Logger Configuration
--------------------------------
+===============================
 
 You can specify custom logger configuration using a configuration file.
 
