@@ -276,11 +276,15 @@ So, the complete *demo.yml* that uses self-hosted runner is as follows:
    
       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
 
+----
+
 See these steps in action:
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/github_create_repo_and_token.gif
    :align: center
    :alt: Creating GitHub Repository and Token
+
+----
 
 Creating Hetzner Cloud Project and Token
 ========================================
@@ -296,11 +300,15 @@ Next you will need to create a Hetzner Cloud project and an API token that we ca
 
       5Up04IHuY8mC7l0JxKwh3Aps4ghGIyL0NJ9rGlhyAmmkddzuRreR1YstTSTFCG0N
 
+----
+
 See these steps in action:
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/hetzner_create_project_and_token.gif
    :align: center
    :alt: Creating GitHub Repository and Token
+
+----
 
 Creating Cloud Service
 ======================
@@ -321,12 +329,15 @@ GitHub repository, GitHub and Hetzner Cloud tokens using
    export GITHUB_TOKEN=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
    github-runners cloud deploy
 
+----
+
 See these steps in action:
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/cloud_deploy.gif
    :align: center
    :alt: Deploying Cloud Service
 
+----
 
 Waiting for GitHub Actions Job to Complete
 ==========================================
@@ -334,11 +345,15 @@ Waiting for GitHub Actions Job to Complete
 ❶ The **github-runners** cloud service is now running. So, now you can just seat back and wait until **github-runners**
 spins up a new runner to complete any queued up GitHub Actions jobs in your GitHub repository.
 
+----
+
 See this step in action:
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/github_job_completed.gif
    :align: center
    :alt: Waiting For GitHub Actions Job to Complete
+
+----
 
 As you can see our job was executed and completed using our own self-hosted runner!
 
