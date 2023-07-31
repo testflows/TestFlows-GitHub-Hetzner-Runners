@@ -220,7 +220,7 @@ The repository name will have the following format:
 :For me, my GitHub repository is:
    ::
 
-   vzakaznikov/demo-testflows-github-runners
+      vzakaznikov/demo-testflows-github-runners
 
 ❷ Now, create an example GitHub Actions workflow as described in the `Quickstart for GitHub Actions <https://docs.github.com/en/actions/quickstart>`_ article.
 Note that we need to modify the example YAML configuration and specify that our job will run on a runner with the **self-hosted** and the **type-cpx21**
@@ -1050,7 +1050,7 @@ as the value of the **--type** as follows:
    github-runners deploy --location fsn1 --type cax21 --image ubuntu-22.04
 
 Using x64 Instance
-=================
+==================
 
 By default, the **cpx11** AMD, 2 vCPU, 2GB RAM, shared-cpu x64 instance type is used. If you want to use
 a different x64 instance then specify desired type using the **--type** option.
