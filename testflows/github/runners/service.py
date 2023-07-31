@@ -41,7 +41,7 @@ def command_options(config):
         if config.default_location
         else ""
     )
-    command += f" --default-image {config.default_image.type}:{config.default_image.name or config.default_image.description}"
+    command += f" --default-image {config.default_image.architecture}:{config.default_image.type}:{config.default_image.name or config.default_image.description}"
     command += f" --max-runners {config.max_runners}" if config.max_runners else ""
     command += f" --setup-script {config.setup_script}" if config.setup_script else ""
     command += (
