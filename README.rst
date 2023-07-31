@@ -176,6 +176,31 @@ based on your Hetzner Cloud limits using the **-m count, --max-runners count** o
 
 ----
 
+-------------------------------
+Jobs That Require Docker Engine
+-------------------------------
+
+For jobs that require Docker to be installed, you can use the standard `Hetzner Docker CE application <https://docs.hetzner.com/cloud/apps/list/docker-ce/>`_
+which can be specified using the **image-** label. See `Specifying Runner Image`_ for more details about specifying custom runner images.
+
+For example
+
+:x64:
+
+   .. code-block:: yaml
+
+      job-name:
+         runs-on: [self-hosted, type-cx11, image-x86-app-docker-ce]
+
+:ARM64:
+
+   .. code-block:: yaml
+
+      job-name:
+         runs-on: [self-hosted, type-cax11, image-arm-app-docker-ce]
+
+----
+
 ----------------------
 Specifying Runner Type
 ----------------------
@@ -266,8 +291,6 @@ For example,
 
 
 :docker-ce app:
-   :✋ Note:
-      Currently Docker CE application does not support ARM64 architecture.
 
    .. code-block:: yaml
 
