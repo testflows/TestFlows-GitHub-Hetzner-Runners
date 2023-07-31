@@ -216,7 +216,7 @@ Installing TestFlows Github Runners
 In order to launch the **github-runners** program, we'll need to specify GitHub repository as well as GitHub and
 Hetzner Cloud tokens. So, let's create these.
 
-Creating GitHub Repository with Actions WorkfLow and Token
+Creating GitHub Repository with Actions Workflow and Token
 ==========================================================
 
 Before using the **github-runners**, you need a GitHub repository with a GitHub Actions workflow set up.
