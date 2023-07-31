@@ -246,8 +246,14 @@ Specifying Runner Image
 By default, the default image of the server for the runner is **ubuntu-22.04**. You can use the **--default-image**
 option to force specific default server image.
 
-You can also use the **image-{type}-{name}** runner label to specify server image for a specific job. Where the **{name}** must be a valid
-Hetzner Cloud image such as *ubuntu-22.04* or *ubuntu-20.04*, and the **{type}** is either *system*, *snapshot*, *backup*, or *app*.
+You can also use the **image-{architecture}-{type}-{name}** runner label to specify server image for a specific job.
+
+Where,
+
+* **{architecture}** is either *x86* or *arm*
+* **{type}** is either *system*, *snapshot*, *backup*, or *app*
+* **{name}** must be a valid Hetzner Cloud image name, for *system* or *app* type, such as *ubuntu-22.04*,
+  or a description, for *backup* or *snapshot* type.
 
 For example,
 
@@ -256,7 +262,7 @@ For example,
    .. code-block:: yaml
 
       job-name:
-         runs-on: [self-hosted, type-cx11, in-ash, image-system-ubuntu-20.04]
+         runs-on: [self-hosted, type-cx11, in-ash, image-x86-system-ubuntu-20.04]
 
 
 :docker-ce app:
@@ -266,7 +272,7 @@ For example,
    .. code-block:: yaml
 
       job-name:
-         runs-on: [self-hosted, type-cx11, in-ash, image-app-docker-ce]
+         runs-on: [self-hosted, type-cx11, in-ash, image-x86-app-docker-ce]
 
 :snapshot:
    For snapshots, specify **description** as the name. Snapshot descriptions
@@ -275,7 +281,7 @@ For example,
    .. code-block:: yaml
 
       job-name:
-         runs-on: [self-hosted, type-cx11, in-ash, image-snapshot-snapshot_description]
+         runs-on: [self-hosted, type-cx11, in-ash, image-x86-snapshot-snapshot_description]
 
 ----
 
@@ -1117,7 +1123,7 @@ the **setup** and **startup** scripts.
 
 :Image:
 
-   The server is configured to have the image specified by the **--default-image** option or the **image-{type}-{name}** runner label.
+   The server is configured to have the image specified by the **--default-image** option or the **image-{architecture}-{type}-{name}** runner label.
 
 :SSH Access:
 
@@ -1295,9 +1301,10 @@ The following options are supported:
 * **--default-location name**
   default runner server location name, default: not specified
 
-* **--default-image type:name_or_description**
+* **--default-image architecture:type:name_or_description**
   default runner server image type and name or description,
-  where type is either: 'system','snapshot','backup','app',
+  where the architecture is either: 'x86' or 'arm',
+  and type is either: 'system','snapshot','backup','app',
   default: *system:ubuntu-22.04*
 
 * **-m count, --max-runners count**
@@ -1365,9 +1372,10 @@ The following options are supported:
         * **-t name, --type name**
           deployment server type, default: *cpx11*
 
-        * **-i type:name_or_description, --image type:name_or_description**
+        * **-i architecture:type:name_or_description, --image architecture:type:name_or_description**
           deployment server image type and name or description,
-          where the type is either: 'system','snapshot','backup','app',
+          where the architecture is either: 'x86' or 'arm',
+          and the type is either: 'system','snapshot','backup','app',
           default: *system:ubuntu-22.04*
 
         * **--setup-script path**

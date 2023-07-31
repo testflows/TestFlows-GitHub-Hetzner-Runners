@@ -44,16 +44,18 @@ def count_type(v):
 def image_type(v, separator=":"):
     """Image type argument. Example: system:ubuntu-22.04"""
     try:
-        image_type, image_name = v.split(separator, 1)
+        image_architecture, image_type, image_name = v.split(separator, 2)
         assert image_type in ("system", "snapshot", "backup", "app")
     except:
         raise ArgumentTypeError(f"invalid image {v}")
 
     if image_type in ("system", "app"):
-        return Image(type=image_type, name=image_name)
+        return Image(type=image_type, architecture=image_architecture, name=image_name)
     else:
         # backup or snapshot uses description
-        return Image(type=image_type, description=image_name)
+        return Image(
+            type=image_type, architecture=image_architecture, description=image_name
+        )
 
 
 def location_type(v):

@@ -30,7 +30,7 @@ class standby_runner:
 @dataclass
 class deploy:
     server_type: server_type = server_type("cpx11")
-    image: image = image("system:ubuntu-22.04")
+    image: image = image("x86:system:ubuntu-22.04")
     location: location = None
     setup_script: path = None
 
@@ -50,7 +50,7 @@ class Config:
     hetzner_token: str = os.getenv("HETZNER_TOKEN")
     ssh_key: str = os.path.expanduser("~/.ssh/id_rsa.pub")
     max_runners: count = 10
-    default_image: image = image("system:ubuntu-22.04")
+    default_image: image = image("x86:system:ubuntu-22.04")
     default_server_type: server_type = server_type("cx11")
     default_location: location = None
     workers: count = 10
@@ -123,13 +123,17 @@ def check_image(client: Client, image: Image):
     """
 
     if image.type in ("system", "app"):
-        return client.images.get_by_name(image.name)
+        return client.images.get_by_name_and_architecture(
+            name=image.name, architecture=image.architecture
+        )
     else:
         # backup or snapshot
         try:
             return [
                 i
-                for i in client.images.get_all(type=image.type)
+                for i in client.images.get_all(
+                    type=image.type, architecture=image.architecture
+                )
                 if i.description == image.description
             ][0]
         except IndexError:

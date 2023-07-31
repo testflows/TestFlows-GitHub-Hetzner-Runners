@@ -121,12 +121,13 @@ def argparser():
 
     parser.add_argument(
         "--default-image",
-        metavar="type:name_or_description",
+        metavar="architecture:type:name_or_description",
         type=args.image_type,
         help=(
             "default runner server image type and name or description,\n"
-            "where the type is either: 'system','snapshot','backup','app',\n"
-            "default: system:ubuntu-22.04"
+            "where the architecture is either: 'x86' or 'arm' and\n"
+            "the type is either: 'system','snapshot','backup','app',\n"
+            "default: x86:system:ubuntu-22.04"
         ),
     )
 
@@ -306,13 +307,14 @@ def argparser():
     deploy_cloud_parser.add_argument(
         "-i",
         "--image",
-        metavar="type:name_or_description",
+        metavar="architecture:type:name_or_description",
         dest="cloud_deploy_image",
         type=args.image_type,
         help=(
             "deployment server image type and name or description,\n"
-            "where the type is either: 'system','snapshot','backup','app',\n"
-            "default: system:ubuntu-22.04"
+            "where the architecture is either: 'x86' or 'arm' and\n"
+            "and the type is either: 'system','snapshot','backup','app',\n"
+            "default: x86:system:ubuntu-22.04"
         ),
     )
 

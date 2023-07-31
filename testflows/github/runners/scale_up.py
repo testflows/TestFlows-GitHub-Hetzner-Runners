@@ -408,30 +408,33 @@ def scale_up(
                     except StopIteration:
                         pass
 
-                with Action("Checking standby runner pool"):
-                    for standby_runner in standby_runners:
-                        labels = set(standby_runner.labels)
-                        replenish_immediately = standby_runner.replenish_immediately
-                        if replenish_immediately:
-                            available = count_available(servers=servers, labels=labels)
-                        else:
-                            available = count_present(server=servers, labels=labels)
+                if standby_runners:
+                    with Action("Checking standby runner pool"):
+                        for standby_runner in standby_runners:
+                            labels = set(standby_runner.labels)
+                            replenish_immediately = standby_runner.replenish_immediately
+                            if replenish_immediately:
+                                available = count_available(
+                                    servers=servers, labels=labels
+                                )
+                            else:
+                                available = count_present(server=servers, labels=labels)
 
-                        if available < standby_runner.count:
-                            for _ in range(standby_runner.count - available):
-                                try:
-                                    with Action(
-                                        f"Replenishing{' immediately' if replenish_immediately else ''} standby server with {labels}"
-                                    ):
-                                        create_runner_server(
-                                            name=f"{standby_server_name_prefix}{str(uuid.uuid1()).replace('-','')}",
-                                            labels=labels,
-                                            setup_worker_pool=setup_worker_pool,
-                                            futures=futures,
-                                            servers=servers,
-                                        )
-                                except StopIteration:
-                                    break
+                            if available < standby_runner.count:
+                                for _ in range(standby_runner.count - available):
+                                    try:
+                                        with Action(
+                                            f"Replenishing{' immediately' if replenish_immediately else ''} standby server with {labels}"
+                                        ):
+                                            create_runner_server(
+                                                name=f"{standby_server_name_prefix}{str(uuid.uuid1()).replace('-','')}",
+                                                labels=labels,
+                                                setup_worker_pool=setup_worker_pool,
+                                                futures=futures,
+                                                servers=servers,
+                                            )
+                                    except StopIteration:
+                                        break
 
                 for future in futures:
                     with Action(
