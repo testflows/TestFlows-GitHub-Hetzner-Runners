@@ -23,6 +23,6 @@ jobs:
       - run: docker run hello-world
   
   Explore-GitHub-Actions-with-Docker-on-ARM64:
-    runs-on: [self-hosted type-cax11]
+    runs-on: [self-hosted, type-cax11]
     steps:
       - run: docker run hello-world
