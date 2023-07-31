@@ -21,7 +21,7 @@ The **github-runners** service program starts and monitors queued up jobs for Gi
 When a new job is queued up, it creates a new Hetzner Cloud server instance
 that provides an ephemeral GitHub Actions runner. Each server instance is automatically
 powered off when job completes and then powered off servers are
-automatically deleted. Both **x64** and **arm64** runners are supported.
+automatically deleted. Both **x64** (*x86*) and **arm64** (*arm*) runners are supported.
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/intro.gif
    :align: center
@@ -57,7 +57,7 @@ Features
 * simple configuration, no Webhooks, no need for AWS lambdas, and no need to setup any GitHub application
 * supports specifying custom runner server types, images, and locations using job labels
 * self-contained program that you can use to deploy, redeploy, and manage the service on a cloud instance
-* supports x64 (x86) and ARM64 runners
+* supports x64 (x86) and ARM64 (arm) runners
 * supports using any Hetzner Cloud server types
 * supports runners with pre-installed Docker
 * supports using any standard Hetzner Cloud images and applications
