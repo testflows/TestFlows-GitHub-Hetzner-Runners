@@ -1478,23 +1478,25 @@ The following options are supported:
       * **stop**
         stop service
 
+----
+
 --------
 Tutorial
 --------
 
-This tutorial will guide you on how to use **github-runners** with GitHub repository and Hetzner Cloud
-project that we'll create.
+This tutorial will guide you on how to use the **github-runners** program to provide autoscaling GitHub Actions runners
+for a GitHub repository and a Hetzner Cloud project that we'll create.
 
 Installing TestFlows Github Runners
 ===================================
 
-Before we get started, you will need to install **github-runners**. See `Installation`_.
+Before we get started, you will need to install **github-runners**. See `Installation`_ for more details.
 
 .. code-block:: bash
 
    pip3 install testflows.github.runners
 
-Check that **github-runners** was installed correctly by executing **github-runners -v** command.
+Check that the **github-runners** was installed correctly by executing the **github-runners -v** command.
 
 .. code-block:: bash
 
@@ -1504,21 +1506,56 @@ Check that **github-runners** was installed correctly by executing **github-runn
 
    1.3.230731.1173142
 
-In order to launch **github-runners**, we need to specify GitHub repository, as well as GitHub and
+In order to launch the **github-runners** program, we'll need to specify GitHub repository as well as GitHub and
 Hetzner Cloud tokens. So, let's create these.
 
-Creating GitHub Repository and Token
-====================================
+Creating GitHub Repository with Actions WorkfLow and Token
+==========================================================
 
-Before using **github-runners**, you need a GitHub repository with a GitHub Actions workflow set up.
+Before using the **github-runners**, you need a GitHub repository with a GitHub Actions workflow set up.
 
-Create GitHub Repository named **demo-testflows-github-runners** and note the repository name *<username>/demo-testflows-github-runners*.
+First, create GitHub Repository named **demo-testflows-github-runners** and note the repository name.
+The repository name will have the **<username>/demo-testflows-github-runners* format.
 For me, my GitHub repository is *vzakaznikov/demo-testflows-github-runners*.
 
 Now, create an example GitHub Actions workflow as described in `Quickstart for GitHub Actions <https://docs.github.com/en/actions/quickstart>`_.
+Note that we need to modify the example YAML configuration and specify that our job will run on a runner with the **self-hosted** and the **type-cpx21**
+labels.
 
-Finally, create GitHub API token with *workflow* privileges and save it.
-For me, my GitHub token is *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*.
+.. code-block:: yaml
+
+     Explore-GitHub-Actions:
+       runs-on: [self-hosted, type-cpx21]
+
+So, the complete *demo.yml* for us will be as follows.
+
+:demo.yml:
+
+   .. code-block:: yaml
+   
+      name: GitHub Actions Demo
+      run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+      on: [push]
+      jobs:
+        Explore-GitHub-Actions:
+          runs-on: [self-hosted, type-cpx21]
+          steps:
+            - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+            - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
+            - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+            - name: Check out repository code
+              uses: actions/checkout@v3
+            - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
+            - run: echo "🖥️ The workflow is now ready to test your code on the runner."
+            - name: List files in the repository
+              run: |
+                ls ${{ github.workspace }}
+            - run: echo "🍏 This job's status is ${{ job.status }}."
+
+
+Finally, you will need to create a GitHub API token with the **workflow** privileges. Make sure to save the token!
+
+For me, my *demo* GitHub token is *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*.
 
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/github_create_repo_and_token.gif
@@ -1528,12 +1565,13 @@ For me, my GitHub token is *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*.
 Creating Hetzner Cloud Project and Token
 ========================================
 
-Next you will need to create Hetzner Cloud project and an API token.
+Next you will need to create a Hetzner Cloud project and an API token that we can use to create an manage Hetzner Cloud server instances.
 
 Create new Hetzner Cloud project **Demo GitHub Runners**.
 
-Now, create API token and save it. For me, the Hetzner Cloud token for my *Demo GitHub Runners*
-project is *5Up04IHuY8mC7l0JxKwh3Aps4ghGIyL0NJ9rGlhyAmmkddzuRreR1YstTSTFCG0N*.
+Now, create an API token and save it.
+
+For me, the Hetzner Cloud token for my *Demo GitHub Runners* project is *5Up04IHuY8mC7l0JxKwh3Aps4ghGIyL0NJ9rGlhyAmmkddzuRreR1YstTSTFCG0N*.
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/hetzner_create_project_and_token.gif
    :align: center
@@ -1542,11 +1580,12 @@ project is *5Up04IHuY8mC7l0JxKwh3Aps4ghGIyL0NJ9rGlhyAmmkddzuRreR1YstTSTFCG0N*.
 Creating Cloud Service
 ======================
 
-With GitHub repository, GitHub and Hetzner Cloud tokens in hand, we can start cloud service
-that we'll create an **github-runners** instance in our Hetzner Cloud project that will
-have the service running.
+With the GitHub repository and GitHub and Hetzner Cloud tokens in hand, we can deploy the **github-runners** service
+to Hetzner Cloud instance. This way the service is not running on your local machine.
 
-We will deploy the service using the **github-runners cloud deploy** command and specify
+The deployment we'll create a **github-runners** instance in your Hetzner Cloud project on which the service will be running.
+
+To deploy the service run the **github-runners cloud deploy** command and specify your
 GitHub repository, GitHub and Hetzner Cloud tokens using
 **GITHUB_REPOSITORY**, **GITHUB_TOKEN**, and **HETZNER_TOKEN** environment variables.
 
@@ -1556,31 +1595,33 @@ GitHub repository, GitHub and Hetzner Cloud tokens using
    export GITHUB_TOKEN=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
    github-runners cloud deploy
 
-
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/cloud_deploy.gif
    :align: center
    :alt: Deploying Cloud Service
 
 
-Waiting for Job to Complete
-===========================
+Waiting for GitHub Actions Job to Complete
+==========================================
 
-With the cloud service running, you now can just seat back and wait until **github-runners**
-spins up a new runner to complete the job in your GitHub repository.
+The **github-runners** cloud service is now running. So, now you can just seat back and wait until **github-runners**
+spins up a new runner to complete any queued up GitHub Actions jobs in your GitHub repository.
 
-.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/githu_job_completed.gif
+.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/github_job_completed.gif
    :align: center
    :alt: Deploying Cloud Service
 
+As you can see our job was executed and completed using our own self-hosted runner!
 
-As you can see our job was executed and completed on our self-hosted runner!
+:✋ Note:
 
-If you run into any issues you can check cloud service logs using the
-**github-runners cloud logs -f** command. For other cloud service commands see `Running as a Cloud Service`_ section.
+   If you run into any issues you can check cloud service logs using the
+   **github-runners cloud logs -f** command. For other cloud service commands see `Running as a Cloud Service`_ section.
+   
+   .. code-block:: bash
+   
+      github-runners cloud logs -f
 
-.. code-block:: bash
-
-   github-runners cloud logs -f
+----
 
 -----------------
 Table of Contents
