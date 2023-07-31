@@ -154,7 +154,7 @@ Installing TestFlows Github Runners
 
 .. code-block:: bash
 
-   pip3 install testflows.github.runners
+  pip3 install testflows.github.runners
 
 ❷ Check that the **github-runners** was installed correctly by executing the **github-runners -v** command.
 
