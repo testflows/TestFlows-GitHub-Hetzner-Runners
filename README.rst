@@ -168,8 +168,6 @@ Getting Started Tutorial
 This tutorial will guide you on how to use the **github-runners** program to provide autoscaling GitHub Actions runners
 for a GitHub repository and a Hetzner Cloud project that you'll create.
 
-----
-
 Installing TestFlows Github Runners
 ====================================
 
