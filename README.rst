@@ -397,15 +397,15 @@ based on your Hetzner Cloud limits using the **-m count, --max-runners count** o
 Specifying Maximum Number of Runners Used in Workflow Run
 =========================================================
 
-By default the maximum number of runners that could be used by a single workflow run
-is not defined. Therefore, for example if you have **--max-runners** set to *10*,
+By default, the maximum number of runners that could be used by a single workflow run
+is not defined. Therefore, for example, if you have **--max-runners** set to *10*,
 and you have a few workflow runs that are **queued**, and each workflow
 contains more than *10* jobs, then only one workflow run will be running its jobs while
 the jobs in other workflow runs will be waiting as there will be no runners
 available until the run that uses all the runners for its jobs completes.
 
 If you would like for the runners to be divided more evenly between different
-**queued** workflow runs then you can use the **--max-runners-in-workflow-run**
+**queued** workflow runs, then you can use the **--max-runners-in-workflow-run**
 option to limit the maximum number of runners used in a single workflow run.
 
 For example,
@@ -415,7 +415,8 @@ For example,
    github-runners --max-runners 40 --max-runners-in-workflow-run 5
 
 will allow only up to *5* runners to be used at the maximum in any single workflow run, and
-therefore would allow up to *8* **queued** workflow runs to run their jobs in parallel.
+therefore would allow up to *8* **queued** workflow runs to run up to *5* jobs in each **queued**
+workflow run in parallel.
 
 :✋ Note:
    Specifying the **--max-runners-in-workflow-run** option will increase the time a specific
