@@ -262,6 +262,25 @@ def count_present(servers: list[RunnerServer], labels: set[str]):
     return count
 
 
+def max_servers_in_workflow_run_reached(
+    run_id, servers: list[BoundServer], max_servers_in_workflow_run: int
+):
+    """Return True if maximum number of servers in workflow run has been reached."""
+    with Action(f"Check maximum number of servers used in workflow run {run_id}"):
+        run_server_name_prefix = f"{server_name_prefix}{run_id}"
+        servers_in_run = [
+            server
+            for server in servers
+            if server.name.startswith(run_server_name_prefix)
+        ]
+        if len(servers_in_run) >= max_servers_in_workflow_run:
+            with Action(
+                f"Maximum number of servers {max_servers_in_workflow_run} for {run_id} has been reached"
+            ):
+                return True
+    return False
+
+
 def scale_up(
     terminate: threading.Event,
     scripts: Scripts,
@@ -378,27 +397,12 @@ def scale_up(
                     try:
                         for run in workflow_runs:
                             if max_servers_in_workflow_run is not None:
-                                with Action(
-                                    f"Check maximum number of servers used in workflow run {run.id}"
+                                if max_servers_in_workflow_run_reached(
+                                    run_id=run.id,
+                                    servers=servers,
+                                    max_servers_in_workflow_run=max_servers_in_workflow_run,
                                 ):
-                                    run_server_name_prefix = (
-                                        f"{server_name_prefix}{run.id}"
-                                    )
-                                    servers_in_run = [
-                                        server
-                                        for server in servers
-                                        if server.name.startswith(
-                                            run_server_name_prefix
-                                        )
-                                    ]
-                                    if (
-                                        len(servers_in_run)
-                                        >= max_servers_in_workflow_run
-                                    ):
-                                        with Action(
-                                            f"Maximum number of servers {max_servers_in_workflow_run} for {run.id} has been reached"
-                                        ):
-                                            continue
+                                    continue
 
                             for job in run.jobs():
                                 labels = set(job.raw_data["labels"])
@@ -435,6 +439,14 @@ def scale_up(
                                                     ).labels()
                                                 ]
                                             )
+
+                                    if max_servers_in_workflow_run is not None:
+                                        if max_servers_in_workflow_run_reached(
+                                            run_id=run.id,
+                                            servers=servers,
+                                            max_servers_in_workflow_run=max_servers_in_workflow_run,
+                                        ):
+                                            break
 
                                     with Action(f"Creating new server for {job}"):
                                         create_runner_server(
