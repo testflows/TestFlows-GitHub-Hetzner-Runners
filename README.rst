@@ -59,6 +59,7 @@ Features
 * supports runners with pre-installed Docker
 * supports using any standard Hetzner Cloud images and applications
 * supports auto-replenishable fixed standby runner pools for jobs to be picked up immediately
+* supports limiting the maximum number of runners used by each workflow run
 * simpler alternative to what GitHub lists in `Recommended autoscaling solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_
 
 ===========
