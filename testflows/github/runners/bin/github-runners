@@ -13,13 +13,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
 import sys
 import time
 import hashlib
+import tempfile
 import logging
 import threading
 import logging.config
 
+from contextlib import contextmanager
 from concurrent.futures import ThreadPoolExecutor, Future
 
 from hcloud import Client
@@ -45,15 +48,6 @@ import testflows.github.runners.service as service
 import testflows.github.runners.delete as delete
 
 from requests_cache import DO_NOT_CACHE, EXPIRE_IMMEDIATELY, install_cache
-
-install_cache(
-    backend="filesystem",
-    cache_control=True,
-    urls_expire_after={
-        "*.github.com": EXPIRE_IMMEDIATELY,
-        "*": DO_NOT_CACHE,
-    },
-)
 
 description = """Auto-scaling GitHub Actions runners service using Hetzner Cloud.
 
@@ -582,6 +576,28 @@ def argparser():
     return parser
 
 
+@contextmanager
+def http_cache():
+    """Enable caching of HTTP requests to GitHub api."""
+    with tempfile.TemporaryDirectory() as tempdir:
+        name = os.path.join(tempdir, "http_cache")
+
+        with Action(f"Enabling HTTP cache at {name}"):
+            pass
+
+        install_cache(
+            name=name,
+            backend="filesystem",
+            cache_control=True,
+            urls_expire_after={
+                "*.github.com": EXPIRE_IMMEDIATELY,
+                "*": DO_NOT_CACHE,
+            },
+        )
+
+        yield
+
+
 def main(
     config, scripts: Scripts, worker_pool: ThreadPoolExecutor, terminate_timeout=30
 ):
@@ -759,7 +775,8 @@ if __name__ == "__main__":
     else:
         config.check()
 
-        with ThreadPoolExecutor(
-            max_workers=config.workers + 3, thread_name_prefix="worker"
-        ) as worker_pool:
-            main(config=config, scripts=scripts, worker_pool=worker_pool)
+        with http_cache():
+            with ThreadPoolExecutor(
+                max_workers=config.workers + 3, thread_name_prefix="worker"
+            ) as worker_pool:
+                main(config=config, scripts=scripts, worker_pool=worker_pool)
