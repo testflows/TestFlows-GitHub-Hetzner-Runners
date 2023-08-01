@@ -23,17 +23,17 @@ jobs:
       - run: docker run hello-world
 
   Explore-GitHub-Actions-with-Docker-on-ARM64:
-    runs-on: [self-hosted, image-system-arm-ubuntu-22.04, type-cax11]
+    runs-on: [self-hosted, image-arm-system-ubuntu-22.04, type-cax11]
     steps:
       - run: docker run hello-world
 
   Explore-GitHub-Actions-with-Docker-using-App:
-    runs-on: [self-hosted, image-app-x86-docker-ce]
+    runs-on: [self-hosted, image-x86-app-docker-ce]
     steps:
       - run: docker run hello-world
   
   Explore-GitHub-Actions-with-Docker-using-App-on-ARM64:
-    runs-on: [self-hosted, image-app-arm-docker-ce, type-cax11]
+    runs-on: [self-hosted, image-arm-app-docker-ce, type-cax11]
     steps:
       - run: docker run hello-world
  
