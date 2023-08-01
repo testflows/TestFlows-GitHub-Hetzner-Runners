@@ -39,6 +39,7 @@ from hcloud.servers.domain import Server
 from hcloud.images.domain import Image
 from hcloud.helpers.labels import LabelValidator
 
+from github import Github
 from github.Repository import Repository
 from github.WorkflowJob import WorkflowJob
 from github.WorkflowRun import WorkflowRun
@@ -173,8 +174,8 @@ def get_startup_script(server_type: ServerType, scripts: Scripts):
 
 
 def create_server(
+    hetzner_token: str,
     setup_worker_pool: ThreadPoolExecutor,
-    client: Client,
     labels: set[str],
     name: str,
     default_server_type: ServerType,
@@ -187,6 +188,8 @@ def create_server(
     timeout=60,
 ):
     """Create specified number of server instances."""
+
+    client = Client(token=hetzner_token)
 
     server_type = get_server_type(labels=labels, default=default_server_type)
     server_location = get_server_location(labels=labels, default=default_location)
@@ -261,12 +264,11 @@ def count_present(servers: list[RunnerServer], labels: set[str]):
 
 def scale_up(
     terminate: threading.Event,
-    repo: Repository,
-    client: Client,
     scripts: Scripts,
     worker_pool: ThreadPoolExecutor,
     github_token: str,
     github_repository: str,
+    hetzner_token: str,
     ssh_key: SSHKey,
     default_server_type: ServerType,
     default_location: Location,
@@ -296,8 +298,8 @@ def scale_up(
 
         future = worker_pool.submit(
             create_server,
+            hetzner_token=hetzner_token,
             setup_worker_pool=setup_worker_pool,
-            client=client,
             labels=labels,
             name=name,
             default_server_type=default_server_type,
@@ -314,6 +316,15 @@ def scale_up(
         futures.append(future)
         servers.append(RunnerServer(name=name, labels=labels))
 
+    with Action("Logging in to Hetzner Cloud"):
+        client = Client(token=hetzner_token)
+
+    with Action("Logging in to GitHub"):
+        github = Github(login_or_token=github_token, per_page=100)
+
+    with Action(f"Getting repository {github_repository}"):
+        repo: Repository = github.get_repo(github_repository)
+
     with ThreadPoolExecutor(
         max_workers=worker_pool._max_workers, thread_name_prefix=f"setup-worker"
     ) as setup_worker_pool:
@@ -325,7 +336,9 @@ def scale_up(
 
             try:
                 with Action("Getting workflow runs", level=logging.DEBUG):
-                    workflow_runs = repo.get_workflow_runs(status="queued")
+                    workflow_runs: list[WorkflowRun] = repo.get_workflow_runs(
+                        status="queued"
+                    )
 
                 futures: list[Future] = []
 

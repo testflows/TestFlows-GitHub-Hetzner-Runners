@@ -28,6 +28,7 @@ from .scale_up import (
 )
 from .logger import logger
 
+from github import Github
 from github.Repository import Repository
 from github.SelfHostedActionsRunner import SelfHostedActionsRunner
 
@@ -64,8 +65,9 @@ class UnusedRunner:
 
 def scale_down(
     terminate: threading.Event,
-    repo: Repository,
-    client: Client,
+    hetzner_token: str,
+    github_token: str,
+    github_repository: str,
     max_powered_off_time: int,
     max_unused_runner_time: int,
     max_runner_registration_time: int,
@@ -80,6 +82,15 @@ def scale_down(
     powered_off_servers: dict[str, PoweredOffServer] = {}
     unused_runners: dict[str, UnusedRunner] = {}
     zombie_servers: dict[str, ZombieServer] = {}
+
+    with Action("Logging in to Hetzner Cloud"):
+        client = Client(token=hetzner_token)
+
+    with Action("Logging in to GitHub"):
+        github = Github(login_or_token=github_token, per_page=100)
+
+    with Action(f"Getting repository {github_repository}"):
+        repo: Repository = github.get_repo(github_repository)
 
     while True:
         current_interval = time.time()
@@ -139,7 +150,9 @@ def scale_down(
             with Action("Looking for unused runners", level=logging.DEBUG):
                 _standby_runners = copy.deepcopy(standby_runners)
                 for runner in runners:
-                    if runner.status == "online" and not runner.busy:
+                    if (runner.status == "online" and not runner.busy) or (
+                        runner.status == "offline"
+                    ):
                         if runner.name.startswith(runner_name_prefix):
                             # skip any specified standby runners
                             if runner.name.startswith(standby_runner_name_prefix):

@@ -49,6 +49,6 @@ setup(
     },
     scripts=["testflows/github/runners/bin/github-runners"],
     zip_safe=False,
-    install_requires=["PyGithub==1.59.0", "hcloud==1.26.0"],
+    install_requires=["PyGithub==1.59.0", "hcloud==1.26.0", "requests-cache==1.1.0"],
     extras_require={"dev": []},
 )
