@@ -757,7 +757,8 @@ The `Config class`_ has the following schema:
    * **github_repository: str**
    * **hetzner_token: str**
    * **ssh_key: str**
-   * **max_runners**
+   * **max_runners: count**
+   * **max_runners_in_workflow_run: count**
    * **default_image: image**
    * **default_server_type: server_type**
    * **default_location: location**
