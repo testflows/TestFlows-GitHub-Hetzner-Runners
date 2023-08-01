@@ -126,6 +126,13 @@ def argparser():
     )
 
     parser.add_argument(
+        "--max-runners-in-workflow-run",
+        metavar="count",
+        type=args.count_type,
+        help="maximum number of runners allowed for a workflow run, default: not set",
+    )
+
+    parser.add_argument(
         "--default-image",
         metavar="architecture:type:name_or_description",
         type=args.image_type,
@@ -649,6 +656,7 @@ def main(
                     github_repository=config.github_repository,
                     interval=config.scale_up_interval,
                     max_servers=config.max_runners,
+                    max_servers_in_workflow_run=config.max_runners_in_workflow_run,
                     max_server_ready_time=config.max_server_ready_time,
                     debug=config.debug,
                     standby_runners=config.standby_runners,

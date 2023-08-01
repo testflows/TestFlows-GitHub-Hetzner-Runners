@@ -43,6 +43,11 @@ def command_options(config):
     )
     command += f" --default-image {config.default_image.architecture}:{config.default_image.type}:{config.default_image.name or config.default_image.description}"
     command += f" --max-runners {config.max_runners}" if config.max_runners else ""
+    command += (
+        f" --max-runners-in-workflow-run {config.max_runners_in_workflow_run}"
+        if config.max_runners_in_workflow_run
+        else ""
+    )
     command += f" --setup-script {config.setup_script}" if config.setup_script else ""
     command += (
         f" --startup-x64-script {config.startup_x64_script}"

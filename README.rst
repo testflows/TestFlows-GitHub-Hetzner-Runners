@@ -286,9 +286,9 @@ Next you will need to create a Hetzner Cloud project and an API token that we ca
 ❷ Now, create an API token and save it.
 
 For me, the Hetzner Cloud token for my *Demo GitHub Runners* project is:
-   
+
 ::
-   
+
    5Up04IHuY8mC7l0JxKwh3Aps4ghGIyL0NJ9rGlhyAmmkddzuRreR1YstTSTFCG0N
 
 You should now have your Hetzner Cloud project ready.
@@ -392,6 +392,36 @@ based on your Hetzner Cloud limits using the **-m count, --max-runners count** o
 .. code-block:: bash
 
    github-runners --max-runners 40
+
+=========================================================
+Specifying Maximum Number of Runners Used in Workflow Run
+=========================================================
+
+By default the maximum number of runners that could be used by a single workflow run
+is not defined. Therefore, for example if you have **--max-runners** set to *10*,
+and you have a few workflow runs that are **queued**, and each workflow
+contains more than *10* jobs, then only one workflow run will be running its jobs while
+the jobs in other workflow runs will be waiting as there will be no runners
+available until the run that uses all the runners for its jobs completes.
+
+If you would like for the runners to be divided more evenly between different
+**queued** workflow runs then you can use the **--max-runners-in-workflow-run**
+option to limit the maximum number of runners used in a single workflow run.
+
+For example,
+
+.. code-block:: bash
+
+   github-runners --max-runners 40 --max-runners-in-workflow-run 5
+
+will allow only up to *5* runners to be used at the maximum in any single workflow run, and
+therefore would allow up to *8* **queued** workflow runs to run their jobs in parallel.
+
+:✋ Note:
+   Specifying the **--max-runners-in-workflow-run** option will increase the time a specific
+   workflow run takes to complete it jobs, if number of jobs in the workflow
+   is greater than the value of this option, as compared to the case if all available runners
+   would be allowed.
 
 ===============================
 Jobs That Require Docker Engine
@@ -1266,7 +1296,7 @@ For each such job, a corresponding Hetzner Cloud server instance is created with
 
 ::
 
-   github-runner-{job.id}
+   github-runner-{job.run_id}-{job.id}
 
 The server is configured using default **setup** and **startup** scripts. The runner name is set
 to be the same as the server name so that servers can be deleted for any unused runner that for some reason
@@ -1280,7 +1310,7 @@ does not pick up a job for which it was created within the **max-unused-runner-t
 Also,
 
 :Note:
-   There is no guarantee that a given runner will pick the job with the exact **job.id** that caused it to be created.
+   There is no guarantee that a given runner will pick the job with the exact *job.id* that caused it to be created.
    This is expected and because for each **queued** job a unique runner will be created the number of runners will be
    equal the number of jobs and therefore under normal conditions all jobs will be executed as expected.
 
@@ -1506,6 +1536,9 @@ The following options are supported:
 
 * **-m count, --max-runners count**
   maximum number of active runners, default: *10*
+
+* **--max-runners-in-workflow-run count**
+  maximum number of runners allowed in a workflow run, default: not set
 
 * **-w count, --workers count**
   number of concurrent workers, default: *10*

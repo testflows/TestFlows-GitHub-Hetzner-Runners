@@ -275,6 +275,7 @@ def scale_up(
     default_image: Image,
     interval: int,
     max_servers: int,
+    max_servers_in_workflow_run: int,
     max_server_ready_time: int,
     debug: bool = False,
     standby_runners: list[StandbyRunner] = None,
@@ -376,10 +377,35 @@ def scale_up(
                 with Action("Looking for queued jobs", level=logging.DEBUG):
                     try:
                         for run in workflow_runs:
+                            if max_servers_in_workflow_run is not None:
+                                with Action(
+                                    f"Check maximum number of servers used in workflow run {run.id}"
+                                ):
+                                    run_server_name_prefix = (
+                                        f"{server_name_prefix}{run.id}"
+                                    )
+                                    servers_in_run = [
+                                        server
+                                        for server in servers
+                                        if server.name.startswith(
+                                            run_server_name_prefix
+                                        )
+                                    ]
+                                    if (
+                                        len(servers_in_run)
+                                        >= max_servers_in_workflow_run
+                                    ):
+                                        with Action(
+                                            f"Maximum number of servers {max_servers_in_workflow_run} for {run.id} has been reached"
+                                        ):
+                                            continue
+
                             for job in run.jobs():
                                 labels = set(job.raw_data["labels"])
 
-                                server_name = f"{server_name_prefix}{job.id}"
+                                server_name = (
+                                    f"{server_name_prefix}{job.run_id}-{job.id}"
+                                )
 
                                 if job.status != "completed":
                                     if server_name in [
