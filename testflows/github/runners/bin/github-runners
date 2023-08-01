@@ -48,6 +48,7 @@ import testflows.github.runners.service as service
 import testflows.github.runners.delete as delete
 
 from requests_cache import DO_NOT_CACHE, EXPIRE_IMMEDIATELY, install_cache
+from requests_cache.backends.filesystem import FileCache
 
 description = """Auto-scaling GitHub Actions runners service using Hetzner Cloud.
 
@@ -587,7 +588,7 @@ def http_cache():
 
         install_cache(
             name=name,
-            backend="filesystem",
+            backend=FileCache(name),
             cache_control=True,
             urls_expire_after={
                 "*.github.com": EXPIRE_IMMEDIATELY,
