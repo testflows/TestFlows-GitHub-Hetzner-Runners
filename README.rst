@@ -51,6 +51,7 @@ Features
 ========
 
 * cost efficient on-demand runners using `Hetzner Cloud <https://www.hetzner.com/cloud>`_
+* supports server recycling to minimize costs
 * simple configuration, no Webhooks, no need for AWS lambdas, and no need to setup any GitHub application
 * supports specifying custom runner server types, images, and locations using job labels
 * self-contained program that you can use to deploy, redeploy, and manage the service on a cloud instance
@@ -424,6 +425,48 @@ workflow run in parallel.
    workflow run takes to complete it jobs, if number of jobs in the workflow
    is greater than the value of this option, as compared to the case if all available runners
    would be allowed.
+
+
+=============================
+Recycling Powered Off Servers
+=============================
+
+By default, recycling of powered off servers that has completed executing a job is turned on.
+
+Recycling allows to minimize costs by allowing multiple runners to be brought up on
+the same server instance as Hetzner Cloud bills servers in 1 hour increments.
+Therefore, it is inefficient to delete a server if it only executed a job
+that runs for a few minutes. Instead, the after completing a job the server is powered off
+and if it can be recycled it is rebuild from scratch by reinstalling the image
+thus providing a clean environment for the next job.
+
+Powered off servers are marked as recyclable by changing their name to **github-runner-recycle-{uuid}**.
+
+Recyclable servers are deleted *10* minutes before they reach their end of life, if they were not
+recycled before that. The end of life is calculated on per hour basis.
+
+For example, if the server is running for 2 hours and 50 minutes, then it will be
+considered end of life and deleted as it has *10* minutes or less of useful life.
+However, if the server is running for 2 hours and 30 minutes, then it potentially
+has 30 minutes of life left and it will be kept around to potentially be recycled.
+
+Given that sometimes a job might need a server that does not match any recyclable servers
+and the maximum number of runners has been reached, **then one of the recyclable servers
+will be picked at random to be deleted** to make room for a new server.
+
+:✋ Note:
+   Randomly deleting a potentially recyclable server is not the most optimal choice,
+   as we could be deleting a server that has higher cost per hour as compared to the others.
+   However, this strategy provides a good-enough behavior in most cases without building
+   server cost comparison analysis into the program as Hetzner Cloud server costs
+   could change at any time.
+
+If needed, you can turn recycling off using the **--recycle {on,off}** option.
+
+.. code-block:: bash
+
+   github-runners --recycle off
+
 
 =============
 Skipping Jobs
@@ -1529,6 +1572,9 @@ The following options are supported:
 * **--license**
   show program's license and exit
 
+* **-r {on,off}, --recycle {on,off}**
+  turn on or off recycling of powered off servers, either 'on' or 'off', default: *on*
+
 * **-c path, --config path**
   program configuration file
 
@@ -1548,7 +1594,7 @@ The following options are supported:
   default runner server type name, default: *cx11*
 
 * **--default-location name**
-  default runner server location name, default: not specified
+  default runner server location name, default: *not specified*
 
 * **--default-image architecture:type:name_or_description**
   default runner server image type and name or description,
