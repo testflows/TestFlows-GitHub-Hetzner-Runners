@@ -328,7 +328,7 @@ def max_servers_in_workflow_run_reached(
     """Return True if maximum number of servers in workflow run has been reached."""
     with Action(
         f"Check maximum number of servers used in workflow run {run_id}",
-        level=locals.DEBUG,
+        level=logging.DEBUG,
         stacklevel=3,
     ):
         run_server_name_prefix = f"{server_name_prefix}{run_id}"
