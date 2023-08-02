@@ -46,7 +46,7 @@ def api_watch(terminate: Event, github_token: str, interval: int = 60):
                 next_resettime = github.rate_limiting_resettime
 
                 with Action(
-                    f"Consumed {calls - current} calls in {interval} sec, {current} calls left, reset in {int(next_resettime - time.time())} sec"
+                    f"Consumed {(calls-current) if not calls < current else {total-current}} calls in {interval} sec, {current} calls left, reset in {int(next_resettime - time.time())} sec"
                 ):
                     calls = current
             i = 0

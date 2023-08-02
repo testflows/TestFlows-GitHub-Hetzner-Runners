@@ -126,6 +126,14 @@ def argparser():
     )
 
     parser.add_argument(
+        "-r",
+        "--recycle",
+        type=args.switch_type,
+        choices=["on", "off"],
+        help="turn on recycling of powered off servers, either 'on' or 'off', default: on",
+    )
+
+    parser.add_argument(
         "--max-runners-in-workflow-run",
         metavar="count",
         type=args.count_type,
@@ -202,7 +210,7 @@ def argparser():
         "--max-powered-off-time",
         metavar="sec",
         type=args.count_type,
-        help="maximum time after which a powered off server is deleted, default: 60 sec",
+        help="maximum time after which a powered off server is recycled or deleted, default: 60 sec",
     )
 
     parser.add_argument(
@@ -655,6 +663,7 @@ def main(
                 scale_up_service: Future = worker_pool.submit(
                     scale_up,
                     terminate=terminate,
+                    recycle=config.recycle,
                     with_label=config.with_label,
                     scripts=scripts,
                     ssh_key=ssh_key,
@@ -676,6 +685,8 @@ def main(
             with Action("Creating scale down service"):
                 scale_down_service: Future = worker_pool.submit(
                     scale_down,
+                    recycle=config.recycle,
+                    ssh_key=ssh_key,
                     hetzner_token=config.hetzner_token,
                     github_token=config.github_token,
                     github_repository=config.github_repository,

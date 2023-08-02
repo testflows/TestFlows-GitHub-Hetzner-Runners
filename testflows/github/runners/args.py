@@ -23,6 +23,15 @@ from hcloud.server_types.domain import ServerType
 from argparse import ArgumentTypeError
 
 
+def switch_type(v):
+    """Switch argument type."""
+    if v == "on":
+        return True
+    elif v == "off":
+        return False
+    raise ArgumentTypeError(f"invalid value {v}")
+
+
 def path_type(v):
     """Path argument type."""
     try:

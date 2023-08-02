@@ -35,7 +35,9 @@ def wait_ssh(server: BoundServer, timeout: float):
     while True:
         attempt += 1
         with Action(
-            f"Trying to connect to {server.name}@{ip}...{attempt}", ignore_fail=True
+            f"Trying to connect to {server.name}@{ip}...{attempt}",
+            ignore_fail=True,
+            stacklevel=3,
         ):
             returncode = ssh(server, "hostname", check=False)
             if returncode == 0:

@@ -27,25 +27,27 @@ class Action:
         name: str,
         ignore_fail: bool = False,
         level: int = logging.INFO,
+        stacklevel: int = 2,
     ):
         self.name = name
         self.ignore_fail = ignore_fail
         self.level = level
+        self.stacklevel = stacklevel
 
     def __enter__(self):
-        logger.log(msg=f"🍀 {self.name}", stacklevel=2, level=self.level)
+        logger.log(msg=f"🍀 {self.name}", stacklevel=self.stacklevel, level=self.level)
         return self
 
     def note(self, message):
-        logger.log(msg=f"   {message}", stacklevel=2, level=self.level)
+        logger.log(msg=f"   {message}", stacklevel=self.stacklevel, level=self.level)
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         if exc_value is not None:
             msg = f"❌ Error: {exc_type.__name__} {exc_value}"
             if not self.debug:
-                logger.log(msg=msg, stacklevel=2, level=logging.ERROR)
+                logger.log(msg=msg, stacklevel=self.stacklevel, level=logging.ERROR)
             else:
-                logger.exception(msg=msg, stacklevel=3)
+                logger.exception(msg=msg, stacklevel=self.stacklevel + 1)
             if self.ignore_fail:
                 return True
             raise

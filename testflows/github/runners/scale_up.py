@@ -15,6 +15,7 @@
 import os
 import time
 import uuid
+import random
 import logging
 import threading
 
@@ -51,14 +52,24 @@ server_name_prefix = "github-runner-"
 runner_name_prefix = server_name_prefix
 standby_server_name_prefix = f"{server_name_prefix}standby-"
 standby_runner_name_prefix = standby_server_name_prefix
+recycle_server_name_prefix = f"{server_name_prefix}recycle-"
+server_ssh_key_label = "github-runner-ssh-key"
 
 
 @dataclass
 class RunnerServer:
     name: str
     labels: set[str]
+    server_type: ServerType
+    server_location: Location
     server_status: str = Server.STATUS_STARTING
     status: str = "initializing"  # busy, ready
+    server: BoundServer = None
+
+
+def uid():
+    """Return unique id."""
+    return str(uuid.uuid1()).replace("-", "")
 
 
 def server_setup(
@@ -91,7 +102,7 @@ def server_setup(
         current_dir = os.path.dirname(__file__)
 
     with Action("Executing setup.sh script"):
-        ssh(server, f"bash -s  < {setup_script}")
+        ssh(server, f"bash -s  < {setup_script}", stacklevel=3)
 
     with Action("Executing startup.sh script"):
         ssh(
@@ -102,6 +113,7 @@ def server_setup(
             f"GITHUB_RUNNER_GROUP=Default "
             f'GITHUB_RUNNER_LABELS="{runner_labels}" '
             f"bash -s' < {startup_script}",
+            stacklevel=3,
         )
 
 
@@ -178,29 +190,25 @@ def create_server(
     setup_worker_pool: ThreadPoolExecutor,
     labels: set[str],
     name: str,
-    default_server_type: ServerType,
-    default_location: Location,
-    default_image: Image,
-    scripts: Scripts,
+    server_type: ServerType,
+    server_location: Location,
+    server_image: Image,
+    startup_script: str,
+    setup_script: str,
     github_token: str,
     github_repository: str,
     ssh_key: SSHKey,
     timeout=60,
 ):
     """Create specified number of server instances."""
-
     client = Client(token=hetzner_token)
-
-    server_type = get_server_type(labels=labels, default=default_server_type)
-    server_location = get_server_location(labels=labels, default=default_location)
-    server_image = get_server_image(client=client, labels=labels, default=default_image)
-    startup_script = get_startup_script(server_type=server_type, scripts=scripts)
 
     server_labels = {
         f"github-runner-label-{i}": value for i, value in enumerate(labels)
     }
+    server_labels[server_ssh_key_label] = ssh_key.name
 
-    with Action("Validating server labels"):
+    with Action(f"Validating server {name} labels"):
         valid, error_msg = LabelValidator.validate_verbose(labels=server_labels)
         if not valid:
             raise ValueError(f"invalid server labels {server_labels}: {error_msg}")
@@ -222,7 +230,58 @@ def create_server(
     setup_worker_pool.submit(
         server_setup,
         server=response.server,
-        setup_script=scripts.setup,
+        setup_script=setup_script,
+        startup_script=startup_script,
+        github_token=github_token,
+        github_repository=github_repository,
+        runner_labels=",".join(labels),
+        timeout=timeout,
+    )
+
+
+def recycle_server(
+    server_name: str,
+    hetzner_token: str,
+    setup_worker_pool: ThreadPoolExecutor,
+    labels: set[str],
+    name: str,
+    server_image: Image,
+    startup_script: str,
+    setup_script: str,
+    github_token: str,
+    github_repository: str,
+    ssh_key: SSHKey,
+    timeout=60,
+):
+    """Create specified number of server instances."""
+    client = Client(token=hetzner_token, poll_interval=1)
+
+    server_labels = {
+        f"github-runner-label-{i}": value for i, value in enumerate(labels)
+    }
+    server_labels[server_ssh_key_label] = ssh_key.name
+
+    with Action(f"Validating server {name} labels"):
+        valid, error_msg = LabelValidator.validate_verbose(labels=server_labels)
+        if not valid:
+            raise ValueError(f"invalid server labels {server_labels}: {error_msg}")
+
+    with Action(f"Get recyclable server {server_name}"):
+        server: BoundServer = client.servers.get_by_name(name=server_name)
+
+    with Action(f"Recycling server {server_name} to make {name}"):
+        server = server.update(name=name, labels=server_labels)
+
+    with Action(f"Rebuilding recycled server {server.name} image"):
+        server.rebuild(image=server_image).wait_until_finished(max_retries=timeout)
+
+    with Action(f"Waiting for server {server.name} to be ready") as action:
+        wait_ready(server=server, timeout=timeout, action=action)
+
+    setup_worker_pool.submit(
+        server_setup,
+        server=server,
+        setup_script=setup_script,
         startup_script=startup_script,
         github_token=github_token,
         github_repository=github_repository,
@@ -283,6 +342,7 @@ def max_servers_in_workflow_run_reached(
 
 def scale_up(
     terminate: threading.Event,
+    recycle: bool,
     with_label: str,
     scripts: Scripts,
     worker_pool: ThreadPoolExecutor,
@@ -302,6 +362,9 @@ def scale_up(
 ):
     """Scale up service."""
 
+    with Action("Logging in to Hetzner Cloud"):
+        client = Client(token=hetzner_token)
+
     def create_runner_server(
         name: str,
         labels: set[str],
@@ -310,12 +373,104 @@ def scale_up(
         servers: list[RunnerServer],
     ):
         """Create new server that would provide a runner with given labels."""
+        recyclable_servers: list[BoundServer] = []
+
+        server_type = get_server_type(labels=labels, default=default_server_type)
+        server_location = get_server_location(labels=labels, default=default_location)
+        server_image = get_server_image(
+            client=client, labels=labels, default=default_image
+        )
+        startup_script = get_startup_script(server_type=server_type, scripts=scripts)
+
+        with Action(
+            f"Trying to create server {name}, "
+            f"type: {server_type.name}, "
+            f"location: {server_location.name if server_location else 'any'}, "
+            f"ssh-key: {ssh_key.name}",
+            stacklevel=3,
+            level=logging.DEBUG,
+        ):
+            pass
+
+        if recycle:
+            for server in servers:
+                if server.name.startswith(recycle_server_name_prefix):
+                    recyclable_servers.append(server)
+                    with Action(
+                        f"Trying to see if we can recycle {server.name}, "
+                        f"type: {server.server_type.name}, "
+                        f"location: {server.server_location.name}, "
+                        f"labels: {server.server.labels}",
+                        stacklevel=3,
+                        level=logging.DEBUG,
+                    ):
+                        pass
+
+                    if (
+                        (server.server_type.name == server_type.name)
+                        and (
+                            server_location is None
+                            or server.server_location.name == server_location.name
+                        )
+                        and (
+                            server.server.labels.get("github-runner-ssh-key")
+                            == ssh_key.name
+                        )
+                    ):
+                        future = worker_pool.submit(
+                            recycle_server,
+                            server_name=server.name,
+                            hetzner_token=hetzner_token,
+                            setup_worker_pool=setup_worker_pool,
+                            labels=labels,
+                            name=name,
+                            server_image=server_image,
+                            startup_script=startup_script,
+                            setup_script=scripts.setup,
+                            github_token=github_token,
+                            github_repository=github_repository,
+                            ssh_key=ssh_key,
+                            timeout=max_server_ready_time,
+                        )
+                        future.server_name = name
+                        futures.append(future)
+                        servers.pop(servers.index(server))
+                        servers.append(
+                            RunnerServer(
+                                name=name,
+                                server_type=server_type,
+                                server_location=server_location,
+                                labels=labels,
+                            )
+                        )
+                        return
+                    else:
+                        with Action(
+                            f"Recyclable server {server.name} did not match {name}",
+                            stacklevel=3,
+                            level=logging.DEBUG,
+                        ):
+                            pass
+
         if max_servers is not None:
             if len(servers) >= max_servers:
                 with Action(
-                    f"Maximum number of servers {max_servers} has been reached"
+                    f"Maximum number of servers {max_servers} has been reached",
+                    stacklevel=3,
                 ):
-                    raise StopIteration("maximum number of servers reached")
+                    if recyclable_servers:
+                        random.shuffle(recyclable_servers)
+                        recyclable_server = recyclable_servers.pop()
+
+                        with Action(
+                            f"Deleting randomly picked recyclable server {recyclable_server.name}",
+                            stacklevel=3,
+                            ignore_fail=True,
+                        ):
+                            recyclable_server.server.delete()
+                        servers.pop(servers.index(recyclable_server))
+                    else:
+                        raise StopIteration("maximum number of servers reached")
 
         future = worker_pool.submit(
             create_server,
@@ -323,22 +478,26 @@ def scale_up(
             setup_worker_pool=setup_worker_pool,
             labels=labels,
             name=name,
-            default_server_type=default_server_type,
-            default_location=default_location,
-            default_image=default_image,
-            scripts=scripts,
+            server_type=server_type,
+            server_location=server_location,
+            server_image=server_image,
+            setup_script=scripts.setup,
+            startup_script=startup_script,
             github_token=github_token,
             github_repository=github_repository,
             ssh_key=ssh_key,
             timeout=max_server_ready_time,
         )
         future.server_name = name
-
         futures.append(future)
-        servers.append(RunnerServer(name=name, labels=labels))
-
-    with Action("Logging in to Hetzner Cloud"):
-        client = Client(token=hetzner_token)
+        servers.append(
+            RunnerServer(
+                name=name,
+                server_type=server_type,
+                server_location=server_location,
+                labels=labels,
+            )
+        )
 
     with Action("Logging in to GitHub"):
         github = Github(login_or_token=github_token, per_page=100)
@@ -375,6 +534,9 @@ def scale_up(
                                     if name.startswith("github-runner-label")
                                 ]
                             ),
+                            server_type=server.server_type,
+                            server_location=server.datacenter.location,
+                            server=server,
                         )
                         for server in client.servers.get_all()
                         if server.name.startswith(server_name_prefix)
@@ -387,7 +549,10 @@ def scale_up(
                         if runner.name.startswith(runner_name_prefix)
                     ]
 
-                with Action("Setting status of servers based on the runner status"):
+                with Action(
+                    "Setting status of servers based on the runner status",
+                    level=logging.DEBUG,
+                ):
                     for runner in runners:
                         for server in servers:
                             if server.name == runner.name:
@@ -423,7 +588,7 @@ def scale_up(
                                             continue
 
                                     if job.status == "in_progress":
-                                        # check we job is running on a standby runner
+                                        # check if the job is running on a standby runner
                                         if job.raw_data["runner_name"].startswith(
                                             standby_runner_name_prefix
                                         ):
@@ -486,7 +651,7 @@ def scale_up(
                                             f"Replenishing{' immediately' if replenish_immediately else ''} standby server with {labels}"
                                         ):
                                             create_runner_server(
-                                                name=f"{standby_server_name_prefix}{str(uuid.uuid1()).replace('-','')}",
+                                                name=f"{standby_server_name_prefix}{uid()}",
                                                 labels=labels,
                                                 setup_worker_pool=setup_worker_pool,
                                                 futures=futures,
