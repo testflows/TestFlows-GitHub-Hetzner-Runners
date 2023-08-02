@@ -450,8 +450,8 @@ considered end of life and deleted as it has *10* minutes or less of useful life
 However, if the server is running for 2 hours and 30 minutes, then it potentially
 has 30 minutes of life left and it will be kept around to potentially be recycled.
 
-Given that sometimes a job might need a server that does not match any recyclable servers
-and the maximum number of runners has been reached, **then one of the recyclable servers
+Sometimes a job might need a server that does not match any recyclable servers,
+if the maximum number of runners has been reached **then one of the recyclable servers
 will be picked at random to be deleted** to make room for a new server.
 
 :✋ Note:
