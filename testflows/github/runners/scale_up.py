@@ -326,7 +326,11 @@ def max_servers_in_workflow_run_reached(
     run_id, servers: list[BoundServer], max_servers_in_workflow_run: int
 ):
     """Return True if maximum number of servers in workflow run has been reached."""
-    with Action(f"Check maximum number of servers used in workflow run {run_id}"):
+    with Action(
+        f"Check maximum number of servers used in workflow run {run_id}",
+        level=locals.DEBUG,
+        stacklevel=3,
+    ):
         run_server_name_prefix = f"{server_name_prefix}{run_id}"
         servers_in_run = [
             server
@@ -335,7 +339,8 @@ def max_servers_in_workflow_run_reached(
         ]
         if len(servers_in_run) >= max_servers_in_workflow_run:
             with Action(
-                f"Maximum number of servers {max_servers_in_workflow_run} for {run_id} has been reached"
+                f"Maximum number of servers {max_servers_in_workflow_run} for {run_id} has been reached",
+                stacklevel=3,
             ):
                 return True
     return False
@@ -587,6 +592,11 @@ def scale_up(
                 with Action("Looking for queued jobs", level=logging.DEBUG):
                     try:
                         for run in workflow_runs:
+                            with Action(
+                                f"Checking jobs for workflow run {run}",
+                                level=logging.DEBUG,
+                            ):
+                                pass
                             if max_servers_in_workflow_run is not None:
                                 if max_servers_in_workflow_run_reached(
                                     run_id=run.id,
@@ -596,6 +606,11 @@ def scale_up(
                                     continue
 
                             for job in run.jobs():
+                                with Action(
+                                    f"Checking job {job} {job.status}",
+                                    level=logging.DEBUG,
+                                ):
+                                    pass
                                 labels = set(job.raw_data["labels"])
 
                                 server_name = (
