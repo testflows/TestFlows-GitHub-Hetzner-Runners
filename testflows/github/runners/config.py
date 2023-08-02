@@ -18,6 +18,7 @@ count = args.count_type
 image = args.image_type
 location = args.location_type
 server_type = args.server_type
+end_of_life = args.end_of_life_type
 
 
 @dataclass
@@ -51,6 +52,7 @@ class Config:
     ssh_key: str = os.path.expanduser("~/.ssh/id_rsa.pub")
     with_label: str = None
     recycle: bool = True
+    end_of_life: count = 50
     max_runners: count = 10
     max_runners_in_workflow_run: count = None
     default_image: image = image("x86:system:ubuntu-22.04")

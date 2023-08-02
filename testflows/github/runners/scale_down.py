@@ -68,7 +68,7 @@ class UnusedRunner:
     observed_interval: float
 
 
-def recycle_server(reason: str, server: BoundServer, ssh_key: SSHKey, margin=10):
+def recycle_server(reason: str, server: BoundServer, ssh_key: SSHKey, end_of_life: int):
     """Recycle server."""
     now = datetime.now(timezone.utc)
     used = now - server.created
@@ -102,7 +102,7 @@ def recycle_server(reason: str, server: BoundServer, ssh_key: SSHKey, margin=10)
             finally:
                 return
 
-    if minutes > (60 - margin):
+    if minutes >= end_of_life:
         with Action(
             f"Try deleting {reason} server {server.name} "
             f"used {days}d{hours}h{minutes}m "
@@ -133,6 +133,7 @@ def scale_down(
     github_token: str,
     github_repository: str,
     recycle: bool,
+    end_of_life: int,
     max_powered_off_time: int,
     max_unused_runner_time: int,
     max_runner_registration_time: int,
@@ -280,6 +281,7 @@ def scale_down(
                                     reason="powered off",
                                     server=powered_off_server.server,
                                     ssh_key=ssh_key,
+                                    end_of_life=end_of_life,
                                 )
                             else:
                                 with Action(
@@ -309,6 +311,7 @@ def scale_down(
                                     reason="zombie",
                                     server=zombie_server.server,
                                     ssh_key=ssh_key,
+                                    end_of_life=end_of_life,
                                 )
                             else:
                                 with Action(
@@ -346,6 +349,7 @@ def scale_down(
                                         reason="unused runner",
                                         server=runner_server,
                                         ssh_key=ssh_key,
+                                        end_of_life=end_of_life,
                                     )
                                 else:
                                     with Action(
@@ -372,6 +376,7 @@ def scale_down(
                         reason="unused recyclable",
                         server=recyclable_server,
                         ssh_key=ssh_key,
+                        end_of_life=end_of_life,
                     )
 
         except Exception as exc:

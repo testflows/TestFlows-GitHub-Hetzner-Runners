@@ -133,6 +133,16 @@ def argparser():
     )
 
     parser.add_argument(
+        "--end-of-life",
+        metavar="minutes",
+        type=args.end_of_life_type,
+        help=(
+            "number of minutes in 1 hour (60 minutes) period after which a recyclable server\n"
+            "is considered to have reached its end of life and thus is deleted, default: 50"
+        ),
+    )
+
+    parser.add_argument(
         "--max-runners-in-workflow-run",
         metavar="count",
         type=args.count_type,
@@ -685,6 +695,7 @@ def main(
                 scale_down_service: Future = worker_pool.submit(
                     scale_down,
                     recycle=config.recycle,
+                    end_of_life=config.end_of_life,
                     ssh_key=ssh_key,
                     hetzner_token=config.hetzner_token,
                     github_token=config.github_token,

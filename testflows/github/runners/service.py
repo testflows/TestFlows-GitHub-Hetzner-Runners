@@ -35,6 +35,7 @@ def command_options(config):
     command += f" --hetzner-token $HETZNER_TOKEN"
     command += f" --config {config.config_file}" if config.config_file else ""
     command += f" --recycle " + "on" if config.recycle else "off"
+    command += f" --end-of-life {config.end_of_life}" if config.end_of_life else ""
     command += f" --with-label {config.with_label}" if config.with_label else ""
     command += f" --workers {config.workers}"
     command += f" --default-type {config.default_server_type.name}"

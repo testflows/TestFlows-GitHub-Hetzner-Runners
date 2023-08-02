@@ -23,6 +23,16 @@ from hcloud.server_types.domain import ServerType
 from argparse import ArgumentTypeError
 
 
+def end_of_life_type(v):
+    """Server end of life type."""
+    try:
+        v = int(v)
+        assert v > 0 and v < 60, f"{v} must be > 0 and < 60"
+    except AssertionError as e:
+        raise ArgumentTypeError(str(e))
+    return v
+
+
 def switch_type(v):
     """Switch argument type."""
     if v == "on":

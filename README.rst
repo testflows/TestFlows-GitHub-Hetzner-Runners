@@ -442,11 +442,13 @@ thus providing a clean environment for the next job.
 
 Powered off servers are marked as recyclable by changing their name to **github-runner-recycle-{uuid}**.
 
-Recyclable servers are deleted *10* minutes before they reach their end of life, if they were not
-recycled before that. The end of life is calculated on per hour basis.
+Recyclable servers are deleted when they reach their end of life period
+which is defined by the **--end-of-life** option, and by default is set to *50* minutes.
+The end of life is calculated on hourly basis and must be greater than *0* and less than *60*.
 
-For example, if the server is running for 2 hours and 50 minutes, then it will be
-considered end of life and deleted as it has *10* minutes or less of useful life.
+For example, with the default value of the **--end-of-life** option set to the *50* minutes,
+if the server is running for 2 hours and 50 minutes, then it will be
+considered to have reached its end of life and is deleted because it has only *10* minutes or less of useful life.
 However, if the server is running for 2 hours and 30 minutes, then it potentially
 has 30 minutes of life left and it will be kept around to potentially be recycled.
 
@@ -1592,6 +1594,10 @@ The following options are supported:
 
 * **-r {on,off}, --recycle {on,off}**
   turn on or off recycling of powered off servers, either 'on' or 'off', default: *on*
+
+* **--end-of-life minutes**
+  number of minutes in 1 hour (60 minutes) period after which a recyclable server
+  is considered to have reached its end of life and thus is deleted, default: *50*
 
 * **-c path, --config path**
   program configuration file
