@@ -1684,7 +1684,7 @@ The following options are supported:
   maximum number of active runners, default: *10*
 
 * **--max-runners-in-workflow-run count**
-  maximum number of runners allowed in a workflow run, default: not set
+  maximum number of runners allowed to be created for a single workflow run, default: not set
 
 * **--with-label label**
   only create runners for jobs that have the specified label,
