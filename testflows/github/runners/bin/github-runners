@@ -146,7 +146,7 @@ def argparser():
         "--max-runners-in-workflow-run",
         metavar="count",
         type=args.count_type,
-        help="maximum number of runners allowed for a workflow run, default: not set",
+        help="maximum number of runners allowed to be created for a single workflow run, default: not set",
     )
 
     parser.add_argument(
