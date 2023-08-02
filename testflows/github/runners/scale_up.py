@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import math
 import time
 import uuid
 import random
@@ -343,6 +344,7 @@ def max_servers_in_workflow_run_reached(
 def scale_up(
     terminate: threading.Event,
     recycle: bool,
+    server_prices: dict[str, float],
     with_label: str,
     scripts: Scripts,
     worker_pool: ThreadPoolExecutor,
@@ -459,11 +461,30 @@ def scale_up(
                     stacklevel=3,
                 ):
                     if recyclable_servers:
-                        random.shuffle(recyclable_servers)
+                        picking = "randomly picked"
+                        if server_prices is None:
+                            random.shuffle(recyclable_servers)
+                        else:
+                            picking = "the cheapest"
+
+                            def sorting_key(server):
+                                server_type_name = server.server_type.name
+                                if server_type_name in server_prices:
+                                    return server_prices[server_type_name]
+                                else:
+                                    with Action(
+                                        f"price for {server_type_name} is missing",
+                                        level=logging.ERROR,
+                                    ):
+                                        return math.inf
+
+                            recyclable_servers.sort(key=sorting_key, reverse=True)
+
                         recyclable_server = recyclable_servers.pop()
 
                         with Action(
-                            f"Deleting randomly picked recyclable server {recyclable_server.name}",
+                            f"Deleting {picking} recyclable server {recyclable_server.name} with type "
+                            f"{recyclable_server.server_type.name}",
                             stacklevel=3,
                             ignore_fail=True,
                         ):

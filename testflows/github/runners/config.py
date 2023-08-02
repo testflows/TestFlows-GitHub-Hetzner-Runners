@@ -73,6 +73,7 @@ class Config:
     logger_config: dict = None
     cloud: cloud = cloud()
     standby_runners: list[standby_runner] = None
+    server_prices: dict[str, float] = None
     config_file: path = None
 
     def __post_init__(self):
@@ -82,7 +83,13 @@ class Config:
     def update(self, args):
         """Update configuration file using command line arguments."""
         for attr in vars(self):
-            if attr in ["config_file", "logger_config", "cloud", "standby_runners"]:
+            if attr in [
+                "config_file",
+                "logger_config",
+                "cloud",
+                "standby_runners",
+                "server_prices",
+            ]:
                 continue
 
             arg_value = getattr(args, attr)

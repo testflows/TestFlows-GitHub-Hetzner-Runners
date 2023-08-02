@@ -673,6 +673,7 @@ def main(
                     scale_up,
                     terminate=terminate,
                     recycle=config.recycle,
+                    server_prices=config.server_prices,
                     with_label=config.with_label,
                     scripts=scripts,
                     ssh_key=ssh_key,
