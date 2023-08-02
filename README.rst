@@ -466,9 +466,11 @@ will be picked at random to be deleted** to make room for a new server if the **
 is not specified using the configuration file. See `Using Configuration File`_ for more details.
 
 If the **server prices** are specified, then the server with the *lowest unused budget* will be removed.
-The *unused budget* is defined as follows:
 
-   $$unused_budget = (60 - age.minutes) * price_per_hour/60$$
+The **unused budget** is defined as follows:
+
+.. image:: https://latex.codecogs.com/svg.image?%5Cbegin%7Bmatrix%7D%5Ctextrm%7Bserver%20life%7D=60-age.minutes%5C%5C%5Ctextrm%7Bprice%20per%20minute%7D=%5Ctextrm%7Bprice%20per%20hour%7D)%5Cdiv%2060%5C%5C%5Ctextrm%7Bunused%20budget%7D=(%5Ctextrm%7Bserver%20life%7D)*(%5Ctextrm%7Bprice%20per%20minute%7D)%5Cend%7Bmatrix%7D
+   :align: center
 
 Here is an example of specifying **server prices** using the configuration file:
 
