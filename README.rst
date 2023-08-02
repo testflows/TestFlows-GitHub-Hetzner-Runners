@@ -464,7 +464,11 @@ Sometimes a job might need a server that does not match any recyclable servers,
 if the maximum number of runners has been reached **then one of the recyclable servers
 will be picked at random to be deleted** to make room for a new server if the **server prices**
 is not specified using the configuration file. See `Using Configuration File`_ for more details.
-If the **server prices** are specified, then the cheapest server will be removed.
+
+If the **server prices** are specified, then the server with the *lowest unused budget* will be removed.
+The *unused budget* is defined as follows:
+
+   $$unused_budget = (60 - age.minutes) * price_per_hour/60$$
 
 Here is an example of specifying **server prices** using the configuration file:
 

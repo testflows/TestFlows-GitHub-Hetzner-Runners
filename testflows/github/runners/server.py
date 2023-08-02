@@ -14,10 +14,26 @@
 # limitations under the License.
 import time
 
+from datetime import datetime, timezone
+from collections import namedtuple
+
 from hcloud.servers.client import BoundServer
 
 from .actions import Action
 from .shell import shell
+
+ServerAge = namedtuple("ServerAge", "days hours minutes seconds")
+
+
+def age(server: BoundServer):
+    """Return server's age."""
+    now = datetime.now(timezone.utc)
+    used = now - server.created
+    days = used.days
+    hours, remainder = divmod(used.seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+
+    return ServerAge(days=days, hours=hours, minutes=minutes, seconds=seconds)
 
 
 def ip_address(server: BoundServer):

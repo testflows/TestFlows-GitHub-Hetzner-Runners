@@ -17,7 +17,6 @@ import copy
 import logging
 import threading
 
-from datetime import datetime, timezone
 from dataclasses import dataclass
 
 from .actions import Action
@@ -31,6 +30,7 @@ from .scale_up import (
     StandbyRunner,
 )
 from .logger import logger
+from .server import age
 
 from github import Github
 from github.Repository import Repository
@@ -70,11 +70,7 @@ class UnusedRunner:
 
 def recycle_server(reason: str, server: BoundServer, ssh_key: SSHKey, end_of_life: int):
     """Recycle server."""
-    now = datetime.now(timezone.utc)
-    used = now - server.created
-    days = used.days
-    hours, remainder = divmod(used.seconds, 3600)
-    minutes, _ = divmod(remainder, 60)
+    days, hours, minutes, _ = age(server=server)
 
     if not server_ssh_key_label in server.labels:
         with Action(

@@ -30,7 +30,7 @@ from .logger import logger
 from .config import check_image
 from .config import standby_runner as StandbyRunner
 
-from .server import wait_ssh, ssh, wait_ready
+from .server import wait_ssh, ssh, wait_ready, age
 
 from hcloud import Client
 from hcloud.ssh_keys.domain import SSHKey
@@ -469,12 +469,16 @@ def scale_up(
 
                             def sorting_key(server):
                                 server_type_name = server.server_type.name
+                                server_age = age(server)
                                 if server_type_name in server_prices:
-                                    return server_prices[server_type_name]
+                                    return (60 - server_age.minutes) - server_prices[
+                                        server_type_name
+                                    ] / 60
                                 else:
                                     with Action(
                                         f"price for {server_type_name} is missing",
                                         level=logging.ERROR,
+                                        stacklevel=4,
                                     ):
                                         return math.inf
 
