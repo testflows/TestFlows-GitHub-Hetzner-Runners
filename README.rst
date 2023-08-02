@@ -461,18 +461,23 @@ However, if the server is running for 2 hours and 30 minutes, then it potentiall
 has 30 minutes of life left and it will be kept around to potentially be recycled.
 
 Sometimes a job might need a server that does not match any recyclable servers,
-if the maximum number of runners has been reached **then one of the recyclable servers
-will be picked at random to be deleted** to make room for a new server if the **server prices**
-is not specified using the configuration file. See `Using Configuration File`_ for more details.
+if the maximum number of runners has been reached then by default one of the recyclable servers
+will be picked at **random** to be deleted to make room for a new server.
 
-If the **server prices** are specified, then the server with the *lowest unused budget* will be removed.
+However, you can specify server prices inside a configuration file. See `Using Configuration File`_ for more details.
+If server prices are specified, then the server with the *lowest unused budget* will be removed.
 
-The **unused budget** is defined as follows:
+The *unused budget* is defined as follows:
 
-.. image:: https://latex.codecogs.com/svg.image?%5Cbegin%7Bmatrix%7D%5Ctextrm%7Bserver%20life%7D=60-age.minutes%5C%5C%5Ctextrm%7Bprice%20per%20minute%7D=%5Ctextrm%7Bprice%20per%20hour%7D)%5Cdiv%2060%5C%5C%5Ctextrm%7Bunused%20budget%7D=(%5Ctextrm%7Bserver%20life%7D)*(%5Ctextrm%7Bprice%20per%20minute%7D)%5Cend%7Bmatrix%7D
-   :align: center
+:unused budget:
 
-Here is an example of specifying **server prices** using the configuration file:
+   .. code-block:: python3
+   
+      server_life = 60 - server_age.minutes
+      price_per_minute = price_per_hour / 60
+      unused_budget = server_life * price_per_minute
+
+Here is an example of specifying server prices using the configuration file:
 
 .. code-block:: bash
 
