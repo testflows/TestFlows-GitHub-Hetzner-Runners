@@ -283,6 +283,7 @@ def max_servers_in_workflow_run_reached(
 
 def scale_up(
     terminate: threading.Event,
+    with_label: str,
     scripts: Scripts,
     worker_pool: ThreadPoolExecutor,
     github_token: str,
@@ -447,6 +448,13 @@ def scale_up(
                                             max_servers_in_workflow_run=max_servers_in_workflow_run,
                                         ):
                                             break
+
+                                    if with_label is not None:
+                                        if not with_label in labels:
+                                            with Action(
+                                                f"Skipping {job} with {labels} as it is missing label '{with_label}'"
+                                            ):
+                                                continue
 
                                     with Action(f"Creating new server for {job}"):
                                         create_runner_server(

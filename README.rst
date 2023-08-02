@@ -425,6 +425,24 @@ workflow run in parallel.
    is greater than the value of this option, as compared to the case if all available runners
    would be allowed.
 
+=============
+Skipping Jobs
+=============
+
+By default, a runner will be created for any **queued** job.
+
+If needed, you can skip creating runners if a job does not have some specified label
+using the **--with-label** option.
+
+For example,
+
+.. code-block:: bash
+
+   github-runners --with-label on-demand
+
+will only create runners for jobs that contain **on-demand** label and skip any job that is missing
+that label.
+
 ===============================
 Jobs That Require Docker Engine
 ===============================
@@ -759,6 +777,7 @@ The `Config class`_ has the following schema:
    * **ssh_key: str**
    * **max_runners: count**
    * **max_runners_in_workflow_run: count**
+   * **with_label: str**
    * **default_image: image**
    * **default_server_type: server_type**
    * **default_location: location**
@@ -1542,6 +1561,10 @@ The following options are supported:
 
 * **--max-runners-in-workflow-run count**
   maximum number of runners allowed in a workflow run, default: not set
+
+* **--with-label label**
+  only create runners for jobs that have the specified label,
+  by default jobs are not skipped and runners will be created for any queued job
 
 * **-w count, --workers count**
   number of concurrent workers, default: *10*

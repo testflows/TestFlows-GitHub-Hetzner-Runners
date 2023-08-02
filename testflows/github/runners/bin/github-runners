@@ -133,6 +133,16 @@ def argparser():
     )
 
     parser.add_argument(
+        "--with-label",
+        metavar="label",
+        type=str,
+        help=(
+            "only create runners for jobs that have the specified label,\n"
+            "by default jobs are not filtered and runners will be created for any queued job"
+        ),
+    )
+
+    parser.add_argument(
         "--default-image",
         metavar="architecture:type:name_or_description",
         type=args.image_type,
@@ -645,6 +655,7 @@ def main(
                 scale_up_service: Future = worker_pool.submit(
                     scale_up,
                     terminate=terminate,
+                    with_label=config.with_label,
                     scripts=scripts,
                     ssh_key=ssh_key,
                     default_server_type=config.default_server_type,
