@@ -46,6 +46,14 @@ to avoid any cleanup. Server instances are not shared between any jobs.
    the same way as for a job that takes 59 minutes. Therefore, the minimal cost
    for any job is the cost of the server for 1 hour plus the cost for one public IPv4 address.
 
+=================
+Table of Contents
+=================
+
+.. contents:: Find out more about,
+   :backlinks: top
+   :depth: 4
+
 ========
 Features
 ========
@@ -1814,13 +1822,5 @@ The following options are supported:
 
       * **stop**
         stop service
-
-=================
-Table of Contents
-=================
-
-.. contents::
-   :backlinks: top
-   :depth: 4
 
 .. _Config class: https://github.com/testflows/TestFlows-GitHub-Runners/blob/main/testflows/github/runners/config.py#L45
