@@ -64,8 +64,9 @@ def deploy(args, config: Config, redeploy=False):
                 f"Checking if server {server_name} already exists", ignore_fail=True
             ):
                 server: BoundServer = client.servers.get_by_name(server_name)
-                with Action(f"Deleting server {server_name}"):
-                    server.delete()
+                if server is not None:
+                    with Action(f"Deleting server {server_name}"):
+                        server.delete()
 
         with Action("Checking if default image exists"):
             config.default_image = check_image(
