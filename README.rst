@@ -454,14 +454,51 @@ has 30 minutes of life left and it will be kept around to potentially be recycle
 
 Sometimes a job might need a server that does not match any recyclable servers,
 if the maximum number of runners has been reached **then one of the recyclable servers
-will be picked at random to be deleted** to make room for a new server.
+will be picked at random to be deleted** to make room for a new server if the **server_prices**
+is not specified using the configuration file. See `Using Configuration File`_ for more details.
 
-:✋ Note:
-   Randomly deleting a potentially recyclable server is not the most optimal choice,
-   as we could be deleting a server that has higher cost per hour as compared to the others.
-   However, this strategy provides a good-enough behavior in most cases without building
-   server cost comparison analysis into the program as Hetzner Cloud server costs
-   could change at any time.
+Here is an example of specifying **server_prices** using the configuration file:
+
+.. code-block:: bash
+
+   github-runners -c config.py
+
+where,
+
+:config.py:
+   .. code-block:: python3
+
+      from testflows.github.runners.config import *
+
+      config = Config(
+         # Prices per hour of Hetzner Cloud servers
+         # using primary IPv4 as of Aug 2, 2023
+         server_prices={
+            # shared vCPU x86
+            "CX11":  0.0060,
+            "CPX11": 0.0067,
+            "CX21":  0.0087,
+            "CPX21": 0.0118,
+            "CX31":  0.0153,
+            "CPX31": 0.0218,
+            "CX41":  0.0286,
+            "CPX41": 0.0420,
+            "CX51":  0.0549,
+            "CPX51": 0.0882,
+            # shard vCPU ARM64
+            "CAX11": 0.0059,
+            "CAX21": 0.0101,
+            "CAX31": 0.0202,
+            "CAX41": 0.0395,
+            # dedicated vCPU
+            "CCX12": 0.0328,
+            "CCX22": 0.0664,
+            "CCX32": 0.1319,
+            "CCX42": 0.2647,
+            "CCX52": 0.5286,
+            "CCX62": 0.7916,
+         }
+      )
 
 A recyclable server is recycled for a new job if it matches the following:
 
@@ -867,6 +904,7 @@ The `Config class`_ has the following schema:
       * **labels: list[str]**
       * **count: count**
       * **replenish_immediately: bool**
+   * **server_prices: dict[str, float]**
 
 ==================
 Specifying SSH Key
