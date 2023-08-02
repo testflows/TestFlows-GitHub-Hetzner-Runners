@@ -461,6 +461,24 @@ will be picked at random to be deleted** to make room for a new server.
    server cost comparison analysis into the program as Hetzner Cloud server costs
    could change at any time.
 
+A recyclable server is recycled for a new job if it matches the following:
+
+* server type matches exactly what the job required or the default type
+* server location matches exactly if job requested a runner in a specific location or the default location is specified
+* server has matching SSH keys
+
+:✋ Note:
+   **Matching server type exactly means that even if a bigger more expensive server type
+   could be potentially recycled it is not used, even though a job that actually requires
+   that expensive server might not be queued before the server's end of life.**
+
+   This is intensional, as we can't predict when a job that actually requires the more expensive
+   server type could be queued. If the program would allow recycling higher server types
+   than actually requested by a job, then we could run into cases when a job
+   that requires smaller and a less expensive server runs on a bigger more expensive server instead.
+   In this case, a job that actually requires the bigger server would force a new expensive server to be created
+   and thus causing more expensive servers to be created than actually necessary.
+
 If needed, you can turn recycling off using the **--recycle {on,off}** option.
 
 .. code-block:: bash
