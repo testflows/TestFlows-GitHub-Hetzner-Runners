@@ -407,16 +407,20 @@ based on your Hetzner Cloud limits using the **-m count, --max-runners count** o
 Specifying Maximum Number of Runners Used in Workflow Run
 =========================================================
 
-By default, the maximum number of runners that could be used by a single workflow run
-is not defined. Therefore, for example, if you have **--max-runners** set to *10*,
-and you have a few workflow runs that are **queued**, and each workflow
-contains more than *10* jobs, then only one workflow run will be running its jobs while
-the jobs in other workflow runs will be waiting as there will be no runners
-available until the run that uses all the runners for its jobs completes.
+By default, the maximum number of runners that could be created for a single workflow run
+is not defined. 
 
-If you would like for the runners to be divided more evenly between different
-**queued** workflow runs, then you can use the **--max-runners-in-workflow-run**
-option to limit the maximum number of runners used in a single workflow run.
+:❗Warning:
+   In general, GitHub does not allow to assign a job to a specific runner, and any available runner
+   that matches the labels could be used. Therefore, one can't control how runners are allocated
+   to queued workflow run jobs and this is why the **--max-runners-in-workflow-run** option will not behave
+   as one would intuitively expect.
+
+If you set the **--max-runners-in-workflow-run** to some value *X*, then **github-runners**
+will created the *X * number of queued workflow runs* runners. How these runners will be allocated by
+GitHub is out of our control. Therefore, the more runs are queued up the more runners will be created, up to the **--max-runners**
+limit, to try to complete the jobs faster. However, this does not mean that you will see exactly *X* number of jobs
+being executed in each queued workflow run. 
 
 For example,
 
@@ -424,16 +428,8 @@ For example,
 
    github-runners --max-runners 40 --max-runners-in-workflow-run 5
 
-will allow only up to *5* runners to be used at the maximum in any single workflow run, and
-therefore would allow up to *8* **queued** workflow runs to run up to *5* jobs in each **queued**
-workflow run in parallel.
-
-:✋ Note:
-   Specifying the **--max-runners-in-workflow-run** option will increase the time a specific
-   workflow run takes to complete it jobs, if number of jobs in the workflow
-   is greater than the value of this option, as compared to the case if all available runners
-   would be allowed.
-
+will create upto *5* runners for each queued up workflow run. If there is only one workflow run, then the maximum number of
+runners will be *5* unless more queued up workflow runs appear, which then could speed up the execution of the run in progress.
 
 =============================
 Recycling Powered Off Servers
