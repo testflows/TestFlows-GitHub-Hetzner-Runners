@@ -129,7 +129,6 @@ def argparser():
         "-r",
         "--recycle",
         type=args.switch_type,
-        choices=["on", "off"],
         help="turn on recycling of powered off servers, either 'on' or 'off', default: on",
     )
 
