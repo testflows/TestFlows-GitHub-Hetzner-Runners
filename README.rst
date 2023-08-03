@@ -502,7 +502,7 @@ where,
             "CPX41": 0.0420,
             "CX51":  0.0549,
             "CPX51": 0.0882,
-            # shard vCPU ARM64
+            # shared vCPU ARM64
             "CAX11": 0.0059,
             "CAX21": 0.0101,
             "CAX31": 0.0202,
