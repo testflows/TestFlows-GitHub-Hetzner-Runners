@@ -205,7 +205,7 @@ def install(args, config: Config, server: BoundServer = None):
         command = f"\"su - ubuntu -c '"
         command += f"GITHUB_TOKEN={config.github_token} "
         command += f"GITHUB_REPOSITORY={config.github_repository} "
-        command += f"HETZNER_TOKEN={config.hetzner_token} "
+        command += f"HETZNER_TOKEN={config.hetzner_token}; "
 
         command += "github-runners"
         command += command_options(config)
