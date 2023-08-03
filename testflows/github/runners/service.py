@@ -21,7 +21,12 @@ SERVICE = f"/etc/systemd/system/{NAME}.service"
 from .actions import Action
 
 
-def command_options(config):
+def command_options(
+    config,
+    github_token="$GITHUB_TOKEN",
+    github_repository="$GITHUB_REPOSITORY",
+    hetzner_token="$HETZNER_TOKEN",
+):
     """Build service install command options not including:
 
     --github-token
@@ -30,9 +35,9 @@ def command_options(config):
     --ssh-key
     """
     command = ""
-    command += f" --github-token $GITHUB_TOKEN"
-    command += f" --github-repository $GITHUB_REPOSITORY"
-    command += f" --hetzner-token $HETZNER_TOKEN"
+    command += f" --github-token {github_token}"
+    command += f" --github-repository {github_repository}"
+    command += f" --hetzner-token {hetzner_token}"
     command += f" --config {config.config_file}" if config.config_file else ""
     command += f" --recycle " + "on" if config.recycle else "off"
     command += f" --end-of-life {config.end_of_life}" if config.end_of_life else ""

@@ -40,7 +40,7 @@ from testflows.github.runners.scale_down import scale_down
 from testflows.github.runners.api_watch import api_watch
 from testflows.github.runners.scripts import Scripts, scripts
 from testflows.github.runners.logger import logger
-from testflows.github.runners.config import Config, check_image
+from testflows.github.runners.config import Config, check_image, check_ssh_key
 
 import testflows.github.runners.args as args
 import testflows.github.runners.cloud as cloud
@@ -637,7 +637,7 @@ def main(
     config, scripts: Scripts, worker_pool: ThreadPoolExecutor, terminate_timeout=30
 ):
     """Auto-scale runners service."""
-
+    user_ssh_keys: list[SSHKey] = []
     terminate = threading.Event()
 
     try:
@@ -651,21 +651,15 @@ def main(
             repo: Repository = github.get_repo(config.github_repository)
 
         with Action("Checking if default image exists"):
-            config.default_image = check_image(
-                client=client, image=config.default_image
-            )
+            config.default_image = check_image(client, config.default_image)
 
         with Action(f"Checking if SSH key exists"):
-            with open(config.ssh_key, "r", encoding="utf-8") as ssh_key_file:
-                public_key = ssh_key_file.read()
-            key_name = hashlib.md5(public_key.encode("utf-8")).hexdigest()
-            ssh_key = SSHKey(name=key_name, public_key=public_key)
+            ssh_key: SSHKey = check_ssh_key(client, config.ssh_key)
 
-            if not client.ssh_keys.get_by_name(name=ssh_key.name):
-                with Action(f"Creating SSH key {ssh_key.name}"):
-                    client.ssh_keys.create(
-                        name=ssh_key.name, public_key=ssh_key.public_key
-                    )
+        if config.user_ssh_keys:
+            with Action(f"Checking if user SSH keys exist"):
+                for user_ssh_key in config.user_ssh_keys:
+                    user_ssh_keys.append(check_ssh_key(client, user_ssh_key))
 
         try:
             with Action("Creating scale up service"):
@@ -677,6 +671,7 @@ def main(
                     with_label=config.with_label,
                     scripts=scripts,
                     ssh_key=ssh_key,
+                    user_ssh_keys=user_ssh_keys,
                     default_server_type=config.default_server_type,
                     default_image=config.default_image,
                     default_location=config.default_location,

@@ -203,12 +203,13 @@ def install(args, config: Config, server: BoundServer = None):
 
     with Action("Installing service"):
         command = f"\"su - ubuntu -c '"
-        command += f"GITHUB_TOKEN={config.github_token} "
-        command += f"GITHUB_REPOSITORY={config.github_repository} "
-        command += f"HETZNER_TOKEN={config.hetzner_token}; "
-
         command += "github-runners"
-        command += command_options(config)
+        command += command_options(
+            config,
+            github_token=config.github_token,
+            github_repository=config.github_repository,
+            hetzner_token=config.hetzner_token,
+        )
         command += " service install -f'\""
 
         ssh(server, command)

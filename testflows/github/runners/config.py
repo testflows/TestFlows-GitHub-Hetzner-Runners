@@ -1,12 +1,16 @@
 import os
 import sys
+import hashlib
 
 from dataclasses import dataclass
 
 from hcloud import Client
 from hcloud.images.domain import Image
+from hcloud.ssh_keys.domain import SSHKey
 
 import testflows.github.runners.args as args
+
+from .actions import Action
 
 
 class ImageNotFoundError(Exception):
@@ -50,6 +54,7 @@ class Config:
     github_repository: str = os.getenv("GITHUB_REPOSITORY")
     hetzner_token: str = os.getenv("HETZNER_TOKEN")
     ssh_key: str = os.path.expanduser("~/.ssh/id_rsa.pub")
+    user_ssh_keys: dict[str, str] = None
     with_label: str = None
     recycle: bool = True
     end_of_life: count = 50
@@ -80,6 +85,9 @@ class Config:
         if self.standby_runners is None:
             self.standby_runners = []
 
+        if self.user_ssh_keys is None:
+            self.user_ssh_keys = []
+
     def update(self, args):
         """Update configuration file using command line arguments."""
         for attr in vars(self):
@@ -88,6 +96,7 @@ class Config:
                 "logger_config",
                 "cloud",
                 "standby_runners",
+                "user_ssh_keys",
                 "server_prices",
             ]:
                 continue
@@ -127,6 +136,20 @@ class Config:
                 file=sys.stderr,
             )
             sys.exit(1)
+
+
+def check_ssh_key(client: Client, ssh_key: str):
+    """Check that ssh key exists if not create it."""
+
+    with open(ssh_key, "r", encoding="utf-8") as ssh_key_file:
+        public_key = ssh_key_file.read()
+
+    key_name = hashlib.md5(public_key.encode("utf-8")).hexdigest()
+    ssh_key = SSHKey(name=key_name, public_key=public_key)
+
+    if not client.ssh_keys.get_by_name(name=ssh_key.name):
+        with Action(f"Creating SSH key {ssh_key.name}", stacklevel=3):
+            client.ssh_keys.create(name=ssh_key.name, public_key=ssh_key.public_key)
 
 
 def check_image(client: Client, image: Image):

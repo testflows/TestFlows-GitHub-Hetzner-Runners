@@ -199,6 +199,7 @@ def create_server(
     github_token: str,
     github_repository: str,
     ssh_key: SSHKey,
+    user_ssh_keys: list[SSHKey],
     timeout=60,
 ):
     """Create specified number of server instances."""
@@ -220,7 +221,7 @@ def create_server(
             server_type=server_type,
             location=server_location,
             image=server_image,
-            ssh_keys=[ssh_key],
+            ssh_keys=[ssh_key] + user_ssh_keys,
             labels=server_labels,
         )
         server: BoundServer = response.server
@@ -346,6 +347,23 @@ def max_servers_in_workflow_run_reached(
     return False
 
 
+def recyclable_server_match(
+    server: BoundServer,
+    server_type: ServerType,
+    server_location: Location,
+    ssh_key: SSHKey,
+):
+    """Check if a recyclable server matches for the specified
+    server type, location and ssh key."""
+    if server.server_type.name != server_type.name:
+        return False
+
+    if server_location and server.server_location.name != server_location.name:
+        return False
+
+    return ssh_key.name == server.server.labels.get(server_ssh_key_label)
+
+
 def scale_up(
     terminate: threading.Event,
     recycle: bool,
@@ -357,6 +375,7 @@ def scale_up(
     github_repository: str,
     hetzner_token: str,
     ssh_key: SSHKey,
+    user_ssh_keys: list[SSHKey],
     default_server_type: ServerType,
     default_location: Location,
     default_image: Image,
@@ -390,10 +409,7 @@ def scale_up(
         startup_script = get_startup_script(server_type=server_type, scripts=scripts)
 
         with Action(
-            f"Trying to create server {name}, "
-            f"type: {server_type.name}, "
-            f"location: {server_location.name if server_location else 'any'}, "
-            f"ssh-key: {ssh_key.name}",
+            f"Trying to create server {name}",
             stacklevel=3,
             level=logging.DEBUG,
         ):
@@ -404,25 +420,17 @@ def scale_up(
                 if server.name.startswith(recycle_server_name_prefix):
                     recyclable_servers.append(server)
                     with Action(
-                        f"Trying to see if we can recycle {server.name}, "
-                        f"type: {server.server_type.name}, "
-                        f"location: {server.server_location.name}, "
-                        f"labels: {server.server.labels}",
+                        f"Checking if we can recycle {server.name}",
                         stacklevel=3,
                         level=logging.DEBUG,
                     ):
                         pass
 
-                    if (
-                        (server.server_type.name == server_type.name)
-                        and (
-                            server_location is None
-                            or server.server_location.name == server_location.name
-                        )
-                        and (
-                            server.server.labels.get("github-runner-ssh-key")
-                            == ssh_key.name
-                        )
+                    if recyclable_server_match(
+                        server=server,
+                        server_type=server_type,
+                        server_location=server_location,
+                        ssh_key=ssh_key,
                     ):
                         future = worker_pool.submit(
                             recycle_server,
@@ -516,6 +524,7 @@ def scale_up(
             github_token=github_token,
             github_repository=github_repository,
             ssh_key=ssh_key,
+            user_ssh_keys=user_ssh_keys,
             timeout=max_server_ready_time,
         )
         future.server_name = name
