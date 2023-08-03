@@ -151,6 +151,8 @@ def check_ssh_key(client: Client, ssh_key: str):
         with Action(f"Creating SSH key {ssh_key.name}", stacklevel=3):
             client.ssh_keys.create(name=ssh_key.name, public_key=ssh_key.public_key)
 
+    return ssh_key
+
 
 def check_image(client: Client, image: Image):
     """Check if image exists.
