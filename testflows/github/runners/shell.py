@@ -13,14 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import time
-import logging
 import subprocess
 
-logger = logging.getLogger("testflows.github.runners")
+from .logger import logger
 
 
 def shell(
-    cmd: str, shell: bool = True, check: bool = True, use_logger=True, stacklevel=2
+    cmd: str,
+    shell: bool = True,
+    check: bool = True,
+    use_logger=True,
+    stacklevel=2,
+    server_name=None,
 ):
     """Execute command."""
     p = subprocess.Popen(
@@ -39,7 +43,11 @@ def shell(
             time.sleep(0.1)
             continue
         if use_logger:
-            logger.info(f"   > {line.rstrip()}", stacklevel=stacklevel)
+            logger.info(
+                f"   > {line.rstrip()}",
+                stacklevel=stacklevel,
+                extra={"server_name": server_name},
+            )
         else:
             print(line.rstrip())
 

@@ -22,6 +22,8 @@ from hcloud.server_types.domain import ServerType
 
 from argparse import ArgumentTypeError
 
+from traceback import print_exception
+
 
 def end_of_life_type(v):
     """Server end of life type."""
@@ -42,11 +44,12 @@ def switch_type(v):
     raise ArgumentTypeError(f"invalid value {v}")
 
 
-def path_type(v):
+def path_type(v, check_exists=True):
     """Path argument type."""
     try:
         v = os.path.abspath(os.path.expanduser(v))
-        os.path.exists(v)
+        if check_exists:
+            os.path.exists(v)
     except Exception as e:
         raise ArgumentTypeError(str(e))
     return v
@@ -98,6 +101,7 @@ def config_type(v):
         config = parse_config(v)
         config.config_file = v
     except Exception as e:
+        # print_exception(e)
         raise ArgumentTypeError(str(e))
 
     return config

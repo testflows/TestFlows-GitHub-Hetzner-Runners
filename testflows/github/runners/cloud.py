@@ -24,6 +24,8 @@ from .actions import Action
 from .config import (
     Config,
     check_image,
+    check_location,
+    check_server_type,
     check_ssh_key,
     write as write_config,
     read as read_config,
@@ -82,16 +84,34 @@ def deploy(args, config: Config, redeploy=False):
                 client=client, image=config.default_image
             )
 
+        with Action("Checking if default location exists"):
+            config.default_location = check_location(client, config.default_location)
+
+        with Action("Checking if default server type exists"):
+            config.default_server_type = check_server_type(
+                client, config.default_server_type
+            )
+
+        with Action("Checking if server type exists"):
+            config.cloud.deploy.server_type = check_server_type(
+                client=client, image=config.cloud.deploy.server_type
+            )
+
         with Action("Checking if server image exists"):
             config.cloud.deploy.image = check_image(
                 client=client, image=config.cloud.deploy.image
             )
 
+        with Action("Checking if server location exists"):
+            config.cloud.deploy.location = check_location(
+                client=client, image=config.cloud.deploy.location
+            )
+
         with Action(f"Checking if SSH key exists"):
             ssh_keys.append(check_ssh_key(client, config.ssh_key))
 
-            if config.ssh_keys:
-                for key in config.ssh_keys:
+            if config.additional_ssh_keys:
+                for key in config.additional_ssh_keys:
                     ssh_keys.append(check_ssh_key(client, key))
 
         with Action(f"Creating new server"):
@@ -179,12 +199,12 @@ def deploy(args, config: Config, redeploy=False):
                 f"{'Modifying' if config.config_file else 'Creating'} "
                 "config file and adding this SSH key to the SSH keys list"
             ):
-                raw_config = {}
+                raw_config = {"config": {}}
                 if config.config_file:
                     raw_config = read_config(config.config_file)
-                keys = raw_config.get("ssh_keys", [])
+                keys = raw_config["config"].get("ssh_keys", [])
                 keys.append(ssh_keys[0].public_key)
-                raw_config["ssh_keys"] = list(set(keys))
+                raw_config["config"]["ssh_keys"] = list(set(keys))
                 write_config(file, raw_config)
                 file.flush()
             scp(
@@ -193,7 +213,7 @@ def deploy(args, config: Config, redeploy=False):
             )
             config.config_file = os.path.join(
                 deploy_configs_folder,
-                os.path.basename(config.config_file),
+                "config.yaml",
             )
 
     with Action("Fixing ownership of any copied configs"):

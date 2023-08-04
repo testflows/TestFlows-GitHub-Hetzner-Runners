@@ -54,8 +54,9 @@ def wait_ssh(server: BoundServer, timeout: float):
             f"Trying to connect to {server.name}@{ip}...{attempt}",
             ignore_fail=True,
             stacklevel=3,
+            server_name=server.name,
         ):
-            returncode = ssh(server, "hostname", check=False)
+            returncode = ssh(server, "hostname", check=False, stacklevel=4)
             if returncode == 0:
                 break
         if time.time() - start_time >= timeout:
@@ -70,9 +71,15 @@ def ssh_command(server: BoundServer):
     return f'ssh -q -o "StrictHostKeyChecking no" root@{ip}'
 
 
-def ssh(server: BoundServer, cmd: str, *args, **kwargs):
+def ssh(server: BoundServer, cmd: str, *args, stacklevel=3, **kwargs):
     """Execute command over SSH."""
-    return shell(f"{ssh_command(server=server)} {cmd}", *args, **kwargs)
+    return shell(
+        f"{ssh_command(server=server)} {cmd}",
+        *args,
+        **kwargs,
+        server_name=server.name,
+        stacklevel=stacklevel,
+    )
 
 
 def scp(source: str, destination: str, *args, **kwargs):
@@ -88,7 +95,7 @@ def wait_ready(server: BoundServer, timeout: float, action: Action = None):
     while True:
         status = server.status
         if action:
-            action.note(f"{server.name} {status}")
+            action.note(f"{server.name} {status}", stacklevel=4)
         if status == server.STATUS_RUNNING:
             break
         if time.time() - start_time >= timeout:

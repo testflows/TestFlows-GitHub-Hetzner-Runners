@@ -23,11 +23,10 @@ import threading
 from dataclasses import dataclass
 
 from .actions import Action
-from .scripts import Scripts
 from .request import request
 from .args import image_type
 from .logger import logger
-from .config import check_image
+from .config import Config, check_image
 from .config import standby_runner as StandbyRunner
 
 from .server import wait_ssh, ssh, wait_ready, age
@@ -69,8 +68,8 @@ class RunnerServer:
 
 
 def uid():
-    """Return unique id."""
-    return str(uuid.uuid1()).replace("-", "")
+    """Return unique id - just a timestamp."""
+    return str(time.time())
 
 
 def server_setup(
@@ -83,10 +82,10 @@ def server_setup(
     timeout: float = 60,
 ):
     """Setup new server instance."""
-    with Action("Wait for SSH connection to be ready"):
+    with Action("Wait for SSH connection to be ready", server_name=server.name):
         wait_ssh(server=server, timeout=timeout)
 
-    with Action("Getting registration token for the runner"):
+    with Action("Getting registration token for the runner", server_name=server.name):
         content, resp = request(
             f"https://api.github.com/repos/{github_repository}/actions/runners/registration-token",
             headers={
@@ -99,13 +98,13 @@ def server_setup(
         )
         GITHUB_RUNNER_TOKEN = content["token"]
 
-    with Action("Getting current directory"):
+    with Action("Getting current directory", server_name=server.name):
         current_dir = os.path.dirname(__file__)
 
-    with Action("Executing setup.sh script"):
-        ssh(server, f"bash -s  < {setup_script}", stacklevel=3)
+    with Action("Executing setup.sh script", server_name=server.name):
+        ssh(server, f"bash -s  < {setup_script}", stacklevel=5)
 
-    with Action("Executing startup.sh script"):
+    with Action("Executing startup.sh script", server_name=server.name):
         ssh(
             server,
             f"'sudo -u ubuntu "
@@ -114,7 +113,7 @@ def server_setup(
             f"GITHUB_RUNNER_GROUP=Default "
             f'GITHUB_RUNNER_LABELS="{runner_labels}" '
             f"bash -s' < {startup_script}",
-            stacklevel=3,
+            stacklevel=5,
         )
 
 
@@ -174,16 +173,15 @@ def get_server_image(
     return server_image
 
 
-def get_startup_script(server_type: ServerType, scripts: Scripts):
+def get_startup_script(server_type: ServerType, x64, arm64):
     """Get startup script based on the requested server type.
     ARM64 servers type names start with "CA" prefix.
 
     For example, CAX11, CAX21, CAX31, and CAX41
     """
     if server_type.name.lower().startswith("ca"):
-        return scripts.startup_arm64
-
-    return scripts.startup_x64
+        return arm64
+    return x64
 
 
 def create_server(
@@ -209,12 +207,12 @@ def create_server(
     }
     server_labels[server_ssh_key_label] = ssh_keys[0].name
 
-    with Action(f"Validating server {name} labels"):
+    with Action(f"Validating server {name} labels", server_name=name):
         valid, error_msg = LabelValidator.validate_verbose(labels=server_labels)
         if not valid:
             raise ValueError(f"invalid server labels {server_labels}: {error_msg}")
 
-    with Action(f"Creating server {name} with labels {labels}"):
+    with Action(f"Creating server {name} with labels {labels}", server_name=name):
         response = client.servers.create(
             name=name,
             server_type=server_type,
@@ -225,7 +223,9 @@ def create_server(
         )
         server: BoundServer = response.server
 
-    with Action(f"Waiting for server {server.name} to be ready") as action:
+    with Action(
+        f"Waiting for server {server.name} to be ready", server_name=name
+    ) as action:
         wait_ready(server=server, timeout=timeout, action=action)
 
     setup_worker_pool.submit(
@@ -262,21 +262,23 @@ def recycle_server(
     }
     server_labels[server_ssh_key_label] = ssh_key.name
 
-    with Action(f"Validating server {name} labels"):
+    with Action(f"Validating server {name} labels", server_name=name):
         valid, error_msg = LabelValidator.validate_verbose(labels=server_labels)
         if not valid:
             raise ValueError(f"invalid server labels {server_labels}: {error_msg}")
 
-    with Action(f"Get recyclable server {server_name}"):
+    with Action(f"Get recyclable server {server_name}", server_name=name):
         server: BoundServer = client.servers.get_by_name(name=server_name)
 
-    with Action(f"Recycling server {server_name} to make {name}"):
+    with Action(f"Recycling server {server_name} to make {name}", server_name=name):
         server = server.update(name=name, labels=server_labels)
 
-    with Action(f"Rebuilding recycled server {server.name} image"):
+    with Action(f"Rebuilding recycled server {server.name} image", server_name=name):
         server.rebuild(image=server_image).wait_until_finished(max_retries=timeout)
 
-    with Action(f"Waiting for server {server.name} to be ready") as action:
+    with Action(
+        f"Waiting for server {server.name} to be ready", server_name=name
+    ) as action:
         wait_ready(server=server, timeout=timeout, action=action)
 
     setup_worker_pool.submit(
@@ -323,13 +325,18 @@ def count_present(servers: list[RunnerServer], labels: set[str]):
 
 
 def max_servers_in_workflow_run_reached(
-    run_id, servers: list[BoundServer], max_servers_in_workflow_run: int
+    run_id,
+    servers: list[BoundServer],
+    max_servers_in_workflow_run: int,
+    server_name: str = None,
 ):
     """Return True if maximum number of servers in workflow run has been reached."""
     with Action(
         f"Check maximum number of servers used in workflow run {run_id}",
         level=logging.DEBUG,
         stacklevel=3,
+        run_id=run_id,
+        server_name=server_name,
     ):
         run_server_name_prefix = f"{server_name_prefix}{run_id}"
         servers_in_run = [
@@ -341,6 +348,8 @@ def max_servers_in_workflow_run_reached(
             with Action(
                 f"Maximum number of servers {max_servers_in_workflow_run} for {run_id} has been reached",
                 stacklevel=3,
+                run_id=run_id,
+                server_name=server_name,
             ):
                 return True
     return False
@@ -365,26 +374,27 @@ def recyclable_server_match(
 
 def scale_up(
     terminate: threading.Event,
-    recycle: bool,
-    server_prices: dict[str, float],
-    with_label: str,
-    scripts: Scripts,
     worker_pool: ThreadPoolExecutor,
-    github_token: str,
-    github_repository: str,
-    hetzner_token: str,
     ssh_keys: list[SSHKey],
-    default_server_type: ServerType,
-    default_location: Location,
-    default_image: Image,
-    interval: int,
-    max_servers: int,
-    max_servers_in_workflow_run: int,
-    max_server_ready_time: int,
-    debug: bool = False,
-    standby_runners: list[StandbyRunner] = None,
+    config: Config,
 ):
     """Scale up service."""
+    github_token: str = config.github_token
+    github_repository: str = config.github_repository
+    hetzner_token: str = config.hetzner_token
+    default_server_type: ServerType = config.default_server_type
+    default_location: Location = config.default_location
+    default_image: Image = config.default_image
+    interval_period: int = config.scale_up_interval
+    max_servers: int = config.max_runners
+    max_servers_in_workflow_run: int = config.max_runners_in_workflow_run
+    max_server_ready_time: int = config.max_server_ready_time
+    debug: bool = config.debug
+    standby_runners: list[StandbyRunner] = config.standby_runners
+    recycle: bool = config.recycle
+    server_prices: dict[str, float] = config.server_prices
+    with_label: str = config.with_label
+    interval: int = -1
 
     with Action("Logging in to Hetzner Cloud"):
         client = Client(token=hetzner_token)
@@ -404,12 +414,18 @@ def scale_up(
         server_image = get_server_image(
             client=client, labels=labels, default=default_image
         )
-        startup_script = get_startup_script(server_type=server_type, scripts=scripts)
+        setup_script = config.setup_script
+        startup_script = get_startup_script(
+            server_type=server_type,
+            x64=config.startup_x64_script,
+            arm64=config.startup_arm64_script,
+        )
 
         with Action(
             f"Trying to create server {name}",
             stacklevel=3,
             level=logging.DEBUG,
+            server_name=name,
         ):
             pass
 
@@ -421,6 +437,7 @@ def scale_up(
                         f"Checking if we can recycle {server.name}",
                         stacklevel=3,
                         level=logging.DEBUG,
+                        server_name=name,
                     ):
                         pass
 
@@ -439,7 +456,7 @@ def scale_up(
                             name=name,
                             server_image=server_image,
                             startup_script=startup_script,
-                            setup_script=scripts.setup,
+                            setup_script=setup_script,
                             github_token=github_token,
                             github_repository=github_repository,
                             ssh_key=ssh_keys[0],
@@ -462,6 +479,7 @@ def scale_up(
                             f"Recyclable server {server.name} did not match {name}",
                             stacklevel=3,
                             level=logging.DEBUG,
+                            server_name=name,
                         ):
                             pass
 
@@ -470,6 +488,7 @@ def scale_up(
                 with Action(
                     f"Maximum number of servers {max_servers} has been reached",
                     stacklevel=3,
+                    server_name=name,
                 ):
                     if recyclable_servers:
                         picking = "randomly picked"
@@ -480,16 +499,18 @@ def scale_up(
 
                             def sorting_key(server):
                                 server_type_name = server.server_type.name
-                                server_age = age(server)
-                                if server_type_name in server_prices:
+                                server_location_name = server.server_location.name
+                                server_age = age(server.server) if server.server else 0
+                                try:
                                     return (60 - server_age.minutes) - server_prices[
                                         server_type_name
-                                    ] / 60
-                                else:
+                                    ][server_location_name] / 60
+                                except KeyError:
                                     with Action(
-                                        f"price for {server_type_name} is missing",
+                                        f"price for {server_type_name} at {server_location_name} is missing",
                                         level=logging.ERROR,
                                         stacklevel=4,
+                                        server_name=name,
                                     ):
                                         return math.inf
 
@@ -502,6 +523,7 @@ def scale_up(
                             f"{recyclable_server.server_type.name}",
                             stacklevel=3,
                             ignore_fail=True,
+                            server_name=name,
                         ):
                             recyclable_server.server.delete()
                         servers.pop(servers.index(recyclable_server))
@@ -517,7 +539,7 @@ def scale_up(
             server_type=server_type,
             server_location=server_location,
             server_image=server_image,
-            setup_script=scripts.setup,
+            setup_script=setup_script,
             startup_script=startup_script,
             github_token=github_token,
             github_repository=github_repository,
@@ -546,19 +568,24 @@ def scale_up(
     ) as setup_worker_pool:
 
         while True:
+            interval += 1
             if terminate.is_set():
-                with Action("Terminating scale up service"):
+                with Action("Terminating scale up service", interval=interval):
                     break
 
             try:
-                with Action("Getting workflow runs", level=logging.DEBUG):
+                with Action(
+                    "Getting workflow runs", level=logging.DEBUG, interval=interval
+                ):
                     workflow_runs: list[WorkflowRun] = repo.get_workflow_runs(
                         status="queued"
                     )
 
                 futures: list[Future] = []
 
-                with Action("Getting list of servers", level=logging.DEBUG):
+                with Action(
+                    "Getting list of servers", level=logging.DEBUG, interval=interval
+                ):
                     servers = [
                         RunnerServer(
                             name=server.name,
@@ -578,7 +605,11 @@ def scale_up(
                         if server.name.startswith(server_name_prefix)
                     ]
 
-                with Action("Getting list of self-hosted runners", level=logging.DEBUG):
+                with Action(
+                    "Getting list of self-hosted runners",
+                    level=logging.DEBUG,
+                    interval=interval,
+                ):
                     runners: list[SelfHostedActionsRunner] = [
                         runner
                         for runner in repo.get_self_hosted_runners()
@@ -588,6 +619,7 @@ def scale_up(
                 with Action(
                     "Setting status of servers based on the runner status",
                     level=logging.DEBUG,
+                    interval=interval,
                 ):
                     for runner in runners:
                         for server in servers:
@@ -595,12 +627,16 @@ def scale_up(
                                 if runner.status == "online":
                                     server.status = "busy" if runner.busy else "ready"
 
-                with Action("Looking for queued jobs", level=logging.DEBUG):
+                with Action(
+                    "Looking for queued jobs", level=logging.DEBUG, interval=interval
+                ):
                     try:
                         for run in workflow_runs:
                             with Action(
                                 f"Checking jobs for workflow run {run}",
                                 level=logging.DEBUG,
+                                run_id=run.id,
+                                interval=interval,
                             ):
                                 pass
                             if max_servers_in_workflow_run is not None:
@@ -615,6 +651,9 @@ def scale_up(
                                 with Action(
                                     f"Checking job {job} {job.status}",
                                     level=logging.DEBUG,
+                                    run_id=run.id,
+                                    job_id=job.id,
+                                    interval=interval,
                                 ):
                                     pass
                                 labels = set(job.raw_data["labels"])
@@ -630,6 +669,8 @@ def scale_up(
                                         with Action(
                                             f"Server already exists for {job.status} {job}",
                                             level=logging.DEBUG,
+                                            server_name=server_name,
+                                            interval=interval,
                                         ):
                                             continue
 
@@ -641,7 +682,9 @@ def scale_up(
                                             continue
 
                                         with Action(
-                                            f"Finding labels for the job from which {job} stole the runner"
+                                            f"Finding labels for the job from which {job} stole the runner",
+                                            server_name=server_name,
+                                            interval=interval,
                                         ):
                                             labels = set(
                                                 [
@@ -657,17 +700,24 @@ def scale_up(
                                             run_id=run.id,
                                             servers=servers,
                                             max_servers_in_workflow_run=max_servers_in_workflow_run,
+                                            server_name=server_name,
                                         ):
                                             break
 
                                     if with_label is not None:
                                         if not with_label in labels:
                                             with Action(
-                                                f"Skipping {job} with {labels} as it is missing label '{with_label}'"
+                                                f"Skipping {job} with {labels} as it is missing label '{with_label}'",
+                                                server_name=server_name,
+                                                interval=interval,
                                             ):
                                                 continue
 
-                                    with Action(f"Creating new server for {job}"):
+                                    with Action(
+                                        f"Creating new server for {job}",
+                                        server_name=server_name,
+                                        interval=interval,
+                                    ):
                                         create_runner_server(
                                             name=server_name,
                                             labels=labels,
@@ -679,7 +729,7 @@ def scale_up(
                         pass
 
                 if standby_runners:
-                    with Action("Checking standby runner pool"):
+                    with Action("Checking standby runner pool", interval=interval):
                         for standby_runner in standby_runners:
                             labels = set(standby_runner.labels)
                             replenish_immediately = standby_runner.replenish_immediately
@@ -694,7 +744,8 @@ def scale_up(
                                 for _ in range(standby_runner.count - available):
                                     try:
                                         with Action(
-                                            f"Replenishing{' immediately' if replenish_immediately else ''} standby server with {labels}"
+                                            f"Replenishing{' immediately' if replenish_immediately else ''} standby server with {labels}",
+                                            interval=interval,
                                         ):
                                             create_runner_server(
                                                 name=f"{standby_server_name_prefix}{uid()}",
@@ -710,17 +761,21 @@ def scale_up(
                     with Action(
                         f"Waiting to finish creating server {future.server_name}",
                         ignore_fail=True,
+                        server_name=future.server_name,
+                        interval=interval,
                     ):
                         future.result()
 
             except Exception as exc:
                 msg = f"❗ Error: {type(exc).__name__} {exc}"
                 if debug:
-                    logger.exception(f"{msg}\n{exc}")
+                    logger.exception(f"{msg}\n{exc}", extra={"interval": interval})
                 else:
-                    logger.error(msg)
+                    logger.error(msg, extra={"interval": interval})
 
             with Action(
-                f"Sleeping until next interval {interval}s", level=logging.DEBUG
+                f"Sleeping until next interval {interval_period}s",
+                level=logging.DEBUG,
+                interval=interval,
             ):
-                time.sleep(interval)
+                time.sleep(interval_period)

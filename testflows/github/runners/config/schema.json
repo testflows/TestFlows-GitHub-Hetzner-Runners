@@ -1,0 +1,203 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "JSON Schema for TestFlows GitHub Runners configuration file.",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "config": {
+            "description": "TestFlows GitHub Runners configuration object.",
+            "type": "object",
+            "properties": {
+                "github_token": {
+                    "description": "GitHub project token, default: ${GITHUB_TOKEN}",
+                    "type": "string",
+                    "examples": ["${GITHUB_TOKEN}"]
+                },
+                "github_repository": {
+                    "description": "GitHub repository",
+                    "type": "string",
+                    "examples": ["${GITHUB_REPOSITORY}","testflows/testflows-github-runner"]
+                },
+                "hetzner_token": {
+                    "description": "Hetzner project token",
+                    "type": "string",
+                    "examples": ["${HETZNER_TOKEN}"]
+                },
+                "ssh_key": {
+                    "description": "Primary public SSH key for which you have private key that will be used to access the severs.",
+                    "type": "string",
+                    "examples": ["~/.ssh/id_rsa.pub"]
+                },
+                "additional_ssh_keys": {
+                    "description": "Additional public SSH keys that will be added to the servers to provide access to additional users.",
+                    "type": "array",
+                    "items": {
+                        "description": "Additional public SSH key.",
+                        "type": "string",
+                        "examples": ["ssh-rsa AAAAB3NzaC1..."]
+                    }
+                },
+                "with_label": {
+                    "description": "Only create runners for jobs that have the specified label, by default jobs are not filtered and runners will be created for any queued job.",
+                    "type": "string",
+                    "examples": ["on-demand"]
+                },
+                "recycle": {
+                    "description": "Turn on recycling of powered off servers, either 'true' or 'false', default: true",
+                    "type": "boolean",
+                    "examples": [true, false]
+                },
+                "end_of_life": {
+                    "description": "Number of minutes in 1 hour (60 minutes) period after which a recyclable server is considered to have reached its end of life and thus is deleted, default: 50.",
+                    "type": "integer",
+                    "examples": [50]
+                },
+                "max_runners": {
+                    "description": "Maximum number of active runners, default: 10.",
+                    "type": "integer",
+                    "examples": [10]
+                },
+                "max_runners_in_workflow_run": {
+                    "description": "Maximum number of runners allowed to be created for a single workflow run, default: not set.",
+                    "type": "integer",
+                    "examples": [5]
+                },
+                "default_image": {
+                    "description": "The architecture:type:name_or_description\nDefault runner server image type and name or description, where the architecture is either: 'x86' or 'arm' and the type is either: 'system','snapshot','backup','app', default: x86:system:ubuntu-22.04.",
+                    "type": "string",
+                    "examples": ["x86:system:ubuntu-22.04"]
+                },
+                "default_server_type": {
+                    "description": "The default runner server type name, default: cx11.",
+                    "type": "string",
+                    "examples": ["cx11"]
+                },
+                "default_location": {
+                    "description": "The default runner server location name, by default not specified.",
+                    "type": "string",
+                    "examples": ["ash"]
+                },
+                "workers": {
+                    "description": "Number of concurrent thread workers, default: 10.",
+                    "type": "integer",
+                    "examples": [10]
+                },
+                "setup_script": {
+                    "description": "Path to custom server setup script.",
+                    "type": "string"
+                },
+                "startup_x64_script": {
+                    "description": "Path to custom x64 server startup script.",
+                    "type": "string"
+                },
+                "startup_arm64_script": {
+                    "description": "Path to custom ARM64 server startup script.",
+                    "type": "string"
+                },
+                "max_powered_off_time": {
+                    "description": "The maximum time after which a powered off server is recycled or deleted, default: 60 sec.",
+                    "type": "integer",
+                    "examples": [60]
+                },
+                "max_unused_runner_time": {
+                    "description": "The maximum time after which an unused runner is removed and its server deleted, default: 120 sec.",
+                    "type": "integer",
+                    "examples": [120]
+                },
+                "max_runner_registration_time": {
+                    "description": "The maximum time after which the server will be deleted if it fails to register a runner, default: 120 sec.",
+                    "type": "integer",
+                    "examples": [120]
+                },
+                "max_server_ready_time": {
+                    "description": "The maximum time to wait for the server to be in the running state, default: 120 sec.",
+                    "type": "integer",
+                    "examples": [120]
+                },
+                "scale_up_interval":{
+                    "description": "The scale up service interval, default: 15 sec.",
+                    "type": "integer",
+                    "examples": [15]
+                },
+                "scale_down_interval": {
+                    "description": "The scale down service interval, default: 15 sec.",
+                    "type": "integer",
+                    "examples": [15]
+                },
+                "debug": {
+                    "description": "Enable debugging mode, default: false",
+                    "type": "boolean",
+                    "examples": [true, false]
+                },
+                "logger_config": {
+                    "description": "Python logging module config. See https://docs.python.org/3/library/logging.config.html#logging-config-dictschema for details.",
+                    "type": "object"
+                },
+                "cloud": {
+                    "description": "Cloud service configuration object.",
+                    "type": "object",
+                    "properties": {
+                        "server_name": {
+                            "description": "The deployment server name, default: github-runners.",
+                            "type": "string",
+                            "examples": ["github-runners"]
+                        },
+                        "deploy": {
+                            "description": "The cloud deploy command configuration.",
+                            "type": "object",
+                            "properties": {
+                                "server_type": {
+                                    "description": "The server type of the cloud service server, default: cpx11.",
+                                    "type": "string",
+                                    "examples": ["cpx11"]
+                                },
+                                "image": {
+                                    "description": "The architecture:type:name_or_description\nthat specifies the image that will be used for the cloud service server, where the architecture is either: 'x86' or 'arm' and the type is either: 'system','snapshot','backup','app', default: x86:system:ubuntu-22.04.",
+                                    "type": "string",
+                                    "examples": ["x86:system:ubuntu-22.04"]
+                                },
+                                "location": {
+                                    "description": "The name of the cloud service server location, default: not set.",
+                                    "type": "string",
+                                    "examples": ["ash"]
+                                },
+                                "setup_script": {
+                                    "description": "Path to custom cloud service server's setup script.",
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "standby_runners": {
+                    "description": "Standby server pool configuration.",
+                    "type": "array",
+                    "items": {
+                        "description": "Standby server group definition.",
+                        "type": "object",
+                        "properties": {
+                            "labels": {
+                                "description": "Standby runner labels.",
+                                "type": "array",
+                                "items": {
+                                    "description": "Label name",
+                                    "type": "string",
+                                }
+                            },
+                            "count": {
+                                "description": "Number of runners in this group, default: 1.",
+                                "type": "integer",
+                                "examples": [1]
+                            },
+                            "replenish_immediately": {
+                                "description": "Enable replenishing standby runner pool immediately, default: true.",
+                                "type": "boolean",
+                                "examples": [true, false]
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

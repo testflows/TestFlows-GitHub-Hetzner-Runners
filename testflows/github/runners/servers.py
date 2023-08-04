@@ -33,7 +33,7 @@ def list(args, config: Config):
 
     with Action("Getting a list of servers"):
         for server in client.servers.get_all():
-            if not server.name.startswith(server_name_prefix):
+            if not server.name.startswith("github-runner"):
                 continue
             status_icon = "✅" if server.status == server.STATUS_RUNNING else "❌"
             print(status_icon, f"{server.status:10}", server.name, file=sys.stdout)

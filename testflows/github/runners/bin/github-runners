@@ -37,9 +37,17 @@ from testflows.github.runners.actions import Action
 from testflows.github.runners.scale_up import scale_up
 from testflows.github.runners.scale_down import scale_down
 from testflows.github.runners.api_watch import api_watch
-from testflows.github.runners.scripts import Scripts, scripts
-from testflows.github.runners.logger import logger
-from testflows.github.runners.config import Config, check_image, check_ssh_key
+from testflows.github.runners.logger import (
+    logger,
+    default_config as default_logger_config,
+)
+from testflows.github.runners.config import Config, check_image
+from testflows.github.runners.config import (
+    check_ssh_key,
+    check_location,
+    check_server_type,
+    check_prices,
+)
 
 import testflows.github.runners.args as args
 import testflows.github.runners.cloud as cloud
@@ -89,23 +97,25 @@ def argparser():
         dest="config_file",
         type=args.config_type,
         help="program yaml configuration file",
-        default=None,
     )
 
     parser.add_argument(
         "--github-token",
+        metavar="token",
         type=str,
         help="GitHub token, default: $GITHUB_TOKEN environment variable",
     )
 
     parser.add_argument(
         "--github-repository",
+        metavar="name",
         type=str,
         help="GitHub repository, default: $GITHUB_REPOSITORY environment variable",
     )
 
     parser.add_argument(
         "--hetzner-token",
+        metavar="token",
         type=str,
         help="Hetzner Cloud token, default: $HETZNER_TOKEN environment variable",
     )
@@ -128,6 +138,7 @@ def argparser():
     parser.add_argument(
         "-r",
         "--recycle",
+        metavar="on|off",
         type=args.switch_type,
         help="turn on recycling of powered off servers, either 'on' or 'off', default: on",
     )
@@ -272,8 +283,8 @@ def argparser():
         help="delete all servers",
         description=(
             f"Delete all servers that provide runners and including any standby runners.\n\n"
-            "Note that cloud service server is not delete. If you have one use\n"
-            "'cloud delete' command to delete it."
+            "Note that the cloud service server will not be deleted. If you do have one, use\n"
+            "the 'cloud delete' command to delete it."
         ),
         formatter_class=RawTextHelpFormatter,
     )
@@ -670,9 +681,7 @@ def http_cache():
         yield
 
 
-def main(
-    config, scripts: Scripts, worker_pool: ThreadPoolExecutor, terminate_timeout=30
-):
+def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=30):
     """Auto-scale runners service."""
     ssh_keys: list[SSHKey] = []
     terminate = threading.Event()
@@ -690,11 +699,22 @@ def main(
         with Action("Checking if default image exists"):
             config.default_image = check_image(client, config.default_image)
 
+        with Action("Checking if default location exists"):
+            config.default_location = check_location(client, config.default_location)
+
+        with Action("Checking if default server type exists"):
+            config.default_server_type = check_server_type(
+                client, config.default_server_type
+            )
+
+        with Action("Checking server prices"):
+            config.server_prices = check_prices(client)
+
         with Action(f"Checking if SSH key exists"):
             ssh_keys.append(check_ssh_key(client, config.ssh_key))
 
-            if config.ssh_keys:
-                for key in config.ssh_keys:
+            if config.additional_ssh_keys:
+                for key in config.additional_ssh_keys:
                     ssh_keys.append(check_ssh_key(client, key))
 
         try:
@@ -702,42 +722,17 @@ def main(
                 scale_up_service: Future = worker_pool.submit(
                     scale_up,
                     terminate=terminate,
-                    recycle=config.recycle,
-                    server_prices=config.server_prices,
-                    with_label=config.with_label,
-                    scripts=scripts,
                     ssh_keys=ssh_keys,
-                    default_server_type=config.default_server_type,
-                    default_image=config.default_image,
-                    default_location=config.default_location,
                     worker_pool=worker_pool,
-                    hetzner_token=config.hetzner_token,
-                    github_token=config.github_token,
-                    github_repository=config.github_repository,
-                    interval=config.scale_up_interval,
-                    max_servers=config.max_runners,
-                    max_servers_in_workflow_run=config.max_runners_in_workflow_run,
-                    max_server_ready_time=config.max_server_ready_time,
-                    debug=config.debug,
-                    standby_runners=config.standby_runners,
+                    config=config,
                 )
 
             with Action("Creating scale down service"):
                 scale_down_service: Future = worker_pool.submit(
                     scale_down,
-                    recycle=config.recycle,
-                    end_of_life=config.end_of_life,
                     ssh_key=ssh_keys[0],
-                    hetzner_token=config.hetzner_token,
-                    github_token=config.github_token,
-                    github_repository=config.github_repository,
                     terminate=terminate,
-                    max_powered_off_time=config.max_powered_off_time,
-                    max_unused_runner_time=config.max_unused_runner_time,
-                    max_runner_registration_time=config.max_runner_registration_time,
-                    interval=config.scale_down_interval,
-                    debug=config.debug,
-                    standby_runners=config.standby_runners,
+                    config=config,
                 )
 
             with Action("Creating GitHub API calls watch service"):
@@ -812,26 +807,8 @@ if __name__ == "__main__":
         Action.debug = True
         logging_level = logging.DEBUG
 
-    if config.logger_config:
-        logging.config.dictConfig(config.logger_config)
-    else:
-        logger.setLevel(logging_level)
-        handler = logging.StreamHandler(sys.stdout)
-        formatter = logging.Formatter(
-            "%(asctime)s %(levelname)8s %(threadName)16s %(funcName)15s %(message)s",
-            datefmt="%m/%d/%Y %I:%M:%S %p",
-        )
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-
-    if config.setup_script:
-        scripts.setup = config.setup_script
-
-    if config.startup_x64_script:
-        scripts.startup_x64 = config.startup_x64_script
-
-    if config.startup_arm64_script:
-        scripts.startup_arm64 = config.startup_arm64_script
+    if not config.logger_config:
+        default_logger_config(level=logging_level)
 
     if hasattr(args, "func"):
         try:
@@ -851,4 +828,4 @@ if __name__ == "__main__":
             with ThreadPoolExecutor(
                 max_workers=config.workers + 3, thread_name_prefix="worker"
             ) as worker_pool:
-                main(config=config, scripts=scripts, worker_pool=worker_pool)
+                main(config=config, worker_pool=worker_pool)
