@@ -181,7 +181,7 @@
                                 "type": "array",
                                 "items": {
                                     "description": "Label name",
-                                    "type": "string",
+                                    "type": "string"
                                 }
                             },
                             "count": {
