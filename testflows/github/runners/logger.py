@@ -62,17 +62,8 @@ def default_config(level=logging.INFO):
     logger.logger.setLevel(level)
     handler = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter(
-        fmt=(
-            "%(asctime)s "
-            "%(levelname)-5s "
-            "%(message)-70s "
-            "%(run_id)-12s "
-            "%(job_id)-12s "
-            "%(server_name)-30s "
-            "%(funcName)-10s "
-            "%(interval)s "
-        ),
-        datefmt="%H%M%S",
+        fmt=("%(asctime)s " "%(message)s"),
+        datefmt="%H:%M:%S",
     )
     handler.setFormatter(formatter)
     logger.logger.addHandler(handler)

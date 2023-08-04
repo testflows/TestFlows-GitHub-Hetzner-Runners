@@ -819,7 +819,7 @@ if __name__ == "__main__":
         except BaseException as exc:
             if config.debug:
                 raise
-            logger.fatal(f"❗ Error: {exc}")
+            logger.critical(f"❗ Error: {exc}")
 
     else:
         config.check()

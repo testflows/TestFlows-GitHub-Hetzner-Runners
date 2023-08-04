@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import sys
 import tempfile
 
 from hcloud import Client
@@ -60,10 +59,10 @@ def deploy(args, config: Config, redeploy=False):
         uninstall(args=args, config=config, server=server)
 
         with Action("Cleaning copied scripts"):
-            ssh(server, f"rm -rf {deploy_scripts_folder}*")
+            ssh(server, f"rm -rf {deploy_scripts_folder}*", stacklevel=4)
 
         with Action("Cleaning copied configs"):
-            ssh(server, f"rm -rf {deploy_configs_folder}*")
+            ssh(server, f"rm -rf {deploy_configs_folder}*", stacklevel=4)
 
     else:
         deploy_setup_script = config.cloud.deploy.setup_script or os.path.join(
@@ -92,19 +91,19 @@ def deploy(args, config: Config, redeploy=False):
                 client, config.default_server_type
             )
 
-        with Action("Checking if server type exists"):
+        with Action("Checking if cloud service server type exists"):
             config.cloud.deploy.server_type = check_server_type(
-                client=client, image=config.cloud.deploy.server_type
+                client=client, server_type=config.cloud.deploy.server_type
             )
 
-        with Action("Checking if server image exists"):
+        with Action("Checking if cloud service server image exists"):
             config.cloud.deploy.image = check_image(
                 client=client, image=config.cloud.deploy.image
             )
 
-        with Action("Checking if server location exists"):
+        with Action("Checking if cloud service server location exists"):
             config.cloud.deploy.location = check_location(
-                client=client, image=config.cloud.deploy.location
+                client=client, location=config.cloud.deploy.location
             )
 
         with Action(f"Checking if SSH key exists"):
@@ -133,10 +132,7 @@ def deploy(args, config: Config, redeploy=False):
             wait_ssh(server=server, timeout=config.max_server_ready_time)
 
         with Action("Executing setup.sh script"):
-            ssh(
-                server,
-                f"bash -s  < {deploy_setup_script}",
-            )
+            ssh(server, f"bash -s  < {deploy_setup_script}", stacklevel=4)
 
     with Action(f"Installing github-runners {version}"):
         command = f"'sudo -u ubuntu pip3 install testflows.github.runners=={version}'"
@@ -146,7 +142,7 @@ def deploy(args, config: Config, redeploy=False):
             if redeploy:
                 command.replace("pip3 install", "pip3 install --upgrade")
 
-        ssh(server, command)
+        ssh(server, command, stacklevel=4)
 
     with Action("Copying any custom scripts"):
         ip = ip_address(server)
@@ -189,7 +185,7 @@ def deploy(args, config: Config, redeploy=False):
                 )
 
     with Action("Fixing ownership of any copied scripts"):
-        ssh(server, f"chown -R ubuntu:ubuntu {deploy_scripts_folder}")
+        ssh(server, f"chown -R ubuntu:ubuntu {deploy_scripts_folder}", stacklevel=4)
 
     with Action(
         f"Copying config file{(' ' + config.config_file) if config.config_file else ''}"
@@ -217,7 +213,7 @@ def deploy(args, config: Config, redeploy=False):
             )
 
     with Action("Fixing ownership of any copied configs"):
-        ssh(server, f"chown -R ubuntu:ubuntu {deploy_configs_folder}")
+        ssh(server, f"chown -R ubuntu:ubuntu {deploy_configs_folder}", stacklevel=4)
 
     install(args, config=config, server=server)
 
@@ -272,12 +268,14 @@ def upgrade(args, config: Config):
             ssh(
                 server,
                 f"'sudo -u ubuntu pip3 install testflows.github.runners=={upgrade_version}'",
+                stacklevel=4,
             )
     else:
         with Action(f"Upgrading github-runners the latest version"):
             ssh(
                 server,
                 f"'sudo -u ubuntu pip3 install --upgrade testflows.github.runners'",
+                stacklevel=4,
             )
 
     start(args, config=config, server=server)
@@ -297,7 +295,7 @@ def uninstall(args, config: Config, server: BoundServer = None):
 
     with Action("Uninstalling service"):
         command = f"\"su - ubuntu -c 'github-runners service uninstall'\""
-        ssh(server, command)
+        ssh(server, command, stacklevel=4)
 
 
 def delete(args, config: Config):
@@ -315,7 +313,7 @@ def delete(args, config: Config):
 
     with Action("Uninstalling service"):
         command = f"\"su - ubuntu -c 'github-runners service uninstall'\""
-        ssh(server, command)
+        ssh(server, command, stacklevel=4)
 
     with Action(f"Deleting server {server_name}"):
         server.delete()
@@ -341,7 +339,7 @@ def logs(args, config: Config, server: BoundServer = None):
         + (" -f" if args.follow else "")
         + "'\""
     )
-    ssh(server, command, use_logger=False)
+    ssh(server, command, use_logger=False, stacklevel=4)
 
 
 def status(args, config: Config, server: BoundServer = None):
@@ -358,7 +356,7 @@ def status(args, config: Config, server: BoundServer = None):
 
     with Action("Getting status"):
         command = f"\"su - ubuntu -c 'github-runners service status'\""
-        ssh(server, command)
+        ssh(server, command, stacklevel=4)
 
 
 def start(args, config: Config, server: BoundServer = None):
@@ -375,7 +373,7 @@ def start(args, config: Config, server: BoundServer = None):
 
     with Action("Starting service"):
         command = f"\"su - ubuntu -c 'github-runners service start'\""
-        ssh(server, command)
+        ssh(server, command, stacklevel=4)
 
 
 def stop(args, config: Config, server: BoundServer = None):
@@ -392,7 +390,7 @@ def stop(args, config: Config, server: BoundServer = None):
 
     with Action("Stopping service"):
         command = f"\"su - ubuntu -c 'github-runners service stop'\""
-        ssh(server, command)
+        ssh(server, command, stacklevel=4)
 
 
 def ssh_client(args, config: Config):

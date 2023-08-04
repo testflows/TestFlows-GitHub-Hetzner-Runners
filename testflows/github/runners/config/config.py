@@ -70,7 +70,7 @@ class deploy:
     server_type: ServerType = server_type("cpx11")
     image: Image = image("x86:system:ubuntu-22.04")
     location: Location = None
-    setup_script: str = os.path.join(current_dir, "scripts", "deploy", "setup.sh")
+    setup_script: str = os.path.join(current_dir, "..", "scripts", "deploy", "setup.sh")
 
 
 @dataclass
@@ -97,9 +97,13 @@ class Config:
     default_server_type: ServerType = server_type("cx11")
     default_location: Location = None
     workers: int = 10
-    setup_script: str = os.path.join(current_dir, "scripts", "setup.sh")
-    startup_x64_script: str = os.path.join(current_dir, "scripts", "startup_x64.sh")
-    startup_arm64_script: str = os.path.join(current_dir, "scripts", "startup_arm64.sh")
+    setup_script: str = os.path.join(current_dir, "..", "scripts", "setup.sh")
+    startup_x64_script: str = os.path.join(
+        current_dir, "..", "scripts", "startup_x64.sh"
+    )
+    startup_arm64_script: str = os.path.join(
+        current_dir, "..", "scripts", "startup_arm64.sh"
+    )
     max_powered_off_time: int = 60
     max_unused_runner_time: int = 120
     max_runner_registration_time: int = 120
