@@ -91,15 +91,13 @@ def server_type(v):
 
 def config_type(v):
     """Program configuration file type."""
-    from .config import Config
+    from .config import parse_config
 
     v = path_type(v)
     try:
-        config_module = SourceFileLoader("config", v).load_module()
-        assert hasattr(config_module, "config"), "config not defined"
-        assert isinstance(config_module.config, Config), "invalid config type"
+        config = parse_config(v)
+        config.config_file = v
     except Exception as e:
         raise ArgumentTypeError(str(e))
 
-    config_module.config.config_file = v
-    return config_module.config
+    return config

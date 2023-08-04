@@ -1,5 +1,7 @@
 import os
+import re
 import sys
+import yaml
 import hashlib
 
 from dataclasses import dataclass
@@ -11,6 +13,20 @@ from hcloud.ssh_keys.domain import SSHKey
 import testflows.github.runners.args as args
 
 from .actions import Action
+
+# add support for parsing ${ENV_VAR} in config
+env_pattern = re.compile(r".*?\${(.*?)}.*?")
+
+
+def env_constructor(loader, node):
+    value = loader.construct_scalar(node)
+    for group in env_pattern.findall(value):
+        value = value.replace(f"${{{group}}}", os.environ.get(group))
+    return value
+
+
+yaml.add_implicit_resolver("!pathex", env_pattern)
+yaml.add_constructor("!pathex", env_constructor)
 
 
 class ImageNotFoundError(Exception):
@@ -54,7 +70,7 @@ class Config:
     github_repository: str = os.getenv("GITHUB_REPOSITORY")
     hetzner_token: str = os.getenv("HETZNER_TOKEN")
     ssh_key: str = os.path.expanduser("~/.ssh/id_rsa.pub")
-    user_ssh_keys: dict[str, str] = None
+    ssh_keys: list[str] = None
     with_label: str = None
     recycle: bool = True
     end_of_life: count = 50
@@ -85,8 +101,8 @@ class Config:
         if self.standby_runners is None:
             self.standby_runners = []
 
-        if self.user_ssh_keys is None:
-            self.user_ssh_keys = []
+        if self.ssh_keys is None:
+            self.ssh_keys = []
 
     def update(self, args):
         """Update configuration file using command line arguments."""
@@ -96,7 +112,7 @@ class Config:
                 "logger_config",
                 "cloud",
                 "standby_runners",
-                "user_ssh_keys",
+                "ssh_keys",
                 "server_prices",
             ]:
                 continue
@@ -136,6 +152,35 @@ class Config:
                 file=sys.stderr,
             )
             sys.exit(1)
+
+
+def read(path: str):
+    """Load raw configuration document."""
+    with open(path, "r") as f:
+        return yaml.load(f, Loader=yaml.SafeLoader)
+
+
+def write(file, doc: dict):
+    """Write raw configuration document to file."""
+    yaml.dump(doc, file)
+
+
+def parse_config(path: str):
+    """Load and parse yaml configuration file into config object."""
+    with open(path, "r") as f:
+        doc = yaml.load(f, Loader=yaml.SafeLoader)
+
+    if doc.get("cloud"):
+        doc["cloud"] = cloud(
+            doc["cloud"], deploy=deploy(**doc["cloud"].get("deploy", {}))
+        )
+
+    if doc.get("standby_runners"):
+        doc["standby_runners"] = [
+            standby_runner(**entry) for entry in doc["standby_runners"]
+        ]
+
+    return Config(**doc)
 
 
 def check_ssh_key(client: Client, ssh_key: str):

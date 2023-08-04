@@ -16,7 +16,6 @@
 import os
 import sys
 import time
-import hashlib
 import tempfile
 import logging
 import threading
@@ -46,6 +45,7 @@ import testflows.github.runners.args as args
 import testflows.github.runners.cloud as cloud
 import testflows.github.runners.service as service
 import testflows.github.runners.delete as delete
+import testflows.github.runners.servers as servers
 
 from requests_cache import DO_NOT_CACHE, EXPIRE_IMMEDIATELY, install_cache
 from requests_cache.backends.filesystem import FileCache
@@ -85,10 +85,10 @@ def argparser():
     parser.add_argument(
         "-c",
         "--config",
-        metavar="path",
+        metavar="yaml",
         dest="config_file",
         type=args.config_type,
-        help="program configuration file",
+        help="program yaml configuration file",
         default=None,
     )
 
@@ -279,6 +279,43 @@ def argparser():
     )
 
     delete_parser.set_defaults(func=delete.all)
+
+    list_parser = commands.add_parser(
+        "list",
+        help="list all servers",
+        description="List runner servers.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    list_parser.set_defaults(func=servers.list)
+
+    ssh_client_parser = commands.add_parser(
+        "ssh",
+        help="ssh to a server",
+        description="Open SSH client to a server.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    ssh_client_parser.add_argument(
+        "name",
+        help="name of the server",
+        type=str,
+    )
+
+    ssh_client_parser.set_defaults(func=servers.ssh_client)
+
+    ssh_client_commands = ssh_client_parser.add_subparsers(
+        title="commands", metavar="command", description=None, help=None
+    )
+
+    ssh_client_command_parser = ssh_client_commands.add_parser(
+        "command",
+        help="print ssh command to the server",
+        description="Get SSH command to connect to the server.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    ssh_client_command_parser.set_defaults(func=servers.ssh_client_command)
 
     cloud_parser = commands.add_parser(
         "cloud",
@@ -637,7 +674,7 @@ def main(
     config, scripts: Scripts, worker_pool: ThreadPoolExecutor, terminate_timeout=30
 ):
     """Auto-scale runners service."""
-    user_ssh_keys: list[SSHKey] = []
+    ssh_keys: list[SSHKey] = []
     terminate = threading.Event()
 
     try:
@@ -654,12 +691,11 @@ def main(
             config.default_image = check_image(client, config.default_image)
 
         with Action(f"Checking if SSH key exists"):
-            ssh_key: SSHKey = check_ssh_key(client, config.ssh_key)
+            ssh_keys.append(check_ssh_key(client, config.ssh_key))
 
-        if config.user_ssh_keys:
-            with Action(f"Checking if user SSH keys exist"):
-                for user_ssh_key in config.user_ssh_keys:
-                    user_ssh_keys.append(check_ssh_key(client, user_ssh_key))
+            if config.ssh_keys:
+                for key in config.ssh_keys:
+                    ssh_keys.append(check_ssh_key(client, key))
 
         try:
             with Action("Creating scale up service"):
@@ -670,8 +706,7 @@ def main(
                     server_prices=config.server_prices,
                     with_label=config.with_label,
                     scripts=scripts,
-                    ssh_key=ssh_key,
-                    user_ssh_keys=user_ssh_keys,
+                    ssh_keys=ssh_keys,
                     default_server_type=config.default_server_type,
                     default_image=config.default_image,
                     default_location=config.default_location,
@@ -692,7 +727,7 @@ def main(
                     scale_down,
                     recycle=config.recycle,
                     end_of_life=config.end_of_life,
-                    ssh_key=ssh_key,
+                    ssh_key=ssh_keys[0],
                     hetzner_token=config.hetzner_token,
                     github_token=config.github_token,
                     github_repository=config.github_repository,

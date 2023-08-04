@@ -198,8 +198,7 @@ def create_server(
     setup_script: str,
     github_token: str,
     github_repository: str,
-    ssh_key: SSHKey,
-    user_ssh_keys: list[SSHKey],
+    ssh_keys: list[SSHKey],
     timeout=60,
 ):
     """Create specified number of server instances."""
@@ -208,7 +207,7 @@ def create_server(
     server_labels = {
         f"github-runner-label-{i}": value for i, value in enumerate(labels)
     }
-    server_labels[server_ssh_key_label] = ssh_key.name
+    server_labels[server_ssh_key_label] = ssh_keys[0].name
 
     with Action(f"Validating server {name} labels"):
         valid, error_msg = LabelValidator.validate_verbose(labels=server_labels)
@@ -221,7 +220,7 @@ def create_server(
             server_type=server_type,
             location=server_location,
             image=server_image,
-            ssh_keys=[ssh_key] + user_ssh_keys,
+            ssh_keys=ssh_keys,
             labels=server_labels,
         )
         server: BoundServer = response.server
@@ -374,8 +373,7 @@ def scale_up(
     github_token: str,
     github_repository: str,
     hetzner_token: str,
-    ssh_key: SSHKey,
-    user_ssh_keys: list[SSHKey],
+    ssh_keys: list[SSHKey],
     default_server_type: ServerType,
     default_location: Location,
     default_image: Image,
@@ -430,7 +428,7 @@ def scale_up(
                         server=server,
                         server_type=server_type,
                         server_location=server_location,
-                        ssh_key=ssh_key,
+                        ssh_key=ssh_keys[0],
                     ):
                         future = worker_pool.submit(
                             recycle_server,
@@ -444,7 +442,7 @@ def scale_up(
                             setup_script=scripts.setup,
                             github_token=github_token,
                             github_repository=github_repository,
-                            ssh_key=ssh_key,
+                            ssh_key=ssh_keys[0],
                             timeout=max_server_ready_time,
                         )
                         future.server_name = name
@@ -523,8 +521,7 @@ def scale_up(
             startup_script=startup_script,
             github_token=github_token,
             github_repository=github_repository,
-            ssh_key=ssh_key,
-            user_ssh_keys=user_ssh_keys,
+            ssh_keys=ssh_keys,
             timeout=max_server_ready_time,
         )
         future.server_name = name
