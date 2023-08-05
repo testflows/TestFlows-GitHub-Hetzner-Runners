@@ -33,10 +33,10 @@ class LoggerAdapter(logging.LoggerAdapter):
 logger = LoggerAdapter(
     logger,
     {
-        "run_id": "",
-        "job_id": "",
-        "server_name": "",
-        "interval": "",
+        "run_id": "-",
+        "job_id": "-",
+        "server_name": "-",
+        "interval": "-",
     },
 )
 

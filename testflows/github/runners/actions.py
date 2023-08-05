@@ -51,7 +51,7 @@ class Action:
             "job_id": job_id,
             "run_id": run_id,
             "server_name": server_name,
-            "interval": str(interval) if interval is not None else "",
+            "interval": str(interval) if interval is not None else "-",
         }
 
     def __enter__(self):
