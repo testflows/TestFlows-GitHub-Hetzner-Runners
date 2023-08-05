@@ -111,6 +111,7 @@ class Config:
     scale_up_interval: int = 15
     scale_down_interval: int = 15
     debug: bool = False
+    service_mode: bool = False
     # special
     logger_config: dict = None
     cloud: cloud = cloud()
@@ -405,6 +406,9 @@ def parse_config(filename: str):
 
     if doc.get("config_file") is not None:
         assert False, "config.config_file: should not be defined"
+
+    if doc.get("service_mode") is not None:
+        assert False, "config.service_mode: should not be defined"
 
     try:
         return Config(**doc)
