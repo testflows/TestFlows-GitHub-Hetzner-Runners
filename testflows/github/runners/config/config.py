@@ -205,25 +205,23 @@ def parse_config(filename: str):
     doc = doc["config"]
 
     if doc.get("ssh_key") is not None:
-        assert isinstance(doc["ssh_key"], str), "config.ssh_key: not a string"
+        assert isinstance(doc["ssh_key"], str), "config.ssh_key: is not a string"
         doc["ssh_key"] = path(doc["ssh_key"], check_exists=False)
 
     if doc.get("additional_ssh_keys") is not None:
-        keys = []
         assert isinstance(
             doc["additional_ssh_keys"], list
         ), "config.additional_ssh_keys: not a list"
         for i, key in enumerate(doc["additional_ssh_keys"]):
             assert isinstance(
                 key, str
-            ), f"config.additional_ssh_keys[{i}]: not a string"
-            keys.append(path(key, check_exists=False))
+            ), f"config.additional_ssh_keys[{i}]: is not a string"
 
     if doc.get("with_label") is not None:
-        assert isinstance(doc["with_label"], str), "config.with_label: not a string"
+        assert isinstance(doc["with_label"], str), "config.with_label: is not a string"
 
     if doc.get("recycle") is not None:
-        assert isinstance(doc["recycle"], bool), "config.recycle: not a boolean"
+        assert isinstance(doc["recycle"], bool), "config.recycle: is not a boolean"
 
     if doc.get("end_of_life") is not None:
         v = doc["end_of_life"]
@@ -255,7 +253,7 @@ def parse_config(filename: str):
     if doc.get("default_location") is not None:
         try:
             v = doc["default_location"]
-            assert isinstance(v, str), "not a string"
+            assert isinstance(v, str), "is not a string"
             doc["default_location"] = location(v)
         except Exception as e:
             assert False, f"config.default_location: {e}"
@@ -414,11 +412,14 @@ def parse_config(filename: str):
         assert False, f"config: {e}"
 
 
-def check_ssh_key(client: Client, ssh_key: str):
+def check_ssh_key(client: Client, ssh_key: str, is_file=True):
     """Check that ssh key exists if not create it."""
 
-    with open(ssh_key, "r", encoding="utf-8") as ssh_key_file:
-        public_key = ssh_key_file.read()
+    if is_file:
+        with open(ssh_key, "r", encoding="utf-8") as ssh_key_file:
+            public_key = ssh_key_file.read()
+    else:
+        public_key = ssh_key
 
     key_name = hashlib.md5(public_key.encode("utf-8")).hexdigest()
     ssh_key = SSHKey(name=key_name, public_key=public_key)

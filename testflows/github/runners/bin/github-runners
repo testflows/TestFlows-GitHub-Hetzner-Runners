@@ -715,7 +715,7 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=30):
 
             if config.additional_ssh_keys:
                 for key in config.additional_ssh_keys:
-                    ssh_keys.append(check_ssh_key(client, key))
+                    ssh_keys.append(check_ssh_key(client, key, is_file=False))
 
         try:
             with Action("Creating scale up service"):

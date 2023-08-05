@@ -56,7 +56,7 @@ class Action:
 
     def __enter__(self):
         logger.log(
-            msg=f"🍀 {self.name}",
+            msg=f"➤ {self.name}",
             stacklevel=self.stacklevel + 1,
             level=self.level,
             extra=self.extra,

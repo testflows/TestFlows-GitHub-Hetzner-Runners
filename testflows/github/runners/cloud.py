@@ -111,7 +111,7 @@ def deploy(args, config: Config, redeploy=False):
 
             if config.additional_ssh_keys:
                 for key in config.additional_ssh_keys:
-                    ssh_keys.append(check_ssh_key(client, key))
+                    ssh_keys.append(check_ssh_key(client, key, is_file=False))
 
         with Action(f"Creating new server"):
             response = client.servers.create(
