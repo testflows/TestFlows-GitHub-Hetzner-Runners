@@ -198,9 +198,13 @@ def deploy(args, config: Config, redeploy=False):
                 raw_config = {"config": {}}
                 if config.config_file:
                     raw_config = read_config(config.config_file)
-                keys = raw_config["config"].get("ssh_keys", [])
-                keys.append(ssh_keys[0].public_key)
-                raw_config["config"]["ssh_keys"] = list(set(keys))
+                additional_ssh_keys = raw_config["config"].get(
+                    "additional_ssh_keys", []
+                )
+                additional_ssh_keys.append(ssh_keys[0].public_key)
+                raw_config["config"]["additional_ssh_keys"] = list(
+                    set(additional_ssh_keys)
+                )
                 write_config(file, raw_config)
                 file.flush()
             scp(
