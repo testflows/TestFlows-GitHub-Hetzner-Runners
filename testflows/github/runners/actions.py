@@ -65,7 +65,7 @@ class Action:
 
     def note(self, message, stacklevel=None):
         logger.log(
-            msg=f"   {message}",
+            msg=f"  {message}",
             stacklevel=(self.stacklevel + 1) if stacklevel is None else stacklevel,
             level=self.level,
             extra=self.extra,
