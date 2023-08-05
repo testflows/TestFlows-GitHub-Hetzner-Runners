@@ -51,6 +51,7 @@ def shell(
             )
         else:
             sys.stdout.write(line.rstrip())
+            sys.stdout.write("\n")
             sys.stdout.flush()
 
     p.wait()
