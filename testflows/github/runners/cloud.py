@@ -329,11 +329,8 @@ def logs(args, config: Config, server: BoundServer = None):
         config.check("hetzner_token")
         server_name = config.cloud.server_name
 
-        with Action("Logging in to Hetzner Cloud"):
-            client = Client(token=config.hetzner_token)
-
-        with Action(f"Getting server {server_name}"):
-            server: BoundServer = client.servers.get_by_name(server_name)
+        client = Client(token=config.hetzner_token)
+        server: BoundServer = client.servers.get_by_name(server_name)
 
     if server is None:
         raise ValueError("server not found")

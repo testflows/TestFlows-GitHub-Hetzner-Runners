@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import sys
 import time
 import subprocess
 
@@ -49,7 +50,8 @@ def shell(
                 extra={"server_name": server_name},
             )
         else:
-            print(line.rstrip())
+            sys.stdout.write(line.rstrip())
+            sys.stdout.flush()
 
     p.wait()
 

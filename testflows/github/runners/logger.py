@@ -36,34 +36,28 @@ logger = LoggerAdapter(
         "run_id": "",
         "job_id": "",
         "server_name": "",
-        "standby_server": "",
-        "recyclable_server": "",
         "interval": "",
     },
 )
 
-columns = [
-    "asctime",
-    "levelname",
-    "message",
-    "interval",
-    "run_id",
-    "job_id",
-    "server_name",
-    "threadName",
-    "funcName",
-]
 
-
-def default_config(level=logging.INFO):
+def default_config(level=logging.INFO, service_mode=False):
     """Apply default logging configuration."""
     global logger
 
     logger.logger.setLevel(level)
     handler = logging.StreamHandler(sys.stdout)
-    formatter = logging.Formatter(
-        fmt=("%(asctime)s " "%(message)s"),
-        datefmt="%H:%M:%S",
-    )
+    if not service_mode:
+        formatter = logging.Formatter(
+            fmt=("%(asctime)s " "%(message)s"),
+            datefmt="%H:%M:%S",
+        )
+    else:
+        formatter = logging.Formatter(
+            fmt=(
+                "%(interval)-10s %(levelname)-8s %(run_id)-12s %(job_id)-12s %(server_name)40s %(threadName)-20s %(funcName)-15s %(message)s"
+            ),
+            datefmt="%H:%M:%S",
+        )
     handler.setFormatter(formatter)
     logger.logger.addHandler(handler)

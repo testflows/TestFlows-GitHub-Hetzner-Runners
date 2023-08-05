@@ -94,7 +94,7 @@ def install(args, config):
                 os.system(f"sudo service {NAME} stop")
 
     with Action(f"Installing {SERVICE}"):
-        binary = os.path.join(current_dir, "bin", "github-runners")
+        binary = os.path.join(current_dir, "bin", "github-runners --service-mode")
         contents = (
             "[Unit]\n"
             "Description=Autoscaling GitHub Actions Runners\n"

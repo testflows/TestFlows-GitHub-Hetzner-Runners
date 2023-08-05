@@ -274,6 +274,12 @@ def argparser():
         help="enable debugging mode, default: False",
     )
 
+    parser.add_argument(
+        "--service-mode",
+        action="store_true",
+        help="enable service mode, default: False",
+    )
+
     commands = parser.add_subparsers(
         title="commands", metavar="command", description=None, help=None
     )
@@ -808,7 +814,7 @@ if __name__ == "__main__":
         logging_level = logging.DEBUG
 
     if not config.logger_config:
-        default_logger_config(level=logging_level)
+        default_logger_config(level=logging_level, service_mode=config.service_mode)
 
     if hasattr(args, "func"):
         try:
