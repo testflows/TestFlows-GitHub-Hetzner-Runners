@@ -37,20 +37,10 @@ class Action:
         self.ignore_fail = ignore_fail
         self.level = level
         self.stacklevel = stacklevel
-        # try to parse run_id and job_id from server name if not specified
-        try:
-            _run_id, _job_id = server_name.rsplit("-", 2)[-2:]
-            _run_id = int(_run_id)
-            _job_id = int(_job_id)
-            run_id = _run_id if run_id is None else run_id
-            job_id = _job_id if job_id is None else job_id
-        except Exception:
-            pass
-
         self.extra = {
-            "job_id": job_id,
-            "run_id": run_id,
-            "server_name": server_name,
+            "job_id": job_id or "-",
+            "run_id": run_id or "-",
+            "server_name": server_name or "-",
             "interval": str(interval) if interval is not None else "-",
         }
 

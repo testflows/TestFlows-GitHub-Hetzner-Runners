@@ -13,8 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-
-from importlib.machinery import SourceFileLoader
+import argparse
 
 from hcloud.images.domain import Image
 from hcloud.locations.domain import Location
@@ -23,6 +22,25 @@ from hcloud.server_types.domain import ServerType
 from argparse import ArgumentTypeError
 
 from traceback import print_exception
+
+file_type = argparse.FileType
+
+from .logger import format as logger_format
+
+
+def columns_type(v):
+    """Log columns type name:width,..."""
+    columns = []
+    try:
+        for c in v.split(","):
+            c = str(c).rsplit(":", 1)
+            assert c[0] in logger_format.keys()
+            if len(c) > 1:
+                c[1] = int(c[1])
+            columns.append(c)
+    except Exception as e:
+        raise ArgumentTypeError(f"invalid format {v}")
+    return columns
 
 
 def end_of_life_type(v):

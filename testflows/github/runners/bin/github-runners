@@ -40,6 +40,7 @@ from testflows.github.runners.api_watch import api_watch
 from testflows.github.runners.logger import (
     logger,
     default_config as default_logger_config,
+    format as logger_format,
 )
 from testflows.github.runners.config import Config, check_image
 from testflows.github.runners.config import (
@@ -654,13 +655,52 @@ def argparser():
         description="Get service logs.",
         formatter_class=RawTextHelpFormatter,
     )
+
+    logs_service_parser.add_argument(
+        "-c",
+        "--columns",
+        metavar="name[:width][,...]",
+        type=args.columns_type,
+        help=(
+            f"comma separated list of columns to include and their optional width.\n"
+            f"Column name is one of the following:\n{', '.join(list(logger_format.keys()))}"
+        ),
+        default=[("time",), ("funcName",), ("level",), ("message",)],
+    )
+
     logs_service_parser.add_argument(
         "-f",
         "--follow",
         action="store_true",
-        help="follow the logs journal",
+        help="follow the logs",
     )
+
+    logs_service_parser.add_argument(
+        "--raw",
+        action="store_true",
+        help="output raw logs",
+    )
+
     logs_service_parser.set_defaults(func=service.logs)
+
+    logs_service_commands = logs_service_parser.add_subparsers(
+        title="commands", metavar="command", description=None, help=None
+    )
+
+    format_logs_service_parser = logs_service_commands.add_parser(
+        "format",
+        help="format",
+        description="Format raw service log.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    format_logs_service_parser.add_argument(
+        "input",
+        type=args.file_type(bufsize=1),
+        help="input log file, use '-' for stdout",
+    )
+
+    format_logs_service_parser.set_defaults(func=service.logs_format)
 
     return parser
 

@@ -14,11 +14,14 @@
 # limitations under the License.
 import os
 import sys
+import time
+import textwrap
 
 NAME = "github-runners"
 SERVICE = f"/etc/systemd/system/{NAME}.service"
 
 from .actions import Action
+from .logger import rotating_service_logfile
 
 
 def command_options(
@@ -143,11 +146,53 @@ def uninstall(args, config=None):
 
 def logs(args, config=None):
     """Get service logs."""
-    os.system(
-        f'sudo bash -c "journalctl -u {NAME}.service'
-        + (" -f" if args.follow else "")
-        + ' | tee"'
-    )
+
+    format = ""
+    if not args.raw:
+        format = f" | github-runners service logs"
+        if args.columns:
+            format += f" --columns"
+            columns = []
+            for c in args.columns:
+                columns.append(f"{c[0]}" + (f":{c[1]}" if len(c) > 1 else ""))
+            format += f" {','.join(columns)}"
+        format += " format -"
+
+    if args.follow:
+        os.system(f'bash -c "tail -n 1000 -f {rotating_service_logfile} | tee{format}"')
+    else:
+        os.system(f'bash -c "ls -tr {rotating_service_logfile}* | xargs cat{format}"')
+
+
+def logs_format(args, config=None, delimiter=","):
+    """Format raw logs."""
+    line_format = config.logger_format
+
+    # name, index, width
+    selected = [
+        (c[0], line_format[c[0]][0], (line_format[c[0]][1] if len(c) < 2 else c[1]))
+        for c in args.columns
+    ]
+
+    while True:
+        line = args.input.readline()
+        if not line:
+            break
+
+        columns = line.split(delimiter)
+        wrapped = [
+            (width, textwrap.wrap(columns[index], width))
+            for _, index, width in selected
+        ]
+        max_lines = max(len(lines) for width, lines in wrapped)
+        for m in range(max_lines):
+            for width, c in wrapped:
+                v = ""
+                if m < len(c):
+                    v = c[m]
+                sys.stdout.write(f"{v:<{width}} ")
+            sys.stdout.write("\n")
+        sys.stdout.flush()
 
 
 def start(args, config=None):

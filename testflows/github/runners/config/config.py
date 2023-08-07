@@ -16,6 +16,7 @@ from hcloud.ssh_keys.domain import SSHKey
 import testflows.github.runners.args as args
 
 from ..actions import Action
+from ..logger import format as logger_format
 
 current_dir = os.path.dirname(__file__)
 
@@ -114,6 +115,7 @@ class Config:
     service_mode: bool = False
     # special
     logger_config: dict = None
+    logger_format: dict = None
     cloud: cloud = cloud()
     standby_runners: list[standby_runner] = None
     server_prices: dict[str, float] = None
@@ -126,12 +128,16 @@ class Config:
         if self.additional_ssh_keys is None:
             self.additional_ssh_keys = []
 
+        if self.logger_format is None:
+            self.logger_format = logger_format
+
     def update(self, args):
         """Update configuration file using command line arguments."""
         for attr in vars(self):
             if attr in [
                 "config_file",
                 "logger_config",
+                "logger_format",
                 "cloud",
                 "standby_runners",
                 "additional_ssh_keys",
