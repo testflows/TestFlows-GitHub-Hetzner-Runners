@@ -25,19 +25,20 @@ from traceback import print_exception
 
 file_type = argparse.FileType
 
-from .logger import default_format as logger_format
-
 
 def columns_type(v):
     """Log columns type name:width,..."""
     columns = []
     try:
         for c in v.split(","):
+            d = {}
             c = str(c).rsplit(":", 1)
-            assert c[0] in logger_format.keys()
+            d["column"] = c[0]
             if len(c) > 1:
                 c[1] = int(c[1])
-            columns.append(c)
+                assert c[1] > 0
+                d["width"] = c[1]
+            columns.append(d)
     except Exception as e:
         raise ArgumentTypeError(f"invalid format {v}")
     return columns

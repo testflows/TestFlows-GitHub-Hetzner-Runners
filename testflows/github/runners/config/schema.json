@@ -137,6 +137,58 @@
                     "description": "Python logging module config. See https://docs.python.org/3/library/logging.config.html#logging-config-dictschema for details.",
                     "type": "object"
                 },
+                "logger_format": {
+                    "description": "Logger format.",
+                    "type": "object",
+                    "properties": {
+                        "delimiter": {
+                            "description": "Column delimiter in the log line.",
+                            "type": "string",
+                            "examples": [","]
+                        },
+                        "default": {
+                            "description": "Default format columns.",
+                            "type": "array",
+                            "items": {
+                                "description": "Default column name and width object.",
+                                "type": "object",
+                                "properties": {
+                                    "column": {
+                                        "description": "Column name.",
+                                        "type": "string"
+                                    },
+                                    "width": {
+                                        "description": "Column width.",
+                                        "type": "integer"
+                                    }
+                                }
+                            }
+                        },
+                        "columns": {
+                            "description": "Columns definitions.",
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "description": "Column object.",
+                                "properties": {
+                                    "column": {
+                                        "description": "Name of the column in the log.",
+                                        "type": "string",
+                                        "examples": ["date", "time", "level", "interval", "run_id", "job_id", "server_name", "funcName", "threadName", "message"]
+                                    },
+                                    "index": {
+                                        "description": "Index of the column in the log line after splitting it by comma.",
+                                        "type": "integer"
+                                    },
+                                    "width": {
+                                        "description": "Allocated width of the column.",
+                                        "type": "integer"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 "cloud": {
                     "description": "Cloud service configuration object.",
                     "type": "object",

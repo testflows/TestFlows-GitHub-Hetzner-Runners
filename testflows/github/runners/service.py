@@ -95,6 +95,9 @@ def install(args, config):
             with Action("Stopping service"):
                 os.system(f"sudo service {NAME} stop")
 
+    with Action(f"Deleting old rotating log files"):
+        os.system(f"rm -rf {rotating_service_logfile}*")
+
     with Action(f"Installing {SERVICE}"):
         binary = os.path.join(current_dir, "bin", "github-runners --service-mode")
         contents = (
@@ -145,15 +148,21 @@ def uninstall(args, config=None):
 
 def logs(args, config=None):
     """Get service logs."""
-
+    logger_columns = config.logger_format["columns"]
     format = ""
     if not args.raw:
-        format = f" | github-runners service logs"
+        format = f" | github-runners"
+        if config.config_file:
+            format += f" -c {config.config_file}"
+        format += " service logs"
         if args.columns:
             format += f" --columns"
             columns = []
             for c in args.columns:
-                columns.append(f"{c[0]}" + (f":{c[1]}" if len(c) > 1 else ""))
+                assert c["column"] in logger_columns, f"{c['column']} is not valid"
+                columns.append(
+                    f"{c['column']}" + (f":{c['width']}" if c.get("width") else "")
+                )
             format += f" {','.join(columns)}"
         format += " format -"
 
@@ -163,14 +172,23 @@ def logs(args, config=None):
         os.system(f'bash -c "ls -tr {rotating_service_logfile}* | xargs cat{format}"')
 
 
-def logs_format(args, config=None, delimiter=",", delimiter_count=9):
+def logs_format(args, config=None):
     """Format raw logs."""
-    line_format = config.logger_format
+    columns = config.logger_format["columns"]
+    delimiter = config.logger_format["delimiter"]
+    default = args.columns or config.logger_format["default"]
+
+    for c in default:
+        assert c["column"] in columns, f"{c['column']} is not valid"
 
     # name, index, width
     selected = [
-        (c[0], line_format[c[0]][0], (line_format[c[0]][1] if len(c) < 2 else c[1]))
-        for c in args.columns
+        (
+            c["column"],
+            columns[c["column"]][0],
+            (columns[c["column"]][1] if c.get("width") is None else c.get("width")),
+        )
+        for c in default
     ]
 
     while True:
@@ -178,7 +196,7 @@ def logs_format(args, config=None, delimiter=",", delimiter_count=9):
         if not line:
             break
 
-        columns = line.split(delimiter, delimiter_count)
+        columns = line.split(delimiter, len(columns) - 1)
         wrapped = [
             (width, textwrap.wrap(columns[index], width))
             for _, index, width in selected

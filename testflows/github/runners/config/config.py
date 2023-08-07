@@ -90,7 +90,7 @@ class Config:
     ssh_key: str = os.path.expanduser("~/.ssh/id_rsa.pub")
     additional_ssh_keys: list[str] = None
     with_label: str = None
-    label_prefix: str = None
+    label_prefix: str = ""
     recycle: bool = True
     end_of_life: int = 50
     max_runners: int = 10
@@ -337,6 +337,67 @@ def parse_config(filename: str):
             logging.config.dictConfig(doc["logger_config"])
         except Exception as e:
             assert False, f"config.logger_config: {e}"
+
+    if doc.get("logger_format") is not None:
+        _logger_format_columns = {}
+        assert isinstance(
+            doc["logger_format"], dict
+        ), f"config.logger_format is not a dictionary"
+
+        assert (
+            doc["logger_format"].get("delimiter") is not None
+        ), "config.logger_format.delimiter is not defined"
+        assert isinstance(
+            doc["logger_format"]["delimiter"], str
+        ), f"config.logger_format.delimiter is not a string"
+
+        assert (
+            doc["logger_format"].get("columns") is not None
+        ), "config.logger_format.columns  is not defined"
+        assert isinstance(
+            doc["logger_format"]["columns"], list
+        ), "config.logger_format.columns is not a list"
+
+        for i, item in enumerate(doc["logger_format"]["columns"]):
+            assert (
+                item.get("column") is not None
+            ), f"config.logger_format[{i}].column is not defined"
+            assert isinstance(
+                item["column"], str
+            ), f"config.logger_format[{i}].column is not a string"
+            assert (
+                item.get("index") is not None
+            ), f"config.logger_format[{i}].index is not defined"
+            assert (
+                isinstance(item["index"], int) and item["index"] >= 0
+            ), f"config.logger_format[{i}].index: {item['index']} is not an integer >= 0"
+            assert (
+                item.get("width") is not None
+            ), f"config.logger_format[{i}].width is not defined"
+            assert (
+                isinstance(item["width"], int) and item["width"] >= 0
+            ), f"config.logger_format[{i}].width: {item['width']} is not an integer >= 0"
+            _logger_format_columns[item["column"]] = (item["index"], item["width"])
+        doc["logger_format"]["columns"] = _logger_format_columns
+
+        assert (
+            doc["logger_format"].get("default") is not None
+        ), "config.logger_format.default is not defined"
+        assert isinstance(
+            doc["logger_format"]["default"], list
+        ), "config.logger_format.default is not an array"
+
+        for i, item in enumerate(doc["logger_format"]["default"]):
+            assert (
+                item.get("column") is not None
+            ), f"config.logger_format.default[{i}].column is not defined"
+            assert (
+                item["column"] in doc["logger_format"]["columns"]
+            ), f"config.logger_format.default[{i}].column is not valid"
+            if item.get("width") is not None:
+                assert (
+                    isinstance(item["width"], int) and item["width"] > 0
+                ), f"config.logger_format.default[{i}].width is not an integer > 0"
 
     if doc.get("cloud") is not None:
         if doc["cloud"].get("server_name") is not None:

@@ -60,16 +60,25 @@ logger = LoggerAdapter(
 
 #: default logger format
 default_format = {
-    "date": (0, 10),
-    "time": (1, 8),
-    "interval": (2, 5),
-    "level": (3, 8),
-    "run_id": (4, 11),
-    "job_id": (5, 11),
-    "server_name": (6, 36),
-    "threadName": (7, 20),
-    "funcName": (8, 14),
-    "message": (9, 90),
+    "default": [
+        {"column": "time"},
+        {"column": "funcName"},
+        {"column": "level"},
+        {"column": "message"},
+    ],
+    "delimiter": ",",
+    "columns": {
+        "date": (0, 10),
+        "time": (1, 8),
+        "interval": (2, 5),
+        "level": (3, 8),
+        "run_id": (4, 11),
+        "job_id": (5, 11),
+        "server_name": (6, 36),
+        "threadName": (7, 20),
+        "funcName": (8, 14),
+        "message": (9, 90),
+    },
 }
 
 
@@ -90,7 +99,6 @@ def default_config(level=logging.INFO, service_mode=False):
 
     # in service mode write to rotating file
     if service_mode:
-        os.system(f"rm -rf {rotating_service_logfile}*")
         maxBytes = 10485760  # 10MB
         rotating_file_handler = logging.handlers.RotatingFileHandler(
             rotating_service_logfile, maxBytes=maxBytes, backupCount=1

@@ -668,11 +668,7 @@ def argparser():
         "--columns",
         metavar="name[:width][,...]",
         type=args.columns_type,
-        help=(
-            f"comma separated list of columns to include and their optional width.\n"
-            f"Column name is one of the following:\n{', '.join(list(logger_format.keys()))}"
-        ),
-        default=[("time",), ("funcName",), ("level",), ("message",)],
+        help="comma separated list of columns to include and their optional width",
     )
 
     logs_service_parser.add_argument(
