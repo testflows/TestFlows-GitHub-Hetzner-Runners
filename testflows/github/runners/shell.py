@@ -45,7 +45,7 @@ def shell(
             continue
         if use_logger:
             logger.info(
-                f"  > {line.rstrip()}",
+                f"   > {line.rstrip()}",
                 stacklevel=stacklevel,
                 extra={"server_name": server_name},
             )

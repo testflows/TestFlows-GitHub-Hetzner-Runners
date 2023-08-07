@@ -25,7 +25,7 @@ from traceback import print_exception
 
 file_type = argparse.FileType
 
-from .logger import format as logger_format
+from .logger import default_format as logger_format
 
 
 def columns_type(v):

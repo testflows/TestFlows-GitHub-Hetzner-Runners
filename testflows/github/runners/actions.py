@@ -46,7 +46,7 @@ class Action:
 
     def __enter__(self):
         logger.log(
-            msg=f"➤ {self.name}",
+            msg=f"🍀 {self.name}",
             stacklevel=self.stacklevel + 1,
             level=self.level,
             extra=self.extra,
@@ -55,7 +55,7 @@ class Action:
 
     def note(self, message, stacklevel=None):
         logger.log(
-            msg=f"  {message}",
+            msg=f"   {message}",
             stacklevel=(self.stacklevel + 1) if stacklevel is None else stacklevel,
             level=self.level,
             extra=self.extra,
@@ -63,7 +63,7 @@ class Action:
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         if exc_value is not None:
-            msg = f"❌ Error: {exc_type.__name__} {exc_value}"
+            msg = f"❌ {exc_type.__name__ or 'Error'}: {exc_value}"
             if not self.debug:
                 logger.log(
                     msg=msg,
@@ -75,6 +75,7 @@ class Action:
                 logger.exception(
                     msg=msg, stacklevel=self.stacklevel + 1, extra=self.extra
                 )
+            exc_value.processed = True
             if self.ignore_fail:
                 return True
             raise

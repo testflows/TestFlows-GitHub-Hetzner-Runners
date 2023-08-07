@@ -58,7 +58,8 @@ logger = LoggerAdapter(
     },
 )
 
-format = {
+#: default logger format
+default_format = {
     "date": (0, 10),
     "time": (1, 8),
     "interval": (2, 5),

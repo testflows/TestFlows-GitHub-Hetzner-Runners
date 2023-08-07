@@ -16,7 +16,7 @@ from hcloud.ssh_keys.domain import SSHKey
 import testflows.github.runners.args as args
 
 from ..actions import Action
-from ..logger import format as logger_format
+from ..logger import default_format as logger_format
 
 current_dir = os.path.dirname(__file__)
 
@@ -90,6 +90,7 @@ class Config:
     ssh_key: str = os.path.expanduser("~/.ssh/id_rsa.pub")
     additional_ssh_keys: list[str] = None
     with_label: str = None
+    label_prefix: str = None
     recycle: bool = True
     end_of_life: int = 50
     max_runners: int = 10
@@ -226,6 +227,11 @@ def parse_config(filename: str):
 
     if doc.get("with_label") is not None:
         assert isinstance(doc["with_label"], str), "config.with_label: is not a string"
+
+    if doc.get("label_prefix") is not None:
+        assert isinstance(
+            doc["label_prefix"], str
+        ), "config.label_prefix: is not a string"
 
     if doc.get("recycle") is not None:
         assert isinstance(doc["recycle"], bool), "config.recycle: is not a boolean"

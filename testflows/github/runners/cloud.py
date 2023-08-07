@@ -55,6 +55,8 @@ def deploy(args, config: Config, redeploy=False):
     if redeploy:
         with Action(f"Getting server {server_name}"):
             server: BoundServer = client.servers.get_by_name(server_name)
+            if not server:
+                raise ValueError(f"server {server_name} not found")
 
         uninstall(args=args, config=config, server=server)
 
@@ -238,6 +240,8 @@ def install(args, config: Config, server: BoundServer = None):
 
         with Action(f"Getting server {server_name}"):
             server: BoundServer = client.servers.get_by_name(server_name)
+            if not server:
+                raise ValueError(f"server {server_name} not found")
 
     with Action("Installing service"):
         command = f"\"su - ubuntu -c '"
@@ -264,6 +268,8 @@ def upgrade(args, config: Config):
 
     with Action(f"Getting server {server_name}"):
         server: BoundServer = client.servers.get_by_name(server_name)
+        if not server:
+            raise ValueError(f"server {server_name} not found")
 
     stop(args, config=config, server=server)
 
@@ -296,6 +302,8 @@ def uninstall(args, config: Config, server: BoundServer = None):
 
         with Action(f"Getting server {server_name}"):
             server: BoundServer = client.servers.get_by_name(server_name)
+            if not server:
+                raise ValueError(f"server {server_name} not found")
 
     with Action("Uninstalling service"):
         command = f"\"su - ubuntu -c 'github-runners service uninstall'\""
@@ -314,6 +322,8 @@ def delete(args, config: Config):
 
     with Action(f"Getting server {server_name}"):
         server: BoundServer = client.servers.get_by_name(server_name)
+        if not server:
+            raise ValueError(f"server {server_name} not found")
 
     with Action("Uninstalling service"):
         command = f"\"su - ubuntu -c 'github-runners service uninstall'\""
@@ -332,8 +342,8 @@ def logs(args, config: Config, server: BoundServer = None):
         client = Client(token=config.hetzner_token)
         server: BoundServer = client.servers.get_by_name(server_name)
 
-    if server is None:
-        raise ValueError("server not found")
+        if not server:
+            raise ValueError(f"server {server_name} not found")
 
     command = (
         f"\"su - ubuntu -c 'github-runners service logs"
@@ -354,6 +364,8 @@ def status(args, config: Config, server: BoundServer = None):
 
         with Action(f"Getting server {server_name}"):
             server = client.servers.get_by_name(server_name)
+            if not server:
+                raise ValueError(f"server {server_name} not found")
 
     with Action("Getting status"):
         command = f"\"su - ubuntu -c 'github-runners service status'\""
@@ -371,6 +383,8 @@ def start(args, config: Config, server: BoundServer = None):
 
         with Action(f"Getting server {server_name}"):
             server = client.servers.get_by_name(server_name)
+            if not server:
+                raise ValueError(f"server {server_name} not found")
 
     with Action("Starting service"):
         command = f"\"su - ubuntu -c 'github-runners service start'\""
@@ -388,6 +402,8 @@ def stop(args, config: Config, server: BoundServer = None):
 
         with Action(f"Getting server {server_name}"):
             server = client.servers.get_by_name(server_name)
+            if not server:
+                raise ValueError(f"server {server_name} not found")
 
     with Action("Stopping service"):
         command = f"\"su - ubuntu -c 'github-runners service stop'\""

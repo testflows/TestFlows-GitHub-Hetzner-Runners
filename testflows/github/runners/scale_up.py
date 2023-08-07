@@ -117,9 +117,13 @@ def server_setup(
         )
 
 
-def get_server_type(labels: set[str], default: ServerType, label_prefix="type-"):
+def get_server_type(labels: set[str], default: ServerType, label_prefix: str = ""):
     """Get server type for the specified job."""
     server_type = None
+
+    if label_prefix and not label_prefix.endswith("-"):
+        label_prefix += "-"
+    label_prefix += "type-"
 
     if server_type is None:
         for label in labels:
@@ -133,13 +137,19 @@ def get_server_type(labels: set[str], default: ServerType, label_prefix="type-")
     return server_type
 
 
-def get_server_location(labels: set[str], default: Location = None, label_prefix="in-"):
+def get_server_location(
+    labels: set[str], default: Location = None, label_prefix: str = ""
+):
     """Get preferred server location for the specified job.
 
     By default, location is set to `None` to avoid server type mismatching
     the location as some server types are not available at some locations.
     """
     server_location: Location = None
+
+    if label_prefix and not label_prefix.endswith("-"):
+        label_prefix += "-"
+    label_prefix += "in-"
 
     if server_location is None:
         for label in labels:
@@ -154,10 +164,14 @@ def get_server_location(labels: set[str], default: Location = None, label_prefix
 
 
 def get_server_image(
-    client: Client, labels: set[str], default: Image, label_prefix="image-"
+    client: Client, labels: set[str], default: Image, label_prefix: str = ""
 ):
     """Get preferred server image for the specified job."""
     server_image: Image = None
+
+    if label_prefix and not label_prefix.endswith("-"):
+        label_prefix += "-"
+    label_prefix += "image-"
 
     if server_image is None:
         for label in labels:
@@ -394,6 +408,7 @@ def scale_up(
     recycle: bool = config.recycle
     server_prices: dict[str, float] = config.server_prices
     with_label: str = config.with_label
+    label_prefix: str = config.label_prefix
     interval: int = -1
 
     with Action("Logging in to Hetzner Cloud"):
@@ -409,10 +424,17 @@ def scale_up(
         """Create new server that would provide a runner with given labels."""
         recyclable_servers: list[BoundServer] = []
 
-        server_type = get_server_type(labels=labels, default=default_server_type)
-        server_location = get_server_location(labels=labels, default=default_location)
+        server_type = get_server_type(
+            labels=labels, default=default_server_type, label_prefix=label_prefix
+        )
+        server_location = get_server_location(
+            labels=labels, default=default_location, label_prefix=label_prefix
+        )
         server_image = get_server_image(
-            client=client, labels=labels, default=default_image
+            client=client,
+            labels=labels,
+            default=default_image,
+            label_prefix=label_prefix,
         )
         setup_script = config.setup_script
         startup_script = get_startup_script(

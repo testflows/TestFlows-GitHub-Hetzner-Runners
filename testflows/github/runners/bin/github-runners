@@ -40,7 +40,7 @@ from testflows.github.runners.api_watch import api_watch
 from testflows.github.runners.logger import (
     logger,
     default_config as default_logger_config,
-    format as logger_format,
+    default_format as logger_format,
 )
 from testflows.github.runners.config import Config, check_image
 from testflows.github.runners.config import (
@@ -169,6 +169,13 @@ def argparser():
             "only create runners for jobs that have the specified label,\n"
             "by default jobs are not filtered and runners will be created for any queued job"
         ),
+    )
+
+    parser.add_argument(
+        "--label-prefix",
+        metavar="prefix",
+        type=str,
+        help="support type, image, and location job labels with the specified prefix",
     )
 
     parser.add_argument(
@@ -865,7 +872,9 @@ if __name__ == "__main__":
         except BaseException as exc:
             if config.debug:
                 raise
-            logger.critical(f"❗ Error: {exc}")
+            if not hasattr(exc, "processed"):
+                logger.critical(f"❗ Error: {exc}")
+            sys.exit(1)
 
     else:
         config.check()

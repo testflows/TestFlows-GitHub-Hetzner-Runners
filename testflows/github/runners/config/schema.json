@@ -42,6 +42,10 @@
                     "type": "string",
                     "examples": ["on-demand"]
                 },
+                "label_prefix": {
+                    "description": "Support type, image, and location job labels with the specified prefix.",
+                    "type": "string"
+                },
                 "recycle": {
                     "description": "Turn on recycling of powered off servers, either 'true' or 'false', default: true",
                     "type": "boolean",
