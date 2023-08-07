@@ -164,7 +164,7 @@ def logs(args, config=None):
         os.system(f'bash -c "ls -tr {rotating_service_logfile}* | xargs cat{format}"')
 
 
-def logs_format(args, config=None, delimiter=","):
+def logs_format(args, config=None, delimiter=",", delimiter_count=9):
     """Format raw logs."""
     line_format = config.logger_format
 
@@ -179,7 +179,7 @@ def logs_format(args, config=None, delimiter=","):
         if not line:
             break
 
-        columns = line.split(delimiter)
+        columns = line.split(delimiter, delimiter_count)
         wrapped = [
             (width, textwrap.wrap(columns[index], width))
             for _, index, width in selected

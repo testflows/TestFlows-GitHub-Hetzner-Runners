@@ -68,7 +68,7 @@ format = {
     "server_name": (6, 36),
     "threadName": (7, 20),
     "funcName": (8, 12),
-    "message": (9, 90),
+    "message": (9, 100),
 }
 
 
