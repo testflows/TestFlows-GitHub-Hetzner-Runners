@@ -151,6 +151,14 @@ def argparser():
     )
 
     parser.add_argument(
+        "--delete-random",
+        action="store_true",
+        help=(
+            "delete random recyclable server when maximum number of servers is reached, by default uses server prices"
+        ),
+    )
+
+    parser.add_argument(
         "--max-runners-in-workflow-run",
         metavar="count",
         type=args.count_type,
@@ -752,8 +760,9 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=30):
                 client, config.default_server_type
             )
 
-        with Action("Checking server prices"):
-            config.server_prices = check_prices(client)
+        if not config.delete_random:
+            with Action("Getting server prices"):
+                config.server_prices = check_prices(client)
 
         with Action(f"Checking if SSH key exists"):
             ssh_keys.append(check_ssh_key(client, config.ssh_key))

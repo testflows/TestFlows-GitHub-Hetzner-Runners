@@ -94,6 +94,7 @@ class Config:
     label_prefix: str = ""
     recycle: bool = True
     end_of_life: int = 50
+    delete_random: bool = False
     max_runners: int = 10
     max_runners_in_workflow_run: int = None
     default_image: Image = image("x86:system:ubuntu-22.04")
@@ -241,6 +242,11 @@ def parse_config(filename: str):
         v = doc["end_of_life"]
         assert isinstance(v, int), "config.end_of_life: is not integer"
         assert v > 0 and v < 60, "config.end_of_life: is not > 0 and < 60"
+
+    if doc.get("delete_random") is not None:
+        assert isinstance(
+            doc["delete_random"], bool
+        ), "config.delete_random: is not a boolean"
 
     if doc.get("max_runners") is not None:
         v = doc["max_runners"]

@@ -47,7 +47,7 @@
                     "type": "string"
                 },
                 "recycle": {
-                    "description": "Turn on recycling of powered off servers, either 'true' or 'false', default: true",
+                    "description": "Turn on recycling of powered off servers, either 'true' or 'false', default: true.",
                     "type": "boolean",
                     "examples": [true, false]
                 },
@@ -55,6 +55,11 @@
                     "description": "Number of minutes in 1 hour (60 minutes) period after which a recyclable server is considered to have reached its end of life and thus is deleted, default: 50.",
                     "type": "integer",
                     "examples": [50]
+                },
+                "delete_random": {
+                    "description": "delete random recyclable server when maximum number of servers is reached, by default uses server prices.",
+                    "type": "boolean",
+                    "examples": [true, false]
                 },
                 "max_runners": {
                     "description": "Maximum number of active runners, default: 10.",
