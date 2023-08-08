@@ -418,6 +418,8 @@ def scale_down(terminate: threading.Event, ssh_key: SSHKey, config: Config):
                 interval=interval,
             ):
                 for server_name in list(recyclable_servers.keys()):
+                    if terminate.is_set():
+                        break
                     recyclable_server = recyclable_servers[server_name]
                     recycle_server(
                         reason="unused recyclable",
