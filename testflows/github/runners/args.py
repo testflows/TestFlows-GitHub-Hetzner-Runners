@@ -114,7 +114,13 @@ def server_type(v):
 
 def config_type(v):
     """Program configuration file type."""
-    from .config import parse_config
+    from .config import parse_config, default_user_config
+
+    if v == "__default_user_config__":
+        if os.path.exists(default_user_config):
+            v = default_user_config
+        else:
+            return None
 
     v = path_type(v)
     try:

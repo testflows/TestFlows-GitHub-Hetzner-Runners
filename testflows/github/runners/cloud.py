@@ -38,7 +38,7 @@ from .service import command_options
 
 current_dir = os.path.dirname(__file__)
 deploy_scripts_folder = "/home/ubuntu/.github-runners/scripts/"
-deploy_configs_folder = "/home/ubuntu/.github-runners/configs/"
+deploy_configs_folder = "/home/ubuntu/.github-runners/"
 
 
 def deploy(args, config: Config, redeploy=False):

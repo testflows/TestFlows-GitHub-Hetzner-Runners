@@ -23,3 +23,4 @@ from .config import (
 from .config import standby_runner
 from .config import read, write
 from .config import parse_config
+from .config import default_user_config

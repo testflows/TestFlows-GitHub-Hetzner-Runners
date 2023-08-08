@@ -94,6 +94,7 @@ def argparser():
         dest="config_file",
         type=args.config_type,
         help="program yaml configuration file",
+        default="__default_user_config__",
     )
 
     parser.add_argument(
@@ -889,6 +890,9 @@ if __name__ == "__main__":
         level=logging_level,
         service_mode=config.service_mode,
     )
+
+    if config.config_file is not None:
+        print(f"Using config file: {config.config_file}")
 
     if hasattr(args, "func"):
         try:

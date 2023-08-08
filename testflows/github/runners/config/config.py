@@ -24,6 +24,8 @@ current_dir = os.path.dirname(__file__)
 # add support for parsing ${ENV_VAR} in config
 env_pattern = re.compile(r".*?\${(.*?)}.*?")
 
+default_user_config = os.path.expanduser("~/.github-runners/config.yaml")
+
 
 def env_constructor(loader, node):
     value = loader.construct_scalar(node)
