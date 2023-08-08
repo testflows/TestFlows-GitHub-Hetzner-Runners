@@ -26,9 +26,13 @@ from traceback import print_exception
 file_type = argparse.FileType
 
 
+class ColumnsType(list):
+    pass
+
+
 def columns_type(v):
     """Log columns type name:width,..."""
-    columns = []
+    columns = ColumnsType()
     columns.value = v
     try:
         for c in v.split(","):
