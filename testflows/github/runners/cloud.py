@@ -64,7 +64,7 @@ def deploy(args, config: Config, redeploy=False):
             ssh(server, f"rm -rf {deploy_scripts_folder}*", stacklevel=4)
 
         with Action("Cleaning copied configs"):
-            ssh(server, f"rm -rf {deploy_configs_folder}*", stacklevel=4)
+            ssh(server, f"rm -rf {deploy_configs_folder}*.yaml", stacklevel=4)
 
     else:
         deploy_setup_script = config.cloud.deploy.setup_script or os.path.join(
