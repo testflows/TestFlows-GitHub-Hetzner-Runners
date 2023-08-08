@@ -734,7 +734,7 @@ def http_cache():
         yield
 
 
-def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=30):
+def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
     """Auto-scale runners service."""
     ssh_keys: list[SSHKey] = []
     terminate = threading.Event()

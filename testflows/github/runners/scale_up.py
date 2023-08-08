@@ -670,6 +670,9 @@ def scale_up(
                                     continue
 
                             for job in run.jobs():
+                                if terminate.is_set():
+                                    raise StopIteration("terminating")
+
                                 with Action(
                                     f"Checking job {job} {job.status}",
                                     level=logging.DEBUG,
@@ -764,6 +767,8 @@ def scale_up(
 
                             if available < standby_runner.count:
                                 for _ in range(standby_runner.count - available):
+                                    if terminate.is_set():
+                                        break
                                     try:
                                         with Action(
                                             f"Replenishing{' immediately' if replenish_immediately else ''} standby server with {labels}",

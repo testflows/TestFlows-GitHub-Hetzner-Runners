@@ -110,6 +110,8 @@ def install(args, config):
             f"Group={os.getgid()}\n"
             "Type=simple\n"
             "Restart=always\n"
+            "KillSignal=SIGINT\n"
+            "TimeoutStopSec=90\n"
             f"Environment=GITHUB_TOKEN={config.github_token}\n"
             f"Environment=GITHUB_REPOSITORY={config.github_repository}\n"
             f"Environment=HETZNER_TOKEN={config.hetzner_token}\n"
