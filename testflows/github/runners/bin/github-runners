@@ -37,11 +37,7 @@ from testflows.github.runners.actions import Action
 from testflows.github.runners.scale_up import scale_up
 from testflows.github.runners.scale_down import scale_down
 from testflows.github.runners.api_watch import api_watch
-from testflows.github.runners.logger import (
-    logger,
-    default_config as default_logger_config,
-    default_format as logger_format,
-)
+from testflows.github.runners.logger import logger, configure as configure_logger
 from testflows.github.runners.config import Config, check_image
 from testflows.github.runners.config import (
     check_ssh_key,
@@ -850,14 +846,17 @@ if __name__ == "__main__":
     else:
         config = Config()
 
-    config.update(args)
-
     if config.debug:
         Action.debug = True
         logging_level = logging.DEBUG
 
-    if not config.logger_config:
-        default_logger_config(level=logging_level, service_mode=config.service_mode)
+    config.update(args)
+
+    configure_logger(
+        config=config.logger_config,
+        level=logging_level,
+        service_mode=config.service_mode,
+    )
 
     if hasattr(args, "func"):
         try:

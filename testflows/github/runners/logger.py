@@ -18,8 +18,6 @@ import logging
 import logging.handlers
 import tempfile
 
-rotating_service_logfile = os.path.join(tempfile.gettempdir(), "github-runners.log")
-
 logger = logging.getLogger("testflows.github.runners")
 
 
@@ -82,32 +80,71 @@ default_format = {
 }
 
 
-def default_config(level=logging.INFO, service_mode=False):
-    """Apply default logging configuration."""
-    global logger
+def configure(config, level=logging.INFO, service_mode=False):
+    """Apply logging configuration."""
 
-    logger.logger.setLevel(level)
+    default_config = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "stdout": {
+                "format": "%(asctime)s %(message)s",
+                "datefmt": "%H:%M:%S",
+            },
+            "rotating_file": {
+                "format": (
+                    "%(asctime)s,%(interval)s,%(levelname)s,"
+                    "%(run_id)s,%(job_id)s,%(server_name)s,"
+                    "%(threadName)s,%(funcName)s,%(message)s"
+                ),
+                "datefmt": "%Y-%m-%d,%H:%M:%S",
+            },
+        },
+        "handlers": {
+            "stdout": {
+                "level": str(level),
+                "formatter": "stdout",
+                "class": "logging.StreamHandler",
+                "stream": "ext://sys.stdout",
+            },
+            "rotating_service_logfile": {
+                "level": str(level),
+                "formatter": "rotating_file",
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": os.path.join(tempfile.gettempdir(), "github-runners.log"),
+                "maxBytes": 10485760,
+                "backupCount": 1,
+            },
+        },
+        "loggers": {
+            "testflows.github.runners": {
+                "level": str(level),
+                "handlers": ["stdout", "rotating_service_logfile"],
+            }
+        },
+    }
 
-    # stream to stdout
-    handler = logging.StreamHandler(sys.stdout)
-    formatter = logging.Formatter(
-        fmt=("%(asctime)s %(message)s"),
-        datefmt="%H:%M:%S",
-    )
-    handler.setFormatter(formatter)
-    logger.logger.addHandler(handler)
+    level = logging.getLevelName(level)
 
-    # in service mode write to rotating file
-    if service_mode:
-        maxBytes = 10485760  # 10MB
-        rotating_file_handler = logging.handlers.RotatingFileHandler(
-            rotating_service_logfile, maxBytes=maxBytes, backupCount=1
-        )
-        rotating_file_formatter = logging.Formatter(
-            fmt=(
-                "%(asctime)s,%(interval)s,%(levelname)s,%(run_id)s,%(job_id)s,%(server_name)s,%(threadName)s,%(funcName)s,%(message)s"
-            ),
-            datefmt="%Y-%m-%d,%H:%M:%S",
-        )
-        rotating_file_handler.setFormatter(rotating_file_formatter)
-        logger.logger.addHandler(rotating_file_handler)
+    if config is None:
+        config = default_config
+
+    if not service_mode:
+        handlers = set(config["loggers"]["testflows.github.runners"]["handlers"])
+        handlers.discard("rotating_service_logfile")
+        config["loggers"]["testflows.github.runners"]["handlers"] = list(handlers)
+    else:
+        if (
+            "rotating_service_logfile"
+            not in config["loggers"]["testflows.github.runners"]["handlers"]
+        ):
+            config["loggers"]["testflows.github.runners"]["handlers"].append(
+                "rotating_service_logfile"
+            )
+
+    for handler in config["handlers"].values():
+        handler["level"] = level
+
+    config["loggers"]["testflows.github.runners"]["level"] = level
+
+    logging.config.dictConfig(config)

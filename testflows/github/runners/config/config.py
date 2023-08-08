@@ -4,6 +4,7 @@ import sys
 import yaml
 import hashlib
 import logging
+import logging.config
 
 from dataclasses import dataclass
 
@@ -333,6 +334,34 @@ def parse_config(filename: str):
         assert isinstance(doc["debug"], bool), "config.debug: not a boolean"
 
     if doc.get("logger_config") is not None:
+        assert (
+            doc["logger_config"].get("loggers") is not None
+        ), "config.logger_config.loggers is not defined"
+        assert (
+            doc["logger_config"]["loggers"].get("testflows.github.runners") is not None
+        ), 'config.logger_config.loggers."tesflows.github.runners" is not defined'
+        assert (
+            doc["logger_config"]["loggers"]["testflows.github.runners"].get("handlers")
+            is not None
+        ), 'config.logger_config.loggers."testflows.github.runners".handlers is not defined'
+
+        assert isinstance(
+            doc["logger_config"]["loggers"]["testflows.github.runners"]["handlers"],
+            list,
+        ), 'config.logger_config.loggers."testflows.github.runners".handlers is not a list'
+        assert (
+            "stdout"
+            in doc["logger_config"]["loggers"]["testflows.github.runners"]["handlers"]
+        ), 'config.logger_config.loggers."testflows.github.runners".handlers missing stdout'
+
+        assert (
+            doc["logger_config"]["handlers"].get("rotating_service_logfile") is not None
+        ), "config.logger_config.handlers.rotating_service_logfile is not defined"
+        assert (
+            doc["logger_config"]["handlers"]["rotating_service_logfile"].get("filename")
+            is not None
+        ), "config.logger_config.handlers.rotating_service_logfile.filename is not defined"
+
         try:
             logging.config.dictConfig(doc["logger_config"])
         except Exception as e:

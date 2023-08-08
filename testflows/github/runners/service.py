@@ -20,7 +20,6 @@ NAME = "github-runners"
 SERVICE = f"/etc/systemd/system/{NAME}.service"
 
 from .actions import Action
-from .logger import rotating_service_logfile
 
 
 def command_options(
@@ -96,7 +95,9 @@ def install(args, config):
                 os.system(f"sudo service {NAME} stop")
 
     with Action(f"Deleting old rotating log files"):
-        os.system(f"rm -rf {rotating_service_logfile}*")
+        os.system(
+            f"rm -rf {config.logger_config['handlers']['rotating_service_logfile']['filename']}*"
+        )
 
     with Action(f"Installing {SERVICE}"):
         binary = os.path.join(current_dir, "bin", "github-runners --service-mode")
@@ -159,12 +160,18 @@ def logs(args, config=None):
             format += f" --columns"
             columns = []
             for c in args.columns:
-                assert c["column"] in logger_columns, f"{c['column']} is not valid"
+                assert (
+                    c["column"] in logger_columns
+                ), f"column {c['column']} is not valid"
                 columns.append(
                     f"{c['column']}" + (f":{c['width']}" if c.get("width") else "")
                 )
             format += f" {','.join(columns)}"
         format += " format -"
+
+    rotating_service_logfile = config.logger_config["handlers"][
+        "rotating_service_logfile"
+    ]["filename"]
 
     if args.follow:
         os.system(f'bash -c "tail -n 1000 -f {rotating_service_logfile} | tee{format}"')
