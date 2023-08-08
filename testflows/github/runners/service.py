@@ -149,15 +149,17 @@ def uninstall(args, config=None):
         os.system("sudo systemctl daemon-reload")
 
 
-def logs(args, config=None):
-    """Get service logs."""
+def log(args, config=None):
+    """Get service log."""
     logger_columns = config.logger_format["columns"]
     format = ""
     if not args.raw:
         format = f" | github-runners"
+        if config.debug:
+            format += " --debug"
         if config.config_file:
             format += f" -c {config.config_file}"
-        format += " service logs"
+        format += " service log"
         if args.columns:
             format += f" --columns"
             columns = []
@@ -181,8 +183,16 @@ def logs(args, config=None):
         os.system(f'bash -c "ls -tr {rotating_service_logfile}* | xargs cat{format}"')
 
 
-def logs_format(args, config=None):
-    """Format raw logs."""
+def delete_log(args, config=None):
+    """Delete log."""
+    with Action(f"Deleting log files"):
+        os.system(
+            f"rm -rf {config.logger_config['handlers']['rotating_service_logfile']['filename']}*"
+        )
+
+
+def format_log(args, config=None):
+    """Format raw log."""
     columns = config.logger_format["columns"]
     delimiter = config.logger_format["delimiter"]
     default = args.columns or config.logger_format["default"]
@@ -223,14 +233,17 @@ def logs_format(args, config=None):
 
 def start(args, config=None):
     """Start service."""
-    os.system(f"sudo service {NAME} start")
+    with Action(f"Starting service {NAME}"):
+        os.system(f"sudo service {NAME} start")
 
 
 def stop(args, config=None):
     """Stop service."""
-    os.system(f"sudo service {NAME} stop")
+    with Action(f"Stopping service {NAME}"):
+        os.system(f"sudo service {NAME} stop")
 
 
 def status(args, config=None):
     """Get service status."""
-    os.system(f"sudo service {NAME} status")
+    with Action(f"Getting service {NAME} status"):
+        os.system(f"sudo service {NAME} status")

@@ -333,8 +333,8 @@ def delete(args, config: Config):
         server.delete()
 
 
-def logs(args, config: Config, server: BoundServer = None):
-    """Get cloud server service logs."""
+def log(args, config: Config, server: BoundServer = None):
+    """Get cloud server service log."""
     if server is None:
         config.check("hetzner_token")
         server_name = config.cloud.server_name
@@ -346,8 +346,10 @@ def logs(args, config: Config, server: BoundServer = None):
             raise ValueError(f"server {server_name} not found")
 
     command = (
-        f"\"su - ubuntu -c 'github-runners service logs"
+        f"\"su - ubuntu -c 'github-runners service log"
         + (" -f" if args.follow else "")
+        + (f" -c {args.columns.value}" if args.columns else "")
+        + (" --raw" if args.raw else "")
         + "'\""
     )
     ssh(server, command, use_logger=False, stacklevel=4)

@@ -29,6 +29,7 @@ file_type = argparse.FileType
 def columns_type(v):
     """Log columns type name:width,..."""
     columns = []
+    columns.value = v
     try:
         for c in v.split(","):
             d = {}

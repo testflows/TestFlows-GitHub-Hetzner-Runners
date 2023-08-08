@@ -453,21 +453,35 @@ def argparser():
 
     redeploy_cloud_parser.set_defaults(func=cloud.redeploy)
 
-    logs_cloud_parser = cloud_commands.add_parser(
-        "logs",
-        help="get cloud service logs",
-        description="Get cloud service logs.",
+    log_cloud_parser = cloud_commands.add_parser(
+        "log",
+        help="get cloud service log",
+        description="Get cloud service log.",
         formatter_class=RawTextHelpFormatter,
     )
 
-    logs_cloud_parser.add_argument(
+    log_cloud_parser.add_argument(
         "-f",
         "--follow",
         action="store_true",
-        help="follow the logs journal",
+        help="follow the log journal",
     )
 
-    logs_cloud_parser.set_defaults(func=cloud.logs)
+    log_cloud_parser.add_argument(
+        "-c",
+        "--columns",
+        metavar="name[:width][,...]",
+        type=args.columns_type,
+        help="comma separated list of columns to include and their optional width",
+    )
+
+    log_cloud_parser.add_argument(
+        "--raw",
+        action="store_true",
+        help="output raw log",
+    )
+
+    log_cloud_parser.set_defaults(func=cloud.log)
 
     status_cloud_parser = cloud_commands.add_parser(
         "status",
@@ -660,14 +674,14 @@ def argparser():
     )
     status_service_parser.set_defaults(func=service.status)
 
-    logs_service_parser = service_commands.add_parser(
-        "logs",
-        help="logs",
-        description="Get service logs.",
+    log_service_parser = service_commands.add_parser(
+        "log",
+        help="log",
+        description="Get service log.",
         formatter_class=RawTextHelpFormatter,
     )
 
-    logs_service_parser.add_argument(
+    log_service_parser.add_argument(
         "-c",
         "--columns",
         metavar="name[:width][,...]",
@@ -675,39 +689,48 @@ def argparser():
         help="comma separated list of columns to include and their optional width",
     )
 
-    logs_service_parser.add_argument(
+    log_service_parser.add_argument(
         "-f",
         "--follow",
         action="store_true",
-        help="follow the logs",
+        help="follow the log",
     )
 
-    logs_service_parser.add_argument(
+    log_service_parser.add_argument(
         "--raw",
         action="store_true",
-        help="output raw logs",
+        help="output raw log",
     )
 
-    logs_service_parser.set_defaults(func=service.logs)
+    log_service_parser.set_defaults(func=service.log)
 
-    logs_service_commands = logs_service_parser.add_subparsers(
+    log_service_commands = log_service_parser.add_subparsers(
         title="commands", metavar="command", description=None, help=None
     )
 
-    format_logs_service_parser = logs_service_commands.add_parser(
+    format_log_service_parser = log_service_commands.add_parser(
         "format",
-        help="format",
+        help="format log",
         description="Format raw service log.",
         formatter_class=RawTextHelpFormatter,
     )
 
-    format_logs_service_parser.add_argument(
+    format_log_service_parser.add_argument(
         "input",
         type=args.file_type(bufsize=1),
         help="input log file, use '-' for stdout",
     )
 
-    format_logs_service_parser.set_defaults(func=service.logs_format)
+    format_log_service_parser.set_defaults(func=service.format_log)
+
+    delete_log_service_parser = log_service_commands.add_parser(
+        "delete",
+        help="delete log",
+        description="Delete service log.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    delete_log_service_parser.set_defaults(func=service.delete_log)
 
     return parser
 
