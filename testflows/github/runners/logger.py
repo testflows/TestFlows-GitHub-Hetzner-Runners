@@ -126,25 +126,29 @@ def configure(config, level=logging.INFO, service_mode=False):
 
     level = logging.getLevelName(level)
 
-    if config is None:
-        config = default_config
+    if config.logger_config is None:
+        config.logger_config = default_config
+
+    logger_config = config.logger_config
 
     if not service_mode:
-        handlers = set(config["loggers"]["testflows.github.runners"]["handlers"])
+        handlers = set(logger_config["loggers"]["testflows.github.runners"]["handlers"])
         handlers.discard("rotating_service_logfile")
-        config["loggers"]["testflows.github.runners"]["handlers"] = list(handlers)
+        logger_config["loggers"]["testflows.github.runners"]["handlers"] = list(
+            handlers
+        )
     else:
         if (
             "rotating_service_logfile"
-            not in config["loggers"]["testflows.github.runners"]["handlers"]
+            not in logger_config["loggers"]["testflows.github.runners"]["handlers"]
         ):
-            config["loggers"]["testflows.github.runners"]["handlers"].append(
+            logger_config["loggers"]["testflows.github.runners"]["handlers"].append(
                 "rotating_service_logfile"
             )
 
-    for handler in config["handlers"].values():
+    for handler in logger_config["handlers"].values():
         handler["level"] = level
 
-    config["loggers"]["testflows.github.runners"]["level"] = level
+    logger_config["loggers"]["testflows.github.runners"]["level"] = level
 
-    logging.config.dictConfig(config)
+    logging.config.dictConfig(logger_config)

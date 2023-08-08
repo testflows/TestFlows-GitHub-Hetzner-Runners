@@ -862,7 +862,7 @@ if __name__ == "__main__":
     config.update(args)
 
     configure_logger(
-        config=config.logger_config,
+        config=config,
         level=logging_level,
         service_mode=config.service_mode,
     )
