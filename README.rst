@@ -359,12 +359,12 @@ As you can see our job was executed and completed using our own self-hosted runn
 
 :✋ Note:
 
-   If you run into any issues you can check cloud service logs using the
-   **github-runners cloud logs -f** command. For other cloud service commands see the `Running as a Cloud Service`_ section.
+   If you run into any issues you can check cloud service log using the
+   **github-runners cloud log -f** command. For other cloud service commands see the `Running as a Cloud Service`_ section.
 
    .. code-block:: bash
 
-      github-runners cloud logs -f
+      github-runners cloud log -f
 
 =========================
 Installation From Sources
@@ -1037,22 +1037,22 @@ or using **service** system utility
    sudo service github-runners stop
 
 -------------
-Checking Logs
+Checking Log
 -------------
 
-You can get the logs for the service using the **service logs** command.
+You can get the log for the service using the **service log** command.
 
-Use **-f, --follow** option to follow logs journal.
+Use **-f, --follow** option to follow the log journal.
 
 .. code-block:: bash
 
-   github-runners service logs -f
+   github-runners service log -f
 
-:followed service log:
+:followed log:
 
    ::
 
-      sudo github-runners service logs
+      github-runners service log -f
       Jul 24 16:12:14 user-node systemd[1]: Stopping Autoscaling GitHub Actions Runners...
       Jul 24 16:12:14 user-node systemd[1]: github-runners.service: Deactivated successfully.
       Jul 24 16:12:14 user-node systemd[1]: Stopped Autoscaling GitHub Actions Runners.
@@ -1074,9 +1074,9 @@ You can dump the full log by omitting the **-f, --follow** option.
 
 .. code-block:: bash
 
-   github-runners service logs
+   github-runners service log
 
-:full service log:
+:full log:
 
    ::
 
@@ -1214,12 +1214,12 @@ using the **cloud redeploy** command.
 
 You can specify the version of the package to be installed using the **--version** option.
 
-------------------
-Cloud Service Logs
-------------------
+-----------------
+Cloud Service Log
+-----------------
 
-You can check logs for the **github-runners** service running on a cloud instance using the **github-runners cloud logs** command.
-Specify **-f, --follow** if you want to follow the logs journal.
+You can check log for the **github-runners** service running on a cloud instance using the **github-runners cloud log** command.
+Specify **-f, --follow** if you want to follow the log journal.
 
 For example,
 
@@ -1227,13 +1227,13 @@ For example,
 
    .. code-block:: bash
 
-      github-runners cloud logs
+      github-runners cloud log
 
-:follow the logs journal:
+:follow the log journal:
 
    .. code-block:: bash
 
-      github-runners cloud logs -f
+      github-runners cloud log -f
 
 --------------------
 Cloud Service Status
@@ -1734,11 +1734,11 @@ The following options are supported:
           service package version to deploy, either version number or 'latest',
           default: current package version
 
-      * **logs**
-        get cloud service logs
+      * **log**
+        get cloud service log
 
         * **-f, --follow**
-          follow logs journal, default: *False*
+          follow log journal, default: *False*
 
       * **status**
         get cloud service status
@@ -1785,11 +1785,11 @@ The following options are supported:
       * **status**
         get service status
 
-      * **logs**
-        get service logs
+      * **log**
+        get service log
 
         * **-f, --follow**
-          follow logs journal, default: *False*
+          follow log journal, default: *False*
 
       * **start**
         start service
