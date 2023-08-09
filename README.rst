@@ -716,7 +716,7 @@ that has *labels*, *count*, and *replenish_immediately* attributes.
            }
        }
 
-where
+where,
 
 * **labels** specifies an array of labels with which standby runners in this group should be created
 * **count** specifies the count of how many runners should be created for the group
