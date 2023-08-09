@@ -858,7 +858,7 @@ For example,
 Opening SSH Client to Server
 ============================
 
-You can open an SSH client to current server the **ssh** command and specify the name of the server you would like to connect to.
+For debugging, you can open an SSH client to current server using the **ssh** command and specify the name of the server you would like to connect to.
 For the **ssh** command to work, you need to specify the **--hetzner-token** and have correct private SSH key.
 
 .. code-block:: bash
@@ -870,7 +870,6 @@ For example,
 .. code-block:: bash
 
    github-runners ssh github-runner-5811138574-15753659850
-
 
 ======================================
 Deleting All Runners And Their Servers
