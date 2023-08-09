@@ -909,6 +909,9 @@ in `schema.json <https://github.com/testflows/TestFlows-GitHub-Runners/blob/main
 You can specify the default configuration by placing the configuration in the *~/.github-runners/config.yaml* file or
 pass the path to the configuration file explicitly using the **-c path, --config path** option.
 
+The YAML configuration file supports special syntax to specify the value of a property as the value of the environment variable using
+the **${ENV_VAR_NAME}** syntax.
+
 For example,
 
 .. code-block:: bash
