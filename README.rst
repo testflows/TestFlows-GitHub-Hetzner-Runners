@@ -830,28 +830,6 @@ separated by a space.
 
    datefmt: "%m/%d/%Y %I:%M:%S %p"
 
-==============================
-Specifying Additional SSH Keys
-==============================
-
-In addition to the main SSH key specified by the **--ssh-key** option, which is used to connect to the servers, you
-can specify additional SSH keys using the **additional_ssh_keys**  property in the configuration file.
-
-This is needed in cases where there is more than one user that should have access to the created servers used for the runners.
-
-Note that the additional SSH keys are defined using only the public key. This enables additional users that hold the matching private key
-to connect to the servers.
-
-For example,
-
-:config.yaml:
-   .. code-block:: yaml
-
-      config:
-         additional_ssh_keys:
-            - ssh-rsa AAAAB3Nza3... user@user-node   
-            - ssh-rsa AADDDFFFC1... another_user@another-node 
-
 ===========================
 Listing All Current Servers
 ===========================
@@ -980,6 +958,28 @@ after provisoning a new cloud server instance that will host the **github-runner
 auto-generated to access the runners. The auto-generated key will be placed in */home/runner/.ssh/id_rsa*, where **runner**
 is the user under which the **github-runners** service runs on the cloud instance. The auto-generated SSH key will be automatically
 added to your project using the MD5 hash of the public key as the SSH key name.
+
+==============================
+Specifying Additional SSH Keys
+==============================
+
+In addition to the main SSH key specified by the **--ssh-key** option, which is used to connect to the servers, you
+can specify additional SSH keys using the **additional_ssh_keys**  property in the configuration file.
+
+This is needed in cases where there is more than one user that should have access to the created servers used for the runners.
+
+Note that the additional SSH keys are defined using only the public key. This enables additional users that hold the matching private key
+to connect to the servers.
+
+For example,
+
+:config.yaml:
+   .. code-block:: yaml
+
+      config:
+         additional_ssh_keys:
+            - ssh-rsa AAAAB3Nza3... user@user-node   
+            - ssh-rsa AADDDFFFC1... another_user@another-node 
 
 ====================
 Running as a Service
