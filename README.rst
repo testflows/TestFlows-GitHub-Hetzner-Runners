@@ -475,7 +475,7 @@ The *unused budget* is defined as follows:
       unused_budget = server_life * price_per_minute
 
 :✋ Note:
-   You can also use the **--delete-random** option to pick recyclable servers to be deleted at random.
+   You can also use the **--delete-random** option to randomly pick a recyclable server to be deleted.
    Deleting servers at random is a legacy feature.
 
 A recyclable server is recycled for a new job if it matches the following:
