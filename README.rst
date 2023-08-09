@@ -445,7 +445,7 @@ that runs for a few minutes. Instead, the after completing a job the server is p
 and if it can be recycled it is rebuild from scratch by reinstalling the image
 thus providing a clean environment for the next job.
 
-Powered off servers are marked as recyclable by changing their name to **github-runner-recycle-{uuid}**.
+Powered off servers are marked as recyclable by changing their name to **github-runner-recycle-{uid}**.
 
 Recyclable servers are deleted when they reach their end of life period
 which is defined by the **--end-of-life** option, and by default is set to *50* minutes.
@@ -453,16 +453,16 @@ The end of life is calculated on hourly basis and must be greater than *0* and l
 
 For example, with the default value of the **--end-of-life** option set to the *50* minutes,
 if the server is running for 2 hours and 50 minutes, then it will be
-considered to have reached its end of life and is deleted because it has only *10* minutes or less of useful life.
+considered to have reached its end of life and is deleted because it has only *10* minutes or less of useful life
+left in the current hour period.
 However, if the server is running for 2 hours and 30 minutes, then it potentially
-has 30 minutes of life left and it will be kept around to potentially be recycled.
+has 30 minutes of life left and it will be kept around to be available for recycling.
 
 Sometimes a job might need a server that does not match any recyclable servers,
 if the maximum number of runners has been reached then by default one of the recyclable servers
-will be picked at **random** to be deleted to make room for a new server.
-
-However, you can specify server prices inside a configuration file. See `Using Configuration File`_ for more details.
-If server prices are specified, then the server with the *lowest unused budget* will be removed.
+will be picked to be deleted to make room for a new server. By default, the recyclable server
+that is deleted is picked based on server's price per hour and its remaining useful life.
+The server with the lowest *unused budget* is deleted.
 
 The *unused budget* is defined as follows:
 
@@ -474,48 +474,9 @@ The *unused budget* is defined as follows:
       price_per_minute = price_per_hour / 60
       unused_budget = server_life * price_per_minute
 
-Here is an example of specifying server prices using the configuration file:
-
-.. code-block:: bash
-
-   github-runners -c config.py
-
-where,
-
-:config.py:
-   .. code-block:: python3
-
-      from testflows.github.runners.config import *
-
-      config = Config(
-         # Prices per hour of Hetzner Cloud servers
-         # using primary IPv4 as of Aug 2, 2023
-         server_prices={
-            # shared vCPU x86
-            "CX11":  0.0060,
-            "CPX11": 0.0067,
-            "CX21":  0.0087,
-            "CPX21": 0.0118,
-            "CX31":  0.0153,
-            "CPX31": 0.0218,
-            "CX41":  0.0286,
-            "CPX41": 0.0420,
-            "CX51":  0.0549,
-            "CPX51": 0.0882,
-            # shared vCPU ARM64
-            "CAX11": 0.0059,
-            "CAX21": 0.0101,
-            "CAX31": 0.0202,
-            "CAX41": 0.0395,
-            # dedicated vCPU
-            "CCX12": 0.0328,
-            "CCX22": 0.0664,
-            "CCX32": 0.1319,
-            "CCX42": 0.2647,
-            "CCX52": 0.5286,
-            "CCX62": 0.7916,
-         }
-      )
+:✋ Note:
+   You can also use the **--delete-random** option to pick recyclable servers to be deleted at random.
+   Deleting servers at random is a legacy feature.
 
 A recyclable server is recycled for a new job if it matches the following:
 
