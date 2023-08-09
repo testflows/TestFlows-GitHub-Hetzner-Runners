@@ -856,97 +856,36 @@ Using Configuration File
 ========================
 
 Instead of passing configuration options using command line arguments, you can use
-configuration file. The configuration file is Python file that must define the **config**
-object of the `Config class`_.
+configuration file. The configuration file uses YAML format and it is usually named **config.yaml**. You can find the complete schema
+in `schema.json <https://github.com/testflows/TestFlows-GitHub-Runners/blob/main/testflows/github/runners/config/schema.json>`_.
 
 :✋ Note:
    When you mix command line options and custom configuration file,
    explicit command line options take precedence over the values that are defined
    for the same parameters in the configuration file.
 
-:✨ Why:
-   Defining configuration file in Python instead of YAML or something else
-   has a few advantages. For example, you can edit it with
-   any Python IDE that provides a convenience of autocompletion and hints.
+You can specify the default configuration by placing the configuration in the *~/.github-runners/config.yaml* file.
 
 For example,
 
-:config.py:
+:config.yaml:
 
-   Simple configuration file. You can find a complete example in `examples/config.py <https://github.com/testflows/TestFlows-GitHub-Runners/blob/main/examples/config.py>`_.
+   This is a simple configuration file. You can find a complete example in the `examples/config.yaml <https://github.com/testflows/TestFlows-GitHub-Runners/blob/main/examples/config.yaml>`_.
 
-   .. code-block:: python3
+   .. code-block:: yaml
 
-      from testflows.github.runners.config import *
-
-      config = Config(
-         github_token=os.getenv("GITHUB_TOKEN"),
-         github_repository=os.getenv("GITHUB_REPOSITORY"),
-         hetzner_token=os.getenv("HETZNER_TOKEN"),
-         default_server_type=server_type("cx11"),
-         cloud=cloud(server_name="my-github-runners-service"),
-         standby_runners=[
-            standby_runner(
-                  labels=["type-cx21"],
-                  count=2,
-                  replenish_immediately=True,
-            )
-         ],
-      )
-
-You can sanity check your configuration file by executing it directly:
-
-.. code-block:: bash
-
-   python3 config.py
-
-You can pass your custom configuration file using the **-c path, --config path** command line option.
-
-.. code-block:: bash
-
-   github-runners -c config.py
-
---------------------
-Configuration Schema
---------------------
-
-The `Config class`_ has the following schema:
-
-:schema:
-   * **github_token: str**
-   * **github_repository: str**
-   * **hetzner_token: str**
-   * **ssh_key: str**
-   * **max_runners: count**
-   * **max_runners_in_workflow_run: count**
-   * **with_label: str**
-   * **default_image: image**
-   * **default_server_type: server_type**
-   * **default_location: location**
-   * **workers: count**
-   * **setup_script: path**
-   * **startup_x64_script: path**
-   * **startup_arm64_script: path**
-   * **max_powered_off_time: count**
-   * **max_unused_runner_time: count**
-   * **max_runner_registration_time: count**
-   * **max_server_ready_time: count**
-   * **scale_up_interval: count**
-   * **scale_down_interval: count**
-   * **debug: bool**
-   * **logger_config: dict**
-   * **cloud: cloud**
-      * **server_name: str**
-      * **deploy: deploy**
-         * **server_type: server_type**
-         * **image: image**
-         * **location: location**
-         * **setup_script: path**
-   * **standby_runners: list[standby_runner]**
-      * **labels: list[str]**
-      * **count: count**
-      * **replenish_immediately: bool**
-   * **server_prices: dict[str, float]**
+      config:
+         github_token: ${GITHUB_TOKEN}
+         github_repository: ${GITHUB_REPOSITORY}
+         hetzner_token: ${HETZNER_TOKEN}
+         default_server_type: cx11
+         cloud:
+            server_name: "my-github-runners-service"
+         standby_runners:
+            - labels:
+               - type-cx21
+              count: 2
+              replenish_immediately: true
 
 ==================
 Specifying SSH Key
