@@ -869,9 +869,6 @@ You can specify the default configuration by placing the configuration in the *~
 For example,
 
 :config.yaml:
-
-   This is a simple configuration file. You can find a complete example in the `examples/config.yaml <https://github.com/testflows/TestFlows-GitHub-Runners/blob/main/examples/config.yaml>`_.
-
    .. code-block:: yaml
 
       config:
@@ -886,6 +883,9 @@ For example,
                - type-cx21
               count: 2
               replenish_immediately: true
+
+:✋ Note:
+   This is a simple configuration file. You can find a complete example in the `examples/config.yaml <https://github.com/testflows/TestFlows-GitHub-Runners/blob/main/examples/config.yaml>`_.
 
 ==================
 Specifying SSH Key
