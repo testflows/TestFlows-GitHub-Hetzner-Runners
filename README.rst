@@ -694,6 +694,7 @@ that has *labels*, *count*, and *replenish_immediately* attributes.
 
 :schema:
    ..code-block::json
+
        "standby_runners": {
            "type": "array",
            "items": {
