@@ -907,7 +907,7 @@ in `schema.json <https://github.com/testflows/TestFlows-GitHub-Runners/blob/main
    for the same parameters in the configuration file.
 
 You can specify the default configuration by placing the configuration in the *~/.github-runners/config.yaml* file or
-pass the path to the configuration file explicitly using the **-c path, --config path*** option.
+pass the path to the configuration file explicitly using the **-c path, --config path** option.
 
 For example,
 
