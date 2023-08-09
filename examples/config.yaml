@@ -7,6 +7,7 @@ config:
     max_runners: 10
     recycle: true
     end_of_life: 50
+    delete_random: false
     default_image: "x86:system:ubuntu-22.04"
     default_server_type: cpx11
     #default_location:
