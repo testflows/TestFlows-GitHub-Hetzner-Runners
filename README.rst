@@ -693,33 +693,45 @@ More than one standby runner group can be specified in the **standby_runners**. 
 that has *labels*, *count*, and *replenish_immediately* attributes.
 
 :schema:
-   * **standby_runners: list[standby_runner]**
-      * **labels: list[str]**
-      * **count: count**
-      * **replenish_immediately: bool**
+   ..code-block::json
+       "standby_runners": {
+           "type": "array",
+           "items": {
+               "type": "object",
+               "properties": {
+                   "labels": {
+                       "type": "array",
+                       "items": {
+                           "type": "string"
+                       }
+                   },
+                   "count": {
+                       "type": "integer"
+                   },
+                   "replenish_immediately": {
+                       "type": "boolean"
+                   }
+               }
+           }
+       }
 
 where
 
-* **labels** specifies a list of labels with which standby runners in this group should be created
-* **count** specifies how many runners should be created for the group
-* **replenish_immediately** specifies if the sandby runners should be replenished as soon as any become busy after picking up a job
+* **labels** specifies an array of labels with which standby runners in this group should be created
+* **count** specifies the count of how many runners should be created for the group
+* **replenish_immediately** specifies if the sandby runners should be replenished as soon as any they become busy after picking up a job, default: true
 
 For example,
 
-:config.py:
-   .. code-block:: python3
+:config.yaml:
+   .. code-block:: yaml
 
-      from testflows.github.runners.config import *
-
-      config = Config(
-         standby_runners=[
-            standby_runner(
-                  labels=["type-cx21"],
-                  count=2,
-                  replenish_immediately=True,
-            )
-         ],
-      )
+      config:
+         standby_runners:
+            - labels:
+               - type-cx21
+              count: 2
+              replenish_immediately: true
 
 ===============================
 Specifying Logger Configuration
@@ -731,39 +743,91 @@ You can specify custom logger configuration using a configuration file.
    Custom logger configuration can only be specified using a configuration file.
    See `Using Configuration File`_ for more details.
 
-The logger configuration is specified by passing a dictionary as the value to the **logger_config** attribute of the `Config class`_.
-For more information about the logger configuration dictionary, see `Configuration dictionary schema <https://docs.python.org/3/library/logging.config.html#logging-config-dictschema>`_ in Python documentation.
+The logger configuration is specified in configuration file using the **logger_config** object.
+For more information about the logger configuration, see `Configuration dictionary schema <https://docs.python.org/3/library/logging.config.html#logging-config-dictschema>`_ in Python documentation.
+
+Any custom logger configuration must at least define **stdout** and **rotating_service_logfile** handlers
+as well as configure **testflows.github.runners** in the **loggers**.
 
 For example,
 
-:config.py:
-   .. code-block:: python3
+:config.yaml:
+   .. code-block:: yaml
 
-      from testflows.github.runners.config import *
+       config:
+          # logging module config
+          logger_config:
+              version: 1
+              disable_existing_loggers: false
+              formatters:
+                  standard:
+                      format: "%(asctime)s %(levelname)s %(funcName)s %(message)s"
+                      datefmt: "%m/%d/%Y %I:%M:%S %p"
+              handlers:
+                  stdout:
+                      level: INFO
+                      formatter: standard
+                      class: logging.StreamHandler
+                      stream: "ext://sys.stdout"
+                  rotating_service_logfile:
+                      level: DEBUG
+                      formatter: standard
+                      class: logging.handlers.RotatingFileHandler
+                      filename: /tmp/github-runners.log
+                      maxBytes: 10485760
+                      backupCount: 1
+              loggers:
+                  testflows.github.runners:
+                      level: INFO
+                      handlers:
+                          - stdout
+                          - rotating_service_logfile
 
-      config = Config(
-         logger_config = {
-             "version": 1,
-             "disable_existing_loggers": False,
-             "formatters": {
-                 "standard": {
-                     "format": "%(asctime)s %(levelname)8s %(threadName)16s %(funcName)15s %(message)s",
-                     "datefmt": "%m/%d/%Y %I:%M:%S %p",
-                 },
-             },
-             "handlers": {
-                 "default": {
-                     "level": "INFO",
-                     "formatter": "standard",
-                     "class": "logging.StreamHandler",
-                     "stream": "ext://sys.stdout",
-                 },
-             },
-             "loggers": {
-                 "testflows.github.runners": {"level": "INFO", "handlers": ["default"]},
-             },
-         }
-     )
+If the logger configuration is using a custom format for the **rotating_service_logfile**, then a custom **logger_format** object
+must be defined to specify the format of the service's rotating log file which is needed for the **service log** and **cloud log** commands.
+
+For the example above, the custom **logger_format** is the following:
+
+.. code-block:: yaml
+
+   config:
+       # logger format
+       logger_format:
+           delimiter: " "
+           default:
+               - column: date
+               - column: time
+               - column: time_ampm
+               - column: level
+               - column: funcName
+               - column: message
+           columns:
+               - column: date
+                 index: 0
+                 width: 10
+               - column: time
+                 index: 1
+                 width: 8
+               - column: time_ampm
+                 index: 2
+                 width: 2
+               - column: level
+                 index: 3
+                 width: 8
+               - column: funcName
+                 index: 4
+                 width: 15
+               - column: message
+                 index: 5
+                 width: 80
+
+Note that the *date*, *time*, and *time_ampm* columns come from the **datefmt** definition which
+defines the **asctime** as a three column field consisting of *date*, *time*, and *time_ampm* columns
+separated by a space.
+
+.. code-block:: yaml
+
+   datefmt: "%m/%d/%Y %I:%M:%S %p"
 
 ======================================
 Deleting All Runners And Their Servers
