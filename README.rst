@@ -1649,12 +1649,18 @@ The following options are supported:
 * **-m count, --max-runners count**
   maximum number of active runners, default: *10*
 
+* **--delete-random**
+  delete random recyclable server when maximum number of servers is reached, by default uses server prices
+
 * **--max-runners-in-workflow-run count**
   maximum number of runners allowed to be created for a single workflow run, default: not set
 
 * **--with-label label**
   only create runners for jobs that have the specified label,
   by default jobs are not skipped and runners will be created for any queued job
+
+* **--label-prefix prefix**
+  support type, image, and location job labels with the specified prefix
 
 * **-w count, --workers count**
   number of concurrent workers, default: *10*
@@ -1695,6 +1701,12 @@ The following options are supported:
 
     * **delete**
       delete all servers
+
+    * **list**
+      list all servers
+
+    * **ssh**
+      ssh to a server
 
     * **cloud**
       cloud service commands
