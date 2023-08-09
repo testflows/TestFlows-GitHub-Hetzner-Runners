@@ -52,6 +52,13 @@ def deploy(args, config: Config, redeploy=False):
     with Action("Logging in to Hetzner Cloud"):
         client = Client(token=config.hetzner_token)
 
+    with Action(f"Checking if SSH key exists"):
+        ssh_keys.append(check_ssh_key(client, config.ssh_key))
+
+        if config.additional_ssh_keys:
+            for key in config.additional_ssh_keys:
+                ssh_keys.append(check_ssh_key(client, key, is_file=False))
+
     if redeploy:
         with Action(f"Getting server {server_name}"):
             server: BoundServer = client.servers.get_by_name(server_name)
@@ -107,13 +114,6 @@ def deploy(args, config: Config, redeploy=False):
             config.cloud.deploy.location = check_location(
                 client=client, location=config.cloud.deploy.location
             )
-
-        with Action(f"Checking if SSH key exists"):
-            ssh_keys.append(check_ssh_key(client, config.ssh_key))
-
-            if config.additional_ssh_keys:
-                for key in config.additional_ssh_keys:
-                    ssh_keys.append(check_ssh_key(client, key, is_file=False))
 
         with Action(f"Creating new server"):
             response = client.servers.create(
