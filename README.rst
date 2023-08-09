@@ -830,6 +830,48 @@ separated by a space.
 
    datefmt: "%m/%d/%Y %I:%M:%S %p"
 
+===========================
+Listing All Current Servers
+===========================
+
+You can list all currently created servers using the **list** command.
+This command will show all the servers that start with the *github-runner* prefix in their name.
+
+For example,
+
+.. code-block:: bash
+
+   github-runners list
+
+::
+
+   Using config file: /home/user/.github-runners/config.yaml
+   11:40:40 🍀 Logging in to Hetzner Cloud
+   11:40:40 🍀 Getting a list of servers
+   ❌ off        github-runner-5811138574-15753659850
+   ❌ off        github-runner-recycle-1691595565.5396028
+   ❌ off        github-runner-recycle-1691595478.7024605
+   ❌ off        github-runner-5811138574-15753660130
+   ❌ off        github-runner-recycle-1691595481.196499
+
+============================
+Opening SSH Client to Server
+============================
+
+You can open an SSH client to current server the **ssh** command and specify the name of the server you would like to connect to.
+For the **ssh** command to work, you need to specify the **--hetzner-token** and have correct private SSH key.
+
+.. code-block:: bash
+
+   github-runners ssh <name>
+
+For example,
+
+.. code-block:: bash
+
+   github-runners ssh github-runner-5811138574-15753659850
+
+
 ======================================
 Deleting All Runners And Their Servers
 ======================================
