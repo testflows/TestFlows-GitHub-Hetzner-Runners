@@ -693,7 +693,7 @@ More than one standby runner group can be specified in the **standby_runners**. 
 that has *labels*, *count*, and *replenish_immediately* attributes.
 
 :schema:
-   ..code-block::json
+   .. code-block:: json
 
        "standby_runners": {
            "type": "array",
