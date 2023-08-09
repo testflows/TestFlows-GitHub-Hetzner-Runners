@@ -906,9 +906,16 @@ in `schema.json <https://github.com/testflows/TestFlows-GitHub-Runners/blob/main
    explicit command line options take precedence over the values that are defined
    for the same parameters in the configuration file.
 
-You can specify the default configuration by placing the configuration in the *~/.github-runners/config.yaml* file.
+You can specify the default configuration by placing the configuration in the *~/.github-runners/config.yaml* file or
+pass the path to the configuration file explicitly using the *-c path, --config path** option.
 
 For example,
+
+.. code-block:: bash
+
+   github-runners -c config.yaml
+
+where,
 
 :config.yaml:
    .. code-block:: yaml
