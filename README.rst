@@ -1099,6 +1099,12 @@ or using **service** system utility
    sudo service github-runners start
    sudo service github-runners stop
 
+:✋ Note:
+   The **service stop** command will send the *SIGINT* signal to the **github-runners** proccess and will wait for the
+   program to perform clean shutdown which includes stopping scale up and scale down loops.
+   Given that the **github-runners** program might be in the middle of configuring servers, the **service stop**
+   command might take sometime to complete.
+
 -------------
 Checking Log
 -------------
