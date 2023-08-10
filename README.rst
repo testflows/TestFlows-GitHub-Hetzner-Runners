@@ -1831,6 +1831,12 @@ The following options are supported:
       * **log**
         get cloud service log
 
+        * **-c name[:width][,...], --columns name[:width][,...]**
+          comma separated list of columns to include and their optional width
+   
+        * **--raw**
+          output raw log
+
         * **-f, --follow**
           follow log journal, default: *False*
 
@@ -1882,8 +1888,22 @@ The following options are supported:
       * **log**
         get service log
 
+        * **-c name[:width][,...], --columns name[:width][,...]**
+          comma separated list of columns to include and their optional width
+
         * **-f, --follow**
           follow log journal, default: *False*
+
+        *  **--raw**
+           output raw log
+
+        * **command**
+
+          * **format**
+            format log
+
+          * **delete**
+            delete log
 
       * **start**
         start service
