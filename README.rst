@@ -1195,7 +1195,16 @@ For example,
 
 By default, the following columns are available unless you redefine the **logger_format** in your configuration file:
 
-*date*, *time*, *level*, *interval*, *funcName*, *threadName*, *run_id*, *job_id*, *server_name*, *message*.
+* *date*
+* *time*
+* *level*
+* *interval*
+* *funcName*
+* *threadName*
+* *run_id*
+* *job_id*
+* *server_name*
+* *message*
 
 Raw Log
 =======
