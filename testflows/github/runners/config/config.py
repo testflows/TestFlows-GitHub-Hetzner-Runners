@@ -112,9 +112,9 @@ class Config:
         current_dir, "..", "scripts", "startup_arm64.sh"
     )
     max_powered_off_time: int = 60
-    max_unused_runner_time: int = 120
-    max_runner_registration_time: int = 120
-    max_server_ready_time: int = 120
+    max_unused_runner_time: int = 180
+    max_runner_registration_time: int = 180
+    max_server_ready_time: int = 180
     scale_up_interval: int = 15
     scale_down_interval: int = 15
     debug: bool = False

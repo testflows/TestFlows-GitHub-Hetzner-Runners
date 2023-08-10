@@ -36,9 +36,9 @@ def lines_type(v):
     if v.startswith("+"):
         offset = 1
     try:
-        assert int(v[offset:]) and int(v[offset:]) > 0
+        assert int(v[offset:]) and int(v[offset:]) >= 0
     except Exception as e:
-        raise ArgumentTypeError(f"{v} must be [+]num with num > 0")
+        raise ArgumentTypeError(f"{v} must be [+]num with num >= 0")
     return v
 
 

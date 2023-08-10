@@ -409,7 +409,7 @@ Specifying Maximum Number of Runners Used in Workflow Run
 =========================================================
 
 By default, the maximum number of runners that could be created for a single workflow run
-is not defined. 
+is not defined.
 
 :❗Warning:
    In general, GitHub does not allow to assign a job to a specific runner, and any available runner
@@ -421,7 +421,7 @@ If you set the **--max-runners-in-workflow-run** to some value *X*, then **githu
 will created the *X * number of queued workflow runs* runners. How these runners will be allocated by
 GitHub is out of our control. Therefore, the more runs are queued up the more runners will be created, up to the **--max-runners**
 limit, to try to complete the jobs faster. However, this does not mean that you will see exactly *X* number of jobs
-being executed in each queued workflow run. 
+being executed in each queued workflow run.
 
 For example,
 
@@ -469,7 +469,7 @@ The *unused budget* is defined as follows:
 :unused budget:
 
    .. code-block:: python3
-   
+
       server_life = 60 - server_age.minutes
       price_per_minute = price_per_hour / 60
       unused_budget = server_life * price_per_minute
@@ -991,8 +991,8 @@ For example,
 
       config:
          additional_ssh_keys:
-            - ssh-rsa AAAAB3Nza3... user@user-node   
-            - ssh-rsa AADDDFFFC1... another_user@another-node 
+            - ssh-rsa AAAAB3Nza3... user@user-node
+            - ssh-rsa AADDDFFFC1... another_user@another-node
 
 ====================
 Running as a Service
@@ -1140,13 +1140,13 @@ then the log will be followed and the new messages will be displayed as they are
 
       github-runners service log -f
       Using config file: /home/user/.github-runners/config.yaml
-      18:11:49 api_watch      INFO     🍀 Consumed 0 calls in 60 sec, 5000 calls left, reset in 3599 sec                           
-      18:12:49 api_watch      INFO     🍀 Logging in to GitHub                                                                     
-      18:12:49 api_watch      INFO     🍀 Checking current API calls consumption rate                                              
-      18:12:49 api_watch      INFO     🍀 Consumed 0 calls in 60 sec, 5000 calls left, reset in 3599 sec                           
-      18:13:49 api_watch      INFO     🍀 Logging in to GitHub                                                                     
-      18:13:49 api_watch      INFO     🍀 Checking current API calls consumption rate                                              
-      18:13:50 api_watch      INFO     🍀 Consumed 0 calls in 60 sec, 5000 calls left, reset in 3599 sec  
+      18:11:49 api_watch      INFO     🍀 Consumed 0 calls in 60 sec, 5000 calls left, reset in 3599 sec
+      18:12:49 api_watch      INFO     🍀 Logging in to GitHub
+      18:12:49 api_watch      INFO     🍀 Checking current API calls consumption rate
+      18:12:49 api_watch      INFO     🍀 Consumed 0 calls in 60 sec, 5000 calls left, reset in 3599 sec
+      18:13:49 api_watch      INFO     🍀 Logging in to GitHub
+      18:13:49 api_watch      INFO     🍀 Checking current API calls consumption rate
+      18:13:50 api_watch      INFO     🍀 Consumed 0 calls in 60 sec, 5000 calls left, reset in 3599 sec
       ...
 
 You can dump the full log by omitting the **-f, --follow** option.
@@ -1160,8 +1160,8 @@ You can dump the full log by omitting the **-f, --follow** option.
    ::
 
       Using config file: /home/user/.github-runners/config.yaml
-      09:44:28 http_cache     INFO     🍀 Enabling HTTP cache at /tmp/tmp60wo30tc/http_cache                                       
-      09:44:28 main           INFO     🍀 Logging in to Hetzner Cloud                                                              
+      09:44:28 http_cache     INFO     🍀 Enabling HTTP cache at /tmp/tmp60wo30tc/http_cache
+      09:44:28 main           INFO     🍀 Logging in to Hetzner Cloud
       09:44:28 main           INFO     🍀 Logging in to GitHub
       09:44:28 main           INFO     🍀 Getting repository testflows/testflows-github-runners
       09:44:28 main           INFO     🍀 Checking if default image exists
@@ -1187,10 +1187,10 @@ For example,
 
    Using config file: /home/user/.github-runners/config.yaml
    Using config file: /home/user/.github-runners/config.yaml
-   18:13:50 🍀 Consumed 0 calls in 60 sec, 5000 calls left,     
-            reset in 3599 sec                                  
-   18:14:50 🍀 Logging in to GitHub                             
-   18:14:50 🍀 Checking current API calls consumption rate    
+   18:13:50 🍀 Consumed 0 calls in 60 sec, 5000 calls left,
+            reset in 3599 sec
+   18:14:50 🍀 Logging in to GitHub
+   18:14:50 🍀 Checking current API calls consumption rate
    ...
 
 By default, the following columns are available unless you redefine the **logger_format** in your configuration file:
@@ -1209,7 +1209,7 @@ By default, the following columns are available unless you redefine the **logger
 Selecting Number of Lines
 =========================
 
-You can select the number of lines you would like to output from the log using the 
+You can select the number of lines you would like to output from the log using the
 **-n [+]number, --lines [+]number** option. With the **--follow** the default is *10*.
 
 You can use the **+** before the *number* to output log starting with the specified line number.
@@ -1704,7 +1704,7 @@ The scale down service also monitors all the runners that have **unused** status
 runners if the runner is **unused** for more than the **max-unused-runner-time** period. This is needed in case a runner never gets a job
 assigned to it and the server will stay in the power on state. This cycle relies on the fact that the runner's name
 is the same as server's name. The **max-unused-runner-time** can be specified using the **--max-unused-runner-time** option which by default
-is set to *120* sec.
+is set to *180* sec.
 
 --------------
 Zombie Servers
@@ -1712,7 +1712,7 @@ Zombie Servers
 
 The scale down service will delete any zombie servers. A zombie server is defined as as any server that fails to register its runner within
 the **max-runner-registration-time**. The **max-runner-registration-time** can be specified using the **--max-runner-registration-time** option
-which by default is set to *60* sec.
+which by default is set to *180* sec.
 
 ===========================
 Handling Failing Conditions
@@ -1820,13 +1820,13 @@ The following options are supported:
   maximum time after which a powered off server is deleted, default: *60* sec
 
 * **--max-unused-runner-time sec**
-  maximum time after which an unused runner is removed and its server deleted, default: *120* sec
+  maximum time after which an unused runner is removed and its server deleted, default: *180* sec
 
 * **--max-runner-registration-time**
-  maximum time after which the server will be deleted if its runner is not registered with GitHub, default: *120* sec
+  maximum time after which the server will be deleted if its runner is not registered with GitHub, default: *180* sec
 
 * **--max-server-ready-time sec**
-  maximum time to wait for the server to be in the running state, default: *120* sec
+  maximum time to wait for the server to be in the running state, default: *180* sec
 
 * **--scale-up-interval sec**
   scale up service interval, default: *15* sec
@@ -1893,7 +1893,7 @@ The following options are supported:
 
         * **-c name[:width][,...], --columns name[:width][,...]**
           comma separated list of columns to include and their optional width
-   
+
         * **--raw**
           output raw log
 
