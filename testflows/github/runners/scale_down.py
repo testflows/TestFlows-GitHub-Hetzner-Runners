@@ -117,7 +117,7 @@ def recycle_server(reason: str, server: BoundServer, ssh_key: SSHKey, end_of_lif
 
     if not server.name.startswith(recycle_server_name_prefix):
         with Action(
-            f"Marking server {server.name} "
+            f"Marking {reason} server {server.name} "
             f"used {days}d{hours}h{minutes}m "
             f"for recycling with {60 - minutes}m of life",
             stacklevel=3,

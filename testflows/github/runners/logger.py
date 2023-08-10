@@ -112,8 +112,8 @@ def configure(config, level=logging.INFO, service_mode=False):
                 "formatter": "rotating_file",
                 "class": "logging.handlers.RotatingFileHandler",
                 "filename": os.path.join(tempfile.gettempdir(), "github-runners.log"),
-                "maxBytes": 10485760,
-                "backupCount": 1,
+                "maxBytes": 52428800,  # 50MB 50*2**20
+                "backupCount": 10,
             },
         },
         "loggers": {
