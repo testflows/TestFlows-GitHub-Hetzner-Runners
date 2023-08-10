@@ -1206,6 +1206,22 @@ By default, the following columns are available unless you redefine the **logger
 * *server_name*
 * *message*
 
+Selecting Number of Lines
+=========================
+
+You can select the number of lines you would like to output from the log using the 
+**-n [+]number, --lines [+]number** option. With the **--follow** the default is *10*.
+
+You can use the **+** before the *number* to output log starting with the specified line number.
+
+For example,
+
+.. code-block:: bash
+
+   github-runners service log -n 50
+   github-runners service log -n +100
+   github-runners service log -f -n 1
+
 Raw Log
 =======
 
@@ -1884,6 +1900,15 @@ The following options are supported:
         * **-f, --follow**
           follow log journal, default: *False*
 
+        * **-n [+]number, --lines [+]number**
+          output the last number of lines, with --follow the default is 10,
+          use '+' before the number to output log starting with the line number
+
+        * **command**
+
+          * **delete**
+            delete log
+
       * **status**
         get cloud service status
 
@@ -1937,6 +1962,10 @@ The following options are supported:
 
         * **-f, --follow**
           follow log journal, default: *False*
+
+        * **-n [+]number, --lines [+]number**
+          output the last number of lines, with --follow the default is 10,
+          use '+' before the number to output log starting with the line number
 
         *  **--raw**
            output raw log
