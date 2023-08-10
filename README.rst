@@ -1175,7 +1175,7 @@ Selecting Log Columns
 =====================
 
 You can use the **-c name[:width][,...], --columns name[:width][,...]** option to specify
-a comma separated list of columns to include in the output as well ass their optional width.
+a comma separated list of columns to include in the output as well as their optional width.
 
 For example,
 
