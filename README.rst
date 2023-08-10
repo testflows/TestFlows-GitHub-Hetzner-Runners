@@ -509,7 +509,7 @@ Skipping Jobs
 
 By default, a runner will be created for any **queued** job.
 
-If needed, you can skip creating runners if a job does not have some specified label
+If needed, you can skip creating runners if a job does not have a specified label
 using the **--with-label** option.
 
 For example,
@@ -522,7 +522,7 @@ will only create runners for jobs that contain **on-demand** label and skip any 
 that label.
 
 ===============================
-Jobs That Require Docker Engine
+Jobs That Require the Docker Engine
 ===============================
 
 For jobs that require Docker to be installed, you can use the standard `Hetzner Docker CE application <https://docs.hetzner.com/cloud/apps/list/docker-ce/>`_
@@ -545,7 +545,7 @@ For example
          runs-on: [self-hosted, type-cax11, image-arm-app-docker-ce]
 
 ======================
-Specifying Runner Type
+Specifying the Runner Type
 ======================
 
 -----------
@@ -561,7 +561,7 @@ You can specify different x64 server instance type by using the **type-{name}** 
 The **{name}** must be a valid `Hetzner Cloud server type <https://www.hetzner.com/cloud>`_
 name such as *cx11*, *cpx21* etc.
 
-For example, to use AMD, 3 vCPU, 4GB RAM shared-cpu x64 instance, you can define the **runs-on**
+For example, to use an AMD, 3 vCPU, 4GB RAM shared-cpu x64 instance, you can define the **runs-on**
 as follows:
 
 .. code-block:: yaml
@@ -573,11 +573,11 @@ as follows:
 ARM64 Runners
 -------------
 
-The default, the server type is **cx11**, which is an Intel, 1 vCPU, 2GB RAM shared-cpu x64 instance.
-Therefore, in order to use ARM64 runners you must specify ARM64 server instance type by using the **type-{name}** runner label.
+The default,server type is **cx11**, which is an Intel, 1 vCPU, 2GB RAM shared-cpu x64 instance.
+Therefore, in order to use ARM64 runners, you must specify the ARM64 server instance type by using the **type-{name}** runner label.
 The **{name}** must be a valid `ARM64 Hetzner Cloud server type <https://www.hetzner.com/cloud>`_
 name such as *cax11*, *cax21* etc. which correspond to the Ampere Altra, 2 vCPU, 4GB RAM and
-4 vCPU, 8GB RAM shared-cpu ARM64 instances respectively.
+4 vCPU, 8GB RAM shared-cpu ARM64 instances, respectively.
 
 For example, to use Ampere Altra, 4 vCPU, 8GB RAM shared-cpu ARM64 instance, you must define the **runs-on**
 as follows:
@@ -592,9 +592,9 @@ Specifying Runner Location
 ==========================
 
 By default, the default location of the server where the runner will be running is not specified. You can use the **--default-location**
-option to force specific default server location.
+option to force a specific default server location.
 
-You can also use the **in-{name}** runner label to specify server location for a specific job. Where **{name}** must be a valid
+You can also use the **in-{name}** runner label to specify the server location for a specific job. Where **{name}** must be a valid
 `Hetzner Cloud location <https://docs.hetzner.com/cloud/general/locations/>`_ name such as *ash* for US, Ashburn, VA or
 *fsn1* for Germany, Falkenstein.
 
@@ -606,13 +606,13 @@ For example,
       runs-on: [self-hosted, type-cx11, in-ash]
 
 =======================
-Specifying Runner Image
+Specifying the Runner Image
 =======================
 
 By default, the default image of the server for the runner is **ubuntu-22.04**. You can use the **--default-image**
-option to force specific default server image.
+option to force a specific default server image.
 
-You can also use the **image-{architecture}-{type}-{name}** runner label to specify server image for a specific job.
+You can also use the **image-{architecture}-{type}-{name}** runner label to specify the server image for a specific job.
 
 Where,
 
@@ -648,10 +648,10 @@ For example,
          runs-on: [self-hosted, type-cx11, in-ash, image-x86-snapshot-snapshot_description]
 
 ============================================
-Specifying Custom Runner Server Setup Script
+Specifying the Custom Runner Server Setup Script
 ============================================
 
-You can specify custom runner server setup script using the **--setup-script** option.
+You can specify a custom runner server setup script using the **--setup-script** option.
 
 For example,
 
@@ -681,13 +681,13 @@ For example,
 Specifying Standby Runners
 ==========================
 
-You can define standby runner groups to be always ready to pick your jobs using a custom configuration file.
+You can define standby runner groups to always be ready to pick up your jobs using a custom configuration file.
 
 :✋ Note:
    Standby runner groups can only be defined using a configuration file.
    See `Using Configuration File`_ for more details.
 
-Standby runners are always active and allow the jobs to be picked up immediately.
+Standby runners are always active and allow jobs to be picked up immediately.
 
 More than one standby runner group can be specified in the **standby_runners**. Each group is defined using the **standby_runner** object
 that has *labels*, *count*, and *replenish_immediately* attributes.
@@ -720,7 +720,7 @@ where,
 
 * **labels** specifies an array of labels with which standby runners in this group should be created
 * **count** specifies the count of how many runners should be created for the group
-* **replenish_immediately** specifies if the sandby runners should be replenished as soon as any they become busy after picking up a job, default: true
+* **replenish_immediately** specifies if the sandby runners should be replenished as soon as they become busy after picking up a job, default: true
 
 For example,
 
@@ -741,10 +741,10 @@ Specifying Logger Configuration
 You can specify custom logger configuration using a configuration file.
 
 :✋ Note:
-   Custom logger configuration can only be specified using a configuration file.
+   A custom logger configuration can only be specified using a configuration file.
    See `Using Configuration File`_ for more details.
 
-The logger configuration is specified in configuration file using the **logger_config** object.
+The logger configuration is specified in the configuration file using the **logger_config** object.
 For more information about the logger configuration, see `Configuration dictionary schema <https://docs.python.org/3/library/logging.config.html#logging-config-dictschema>`_ in Python documentation.
 
 Any custom logger configuration must at least define **stdout** and **rotating_service_logfile** handlers
@@ -822,7 +822,7 @@ For the example above, the custom **logger_format** is the following:
                  index: 5
                  width: 80
 
-Note that the *date*, *time*, and *time_ampm* columns come from the **datefmt** definition which
+Note that the *date*, *time*, and *time_ampm* columns come from the **datefmt** definition, which
 defines the **asctime** as a three column field consisting of *date*, *time*, and *time_ampm* columns
 separated by a space.
 
@@ -855,11 +855,11 @@ For example,
    ❌ off        github-runner-recycle-1691595481.196499
 
 ============================
-Opening SSH Client to Server
+Opening SSH Client to the Server
 ============================
 
-For debugging, you can open an SSH client to current server using the **ssh** command and specify the name of the server you would like to connect to.
-For the **ssh** command to work, you need to specify the **--hetzner-token** and have correct private SSH key.
+For debugging, you can open an SSH client to the current server using the **ssh** command and specify the name of the server you would like to connect to.
+For the **ssh** command to work, you need to specify the **--hetzner-token** and have the correct private SSH key.
 
 .. code-block:: bash
 
@@ -878,7 +878,7 @@ Deleting All Runners And Their Servers
 You can delete all runners, including standby runners, and their servers using the **delete** command.
 
 :✋ Note:
-   The **delete** command will not delete cloud service server. If you also want to delete it,
+   The **delete** command will not delete a cloud service server. If you also want to delete it,
    you also need to execute **cloud delete** command. For more information, see `Deleting Cloud Service`_ section.
 
 .. code-block:: bash
@@ -894,15 +894,15 @@ You can delete all runners, including standby runners, and their servers using t
    07/29/2023 07:43:17 PM     INFO       MainThread             all 🍀 Getting list of servers
 
 ========================
-Using Configuration File
+Using a Configuration File
 ========================
 
 Instead of passing configuration options using command line arguments, you can use
-configuration file. The configuration file uses YAML format and it is usually named **config.yaml**. You can find the complete schema
+configuration file. The configuration file uses YAML format, and it is usually named **config.yaml**. You can find the complete schema
 in `schema.json <https://github.com/testflows/TestFlows-GitHub-Runners/blob/main/testflows/github/runners/config/schema.json>`_.
 
 :✋ Note:
-   When you mix command line options and custom configuration file,
+   When you mix command line options with a custom configuration file,
    explicit command line options take precedence over the values that are defined
    for the same parameters in the configuration file.
 
@@ -944,7 +944,7 @@ Specifying SSH Key
 ==================
 
 All server instances that are created are accessed via SSH using the **ssh** utility and therefore you must provide a valid SSH key
-using the **--ssh-key** option. If the **--ssh-key** option is no specified, then the *~/.ssh/id_rsa.pub* default key path will be used.
+using the **--ssh-key** option. If the **--ssh-key** option is not specified, then the *~/.ssh/id_rsa.pub* default key path will be used.
 
 The SSH key will be automatically added to your project using the MD5 hash of the public key as the SSH key name.
 
