@@ -19,12 +19,12 @@ A simple alternative to Github's `Recommended autoscaling solutions <https://doc
 
 :🔍 Tip:
    You can easily navigate this documentation page by clicking on any title to jump to the `Table of Contents`_.
-   Try it out, and remember, if you get lost just click any title!
+   Try it out, and remember, if you get lost, just click any title!
 
 The **github-runners** service program starts and monitors queued up jobs for GitHub Actions workflows.
 When a new job is queued up, it creates a new Hetzner Cloud server instance
 that provides an ephemeral GitHub Actions runner. Each server instance is automatically
-powered off when job completes and then powered off servers are
+powered off when the job completes, and then powered off servers are
 automatically deleted. Both **x64** (*x86*) and **arm64** (*arm*) runners are supported.
 See `Features`_ and `Limitations`_ for more details.
 
@@ -38,13 +38,13 @@ See `Features`_ and `Limitations`_ for more details.
    Use it at your own risk. Manual monitoring is required to make sure server instances are cleaned up properly
    and costs are kept under control.
 
-Costs depend on the server type, number of jobs and execution time. For each job a new server instance is created
-to avoid any cleanup. Server instances are not shared between any jobs.
+Costs depend on the server type, number of jobs, and execution time. For each job, a new server instance is created
+to avoid any cleanup. Server instances are not shared between jobs.
 
 :✋ Note:
-   Currently Hetzner Cloud server instances are billed on hourly basis. So a job that takes 1 min will be billed
+   Currently, Hetzner Cloud server instances are billed on an hourly basis. So a job that takes 1 min will be billed
    the same way as for a job that takes 59 minutes. Therefore, the minimal cost
-   for any job is the cost of the server for 1 hour plus the cost for one public IPv4 address.
+   for any job, the cost of the server for 1 hour plus the cost of one public IPv4 address.
 
 =================
 Table of Contents
@@ -79,8 +79,8 @@ Limitations
 **Group runners are not supported**
   ✎ However, you can run individual services for each repository using different Hetzner Cloud projects.
 
-**Unique Hetzner Cloud project must be used for each repository**
-   ✎ However, unique projects allow to easily keep track of runner costs per repository.
+**A unique Hetzner Cloud project must be used for each repository**
+   ✎ However, unique projects allow you to easily keep track of runner costs per repository.
 
 =============
 Prerequisites
@@ -120,7 +120,7 @@ If your **PATH** is missing this folder, on Ubuntu, modify your *~/.profile* and
 :~/.profile:
    .. code-block:: bash
 
-      # set PATH so it includes user's private bin if it exists
+      # set PATH so it includes the user's private bin if it exists
       if [ -d "$HOME/.local/bin" ] ; then
           PATH="$HOME/.local/bin:$PATH"
       fi
@@ -206,12 +206,12 @@ Installing TestFlows Github Runners
    :~/.profile:
       .. code-block:: bash
 
-         # set PATH so it includes user's private bin if it exists
+         # set PATH so it includes the user's private bin if it exists
          if [ -d "$HOME/.local/bin" ] ; then
              PATH="$HOME/.local/bin:$PATH"
          fi
 
-In order to launch the **github-runners** program, we'll need to specify GitHub repository as well as GitHub and
+In order to launch the **github-runners** program, we'll need to specify the GitHub repository as well as GitHub and
 Hetzner Cloud tokens. So, let's create these.
 
 ----------------------------------------------------------
@@ -220,7 +220,7 @@ Creating GitHub Repository with Actions Workflow and Token
 
 Before using the **github-runners**, you need a GitHub repository with a GitHub Actions workflow set up.
 
-❶ First, create GitHub Repository named **demo-testflows-github-runners** and note the repository name.
+❶ First, create a GitHub Repository named **demo-testflows-github-runners** and note the repository name.
 
 The repository name will have the following format:
 
@@ -243,7 +243,7 @@ labels.
      Explore-GitHub-Actions:
        runs-on: [self-hosted, type-cpx21]
 
-So, the complete *demo.yml* that uses self-hosted runner is as follows:
+So, the complete *demo.yml* that uses a self-hosted runner is as follows:
 
 :demo.yml:
 
@@ -287,12 +287,12 @@ See these steps in action:
    :alt: Creating GitHub Repository and Token
 
 ----------------------------------------
-Creating Hetzner Cloud Project and Token
+Creating a Hetzner Cloud Project and Token
 ----------------------------------------
 
-Next you will need to create a Hetzner Cloud project and an API token that we can use to create an manage Hetzner Cloud server instances.
+Next, you will need to create a Hetzner Cloud project and an API token that we can use to create and manage Hetzner Cloud server instances.
 
-❶ Create new Hetzner Cloud project **Demo GitHub Runners**.
+❶ Create a new Hetzner Cloud project **Demo GitHub Runners**.
 
 ❷ Now, create an API token and save it.
 
@@ -312,13 +312,13 @@ See these steps in action:
    :alt: Creating GitHub Repository and Token
 
 ----------------------
-Creating Cloud Service
+Creating a Cloud Service
 ----------------------
 
 With the GitHub repository and GitHub and Hetzner Cloud tokens in hand, we can deploy the **github-runners** service
-to Hetzner Cloud instance. This way the service is not running on your local machine.
+to Hetzner Cloud instance. This way, the service is not running on your local machine.
 
-The deployment we'll create a **github-runners** instance in your Hetzner Cloud project on which the service will be running.
+The deployment, we'll create a **github-runners** instance in your Hetzner Cloud project on which the service will be running.
 See the `Running as a Cloud Service`_ section for details.
 
 ❶ To deploy the service run the **github-runners cloud deploy** command and specify your
