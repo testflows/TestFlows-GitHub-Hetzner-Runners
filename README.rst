@@ -1175,7 +1175,7 @@ Selecting Log Columns
 =====================
 
 You can use the **-c name[:width][,...], --columns name[:width][,...]** option to specify
-a comma separated list of columns to include in the output as well ass their optional width.
+a comma separated list of columns to include in the output as well as their optional width.
 
 For example,
 
@@ -1195,7 +1195,16 @@ For example,
 
 By default, the following columns are available unless you redefine the **logger_format** in your configuration file:
 
-*date*, *time*, *level*, *interval*, *funcName*, *threadName*, *run_id*, *job_id*, *server_name*, *message*.
+* *date*
+* *time*
+* *level*
+* *interval*
+* *funcName*
+* *threadName*
+* *run_id*
+* *job_id*
+* *server_name*
+* *message*
 
 Raw Log
 =======
