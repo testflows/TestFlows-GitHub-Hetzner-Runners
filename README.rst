@@ -1349,6 +1349,9 @@ For example,
 
       github-runners cloud log -f
 
+You can also specify the **--raw** option to output the raw log as well as use the **-c name[:width][,...], --columns name[:width][,...]**
+option to specify a comma separated list of columns to include in the output and their optional width.
+
 --------------------
 Cloud Service Status
 --------------------
