@@ -345,7 +345,7 @@ See these steps in action:
 Waiting for GitHub Actions Job to Complete
 ------------------------------------------
 
-❶ The **github-runners** cloud service is now running. So, now you can just seat back and wait until **github-runners**
+❶ The **github-runners** cloud service is now running. So, now you can just sit back and wait until **github-runners**
 spins up a new runner to complete any queued up GitHub Actions jobs in your GitHub repository.
 
 See this step in action:
@@ -355,12 +355,12 @@ See this step in action:
    :width: 790px
    :alt: Waiting For GitHub Actions Job to Complete
 
-As you can see our job was executed and completed using our own self-hosted runner!
+As you can see, our job was executed and completed using our own self-hosted runner!
 
 :✋ Note:
 
-   If you run into any issues you can check cloud service log using the
-   **github-runners cloud log -f** command. For other cloud service commands see the `Running as a Cloud Service`_ section.
+   If you run into any issues, you can check the cloud service log using the
+   **github-runners cloud log -f** command. For other cloud service commands, see the `Running as a Cloud Service`_ section.
 
    .. code-block:: bash
 
@@ -394,7 +394,7 @@ or you can specify these values using the following options:
 * **--hetzner-token**
 
 ====================================
-Specifying Maximum Number of Runners
+Specifying the Maximum Number of Runners
 ====================================
 
 The default maximum number of runners is **10**. You can set a different value
@@ -405,21 +405,21 @@ based on your Hetzner Cloud limits using the **-m count, --max-runners count** o
    github-runners --max-runners 40
 
 =========================================================
-Specifying Maximum Number of Runners Used in Workflow Run
+Specifying the Maximum Number of Runners Used in Workflow Run
 =========================================================
 
 By default, the maximum number of runners that could be created for a single workflow run
 is not defined.
 
 :❗Warning:
-   In general, GitHub does not allow to assign a job to a specific runner, and any available runner
+   In general, GitHub does not allow you to assign a job to a specific runner, and any available runner
    that matches the labels could be used. Therefore, one can't control how runners are allocated
-   to queued workflow run jobs and this is why the **--max-runners-in-workflow-run** option will not behave
+   to queued workflow run jobs, and this is why the **--max-runners-in-workflow-run** option will not behave
    as one would intuitively expect.
 
 If you set the **--max-runners-in-workflow-run** to some value *X*, then **github-runners**
-will created the *X * number of queued workflow runs* runners. How these runners will be allocated by
-GitHub is out of our control. Therefore, the more runs are queued up the more runners will be created, up to the **--max-runners**
+will create the *X * number of queued workflow runs* runners. How these runners will be allocated by
+GitHub is out of our control. Therefore, the more runs queued up, the more runners will be created, up to the **--max-runners**
 limit, to try to complete the jobs faster. However, this does not mean that you will see exactly *X* number of jobs
 being executed in each queued workflow run.
 
@@ -429,39 +429,39 @@ For example,
 
    github-runners --max-runners 40 --max-runners-in-workflow-run 5
 
-will create upto *5* runners for each queued up workflow run. If there is only one workflow run, then the maximum number of
-runners will be *5* unless more queued up workflow runs appear, which then could speed up the execution of the run in progress.
+will create upto *5* runners for each queued up workflow run. If there is only one workflow running, then the maximum number of
+runners will be *5* unless more queued up workflow runs appear, which could then speed up the execution of the run in progress.
 
 =============================
-Recycling Powered Off Servers
+Recycling Powered-Off Servers
 =============================
 
-By default, recycling of powered off servers that has completed executing a job is turned on.
+By default, recycling of powered-off servers that have completed executing a job is turned on.
 
-Recycling allows to minimize costs by allowing multiple runners to be brought up on
-the same server instance as Hetzner Cloud bills servers in 1 hour increments.
+Recycling allows for minimizing costs by allowing multiple runners to be brought up on
+the same server instance as Hetzner Cloud, which bills servers in 1 hour increments.
 Therefore, it is inefficient to delete a server if it only executed a job
-that runs for a few minutes. Instead, the after completing a job the server is powered off
-and if it can be recycled it is rebuild from scratch by reinstalling the image
+that runs for a few minutes. Instead, after completing a job, the server is powered off
+and if it can be recycled, it is rebuilt from scratch by reinstalling the image
 thus providing a clean environment for the next job.
 
 Powered off servers are marked as recyclable by changing their name to **github-runner-recycle-{uid}**.
 
 Recyclable servers are deleted when they reach their end of life period
 which is defined by the **--end-of-life** option, and by default is set to *50* minutes.
-The end of life is calculated on hourly basis and must be greater than *0* and less than *60*.
+The end of life is calculated on an hourly basis and must be greater than *0* and less than *60*.
 
 For example, with the default value of the **--end-of-life** option set to the *50* minutes,
 if the server is running for 2 hours and 50 minutes, then it will be
 considered to have reached its end of life and is deleted because it has only *10* minutes or less of useful life
 left in the current hour period.
-However, if the server is running for 2 hours and 30 minutes, then it potentially
-has 30 minutes of life left and it will be kept around to be available for recycling.
+However, if the server is running for 2 hours and 30 minutes, then it could potentially
+has 30 minutes of life left, and it will be kept around to be available for recycling.
 
 Sometimes a job might need a server that does not match any recyclable servers,
-if the maximum number of runners has been reached then by default one of the recyclable servers
+if the maximum number of runners has been reached, then by default, one of the recyclable servers
 will be picked to be deleted to make room for a new server. By default, the recyclable server
-that is deleted is picked based on server's price per hour and its remaining useful life.
+that is deleted is picked based on the server's price per hour and its remaining useful life.
 The server with the lowest *unused budget* is deleted.
 
 The *unused budget* is defined as follows:
@@ -480,21 +480,21 @@ The *unused budget* is defined as follows:
 
 A recyclable server is recycled for a new job if it matches the following:
 
-* server type matches exactly what the job required or the default type
-* server location matches exactly if job requested a runner in a specific location or the default location is specified
+* server type matches exactly what the job requires or the default type
+* server location matches exactly if a job requests a runner in a specific location or the default location is specified
 * server has matching SSH keys
 
 :✋ Note:
-   **Matching server type exactly means that even if a bigger more expensive server type
-   could be potentially recycled it is not used, even though a job that actually requires
+   **Matching server type exactly means that even if a bigger, more expensive server type
+   could be potentially recycled if it is not used, even though a job that actually requires
    that expensive server might not be queued before the server's end of life.**
 
    This is intensional, as we can't predict when a job that actually requires the more expensive
-   server type could be queued. If the program would allow recycling higher server types
+   server type could be queued. If the program would allow recycling of higher server types
    than actually requested by a job, then we could run into cases when a job
-   that requires smaller and a less expensive server runs on a bigger more expensive server instead.
-   In this case, a job that actually requires the bigger server would force a new expensive server to be created
-   and thus causing more expensive servers to be created than actually necessary.
+   that requires a smaller and less expensive server runs on a bigger and more expensive server instead.
+   In this case, a job that actually requires a bigger server would force a new, expensive server to be created
+   and thus causing more expensive servers to be created than are actually necessary.
 
 If needed, you can turn recycling off using the **--recycle {on,off}** option.
 
