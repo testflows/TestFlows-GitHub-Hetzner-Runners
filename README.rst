@@ -1124,7 +1124,11 @@ Checking Log
 
 You can get the log for the service using the **service log** command.
 
-Use **-f, --follow** option to follow the log journal.
+Following The Log
+=================
+
+Use the **-f, --follow** option to follow the log journal. By default, the last *1000* lines will be shown and
+then the log will be followed and the new messages will be displayed as they are added to the log.
 
 .. code-block:: bash
 
@@ -1135,22 +1139,15 @@ Use **-f, --follow** option to follow the log journal.
    ::
 
       github-runners service log -f
-      Jul 24 16:12:14 user-node systemd[1]: Stopping Autoscaling GitHub Actions Runners...
-      Jul 24 16:12:14 user-node systemd[1]: github-runners.service: Deactivated successfully.
-      Jul 24 16:12:14 user-node systemd[1]: Stopped Autoscaling GitHub Actions Runners.
-      Jul 24 16:12:14 user-node systemd[1]: github-runners.service: Consumed 8.454s CPU time.
-      Jul 24 16:12:17 user-node systemd[1]: Started Autoscaling GitHub Actions Runners.
-      Jul 24 16:12:18 user-node github-runners[74176]: 07/24/2023 04:12:18 PM   INFO MainThread            main 🍀 Logging in to Hetzner Cloud
-      Jul 24 16:12:18 user-node github-runners[74176]: 07/24/2023 04:12:18 PM   INFO MainThread            main 🍀 Logging in to GitHub
-      Jul 24 16:12:18 user-node github-runners[74176]: 07/24/2023 04:12:18 PM   INFO MainThread            main 🍀 Getting repository vzakaznikov/github-runners
-      Jul 24 16:12:18 user-node github-runners[74176]: 07/24/2023 04:12:18 PM   INFO MainThread            main 🍀 Creating scale up service
-      Jul 24 16:12:18 user-node github-runners[74176]: 07/24/2023 04:12:18 PM   INFO MainThread            main 🍀 Creating scale down service
-
-which is equivalent to the following **journalctl** command:
-
-.. code-block:: bash
-
-   journalctl -u github-runners.service -f
+      Using config file: /home/user/.github-runners/config.yaml
+      18:11:49 api_watch      INFO     🍀 Consumed 0 calls in 60 sec, 5000 calls left, reset in 3599 sec                           
+      18:12:49 api_watch      INFO     🍀 Logging in to GitHub                                                                     
+      18:12:49 api_watch      INFO     🍀 Checking current API calls consumption rate                                              
+      18:12:49 api_watch      INFO     🍀 Consumed 0 calls in 60 sec, 5000 calls left, reset in 3599 sec                           
+      18:13:49 api_watch      INFO     🍀 Logging in to GitHub                                                                     
+      18:13:49 api_watch      INFO     🍀 Checking current API calls consumption rate                                              
+      18:13:50 api_watch      INFO     🍀 Consumed 0 calls in 60 sec, 5000 calls left, reset in 3599 sec  
+      ...
 
 You can dump the full log by omitting the **-f, --follow** option.
 
@@ -1162,14 +1159,49 @@ You can dump the full log by omitting the **-f, --follow** option.
 
    ::
 
-      Jul 24 14:24:42 user-node systemd[1]: Started Autoscaling GitHub Actions Runners.
-      Jul 24 14:24:42 user-node env[62771]: LANG=en_CA.UTF-8
-      Jul 24 14:24:42 user-node env[62771]: LANGUAGE=en_CA:en
-      Jul 24 14:24:42 user-node env[62771]: PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin
-      Jul 24 14:24:42 user-node env[62771]: INVOCATION_ID=dc7b778f95fa4ccf95e4a4592b50d9e1
-      Jul 24 14:24:42 user-node env[62771]: JOURNAL_STREAM=8:328542
-      Jul 24 14:24:42 user-node env[62771]: SYSTEMD_EXEC_PID=62771
+      Using config file: /home/user/.github-runners/config.yaml
+      09:44:28 http_cache     INFO     🍀 Enabling HTTP cache at /tmp/tmp60wo30tc/http_cache                                       
+      09:44:28 main           INFO     🍀 Logging in to Hetzner Cloud                                                              
+      09:44:28 main           INFO     🍀 Logging in to GitHub
+      09:44:28 main           INFO     🍀 Getting repository testflows/testflows-github-runners
+      09:44:28 main           INFO     🍀 Checking if default image exists
+      09:44:29 main           INFO     🍀 Checking if default location exists
+      09:44:29 main           INFO     🍀 Checking if default server type exists
+      09:44:29 main           INFO     🍀 Getting server prices
+      09:44:30 main           INFO     🍀 Checking if SSH key exists
       ...
+
+Selecting Log Columns
+=====================
+
+You can use the **-c name[:width][,...], --columns name[:width][,...]** option to specify
+a comma separated list of columns to include in the output as well ass their optional width.
+
+For example,
+
+.. code-block:: bash
+
+   github-runners service log -f -c time,message:50
+
+::
+
+   Using config file: /home/user/.github-runners/config.yaml
+   Using config file: /home/user/.github-runners/config.yaml
+   18:13:50 🍀 Consumed 0 calls in 60 sec, 5000 calls left,     
+            reset in 3599 sec                                  
+   18:14:50 🍀 Logging in to GitHub                             
+   18:14:50 🍀 Checking current API calls consumption rate    
+   ...
+
+By default, the following columns are available unless you redefine the **logger_format** in your configuration file:
+
+*date*, *time*, *level*, *interval*, *funcName*, *threadName*, *run_id*, *job_id*, *server_name*, *message*.
+
+Raw Log
+=======
+
+By default, the log is processed and broken up into columns based on the **logger_format** configuration.
+You can output the raw log by specifying the **--raw** option.
 
 ==========================
 Running as a Cloud Service
