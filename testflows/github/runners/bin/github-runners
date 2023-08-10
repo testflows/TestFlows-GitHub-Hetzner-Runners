@@ -19,6 +19,7 @@ import time
 import tempfile
 import logging
 import threading
+import subprocess
 import logging.config
 
 from contextlib import contextmanager
@@ -892,7 +893,11 @@ if __name__ == "__main__":
     )
 
     if config.config_file is not None:
-        print(f"Using config file: {config.config_file}")
+        if "github-runners" not in subprocess.check_output(
+            ["ps", "-o", "cmd=", f"{os.getppid()}"], text=True
+        ):
+            sys.stdout.write(f"Using config file: {config.config_file}\n")
+            sys.stdout.flush()
 
     if hasattr(args, "func"):
         try:
