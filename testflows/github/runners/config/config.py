@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import yaml
+import base64
 import hashlib
 import logging
 import logging.config
@@ -117,8 +118,9 @@ class Config:
     scale_up_interval: int = 15
     scale_down_interval: int = 15
     debug: bool = False
-    service_mode: bool = False
     # special
+    service_mode: bool = False
+    embedded_mode: bool = False
     logger_config: dict = None
     logger_format: dict = None
     cloud: cloud = cloud()
@@ -520,6 +522,9 @@ def parse_config(filename: str):
     if doc.get("service_mode") is not None:
         assert False, "config.service_mode: should not be defined"
 
+    if doc.get("embedded_mode") is not None:
+        assert False, "config.embedded_mode: should not be defined"
+
     try:
         return Config(**doc)
     except Exception as e:
@@ -529,17 +534,29 @@ def parse_config(filename: str):
 def check_ssh_key(client: Client, ssh_key: str, is_file=True):
     """Check that ssh key exists if not create it."""
 
+    def fingerprint(ssh_key):
+        """Calculate fingerprint of a public SSH key."""
+        encoded_key = base64.b64decode(ssh_key.strip().split()[1].encode("utf-8"))
+        md5_digest = hashlib.md5(encoded_key).hexdigest()
+
+        return ":".join(a + b for a, b in zip(md5_digest[::2], md5_digest[1::2]))
+
     if is_file:
         with open(ssh_key, "r", encoding="utf-8") as ssh_key_file:
             public_key = ssh_key_file.read()
     else:
         public_key = ssh_key
 
-    key_name = hashlib.md5(public_key.encode("utf-8")).hexdigest()
-    ssh_key = SSHKey(name=key_name, public_key=public_key)
+    name = hashlib.md5(public_key.encode("utf-8")).hexdigest()
+    ssh_key: SSHKey = SSHKey(
+        name=name, public_key=public_key, fingerprint=fingerprint(public_key)
+    )
 
-    if not client.ssh_keys.get_by_name(name=ssh_key.name):
-        with Action(f"Creating SSH key {ssh_key.name}", stacklevel=3):
+    if not client.ssh_keys.get_by_fingerprint(fingerprint=ssh_key.fingerprint):
+        with Action(
+            f"Creating SSH key {ssh_key.name} with fingerprint {ssh_key.fingerprint}",
+            stacklevel=3,
+        ):
             client.ssh_keys.create(name=ssh_key.name, public_key=ssh_key.public_key)
 
     return ssh_key

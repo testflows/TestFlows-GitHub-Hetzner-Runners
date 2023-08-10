@@ -30,6 +30,18 @@ class ColumnsType(list):
     pass
 
 
+def lines_type(v):
+    """Log lines type [+]num."""
+    offset = 0
+    if v.startswith("+"):
+        offset = 1
+    try:
+        assert int(v[offset:]) and int(v[offset:]) > 0
+    except Exception as e:
+        raise ArgumentTypeError(f"{v} must be [+]num with num > 0")
+    return v
+
+
 def columns_type(v):
     """Log columns type name:width,..."""
     columns = ColumnsType()

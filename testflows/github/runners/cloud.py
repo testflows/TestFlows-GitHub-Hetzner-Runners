@@ -355,6 +355,22 @@ def log(args, config: Config, server: BoundServer = None):
     ssh(server, command, use_logger=False, stacklevel=4)
 
 
+def delete_log(args, config: Config, server: BoundServer = None):
+    """Delete cloud server service log."""
+    if server is None:
+        config.check("hetzner_token")
+        server_name = config.cloud.server_name
+
+        client = Client(token=config.hetzner_token)
+        server: BoundServer = client.servers.get_by_name(server_name)
+
+        if not server:
+            raise ValueError(f"server {server_name} not found")
+
+    command = f"\"su - ubuntu -c 'github-runners service log delete'\""
+    ssh(server, command, use_logger=False, stacklevel=4)
+
+
 def status(args, config: Config, server: BoundServer = None):
     """Get cloud server service status."""
     if server is None:

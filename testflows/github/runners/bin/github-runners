@@ -19,7 +19,6 @@ import time
 import tempfile
 import logging
 import threading
-import subprocess
 import logging.config
 
 from contextlib import contextmanager
@@ -294,6 +293,12 @@ def argparser():
         help="enable service mode, default: False",
     )
 
+    parser.add_argument(
+        "--embedded-mode",
+        action="store_true",
+        help="enable embedded mode, default: False",
+    )
+
     commands = parser.add_subparsers(
         title="commands", metavar="command", description=None, help=None
     )
@@ -470,6 +475,17 @@ def argparser():
     )
 
     log_cloud_parser.add_argument(
+        "-n",
+        "--lines",
+        metavar="[+]number",
+        type=args.lines_type,
+        help=(
+            "output the last number of lines, with --follow the default is 10,\n"
+            "use '+' before the number to output log starting with the line number"
+        ),
+    )
+
+    log_cloud_parser.add_argument(
         "-c",
         "--columns",
         metavar="name[:width][,...]",
@@ -484,6 +500,19 @@ def argparser():
     )
 
     log_cloud_parser.set_defaults(func=cloud.log)
+
+    log_cloud_commands = log_cloud_parser.add_subparsers(
+        title="commands", metavar="command", description=None, help=None
+    )
+
+    delete_log_cloud_parser = log_cloud_commands.add_parser(
+        "delete",
+        help="delete log",
+        description="Delete cloud service log.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    delete_log_cloud_parser.set_defaults(func=cloud.delete_log)
 
     status_cloud_parser = cloud_commands.add_parser(
         "status",
@@ -699,6 +728,17 @@ def argparser():
     )
 
     log_service_parser.add_argument(
+        "-n",
+        "--lines",
+        metavar="[+]number",
+        type=args.lines_type,
+        help=(
+            "output the last number of lines, with --follow the default is 10,\n"
+            "use '+' before the number to output log starting with the line number"
+        ),
+    )
+
+    log_service_parser.add_argument(
         "--raw",
         action="store_true",
         help="output raw log",
@@ -893,9 +933,7 @@ if __name__ == "__main__":
     )
 
     if config.config_file is not None:
-        if "github-runners" not in subprocess.check_output(
-            ["ps", "-o", "cmd=", f"{os.getppid()}"], text=True
-        ):
+        if not config.embedded_mode:
             sys.stdout.write(f"Using config file: {config.config_file}\n")
             sys.stdout.flush()
 

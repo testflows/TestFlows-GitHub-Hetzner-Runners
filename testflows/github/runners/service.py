@@ -154,7 +154,7 @@ def log(args, config=None):
     logger_columns = config.logger_format["columns"]
     format = ""
     if not args.raw:
-        format = f" | github-runners"
+        format = f" | github-runners --embedded-mode"
         if config.debug:
             format += " --debug"
         if config.config_file:
@@ -178,9 +178,15 @@ def log(args, config=None):
     ]["filename"]
 
     if args.follow:
-        os.system(f'bash -c "tail -n 1000 -f {rotating_service_logfile} | tee{format}"')
+        lines = "10" if not args.lines else args.lines
+        os.system(
+            f'bash -c "tail -n {lines} -f {rotating_service_logfile} | tee{format}"'
+        )
     else:
-        os.system(f'bash -c "ls -tr {rotating_service_logfile}* | xargs cat{format}"')
+        lines = "+0" if not args.lines else args.lines
+        os.system(
+            f'bash -c "ls -tr {rotating_service_logfile}* | xargs tail -n {lines}{format}"'
+        )
 
 
 def delete_log(args, config=None):
