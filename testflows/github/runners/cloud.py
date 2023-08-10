@@ -349,6 +349,7 @@ def log(args, config: Config, server: BoundServer = None):
         f"\"su - ubuntu -c 'github-runners service log"
         + (" -f" if args.follow else "")
         + (f" -c {args.columns.value}" if args.columns else "")
+        + (f" -n {args.lines}" if args.lines else "")
         + (" --raw" if args.raw else "")
         + "'\""
     )
