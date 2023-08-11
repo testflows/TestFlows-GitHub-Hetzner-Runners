@@ -1429,10 +1429,10 @@ You can specify **-f, --force** option to force service reinstallation if it is 
    github-runners <options> cloud install -f
 
 --------------------------
-Uninstalling Cloud Service
+Uninstalling the Cloud Service
 --------------------------
 
-You can manually force uninstallation of the **github-runners** service running on a cloud instance using
+You can manually force the uninstallation of the **github-runners** service running on a cloud instance using
 the **github-runners cloud uninstall** command.
 
 .. code-block:: bash
@@ -1440,17 +1440,17 @@ the **github-runners cloud uninstall** command.
    github-runners cloud uninstall
 
 -------------------------------
-Upgrading Cloud Service Package
+Upgrading the Cloud Service Package
 -------------------------------
 
 You can manually upgrade the **github-runners** service package running on a cloud instance using
 the **github-runners cloud upgrade** command.
 
-If specific '--version' is specified then the *testflows.github.runners* package is upgraded to
-the specified version otherwise the version is upgraded to the latest available.
+If a specific '--version' is specified, then the *testflows.github.runners* package is upgraded to
+the specified version, otherwise the version is upgraded to the latest available.
 
 :✋ Note:
-   The service is not re-installed during the package upgrade process.
+   The service is not reinstalled during the package upgrade process.
    Instead, it is stopped before the upgrade and then started back up
    after the package upgrade is complete.
 
@@ -1458,7 +1458,7 @@ the specified version otherwise the version is upgraded to the latest available.
 
    github-runners cloud upgrade --version <version>
 
-The service is not re-installed during the package upgrade process.
+The service is not reinstalled during the package upgrade process.
 Instead, it is stopped before the upgrade and then started back up
 
 ------------------------------
@@ -1474,7 +1474,7 @@ you can keep the existing server and use **cloud redeploy** command.
 
 When needed, you can also SSH into the cloud service manually and perform changes manually.
 
-You can do complete service teardown using the **cloud delete** and then the **cloud deploy** commands.
+You can do a complete service teardown using the **cloud delete** and then the **cloud deploy** commands.
 
 .. code-block:: bash
 
@@ -1482,15 +1482,15 @@ You can do complete service teardown using the **cloud delete** and then the **c
    github-runners <options> cloud deploy --version latest
 
 :✋ Note:
-   Complete teardown will not affect any current jobs as the service is designed to
+   A complete teardown will not affect any current jobs, as the service is designed to
    be restartable. However, some servers might be left in an unfinished state
    but they will be cleaned up when the service is restarted.
 
 ----------------------
-Deleting Cloud Service
+Deleting the Cloud Service
 ----------------------
 
-You can delete the **github-runners** cloud service and the cloud instance that is running on using
+You can delete the **github-runners** cloud service and the cloud instance that is running on it using
 the **github-runners cloud delete** command.
 
 The **cloud delete** command, deletes the cloud service by first stopping the service and then deleting the server instance.
@@ -1515,13 +1515,13 @@ For example,
 SSH in to Cloud Service
 -----------------------
 
-You can open SSH client to the cloud service using the **cloud ssh** command. For example,
+You can open an SSH client to the cloud service using the **cloud ssh** command. For example,
 
 .. code-block:: bash
 
    github-runners cloud ssh
 
-You can also manually SSH in to the cloud service using the **ssh** utility. For convenience, you can
+You can also manually SSH into the cloud service using the **ssh** utility. For convenience, you can
 retrieve the SSH client command using the **cloud ssh command** command. For example,
 
 .. code-block:: bash
@@ -1545,12 +1545,12 @@ For each such job, a corresponding Hetzner Cloud server instance is created with
 
    github-runner-{job.run_id}-{job.id}
 
-The server is configured using default **setup** and **startup** scripts. The runner name is set
-to be the same as the server name so that servers can be deleted for any unused runner that for some reason
+The server is configured using the default **setup** and **startup** scripts. The runner's name is set
+to be the same as the server name so that servers can be deleted for any unused runner that, for some reason
 does not pick up a job for which it was created within the **max-unused-runner-time** period.
 
 :Note:
-   Given that the server name is fixed and specific for each *job.id*, if multiple `github-runners` are running in parallel then
+   Given that the server name is fixed and specific for each *job.id*, if multiple `github-runners` are running in parallel, then
    only 1 server will be created for a given `job` and any other attempts to create a server with the same name will be rejected
    by the Hetzner Cloud.
 
@@ -1558,14 +1558,14 @@ Also,
 
 :Note:
    There is no guarantee that a given runner will pick the job with the exact *job.id* that caused it to be created.
-   This is expected and because for each **queued** job a unique runner will be created the number of runners will be
-   equal the number of jobs and therefore under normal conditions all jobs will be executed as expected.
+   This is expected, and for each **queued** job a unique runner will be created the number of runners will be
+   equal the number of jobs, and therefore, under normal conditions, all jobs will be executed as expected.
 
 -------------------------
 Maximum Number of Runners
 -------------------------
 
-By default, the maximum number of runners and therefore the maximum number of server instances is not set and therefore is unlimited.
+By default, the maximum number of runners and, therefore the maximum number of server instances are not set and are therefore unlimited.
 You can set the maximum number of runners using the **--max-runners** option.
 
 .. code-blocks::bash
@@ -1587,7 +1587,7 @@ the **setup** and **startup** scripts.
    The **{name}** must be a valid `Hetzner Cloud <https://www.hetzner.com/cloud>`_
    server type name such as *cx11*, *cpx21* etc.
 
-   For example, to use AMD, 3 vCPU, 4GB RAM shared-cpu x64 instance, you can define the **runs-on**
+   For example, to use an AMD, 3 vCPU, 4GB RAM shared-cpu x64 instance, you can define the **runs-on**
    as follows:
 
    .. code-block:: yaml
@@ -1597,8 +1597,8 @@ the **setup** and **startup** scripts.
 
 :Server Location:
 
-   The server location can bespecified by using the **--default-location** option or the **in-<name>** runner label.
-   By default, location is not set as some server types are not available in some locations.
+   The server location can be specified by using the **--default-location** option or the **in-<name>** runner label.
+   By default, location is not set, as some server types are not available in some locations.
 
 :Image:
 
@@ -1606,7 +1606,7 @@ the **setup** and **startup** scripts.
 
 :SSH Access:
 
-   The server is configured to be accessed using *ssh* utility and the SSH public key path is specified using the **--ssh-key**
+   The server is configured to be accessed using *ssh* utility, and the SSH public key path is specified using the **--ssh-key**
    option.
 
 :Image Configuration:
@@ -1636,8 +1636,8 @@ The **setup** script creates and configures **runner** user that has **sudo** pr
 The Start-up Script
 -------------------
 
-The **startup** script installs GitHub Actions runner. After installation it configures the runner to start in an *--ephemeral* mode.
-The *--ephemeral* mode causes the runner to exit as soon as it completes a job. After the runner exits the server is powered off.
+The **startup** script installs the GitHub Actions runner. After installation, it configures the runner to start in an *--ephemeral* mode.
+The *--ephemeral* mode causes the runner to exit as soon as it completes a job. After the runner exits, the server is powered off.
 
 :✋ Note:
    The **startup** script is executed as **ubuntu** user and therefore you must use **sudo** for any commands that need *root* privileges.
@@ -1662,7 +1662,7 @@ The x64 **startup** script installs and configures x64 version of the runner.
      bash -c "screen -d -m bash -c './run.sh; sudo poweroff'"
 
 
-The ARM64 **startup** script is similar to the x64 script but install an ARM64 version of the runner.
+The ARM64 **startup** script is similar to the x64 script but installs an ARM64 version of the runner.
 
 :ARM64:
 
@@ -1690,11 +1690,11 @@ Scaling Down Runners
 Powered Off Servers
 -------------------
 
-The program scales down runners by first cleaning up powered off servers. The scale down service relies on the fact
-that the `startup <#the-start-up-script>`_ script starts an ephemeral runner which will pick up only 1 job and then will power itself off after the job is complete.
+The program scales down runners by first cleaning up powered off servers. The scaled down service relies on the fact
+that the `startup <#the-start-up-script>`_ script starts an ephemeral runner that will pick up only 1 job and then power itself off after the job is complete.
 
 The powered off servers are deleted after the **max-powered-off-time** interval which
-can be specified using the **--max-powered-off-time** option which by default is set to *20* sec.
+can be specified using the **--max-powered-off-time** option, which by default is set to *20* sec.
 
 --------------
 Unused Runners
@@ -1702,15 +1702,15 @@ Unused Runners
 
 The scale down service also monitors all the runners that have **unused** status and tries to delete any servers associated with such
 runners if the runner is **unused** for more than the **max-unused-runner-time** period. This is needed in case a runner never gets a job
-assigned to it and the server will stay in the power on state. This cycle relies on the fact that the runner's name
-is the same as server's name. The **max-unused-runner-time** can be specified using the **--max-unused-runner-time** option which by default
+assigned to it, and the server will stay in the power on state. This cycle relies on the fact that the runner's name
+is the same as server's name. The **max-unused-runner-time** can be specified using the **--max-unused-runner-time** option, which by default
 is set to *180* sec.
 
 --------------
 Zombie Servers
 --------------
 
-The scale down service will delete any zombie servers. A zombie server is defined as as any server that fails to register its runner within
+The scale down service will delete any zombie servers. A zombie server is defined as any server that fails to register its runner within
 the **max-runner-registration-time**. The **max-runner-registration-time** can be specified using the **--max-runner-registration-time** option
 which by default is set to *180* sec.
 
@@ -1728,10 +1728,10 @@ The program is designed to handle the following failing conditions:
    The behavior will be the same as for the **Server Never Registers a Runner** case above.
 
 :The *./run.sh* Command Fails:
-   The server will be powered off by the **startup** script and will be deleted by the scale down service.
+   The server will be powered off by the **startup** script and deleted by the scale down service.
 
 :Creating Server For Queued Job Fails:
-   If creation of the server fails for some reason then the scale up service will retry the operation in the next interval as the job's status will remain **queued**.
+   If creation of the server fails for some reason, then the scale up service will retry the operation in the next interval as the job's status will remain **queued**.
 
 :Runner Never Gets a Job Assigned:
    If the runner never gets a job assigned, then the scale down service will remove the runner and delete its server after the **max-unused-runner-time** period.
