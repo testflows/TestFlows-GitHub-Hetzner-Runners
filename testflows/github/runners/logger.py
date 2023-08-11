@@ -21,6 +21,21 @@ import tempfile
 logger = logging.getLogger("testflows.github.runners")
 
 
+class StdoutHandler(logging.StreamHandler):
+    def emit(self, record):
+        if record.msg.startswith("__json__:"):
+            try:
+                record.msg = json.loads(record.msg[9:])
+            except Exception:
+                # ignore any errors
+                pass
+        return super(StdoutHandler, self).emit(record)
+
+
+class RotatingFileHandler(logging.handlers.RotatingFileHandler):
+    pass
+
+
 class LoggerAdapter(logging.LoggerAdapter):
     def process(self, msg, kwargs):
         if kwargs.get("extra") is None:
@@ -105,13 +120,13 @@ def configure(config, level=logging.INFO, service_mode=False):
             "stdout": {
                 "level": str(level),
                 "formatter": "stdout",
-                "class": "logging.StreamHandler",
+                "class": "testflows.github.runners.logger.StdoutHandler",
                 "stream": "ext://sys.stdout",
             },
             "rotating_service_logfile": {
                 "level": str(level),
                 "formatter": "rotating_file",
-                "class": "logging.handlers.RotatingFileHandler",
+                "class": "testflows.github.runners.logger.RotatingFileHandler",
                 "filename": os.path.join(tempfile.gettempdir(), "github-runners.log"),
                 "maxBytes": 52428800,  # 50MB 50*2**20
                 "backupCount": 10,

@@ -768,12 +768,12 @@ For example,
                   stdout:
                       level: INFO
                       formatter: standard
-                      class: logging.StreamHandler
+                      class: testflows.github.runners.logger.StdoutHandler
                       stream: "ext://sys.stdout"
                   rotating_service_logfile:
                       level: DEBUG
                       formatter: standard
-                      class: logging.handlers.RotatingFileHandler
+                      class: testflows.github.runners.logger.RotatingFileHandler
                       filename: /tmp/github-runners.log
                       maxBytes: 10485760
                       backupCount: 1
