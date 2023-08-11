@@ -1792,14 +1792,14 @@ The following options are supported:
   maximum number of active runners, default: *10*
 
 * **--delete-random**
-  delete random recyclable server when maximum number of servers is reached, by default uses server prices
+  delete random recyclable server when the maximum number of servers is reached, by default, server prices are used
 
 * **--max-runners-in-workflow-run count**
   maximum number of runners allowed to be created for a single workflow run, default: not set
 
 * **--with-label label**
   only create runners for jobs that have the specified label,
-  by default jobs are not skipped and runners will be created for any queued job
+  by default, jobs are not skipped, and runners will be created for any queued job
 
 * **--label-prefix prefix**
   support type, image, and location job labels with the specified prefix
@@ -1808,13 +1808,13 @@ The following options are supported:
   number of concurrent workers, default: *10*
 
 * **--setup-script path**
-  path to custom server setup script
+  path to the custom server setup script
 
 * **--startup-x64-script path**
-  path to custom server startup script
+  path to the custom server startup script
 
 * **--startup-arm64-script path**
-  path to custom ARM64 server startup script
+  path to the custom ARM64 server startup script
 
 * **--max-powered-off-time sec**
   maximum time after which a powered off server is deleted, default: *60* sec
@@ -1860,10 +1860,10 @@ The following options are supported:
         deploy cloud service
 
         * **-f, --force**
-          force deployment if already exist
+          force deployment if it already exists
 
         * **--version number|latest**
-          service package version to deploy, either version number or 'latest',
+          service package version to deploy, either a version number or 'latest',
           default: current package version
 
         * **-l name, --location name**
@@ -1885,7 +1885,7 @@ The following options are supported:
         redeploy on the same cloud service server
 
         * **--version number|latest**
-          service package version to deploy, either version number or 'latest',
+          service package version to deploy, either a version number or 'latest',
           default: current package version
 
       * **log**
@@ -1902,7 +1902,7 @@ The following options are supported:
 
         * **-n [+]number, --lines [+]number**
           output the last number of lines, with --follow the default is 10,
-          use '+' before the number to output log starting with the line number
+          use '+' before the number to output the log, starting with the line number
 
         * **command**
 
@@ -1965,7 +1965,7 @@ The following options are supported:
 
         * **-n [+]number, --lines [+]number**
           output the last number of lines, with --follow the default is 10,
-          use '+' before the number to output log starting with the line number
+          use '+' before the number to output the log, starting with the line number
 
         *  **--raw**
            output raw log
