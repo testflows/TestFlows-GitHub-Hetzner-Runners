@@ -14,6 +14,7 @@
 # limitations under the License.
 import os
 import sys
+import json
 import textwrap
 
 NAME = "github-runners"
@@ -232,6 +233,12 @@ def format_log(args, config=None):
                 v = ""
                 if m < len(c):
                     v = c[m]
+                if v.startswith("__json__:"):
+                    try:
+                        v = json.loads(v[9:])
+                    except Exception:
+                        # ignore any errors if we failed to decode column as json
+                        pass
                 sys.stdout.write(f"{v:<{width}} ")
             sys.stdout.write("\n")
         sys.stdout.flush()

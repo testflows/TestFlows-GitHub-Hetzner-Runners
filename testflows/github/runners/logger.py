@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import sys
+import json
 import logging
 import logging.handlers
 import tempfile
@@ -43,6 +43,7 @@ class LoggerAdapter(logging.LoggerAdapter):
                 except Exception:
                     pass
 
+        msg = "__json__:" + json.dumps(str(msg))
         return msg, kwargs
 
 
