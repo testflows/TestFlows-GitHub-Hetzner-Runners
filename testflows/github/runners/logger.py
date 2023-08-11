@@ -41,7 +41,7 @@ class RotatingFileHandler(logging.handlers.RotatingFileHandler):
 
 class StdoutHandler(logging.StreamHandler):
     def emit(self, record):
-        record = copy.deepcopy(record)
+        record = copy.copy(record)
         record.msg = decode_message(record.msg)
         return super(StdoutHandler, self).emit(record)
 
