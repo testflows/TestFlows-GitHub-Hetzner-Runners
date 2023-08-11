@@ -954,7 +954,7 @@ The SSH key will be automatically added to your project using the MD5 hash of th
 Most GitHub users already have an SSH key associated with the account. If you want to know how to add an SSH key, see `Adding a new SSH key to your GitHub account    <https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account>`_ article.
 
 ----------------------
-Generating New SSH Key
+Generating a New SSH Key
 ----------------------
 
 If you need to generate a new SSH key, see `Generating a new SSH key and adding it to the ssh-agent <https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent>`_ article.
@@ -964,7 +964,7 @@ SSH Keys in Cloud Deployment
 ----------------------------
 
 If you are deploying the **github-runners** program as a cloud service using the **github-runners <options> cloud deploy** command, then
-after provisoning a new cloud server instance that will host the **github-runners** service, a new SSH key will be
+after provisioning a new cloud server instance that will host the **github-runners** service, a new SSH key will be
 auto-generated to access the runners. The auto-generated key will be placed in */home/runner/.ssh/id_rsa*, where **runner**
 is the user under which the **github-runners** service runs on the cloud instance. The auto-generated SSH key will be automatically
 added to your project using the MD5 hash of the public key as the SSH key name.
@@ -975,13 +975,13 @@ Specifying Additional SSH Keys
 
 In addition to the main SSH key specified by the **--ssh-key** option, which is used to connect to the servers, you
 can specify additional SSH keys using the **additional_ssh_keys**  property in the configuration file.
-This is needed in cases where there is more than one user that should have access to the created servers used for the runners.
+This is needed in cases where there is more than one user that should have access to the servers used for the runners.
 
 :✋ Note:
    Additional SSH keys can only be defined using a configuration file.
    See `Using Configuration File`_ for more details.
 
-Note that the additional SSH keys are defined using only the public key. This enables additional users that hold the matching private key
+Note that the additional SSH keys are defined using only the public key. This enables additional users to hold the matching private key
 to connect to the servers.
 
 For example,
@@ -1001,7 +1001,7 @@ Running as a Service
 You can run **github-runners** as a service.
 
 :✋ Note:
-   In order to install the service, the user that installed the module must have **sudo** privileges.
+   In order to install the service, the user who installed the module must have **sudo** privileges.
 
 ---------------------------
 Installing and Uninstalling
@@ -1051,8 +1051,8 @@ The **/etc/systemd/system/github-runners.service** file is created with the foll
 Modifying Program Options
 -------------------------
 
-If you want to modify service program options you can stop the service,
-edit the **/etc/systemd/system/github-runners.service** file by hand, then reload service daemon,
+If you want to modify service program options, you can stop the service,
+edit the **/etc/systemd/system/github-runners.service** file by hand, then reload the service daemon,
 and start the service back up.
 
 .. code-block:: bash
@@ -1060,7 +1060,7 @@ and start the service back up.
    github-runners service stop
    sudo vim /etc/systemd/system/github-runners.service
    sudo systemctl daemon-reload
-   github-runners service start
+   github-runners service starts
 
 ---------------
 Checking Status
@@ -1102,7 +1102,7 @@ You can start and stop the service using the **service start** and **service sto
 
 .. code-block:: bash
 
-   github-runners service start
+   github-runners service starts
    github-runners service stop
 
 or using **service** system utility
@@ -1113,8 +1113,8 @@ or using **service** system utility
    sudo service github-runners stop
 
 :✋ Note:
-   The **service stop** command will send the *SIGINT* signal to the **github-runners** proccess and will wait for the
-   program to perform clean shutdown which includes stopping scale up and scale down loops.
+   The **service stop** command will send the *SIGINT* signal to the **github-runners** process and will wait for the
+   program to perform a clean shutdown, which includes stopping scale up and scale down loops.
    Given that the **github-runners** program might be in the middle of configuring servers, the **service stop**
    command might take sometime to complete.
 
@@ -1128,7 +1128,7 @@ Following The Log
 =================
 
 Use the **-f, --follow** option to follow the log journal. By default, the last *1000* lines will be shown and
-then the log will be followed and the new messages will be displayed as they are added to the log.
+then the log will be followed, and the new messages will be displayed as they are added to the log.
 
 .. code-block:: bash
 
@@ -1206,13 +1206,13 @@ By default, the following columns are available unless you redefine the **logger
 * *server_name*
 * *message*
 
-Selecting Number of Lines
+Selecting the Number of Lines
 =========================
 
 You can select the number of lines you would like to output from the log using the
 **-n [+]number, --lines [+]number** option. With the **--follow** the default is *10*.
 
-You can use the **+** before the *number* to output log starting with the specified line number.
+You can use the **+** before the *number* to output a log starting with the specified line number.
 
 For example,
 
@@ -1314,16 +1314,16 @@ You can customize deployment server location, type, and image using the *--locat
 The cloud instance that runs the **github-runners** service can either be x64 or ARM64 instance. By default, **cpx11**
 AMD, 2 vCPU, 2GB RAM, shared-cpu x64 instance type is used.
 
-Using ARM64 Instance
+Using an ARM64 Instance
 ====================
 
 If you want to deploy the **github-runners** service to an ARM64 instance, then you must specify the instance
 type using the **--type** option.
 
 :✋ Note:
-   Currently Hetzner Cloud has ARM64 instances only available in Germany, Falkenstein (**fsn1**) location.
+   Currently, Hetzner Cloud has ARM64 instances only available in Germany, Falkenstein (**fsn1**) location.
 
-For example, to use Ampere Altra, 4 vCPU, 8GB RAM shared-cpu ARM64 instance, you must specify **cax21**
+For example, to use an Ampere Altra, 4 vCPU, 8GB RAM shared-cpu ARM64 instance, you must specify **cax21**
 as the value of the **--type** as follows:
 
 .. code-block:: bash
@@ -1334,13 +1334,13 @@ Using x64 Instance
 ==================
 
 By default, the **cpx11** AMD, 2 vCPU, 2GB RAM, shared-cpu x64 instance type is used. If you want to use
-a different x64 instance then specify desired type using the **--type** option.
+a different x64 instance, then specify the desired type using the **--type** option.
 
 -------------------------
 Redeploying Cloud Service
 -------------------------
 
-You can change cloud service configuration or cloud service package version without deleting the existing cloud service server
+You can change the cloud service configuration or cloud service package version without deleting the existing cloud service server
 using the **cloud redeploy** command.
 
 .. code-block:: bash
@@ -1357,7 +1357,7 @@ You can specify the version of the package to be installed using the **--version
 Cloud Service Log
 -----------------
 
-You can check log for the **github-runners** service running on a cloud instance using the **github-runners cloud log** command.
+You can check the log for the **github-runners** service running on a cloud instance using the **github-runners cloud log** command.
 Specify **-f, --follow** if you want to follow the log journal.
 
 For example,
@@ -1403,7 +1403,7 @@ You can manually stop the **github-runners** service running on a cloud instance
 Starting Cloud Service
 ----------------------
 
-You can manually start the **github-runners** service running on a cloud instance after it was being manually stopped
+You can manually start the **github-runners** service running on a cloud instance after it was manually stopped
 using the **github-runners cloud start** command.
 
 .. code-block:: bash
@@ -1422,7 +1422,7 @@ the **github-runners cloud install** command.
    the options that are passed to the `github-runners <options> cloud install` command
    will be the same options with which the service will be executed.
 
-You can specify **-f, --force** option to force service re-installation if it is already installed.
+You can specify **-f, --force** option to force service reinstallation if it is already installed.
 
 .. code-block:: bash
 
