@@ -286,9 +286,9 @@ See these steps in action:
    :width: 790px
    :alt: Creating GitHub Repository and Token
 
-----------------------------------------
+------------------------------------------
 Creating a Hetzner Cloud Project and Token
-----------------------------------------
+------------------------------------------
 
 Next, you will need to create a Hetzner Cloud project and an API token that we can use to create and manage Hetzner Cloud server instances.
 
@@ -311,9 +311,9 @@ See these steps in action:
    :width: 790px
    :alt: Creating GitHub Repository and Token
 
-----------------------
+------------------------
 Creating a Cloud Service
-----------------------
+------------------------
 
 With the GitHub repository and GitHub and Hetzner Cloud tokens in hand, we can deploy the **github-runners** service
 to Hetzner Cloud instance. This way, the service is not running on your local machine.
@@ -393,9 +393,9 @@ or you can specify these values using the following options:
 * **--github-repository**
 * **--hetzner-token**
 
-====================================
+========================================
 Specifying the Maximum Number of Runners
-====================================
+========================================
 
 The default maximum number of runners is **10**. You can set a different value
 based on your Hetzner Cloud limits using the **-m count, --max-runners count** option. For example,
@@ -404,9 +404,9 @@ based on your Hetzner Cloud limits using the **-m count, --max-runners count** o
 
    github-runners --max-runners 40
 
-=========================================================
+=============================================================
 Specifying the Maximum Number of Runners Used in Workflow Run
-=========================================================
+=============================================================
 
 By default, the maximum number of runners that could be created for a single workflow run
 is not defined.
@@ -521,12 +521,12 @@ For example,
 will only create runners for jobs that contain **on-demand** label and skip any job that is missing
 that label.
 
-===============================
+===================================
 Jobs That Require the Docker Engine
-===============================
+===================================
 
 For jobs that require Docker to be installed, you can use the standard `Hetzner Docker CE application <https://docs.hetzner.com/cloud/apps/list/docker-ce/>`_
-which can be specified using the **image-** label. See `Specifying Runner Image`_ for more details about specifying custom runner images.
+which can be specified using the **image-** label. See `Specifying the Runner Image`_ for more details about specifying custom runner images.
 
 For example
 
@@ -544,9 +544,9 @@ For example
       job-name:
          runs-on: [self-hosted, type-cax11, image-arm-app-docker-ce]
 
-======================
+==========================
 Specifying the Runner Type
-======================
+==========================
 
 -----------
 x64 Runners
@@ -605,9 +605,9 @@ For example,
    job-name:
       runs-on: [self-hosted, type-cx11, in-ash]
 
-=======================
+===========================
 Specifying the Runner Image
-=======================
+===========================
 
 By default, the default image of the server for the runner is **ubuntu-22.04**. You can use the **--default-image**
 option to force a specific default server image.
@@ -647,9 +647,9 @@ For example,
       job-name:
          runs-on: [self-hosted, type-cx11, in-ash, image-x86-snapshot-snapshot_description]
 
-============================================
+================================================
 Specifying the Custom Runner Server Setup Script
-============================================
+================================================
 
 You can specify a custom runner server setup script using the **--setup-script** option.
 
@@ -685,7 +685,7 @@ You can define standby runner groups to always be ready to pick up your jobs usi
 
 :✋ Note:
    Standby runner groups can only be defined using a configuration file.
-   See `Using Configuration File`_ for more details.
+   See `Using a Configuration File`_ for more details.
 
 Standby runners are always active and allow jobs to be picked up immediately.
 
@@ -742,7 +742,7 @@ You can specify custom logger configuration using a configuration file.
 
 :✋ Note:
    A custom logger configuration can only be specified using a configuration file.
-   See `Using Configuration File`_ for more details.
+   See `Using a Configuration File`_ for more details.
 
 The logger configuration is specified in the configuration file using the **logger_config** object.
 For more information about the logger configuration, see `Configuration dictionary schema <https://docs.python.org/3/library/logging.config.html#logging-config-dictschema>`_ in Python documentation.
@@ -854,9 +854,9 @@ For example,
    ❌ off        github-runner-5811138574-15753660130
    ❌ off        github-runner-recycle-1691595481.196499
 
-============================
+================================
 Opening SSH Client to the Server
-============================
+================================
 
 For debugging, you can open an SSH client to the current server using the **ssh** command and specify the name of the server you would like to connect to.
 For the **ssh** command to work, you need to specify the **--hetzner-token** and have the correct private SSH key.
@@ -879,7 +879,7 @@ You can delete all runners, including standby runners, and their servers using t
 
 :✋ Note:
    The **delete** command will not delete a cloud service server. If you also want to delete it,
-   you also need to execute **cloud delete** command. For more information, see `Deleting Cloud Service`_ section.
+   you also need to execute **cloud delete** command. For more information, see `Deleting the Cloud Service`_ section.
 
 .. code-block:: bash
 
@@ -893,9 +893,9 @@ You can delete all runners, including standby runners, and their servers using t
    07/29/2023 07:43:17 PM     INFO       MainThread             all 🍀 Getting list of self-hosted runners
    07/29/2023 07:43:17 PM     INFO       MainThread             all 🍀 Getting list of servers
 
-========================
+==========================
 Using a Configuration File
-========================
+==========================
 
 Instead of passing configuration options using command line arguments, you can use
 configuration file. The configuration file uses YAML format, and it is usually named **config.yaml**. You can find the complete schema
@@ -953,9 +953,9 @@ The SSH key will be automatically added to your project using the MD5 hash of th
 
 Most GitHub users already have an SSH key associated with the account. If you want to know how to add an SSH key, see `Adding a new SSH key to your GitHub account    <https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account>`_ article.
 
-----------------------
+------------------------
 Generating a New SSH Key
-----------------------
+------------------------
 
 If you need to generate a new SSH key, see `Generating a new SSH key and adding it to the ssh-agent <https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent>`_ article.
 
@@ -979,7 +979,7 @@ This is needed in cases where there is more than one user that should have acces
 
 :✋ Note:
    Additional SSH keys can only be defined using a configuration file.
-   See `Using Configuration File`_ for more details.
+   See `Using a Configuration File`_ for more details.
 
 Note that the additional SSH keys are defined using only the public key. This enables additional users to hold the matching private key
 to connect to the servers.
@@ -1207,7 +1207,7 @@ By default, the following columns are available unless you redefine the **logger
 * *message*
 
 Selecting the Number of Lines
-=========================
+=============================
 
 You can select the number of lines you would like to output from the log using the
 **-n [+]number, --lines [+]number** option. With the **--follow** the default is *10*.
@@ -1315,7 +1315,7 @@ The cloud instance that runs the **github-runners** service can either be x64 or
 AMD, 2 vCPU, 2GB RAM, shared-cpu x64 instance type is used.
 
 Using an ARM64 Instance
-====================
+=======================
 
 If you want to deploy the **github-runners** service to an ARM64 instance, then you must specify the instance
 type using the **--type** option.
@@ -1428,9 +1428,9 @@ You can specify **-f, --force** option to force service reinstallation if it is 
 
    github-runners <options> cloud install -f
 
---------------------------
+------------------------------
 Uninstalling the Cloud Service
---------------------------
+------------------------------
 
 You can manually force the uninstallation of the **github-runners** service running on a cloud instance using
 the **github-runners cloud uninstall** command.
@@ -1439,9 +1439,9 @@ the **github-runners cloud uninstall** command.
 
    github-runners cloud uninstall
 
--------------------------------
+-----------------------------------
 Upgrading the Cloud Service Package
--------------------------------
+-----------------------------------
 
 You can manually upgrade the **github-runners** service package running on a cloud instance using
 the **github-runners cloud upgrade** command.
@@ -1486,9 +1486,9 @@ You can do a complete service teardown using the **cloud delete** and then the *
    be restartable. However, some servers might be left in an unfinished state
    but they will be cleaned up when the service is restarted.
 
-----------------------
+--------------------------
 Deleting the Cloud Service
-----------------------
+--------------------------
 
 You can delete the **github-runners** cloud service and the cloud instance that is running on it using
 the **github-runners cloud delete** command.
