@@ -14,6 +14,7 @@
 # limitations under the License.
 import os
 import json
+import copy
 import logging
 import logging.handlers
 import tempfile
@@ -34,14 +35,15 @@ def decode_message(msg):
     return msg
 
 
-class StdoutHandler(logging.StreamHandler):
-    def emit(self, record):
-        record.msg = decode_message(record.msg)
-        return super(StdoutHandler, self).emit(record)
-
-
 class RotatingFileHandler(logging.handlers.RotatingFileHandler):
     pass
+
+
+class StdoutHandler(logging.StreamHandler):
+    def emit(self, record):
+        record = copy.deepcopy(record)
+        record.msg = decode_message(record.msg)
+        return super(StdoutHandler, self).emit(record)
 
 
 class LoggerAdapter(logging.LoggerAdapter):
