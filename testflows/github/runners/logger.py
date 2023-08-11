@@ -20,15 +20,23 @@ import tempfile
 
 logger = logging.getLogger("testflows.github.runners")
 
+encoded_message_prefix = "✉ "
+
+
+def decode_message(msg):
+    """Decode encoded message."""
+    if msg.startswith(encoded_message_prefix):
+        try:
+            return json.loads(msg[len(encoded_message_prefix) :])
+        except Exception:
+            # ignore any errors if we failed to decode column as json
+            pass
+    return msg
+
 
 class StdoutHandler(logging.StreamHandler):
     def emit(self, record):
-        if record.msg.startswith("__json__:"):
-            try:
-                record.msg = json.loads(record.msg[9:])
-            except Exception:
-                # ignore any errors
-                pass
+        record.msg = decode_message(record.msg)
         return super(StdoutHandler, self).emit(record)
 
 
@@ -58,7 +66,7 @@ class LoggerAdapter(logging.LoggerAdapter):
                 except Exception:
                     pass
 
-        msg = "__json__:" + json.dumps(str(msg))
+        msg = encoded_message_prefix + json.dumps(str(msg))
         return msg, kwargs
 
 

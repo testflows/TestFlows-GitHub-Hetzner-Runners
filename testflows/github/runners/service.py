@@ -21,6 +21,7 @@ NAME = "github-runners"
 SERVICE = f"/etc/systemd/system/{NAME}.service"
 
 from .actions import Action
+from .logger import decode_message
 
 
 def command_options(
@@ -233,12 +234,7 @@ def format_log(args, config=None):
                 v = ""
                 if m < len(c):
                     v = c[m]
-                if v.startswith("__json__:"):
-                    try:
-                        v = json.loads(v[9:])
-                    except Exception:
-                        # ignore any errors if we failed to decode column as json
-                        pass
+                v = decode_message(v)
                 sys.stdout.write(f"{v:<{width}} ")
             sys.stdout.write("\n")
         sys.stdout.flush()
