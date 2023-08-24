@@ -3,7 +3,7 @@ run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 on: [push]
 jobs:
   Explore-GitHub-Actions:
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, type-ccx43]
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
       - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
@@ -17,13 +17,13 @@ jobs:
           ls ${{ github.workspace }}
       - run: echo "🍏 This job's status is ${{ job.status }}."
   
-  Explore-GitHub-Actions-with-Docker:
-    runs-on: [self-hosted, image-x86-app-docker-ce]
-    steps:
-      - run: docker run hello-world
+ # Explore-GitHub-Actions-with-Docker:
+ #   runs-on: [self-hosted, image-x86-app-docker-ce]
+ #   steps:
+ #     - run: docker run hello-world
   
-  Explore-GitHub-Actions-with-Docker-on-ARM64:
-    runs-on: [self-hosted, image-arm-app-docker-ce, type-cax11]
-    steps:
-      - run: docker run hello-world
+ # Explore-GitHub-Actions-with-Docker-on-ARM64:
+ #   runs-on: [self-hosted, image-arm-app-docker-ce, type-cax11]
+ #   steps:
+ #     - run: docker run hello-world
  
