@@ -35,15 +35,45 @@ def decode_message(msg):
     return msg
 
 
+def encode_message(msg):
+    """Encode message."""
+    return json.dumps(msg)
+
+
+class RotatingFileFormatter(logging.Formatter):
+    def format(self, record):
+        """Format record and convert multi-line message to text which includes exception or stacktrace if present."""
+        message = record.getMessage()
+
+        if record.exc_info:
+            # Cache the traceback text to avoid converting it multiple times
+            # (it's constant anyway)
+            if not record.exc_text:
+                record.exc_text = self.formatException(record.exc_info)
+
+        if record.exc_text:
+            if message[-1:] != "\n":
+                message = message + "\n"
+            message = message + record.exc_text
+        if record.stack_info:
+            if message[-1:] != "\n":
+                message = message + "\n"
+            message = message + self.formatStack(record.stack_info)
+
+        record.message = encoded_message_prefix + encode_message(message)
+        if self.usesTime():
+            record.asctime = self.formatTime(record, self.datefmt)
+
+        s = self.formatMessage(record)
+        return s
+
+
 class RotatingFileHandler(logging.handlers.RotatingFileHandler):
     pass
 
 
 class StdoutHandler(logging.StreamHandler):
-    def emit(self, record):
-        record = copy.copy(record)
-        record.msg = decode_message(record.msg)
-        return super(StdoutHandler, self).emit(record)
+    pass
 
 
 class LoggerAdapter(logging.LoggerAdapter):
@@ -68,7 +98,6 @@ class LoggerAdapter(logging.LoggerAdapter):
                 except Exception:
                     pass
 
-        msg = encoded_message_prefix + json.dumps(str(msg))
         return msg, kwargs
 
 
@@ -118,6 +147,7 @@ def configure(config, level=logging.INFO, service_mode=False):
                 "datefmt": "%H:%M:%S",
             },
             "rotating_file": {
+                "class": "testflows.github.hetzner.runners.logger.RotatingFileFormatter",
                 "format": (
                     "%(asctime)s,%(interval)s,%(levelname)s,"
                     "%(run_id)s,%(job_id)s,%(server_name)s,"

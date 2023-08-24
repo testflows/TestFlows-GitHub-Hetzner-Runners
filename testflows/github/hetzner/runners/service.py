@@ -207,6 +207,18 @@ def format_log(args, config=None):
     delimiter = config.logger_format["delimiter"]
     default = args.columns or config.logger_format["default"]
 
+    class Wrapper(textwrap.TextWrapper):
+        """Custom wrapper that preserves new lines."""
+
+        def wrap(self, text):
+            split_text = text.split("\n")
+            lines = [
+                line
+                for para in split_text
+                for line in textwrap.TextWrapper.wrap(self, para)
+            ]
+            return lines
+
     for c in default:
         assert c["column"] in columns, f"{c['column']} is not valid"
 
@@ -226,9 +238,11 @@ def format_log(args, config=None):
             break
 
         columns = line.split(delimiter, len(columns) - 1)
+        for i, c in enumerate(columns):
+            columns[i] = decode_message(c)
+
         wrapped = [
-            (width, textwrap.wrap(columns[index], width))
-            for _, index, width in selected
+            (width, Wrapper(width).wrap(columns[index])) for _, index, width in selected
         ]
         max_lines = max(len(lines) for width, lines in wrapped)
         for m in range(max_lines):
@@ -236,7 +250,6 @@ def format_log(args, config=None):
                 v = ""
                 if m < len(c):
                     v = c[m]
-                v = decode_message(v)
                 sys.stdout.write(f"{v:<{width}} ")
             sys.stdout.write("\n")
         sys.stdout.flush()
