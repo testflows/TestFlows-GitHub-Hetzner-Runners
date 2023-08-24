@@ -20,14 +20,14 @@ with open("README.rst", "r", encoding="utf-8") as fd:
 
 
 setup(
-    name="testflows.github.runners",
+    name="testflows.github.hetzner.runners",
     version="__VERSION__",
     description="Autoscaling GitHub Actions Runners Using Hetzner Cloud ",
     author="Vitaliy Zakaznikov",
     author_email="vzakaznikov@testflows.com",
     long_description=long_description,
     long_description_content_type="text/x-rst",
-    url="https://github.com/testflows/github-runners",
+    url="https://github.com/testflows/testflows-github-hetzner-runners",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Programming Language :: Python :: 3",
@@ -37,19 +37,19 @@ setup(
     python_requires=">=3.8",
     license="Apache-2.0",
     packages=[
-        "testflows.github.runners",
-        "testflows.github.runners.bin",
-        "testflows.github.runners.config",
-        "testflows.github.runners.scripts",
-        "testflows.github.runners.scripts.deploy",
+        "testflows.github.hetzner.runners",
+        "testflows.github.hetzner.runners.bin",
+        "testflows.github.hetzner.runners.config",
+        "testflows.github.hetzner.runners.scripts",
+        "testflows.github.hetzner.runners.scripts.deploy",
     ],
     package_data={
-        "testflows.github.runners.config": ["*.json"],
-        "testflows.github.runners.scripts": ["*.sh"],
-        "testflows.github.runners.scripts.deploy": ["*.sh"],
-        "testflows.github.runners.bin": ["github-runners"],
+        "testflows.github.hetzner.runners.config": ["*.json"],
+        "testflows.github.hetzner.runners.scripts": ["*.sh"],
+        "testflows.github.hetzner.runners.scripts.deploy": ["*.sh"],
+        "testflows.github.hetzner.runners.bin": ["github-hetzner-runners"],
     },
-    scripts=["testflows/github/runners/bin/github-runners"],
+    scripts=["testflows/github/hetzner/runners/bin/github-hetzner-runners"],
     zip_safe=False,
     install_requires=[
         "PyGithub==1.59.0",

@@ -17,7 +17,7 @@ import sys
 import json
 import textwrap
 
-NAME = "github-runners"
+NAME = "github-hetzner-runners"
 SERVICE = f"/etc/systemd/system/{NAME}.service"
 
 from .actions import Action
@@ -102,7 +102,9 @@ def install(args, config):
         )
 
     with Action(f"Installing {SERVICE}"):
-        binary = os.path.join(current_dir, "bin", "github-runners --service-mode")
+        binary = os.path.join(
+            current_dir, "bin", "github-hetzner-runners --service-mode"
+        )
         contents = (
             "[Unit]\n"
             "Description=Autoscaling GitHub Actions Runners\n"
@@ -156,7 +158,7 @@ def log(args, config=None):
     logger_columns = config.logger_format["columns"]
     format = ""
     if not args.raw:
-        format = f" | github-runners --embedded-mode"
+        format = f" | github-hetzner-runners --embedded-mode"
         if config.debug:
             format += " --debug"
         if config.config_file:

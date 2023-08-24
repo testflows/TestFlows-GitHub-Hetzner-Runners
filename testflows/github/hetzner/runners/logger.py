@@ -19,7 +19,7 @@ import logging
 import logging.handlers
 import tempfile
 
-logger = logging.getLogger("testflows.github.runners")
+logger = logging.getLogger("testflows.github.hetzner.runners")
 
 encoded_message_prefix = "✉ "
 
@@ -130,20 +130,22 @@ def configure(config, level=logging.INFO, service_mode=False):
             "stdout": {
                 "level": str(level),
                 "formatter": "stdout",
-                "class": "testflows.github.runners.logger.StdoutHandler",
+                "class": "testflows.github.hetzner.runners.logger.StdoutHandler",
                 "stream": "ext://sys.stdout",
             },
             "rotating_service_logfile": {
                 "level": str(level),
                 "formatter": "rotating_file",
-                "class": "testflows.github.runners.logger.RotatingFileHandler",
-                "filename": os.path.join(tempfile.gettempdir(), "github-runners.log"),
+                "class": "testflows.github.hetzner.runners.logger.RotatingFileHandler",
+                "filename": os.path.join(
+                    tempfile.gettempdir(), "github-hetzner-runners.log"
+                ),
                 "maxBytes": 52428800,  # 50MB 50*2**20
                 "backupCount": 10,
             },
         },
         "loggers": {
-            "testflows.github.runners": {
+            "testflows.github.hetzner.runners": {
                 "level": str(level),
                 "handlers": ["stdout", "rotating_service_logfile"],
             }
@@ -158,23 +160,27 @@ def configure(config, level=logging.INFO, service_mode=False):
     logger_config = config.logger_config
 
     if not service_mode:
-        handlers = set(logger_config["loggers"]["testflows.github.runners"]["handlers"])
+        handlers = set(
+            logger_config["loggers"]["testflows.github.hetzner.runners"]["handlers"]
+        )
         handlers.discard("rotating_service_logfile")
-        logger_config["loggers"]["testflows.github.runners"]["handlers"] = list(
+        logger_config["loggers"]["testflows.github.hetzner.runners"]["handlers"] = list(
             handlers
         )
     else:
         if (
             "rotating_service_logfile"
-            not in logger_config["loggers"]["testflows.github.runners"]["handlers"]
+            not in logger_config["loggers"]["testflows.github.hetzner.runners"][
+                "handlers"
+            ]
         ):
-            logger_config["loggers"]["testflows.github.runners"]["handlers"].append(
-                "rotating_service_logfile"
-            )
+            logger_config["loggers"]["testflows.github.hetzner.runners"][
+                "handlers"
+            ].append("rotating_service_logfile")
 
     for handler in logger_config["handlers"].values():
         handler["level"] = level
 
-    logger_config["loggers"]["testflows.github.runners"]["level"] = level
+    logger_config["loggers"]["testflows.github.hetzner.runners"]["level"] = level
 
     logging.config.dictConfig(logger_config)

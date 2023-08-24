@@ -22,21 +22,25 @@ import subprocess
 from datetime import datetime
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-package = os.path.join("testflows", "github", "runners")
+package = os.path.join("testflows", "github", "hetzner", "runners")
 init_path = os.path.join(current_dir, package, "__init__.py")
 setup_path = os.path.join(current_dir, "setup.py")
 
-parser = argparse.ArgumentParser(description="TestFlows - GitHub Actions Runners packaging script")
-parser.add_argument("--debug", help="enable debugging", action="store_true", default=False)
+parser = argparse.ArgumentParser(
+    description="TestFlows - GitHub Actions Runners using Hetzner Cloud packaging script"
+)
+parser.add_argument(
+    "--debug", help="enable debugging", action="store_true", default=False
+)
+
 
 def get_base_version():
-    """Return package base version.
-    """
+    """Return package base version."""
     version = None
     with open(os.path.join(current_dir, package, "__init__.py")) as fd:
         for line in fd.readlines():
             if line.startswith("__version__ = "):
-                match = re.match("__version__\s=\s\"(?P<version>.+).__VERSION__", line)
+                match = re.match('__version__\s=\s"(?P<version>.+).__VERSION__', line)
                 if match:
                     version = match.groupdict().get("version")
                     if version:
@@ -45,13 +49,14 @@ def get_base_version():
         raise ValueError("failed to get base version number")
     return version
 
+
 def get_revision():
-    """Return build revision.
-    """
+    """Return build revision."""
     now = datetime.utcnow()
     major_revision = now.strftime("%y%m%d")
     minor_revision = now.strftime("%H%M%S")
     return major_revision + ".1" + minor_revision
+
 
 def set_version(path, version):
     """Set version in the file.
@@ -67,6 +72,7 @@ def set_version(path, version):
         fd.write(content.replace("__VERSION__", version))
     return content
 
+
 def unset_version(path, content):
     """Unset version in the file.
 
@@ -78,16 +84,20 @@ def unset_version(path, content):
         fd.truncate()
         fd.write(content)
 
+
 def build_package(args, options):
     """Build package.
 
     :param args: arguments
     :param options: extra options
     """
-    subprocess.run(["/usr/bin/env", "python3", "setup.py"]
-                   + (["-q"] if not args.debug else [])
-                   + ["sdist"]
-                   + (options if options else []))
+    subprocess.run(
+        ["/usr/bin/env", "python3", "setup.py"]
+        + (["-q"] if not args.debug else [])
+        + ["sdist"]
+        + (options if options else [])
+    )
+
 
 def build(args, options=None):
     """Build package.
@@ -115,6 +125,7 @@ def build(args, options=None):
             unset_version(init_path, init_content)
         if setup_content:
             unset_version(setup_path, setup_content)
+
 
 if __name__ == "__main__":
     args = parser.parse_args()

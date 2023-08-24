@@ -7,9 +7,9 @@
 ----
 
 :PyPi:
-   `Versions <https://pypi.org/project/testflows.github.runners/>`_
+   `Versions <https://pypi.org/project/testflows.github.hetzner.runners/>`_
 :License:
-   `Apache-2.0 <https://github.com/testflows/TestFlows-GitHub-Runners/blob/main/LICENSE>`_
+   `Apache-2.0 <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/blob/main/LICENSE>`_
 
 ======================================================
 Autoscaling GitHub Actions Runners Using Hetzner Cloud
@@ -21,14 +21,14 @@ A simple alternative to Github's `Recommended autoscaling solutions <https://doc
    You can easily navigate this documentation page by clicking on any title to jump to the `Table of Contents`_.
    Try it out, and remember, if you get lost, just click any title!
 
-The **github-runners** service program starts and monitors queued up jobs for GitHub Actions workflows.
+The **github-hetzner-runners** service program starts and monitors queued up jobs for GitHub Actions workflows.
 When a new job is queued up, it creates a new Hetzner Cloud server instance
 that provides an ephemeral GitHub Actions runner. Each server instance is automatically
 powered off when the job completes, and then powered off servers are
 automatically deleted. Both **x64** (*x86*) and **arm64** (*arm*) runners are supported.
 See `Features`_ and `Limitations`_ for more details.
 
-.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/docs/images/intro.gif
+.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GiHhub-Hetzner-Runners/master/docs/images/intro.gif
    :align: center
    :alt: TestFlows GitHub Runners
 
@@ -96,24 +96,24 @@ Installation
 
 .. code-block:: bash
 
-   pip3 install testflows.github.runners
+   pip3 install testflows.github.hetzner.runners
 
-Check that the **github-runners** utility was installed correctly by executing the **github-runners -v** command.
+Check that the **github-hetzner-runners** utility was installed correctly by executing the **github-hetzner-runners -v** command.
 
 .. code-block:: bash
 
-   github-runners -v
+   github-hetzner-runners -v
 
-The **github-runners** utility is installed in to the *~/.local/bin/* folder. Please make sure that this folder
+The **github-hetzner-runners** utility is installed in to the *~/.local/bin/* folder. Please make sure that this folder
 is part of the **PATH**.
 
 .. code-block:: bash
 
-   which github-runners
+   which github-hetzner-runners
 
 ::
 
-   ~/.local/bin/github-runners
+   ~/.local/bin/github-hetzner-runners
 
 If your **PATH** is missing this folder, on Ubuntu, modify your *~/.profile* and add the following section:
 
@@ -134,20 +134,20 @@ Set environment variables corresponding to your GitHub repository and Hetzner Cl
 .. code-block:: bash
 
    export GITHUB_TOKEN=ghp_...
-   export GITHUB_REPOSITORY=vzakaznikov/github-runners
+   export GITHUB_REPOSITORY=testflows/testflows-github-hetzner-runners
    export HETZNER_TOKEN=GJzdc...
 
-Then, start the **github-runners** program:
+Then, start the **github-hetzner-runners** program:
 
 .. code-block:: bash
 
-   github-runners
+   github-hetzner-runners
 
 ::
 
    07/22/2023 08:20:37 PM   INFO MainThread            main 🍀 Logging in to Hetzner Cloud
    07/22/2023 08:20:37 PM   INFO MainThread            main 🍀 Logging in to GitHub
-   07/22/2023 08:20:37 PM   INFO MainThread            main 🍀 Getting repository vzakaznikov/github-runners
+   07/22/2023 08:20:37 PM   INFO MainThread            main 🍀 Getting repository testflows/testflows-github-hetzner-runners
    07/22/2023 08:20:37 PM   INFO MainThread            main 🍀 Creating scale up service
    07/22/2023 08:20:37 PM   INFO MainThread            main 🍀 Creating scale down service
    07/22/2023 08:20:38 PM   INFO   worker_2   create_server 🍀 Create server
@@ -157,7 +157,7 @@ Alternatively, you can pass the required options using the command line as follo
 
 .. code-block:: bash
 
-   github-runners --github-token <GITHUB_TOKEN> --github-repository <GITHUB_REPOSITORY> --hetzner-token <HETZNER_TOKEN>
+   github-hetzner-runners --github-token <GITHUB_TOKEN> --github-repository <GITHUB_REPOSITORY> --hetzner-token <HETZNER_TOKEN>
 
 ========================
 Getting Started Tutorial
@@ -166,40 +166,40 @@ Getting Started Tutorial
 :✅ Launch your first self-hosted runner in:
    5 minutes
 
-This tutorial will guide you on how to use the **github-runners** program to provide autoscaling GitHub Actions runners
+This tutorial will guide you on how to use the **github-hetzner-runners** program to provide autoscaling GitHub Actions runners
 for a GitHub repository and a Hetzner Cloud project that you'll create.
 
 -----------------------------------
 Installing TestFlows Github Runners
 -----------------------------------
 
-❶ Before we get started, you will need to install **testflows.github.runners** Python package. See the `Installation`_ section for more details.
+❶ Before we get started, you will need to install **testflows.github.hetzner.runners** Python package. See the `Installation`_ section for more details.
 
 .. code-block:: bash
 
-  pip3 install testflows.github.runners
+  pip3 install testflows.github.hetzner.runners
 
-❷ Check that the **github-runners** utility was installed correctly by executing the **github-runners -v** command.
+❷ Check that the **github-hetzner-runners** utility was installed correctly by executing the **github-hetzner-runners -v** command.
 
 .. code-block:: bash
 
-   github-runners -v
+   github-hetzner-runners -v
 
 ::
 
    1.3.230731.1173142
 
 :✋ Note:
-   The **github-runners** utility is installed in to the *~/.local/bin/* folder. Please make sure that this folder
+   The **github-hetzner-runners** utility is installed in to the *~/.local/bin/* folder. Please make sure that this folder
    is part of the **PATH**.
 
    .. code-block:: bash
 
-      which github-runners
+      which github-hetzner-runners
 
    ::
 
-      ~/.local/bin/github-runners
+      ~/.local/bin/github-hetzner-runners
 
    If your **PATH** is missing this folder, on Ubuntu, you can modify your *~/.profile* and add the following section:
 
@@ -211,28 +211,28 @@ Installing TestFlows Github Runners
              PATH="$HOME/.local/bin:$PATH"
          fi
 
-In order to launch the **github-runners** program, we'll need to specify the GitHub repository as well as GitHub and
+In order to launch the **github-hetzner-runners** program, we'll need to specify the GitHub repository as well as GitHub and
 Hetzner Cloud tokens. So, let's create these.
 
 ----------------------------------------------------------
 Creating GitHub Repository with Actions Workflow and Token
 ----------------------------------------------------------
 
-Before using the **github-runners**, you need a GitHub repository with a GitHub Actions workflow set up.
+Before using the **github-hetzner-runners**, you need a GitHub repository with a GitHub Actions workflow set up.
 
-❶ First, create a GitHub Repository named **demo-testflows-github-runners** and note the repository name.
+❶ First, create a GitHub Repository named **demo-testflows-github-hetzner-runners** and note the repository name.
 
 The repository name will have the following format:
 
 ::
 
-   <username>/demo-testflows-github-runners
+   <username>/demo-testflows-github-hetzner-runners
 
 For me, my GitHub repository is:
 
 ::
 
-   vzakaznikov/demo-testflows-github-runners
+   vzakaznikov/demo-testflows-github-hetzner-runners
 
 ❷ Now, create an example GitHub Actions workflow as described in the `Quickstart for GitHub Actions <https://docs.github.com/en/actions/quickstart>`_ article.
 Note that we need to modify the example YAML configuration and specify that our job will run on a runner with the **self-hosted** and the **type-cpx21**
@@ -281,7 +281,7 @@ You should now have your GitHub repository ready.
 
 See these steps in action:
 
-.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/docs/images/github_create_repo_and_token.gif
+.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Hetzner-Runners/master/docs/images/github_create_repo_and_token.gif
    :align: center
    :width: 790px
    :alt: Creating GitHub Repository and Token
@@ -306,7 +306,7 @@ You should now have your Hetzner Cloud project ready.
 
 See these steps in action:
 
-.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/docs/images/hetzner_create_project_and_token.gif
+.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Hetzner-Runners/master/docs/images/hetzner_create_project_and_token.gif
    :align: center
    :width: 790px
    :alt: Creating GitHub Repository and Token
@@ -315,13 +315,13 @@ See these steps in action:
 Creating a Cloud Service
 ------------------------
 
-With the GitHub repository and GitHub and Hetzner Cloud tokens in hand, we can deploy the **github-runners** service
+With the GitHub repository and GitHub and Hetzner Cloud tokens in hand, we can deploy the **github-hetzner-runners** service
 to Hetzner Cloud instance. This way, the service is not running on your local machine.
 
-The deployment, we'll create a **github-runners** instance in your Hetzner Cloud project on which the service will be running.
+The deployment, we'll create a **github-hetzner-runners** instance in your Hetzner Cloud project on which the service will be running.
 See the `Running as a Cloud Service`_ section for details.
 
-❶ To deploy the service run the **github-runners cloud deploy** command and specify your
+❶ To deploy the service run the **github-hetzner-runners cloud deploy** command and specify your
 GitHub repository, GitHub and Hetzner Cloud tokens using
 **GITHUB_REPOSITORY**, **GITHUB_TOKEN**, and **HETZNER_TOKEN** environment variables.
 
@@ -330,13 +330,13 @@ GitHub repository, GitHub and Hetzner Cloud tokens using
    export GITHUB_REPOSITORY=
    export HETZNER_TOKEN=
    export GITHUB_TOKEN=
-   github-runners cloud deploy
+   github-hetzner-runners cloud deploy
 
 You should now have the cloud service up and running.
 
 See these steps in action:
 
-.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/docs/images/cloud_deploy.gif
+.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Hetzner-Runners/master/docs/images/cloud_deploy.gif
    :align: center
    :width: 625px
    :alt: Deploying Cloud Service
@@ -345,12 +345,12 @@ See these steps in action:
 Waiting for GitHub Actions Job to Complete
 ------------------------------------------
 
-❶ The **github-runners** cloud service is now running. So, now you can just sit back and wait until **github-runners**
+❶ The **github-hetzner-runners** cloud service is now running. So, now you can just sit back and wait until **github-hetzner-runners**
 spins up a new runner to complete any queued up GitHub Actions jobs in your GitHub repository.
 
 See this step in action:
 
-.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Runners/master/docs/images/github_job_completed.gif
+.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Hetzner-Runners/master/docs/images/github_job_completed.gif
    :align: center
    :width: 790px
    :alt: Waiting For GitHub Actions Job to Complete
@@ -360,11 +360,11 @@ As you can see, our job was executed and completed using our own self-hosted run
 :✋ Note:
 
    If you run into any issues, you can check the cloud service log using the
-   **github-runners cloud log -f** command. For other cloud service commands, see the `Running as a Cloud Service`_ section.
+   **github-hetzner-runners cloud log -f** command. For other cloud service commands, see the `Running as a Cloud Service`_ section.
 
    .. code-block:: bash
 
-      github-runners cloud log -f
+      github-hetzner-runners cloud log -f
 
 =========================
 Installation From Sources
@@ -374,7 +374,7 @@ For development, you can install from sources as follows:
 
 .. code-block:: bash
 
-   git clone https://github.com/testflows/Github-Runners.git
+   git clone https://github.com/testflows/testflows-github-hetzner-runners.git
    ./package && ./install
 
 ===================
@@ -402,7 +402,7 @@ based on your Hetzner Cloud limits using the **-m count, --max-runners count** o
 
 .. code-block:: bash
 
-   github-runners --max-runners 40
+   github-hetzner-runners --max-runners 40
 
 =============================================================
 Specifying the Maximum Number of Runners Used in Workflow Run
@@ -417,7 +417,7 @@ is not defined.
    to queued workflow run jobs, and this is why the **--max-runners-in-workflow-run** option will not behave
    as one would intuitively expect.
 
-If you set the **--max-runners-in-workflow-run** to some value *X*, then **github-runners**
+If you set the **--max-runners-in-workflow-run** to some value *X*, then **github-hetzner-runners**
 will create the *X * number of queued workflow runs* runners. How these runners will be allocated by
 GitHub is out of our control. Therefore, the more runs queued up, the more runners will be created, up to the **--max-runners**
 limit, to try to complete the jobs faster. However, this does not mean that you will see exactly *X* number of jobs
@@ -427,7 +427,7 @@ For example,
 
 .. code-block:: bash
 
-   github-runners --max-runners 40 --max-runners-in-workflow-run 5
+   github-hetzner-runners --max-runners 40 --max-runners-in-workflow-run 5
 
 will create upto *5* runners for each queued up workflow run. If there is only one workflow running, then the maximum number of
 runners will be *5* unless more queued up workflow runs appear, which could then speed up the execution of the run in progress.
@@ -445,7 +445,7 @@ that runs for a few minutes. Instead, after completing a job, the server is powe
 and if it can be recycled, it is rebuilt from scratch by reinstalling the image
 thus providing a clean environment for the next job.
 
-Powered off servers are marked as recyclable by changing their name to **github-runner-recycle-{uid}**.
+Powered off servers are marked as recyclable by changing their name to **github-hetzner-runner-recycle-{uid}**.
 
 Recyclable servers are deleted when they reach their end of life period
 which is defined by the **--end-of-life** option, and by default is set to *50* minutes.
@@ -500,7 +500,7 @@ If needed, you can turn recycling off using the **--recycle {on,off}** option.
 
 .. code-block:: bash
 
-   github-runners --recycle off
+   github-hetzner-runners --recycle off
 
 
 =============
@@ -516,7 +516,7 @@ For example,
 
 .. code-block:: bash
 
-   github-runners --with-label on-demand
+   github-hetzner-runners --with-label on-demand
 
 will only create runners for jobs that contain **on-demand** label and skip any job that is missing
 that label.
@@ -675,7 +675,7 @@ For example,
 :command:
    .. code-block:: bash
 
-      github-runners --setup-script ./custom_setup.sh
+      github-hetzner-runners --setup-script ./custom_setup.sh
 
 ==========================
 Specifying Standby Runners
@@ -748,7 +748,7 @@ The logger configuration is specified in the configuration file using the **logg
 For more information about the logger configuration, see `Configuration dictionary schema <https://docs.python.org/3/library/logging.config.html#logging-config-dictschema>`_ in Python documentation.
 
 Any custom logger configuration must at least define **stdout** and **rotating_service_logfile** handlers
-as well as configure **testflows.github.runners** in the **loggers**.
+as well as configure **testflows.github.hetzner.runners** in the **loggers**.
 
 For example,
 
@@ -768,17 +768,17 @@ For example,
                   stdout:
                       level: INFO
                       formatter: standard
-                      class: testflows.github.runners.logger.StdoutHandler
+                      class: testflows.github.hetzner.runners.logger.StdoutHandler
                       stream: "ext://sys.stdout"
                   rotating_service_logfile:
                       level: DEBUG
                       formatter: standard
-                      class: testflows.github.runners.logger.RotatingFileHandler
-                      filename: /tmp/github-runners.log
+                      class: testflows.github.hetzner.runners.logger.RotatingFileHandler
+                      filename: /tmp/github-hetzner-runners.log
                       maxBytes: 10485760
                       backupCount: 1
               loggers:
-                  testflows.github.runners:
+                  testflows.github.hetzner.runners:
                       level: INFO
                       handlers:
                           - stdout
@@ -835,24 +835,24 @@ Listing All Current Servers
 ===========================
 
 You can list all currently created servers using the **list** command.
-This command will show all the servers that start with the *github-runner* prefix in their name.
+This command will show all the servers that start with the *github-hetzner-runner* prefix in their name.
 
 For example,
 
 .. code-block:: bash
 
-   github-runners list
+   github-hetzner-runners list
 
 ::
 
-   Using config file: /home/user/.github-runners/config.yaml
+   Using config file: /home/user/.github-hetzner-runners/config.yaml
    11:40:40 🍀 Logging in to Hetzner Cloud
    11:40:40 🍀 Getting a list of servers
-   ❌ off        github-runner-5811138574-15753659850
-   ❌ off        github-runner-recycle-1691595565.5396028
-   ❌ off        github-runner-recycle-1691595478.7024605
-   ❌ off        github-runner-5811138574-15753660130
-   ❌ off        github-runner-recycle-1691595481.196499
+   ❌ off        github-hetzner-runner-5811138574-15753659850
+   ❌ off        github-hetzner-runner-recycle-1691595565.5396028
+   ❌ off        github-hetzner-runner-recycle-1691595478.7024605
+   ❌ off        github-hetzner-runner-5811138574-15753660130
+   ❌ off        github-hetzner-runner-recycle-1691595481.196499
 
 ================================
 Opening SSH Client to the Server
@@ -863,13 +863,13 @@ For the **ssh** command to work, you need to specify the **--hetzner-token** and
 
 .. code-block:: bash
 
-   github-runners ssh <name>
+   github-hetzner-runners ssh <name>
 
 For example,
 
 .. code-block:: bash
 
-   github-runners ssh github-runner-5811138574-15753659850
+   github-hetzner-runners ssh github-hetzner-runner-5811138574-15753659850
 
 ======================================
 Deleting All Runners And Their Servers
@@ -883,13 +883,13 @@ You can delete all runners, including standby runners, and their servers using t
 
 .. code-block:: bash
 
-   github-runners delete
+   github-hetzner-runners delete
 
 ::
 
    07/29/2023 07:43:16 PM     INFO       MainThread             all 🍀 Logging in to Hetzner Cloud
    07/29/2023 07:43:16 PM     INFO       MainThread             all 🍀 Logging in to GitHub
-   07/29/2023 07:43:16 PM     INFO       MainThread             all 🍀 Getting repository testflows/testflows-github-runners
+   07/29/2023 07:43:16 PM     INFO       MainThread             all 🍀 Getting repository testflows/testflows-github-hetzner-runners
    07/29/2023 07:43:17 PM     INFO       MainThread             all 🍀 Getting list of self-hosted runners
    07/29/2023 07:43:17 PM     INFO       MainThread             all 🍀 Getting list of servers
 
@@ -899,14 +899,14 @@ Using a Configuration File
 
 Instead of passing configuration options using command line arguments, you can use
 configuration file. The configuration file uses YAML format, and it is usually named **config.yaml**. You can find the complete schema
-in `schema.json <https://github.com/testflows/TestFlows-GitHub-Runners/blob/main/testflows/github/runners/config/schema.json>`_.
+in `schema.json <https://github.com/testflows/TestFlows-github-hetzner-runners/blob/main/testflows/github/hetzner/runners/config/schema.json>`_.
 
 :✋ Note:
    When you mix command line options with a custom configuration file,
    explicit command line options take precedence over the values that are defined
    for the same parameters in the configuration file.
 
-You can specify the default configuration by placing the configuration in the *~/.github-runners/config.yaml* file or
+You can specify the default configuration by placing the configuration in the *~/.github-hetzner-runners/config.yaml* file or
 pass the path to the configuration file explicitly using the **-c path, --config path** option.
 
 The YAML configuration file supports special syntax to specify the value of a property as the value of the environment variable using
@@ -916,7 +916,7 @@ For example,
 
 .. code-block:: bash
 
-   github-runners -c config.yaml
+   github-hetzner-runners -c config.yaml
 
 where,
 
@@ -929,7 +929,7 @@ where,
          hetzner_token: ${HETZNER_TOKEN}
          default_server_type: cx11
          cloud:
-            server_name: "my-github-runners-service"
+            server_name: "my-github-hetzner-runners-service"
          standby_runners:
             - labels:
                - type-cx21
@@ -937,7 +937,7 @@ where,
               replenish_immediately: true
 
 :✋ Note:
-   This is a simple configuration file. You can find a complete example in the `examples/config.yaml <https://github.com/testflows/TestFlows-GitHub-Runners/blob/main/examples/config.yaml>`_.
+   This is a simple configuration file. You can find a complete example in the `examples/config.yaml <https://github.com/testflows/TestFlows-github-hetzner-runners/blob/main/examples/config.yaml>`_.
 
 ==================
 Specifying SSH Key
@@ -963,10 +963,10 @@ If you need to generate a new SSH key, see `Generating a new SSH key and adding 
 SSH Keys in Cloud Deployment
 ----------------------------
 
-If you are deploying the **github-runners** program as a cloud service using the **github-runners <options> cloud deploy** command, then
-after provisioning a new cloud server instance that will host the **github-runners** service, a new SSH key will be
+If you are deploying the **github-hetzner-runners** program as a cloud service using the **github-hetzner-runners <options> cloud deploy** command, then
+after provisioning a new cloud server instance that will host the **github-hetzner-runners** service, a new SSH key will be
 auto-generated to access the runners. The auto-generated key will be placed in */home/runner/.ssh/id_rsa*, where **runner**
-is the user under which the **github-runners** service runs on the cloud instance. The auto-generated SSH key will be automatically
+is the user under which the **github-hetzner-runners** service runs on the cloud instance. The auto-generated SSH key will be automatically
 added to your project using the MD5 hash of the public key as the SSH key name.
 
 ==============================
@@ -998,7 +998,7 @@ For example,
 Running as a Service
 ====================
 
-You can run **github-runners** as a service.
+You can run **github-hetzner-runners** as a service.
 
 :✋ Note:
    In order to install the service, the user who installed the module must have **sudo** privileges.
@@ -1011,24 +1011,24 @@ After installation, you can use **service install** and **service uninstall** co
 uninstall the service.
 
 :✋ Note:
-   The options that are passed to the **github-runners <options> service install** command
+   The options that are passed to the **github-hetzner-runners <options> service install** command
    will be the same options with which the service will be executed.
 
 .. code-block:: bash
 
    export GITHUB_TOKEN=ghp_...
-   export GITHUB_REPOSITORY=testflows/github-runners
+   export GITHUB_REPOSITORY=testflows/github-hetzner-runners
    export HETZNER_TOKEN=GJzdc...
 
-   github-runners service install
+   github-hetzner-runners service install
 
-The **/etc/systemd/system/github-runners.service** file is created with the following content.
+The **/etc/systemd/system/github-hetzner-runners.service** file is created with the following content.
 
 :✋ Note:
    The service will use the *User* and the *Group* of the user executing the program.
 
 
-:/etc/systemd/system/github-runners.service:
+:/etc/systemd/system/github-hetzner-runners.service:
 
    ::
 
@@ -1041,9 +1041,9 @@ The **/etc/systemd/system/github-runners.service** file is created with the foll
       Type=simple
       Restart=always
       Environment=GITHUB_TOKEN=ghp_...
-      Environment=GITHUB_REPOSITORY=testflows/github-runners
+      Environment=GITHUB_REPOSITORY=testflows/testflows-github-hetzner-runners
       Environment=HETZNER_TOKEN=GJ..
-      ExecStart=/home/user/.local/lib/python3.10/site-packages/testflows/github/runners/bin/github-runners --workers 10 --max-powered-off-time 20 --max-unused-runner-time 120 --max-runner-registration-time 60 --scale-up-interval 10 --scale-down-interval 10
+      ExecStart=/home/user/.local/lib/python3.10/site-packages/testflows/github/hetzner/runners/bin/github-hetzner-runners --workers 10 --max-powered-off-time 20 --max-unused-runner-time 120 --max-runner-registration-time 60 --scale-up-interval 10 --scale-down-interval 10
       [Install]
       WantedBy=multi-user.target
 
@@ -1052,15 +1052,15 @@ Modifying Program Options
 -------------------------
 
 If you want to modify service program options, you can stop the service,
-edit the **/etc/systemd/system/github-runners.service** file by hand, then reload the service daemon,
+edit the **/etc/systemd/system/github-hetzner-runners.service** file by hand, then reload the service daemon,
 and start the service back up.
 
 .. code-block:: bash
 
-   github-runners service stop
-   sudo vim /etc/systemd/system/github-runners.service
+   github-hetzner-runners service stop
+   sudo vim /etc/systemd/system/github-hetzner-runners.service
    sudo systemctl daemon-reload
-   github-runners service starts
+   github-hetzner-runners service starts
 
 ---------------
 Checking Status
@@ -1070,28 +1070,28 @@ After installation, you can check the status of the service using the **service 
 
 .. code-block:: bash
 
-   github-runners service status:
+   github-hetzner-runners service status:
 
 :service status:
 
    ::
 
-      ● github-runners.service - Autoscaling GitHub Actions Runners
-           Loaded: loaded (/etc/systemd/system/github-runners.service; enabled; vendor preset: enabled)
+      ● github-hetzner-runners.service - Autoscaling GitHub Actions Runners
+           Loaded: loaded (/etc/systemd/system/github-hetzner-runners.service; enabled; vendor preset: enabled)
            Active: active (running) since Mon 2023-07-24 14:38:33 EDT; 1h 31min ago
          Main PID: 66188 (python3)
             Tasks: 3 (limit: 37566)
            Memory: 28.8M
               CPU: 8.274s
-           CGroup: /system.slice/github-runners.service
-                   └─66188 python3 /usr/local/bin/github-runners --workers 10 --max-powered-off-time 20 --max-unused-runner-time 120 --max->
+           CGroup: /system.slice/github-hetzner-runners.service
+                   └─66188 python3 /usr/local/bin/github-hetzner-runners --workers 10 --max-powered-off-time 20 --max-unused-runner-time 120 --max->
 
       Jul 24 14:38:33 user-node systemd[1]: Started Autoscaling GitHub Actions Runners.
-      Jul 24 14:38:33 user-node github-runners[66188]: 07/24/2023 02:38:33 PM   INFO MainThread            main 🍀 Logging in to Hetzner >
-      Jul 24 14:38:33 user-node github-runners[66188]: 07/24/2023 02:38:33 PM   INFO MainThread            main 🍀 Logging in to GitHub
-      Jul 24 14:38:33 user-node github-runners[66188]: 07/24/2023 02:38:33 PM   INFO MainThread            main 🍀 Getting repository vza>
-      Jul 24 14:38:33 user-node github-runners[66188]: 07/24/2023 02:38:33 PM   INFO MainThread            main 🍀 Creating scale up serv>
-      Jul 24 14:38:33 user-node github-runners[66188]: 07/24/2023 02:38:33 PM   INFO MainThread            main 🍀 Creating scale down se>
+      Jul 24 14:38:33 user-node github-hetzner-runners[66188]: 07/24/2023 02:38:33 PM   INFO MainThread            main 🍀 Logging in to Hetzner >
+      Jul 24 14:38:33 user-node github-hetzner-runners[66188]: 07/24/2023 02:38:33 PM   INFO MainThread            main 🍀 Logging in to GitHub
+      Jul 24 14:38:33 user-node github-hetzner-runners[66188]: 07/24/2023 02:38:33 PM   INFO MainThread            main 🍀 Getting repository vza>
+      Jul 24 14:38:33 user-node github-hetzner-runners[66188]: 07/24/2023 02:38:33 PM   INFO MainThread            main 🍀 Creating scale up serv>
+      Jul 24 14:38:33 user-node github-hetzner-runners[66188]: 07/24/2023 02:38:33 PM   INFO MainThread            main 🍀 Creating scale down se>
       lines 1-16/16 (END)
 
 ---------------------
@@ -1102,20 +1102,20 @@ You can start and stop the service using the **service start** and **service sto
 
 .. code-block:: bash
 
-   github-runners service starts
-   github-runners service stop
+   github-hetzner-runners service starts
+   github-hetzner-runners service stop
 
 or using **service** system utility
 
 .. code-block:: bash
 
-   sudo service github-runners start
-   sudo service github-runners stop
+   sudo service github-hetzner-runners start
+   sudo service github-hetzner-runners stop
 
 :✋ Note:
-   The **service stop** command will send the *SIGINT* signal to the **github-runners** process and will wait for the
+   The **service stop** command will send the *SIGINT* signal to the **github-hetzner-runners** process and will wait for the
    program to perform a clean shutdown, which includes stopping scale up and scale down loops.
-   Given that the **github-runners** program might be in the middle of configuring servers, the **service stop**
+   Given that the **github-hetzner-runners** program might be in the middle of configuring servers, the **service stop**
    command might take sometime to complete.
 
 -------------
@@ -1132,14 +1132,14 @@ then the log will be followed, and the new messages will be displayed as they ar
 
 .. code-block:: bash
 
-   github-runners service log -f
+   github-hetzner-runners service log -f
 
 :followed log:
 
    ::
 
-      github-runners service log -f
-      Using config file: /home/user/.github-runners/config.yaml
+      github-hetzner-runners service log -f
+      Using config file: /home/user/.github-hetzner-runners/config.yaml
       18:11:49 api_watch      INFO     🍀 Consumed 0 calls in 60 sec, 5000 calls left, reset in 3599 sec
       18:12:49 api_watch      INFO     🍀 Logging in to GitHub
       18:12:49 api_watch      INFO     🍀 Checking current API calls consumption rate
@@ -1153,17 +1153,17 @@ You can dump the full log by omitting the **-f, --follow** option.
 
 .. code-block:: bash
 
-   github-runners service log
+   github-hetzner-runners service log
 
 :full log:
 
    ::
 
-      Using config file: /home/user/.github-runners/config.yaml
+      Using config file: /home/user/.github-hetzner-runners/config.yaml
       09:44:28 http_cache     INFO     🍀 Enabling HTTP cache at /tmp/tmp60wo30tc/http_cache
       09:44:28 main           INFO     🍀 Logging in to Hetzner Cloud
       09:44:28 main           INFO     🍀 Logging in to GitHub
-      09:44:28 main           INFO     🍀 Getting repository testflows/testflows-github-runners
+      09:44:28 main           INFO     🍀 Getting repository testflows/testflows-github-hetzner-runners
       09:44:28 main           INFO     🍀 Checking if default image exists
       09:44:29 main           INFO     🍀 Checking if default location exists
       09:44:29 main           INFO     🍀 Checking if default server type exists
@@ -1181,12 +1181,12 @@ For example,
 
 .. code-block:: bash
 
-   github-runners service log -f -c time,message:50
+   github-hetzner-runners service log -f -c time,message:50
 
 ::
 
-   Using config file: /home/user/.github-runners/config.yaml
-   Using config file: /home/user/.github-runners/config.yaml
+   Using config file: /home/user/.github-hetzner-runners/config.yaml
+   Using config file: /home/user/.github-hetzner-runners/config.yaml
    18:13:50 🍀 Consumed 0 calls in 60 sec, 5000 calls left,
             reset in 3599 sec
    18:14:50 🍀 Logging in to GitHub
@@ -1218,9 +1218,9 @@ For example,
 
 .. code-block:: bash
 
-   github-runners service log -n 50
-   github-runners service log -n +100
-   github-runners service log -f -n 1
+   github-hetzner-runners service log -n 50
+   github-hetzner-runners service log -n +100
+   github-hetzner-runners service log -f -n 1
 
 Raw Log
 =======
@@ -1232,38 +1232,38 @@ You can output the raw log by specifying the **--raw** option.
 Running as a Cloud Service
 ==========================
 
-Instead of running **github-runners** program locally as a standalone application or as a service.
-You can easily deploy **github-runners** to run on a Hetzner Cloud instance.
+Instead of running **github-hetzner-runners** program locally as a standalone application or as a service.
+You can easily deploy **github-hetzner-runners** to run on a Hetzner Cloud instance.
 
 See **-h, --help** for all the available commands.
 
 :✋ Note:
-   By default, the server name where the **github-runners** service will be running
-   is **github-runners**. If you want to use a custom server name, then
+   By default, the server name where the **github-hetzner-runners** service will be running
+   is **github-hetzner-runners**. If you want to use a custom server name, then
    you must use the **cloud --name** option for any **cloud** commands.
 
 .. code-block:: bash
 
-   github-runners cloud -h
+   github-hetzner-runners cloud -h
 
 ---------
 Deploying
 ---------
 
-You can deploy **github-runners** as a service to a new Hetzner Cloud server instance, that will be created for you automatically,
+You can deploy **github-hetzner-runners** as a service to a new Hetzner Cloud server instance, that will be created for you automatically,
 using the **cloud deploy** command.
 
 :✋ Note:
-   The options that are passed to the **github-runners <options> cloud deploy** command
+   The options that are passed to the **github-hetzner-runners <options> cloud deploy** command
    will be the same options with which the service will be executed.
 
 .. code-block:: bash
 
    export GITHUB_TOKEN=ghp_...
-   export GITHUB_REPOSITORY=testflows/github-runners
+   export GITHUB_REPOSITORY=testflows/github-hetzner-runners
    export HETZNER_TOKEN=GJzdc...
 
-   github-runners deploy
+   github-hetzner-runners deploy
 
 You can specify the version of the package to be installed using the **--version** option. By default, the current local package
 version will be installed on the cloud service server. You can also pass *latest* as the value to install the latest available
@@ -1271,7 +1271,7 @@ version.
 
 .. code-block:: bash
 
-   github-runners deploy --version latest
+   github-hetzner-runners deploy --version latest
 
 The **deploy** command will use the following default values:
 
@@ -1309,15 +1309,15 @@ You can customize deployment server location, type, and image using the *--locat
 
 .. code-block:: bash
 
-   github-runners deploy --location nbg1 --type cx11 --image ubuntu-22.04
+   github-hetzner-runners deploy --location nbg1 --type cx11 --image ubuntu-22.04
 
-The cloud instance that runs the **github-runners** service can either be x64 or ARM64 instance. By default, **cpx11**
+The cloud instance that runs the **github-hetzner-runners** service can either be x64 or ARM64 instance. By default, **cpx11**
 AMD, 2 vCPU, 2GB RAM, shared-cpu x64 instance type is used.
 
 Using an ARM64 Instance
 =======================
 
-If you want to deploy the **github-runners** service to an ARM64 instance, then you must specify the instance
+If you want to deploy the **github-hetzner-runners** service to an ARM64 instance, then you must specify the instance
 type using the **--type** option.
 
 :✋ Note:
@@ -1328,7 +1328,7 @@ as the value of the **--type** as follows:
 
 .. code-block:: bash
 
-   github-runners deploy --location fsn1 --type cax21 --image ubuntu-22.04
+   github-hetzner-runners deploy --location fsn1 --type cax21 --image ubuntu-22.04
 
 Using x64 Instance
 ==================
@@ -1345,10 +1345,10 @@ using the **cloud redeploy** command.
 
 .. code-block:: bash
 
-   github-runners <options> cloud redeploy
+   github-hetzner-runners <options> cloud redeploy
 
 :✋ Note:
-   The options that are passed to the **github-runners <options> cloud redeploy** command
+   The options that are passed to the **github-hetzner-runners <options> cloud redeploy** command
    will be the same options with which the service will be executed.
 
 You can specify the version of the package to be installed using the **--version** option.
@@ -1357,7 +1357,7 @@ You can specify the version of the package to be installed using the **--version
 Cloud Service Log
 -----------------
 
-You can check the log for the **github-runners** service running on a cloud instance using the **github-runners cloud log** command.
+You can check the log for the **github-hetzner-runners** service running on a cloud instance using the **github-hetzner-runners cloud log** command.
 Specify **-f, --follow** if you want to follow the log journal.
 
 For example,
@@ -1366,13 +1366,13 @@ For example,
 
    .. code-block:: bash
 
-      github-runners cloud log
+      github-hetzner-runners cloud log
 
 :follow the log journal:
 
    .. code-block:: bash
 
-      github-runners cloud log -f
+      github-hetzner-runners cloud log -f
 
 You can also specify the **--raw** option to output the raw log as well as use the **-c name[:width][,...], --columns name[:width][,...]**
 option to specify a comma separated list of columns to include in the output and their optional width.
@@ -1381,72 +1381,72 @@ option to specify a comma separated list of columns to include in the output and
 Cloud Service Status
 --------------------
 
-You can check the status of the **github-runners** service running on a cloud instance using the **github-runners cloud status** command.
+You can check the status of the **github-hetzner-runners** service running on a cloud instance using the **github-hetzner-runners cloud status** command.
 
 For example,
 
 .. code-block:: bash
 
-   github-runners cloud status
+   github-hetzner-runners cloud status
 
 ----------------------
 Stopping Cloud Service
 ----------------------
 
-You can manually stop the **github-runners** service running on a cloud instance using the **github-runners cloud stop** command.
+You can manually stop the **github-hetzner-runners** service running on a cloud instance using the **github-hetzner-runners cloud stop** command.
 
 .. code-block:: bash
 
-   github-runners cloud stop
+   github-hetzner-runners cloud stop
 
 ----------------------
 Starting Cloud Service
 ----------------------
 
-You can manually start the **github-runners** service running on a cloud instance after it was manually stopped
-using the **github-runners cloud start** command.
+You can manually start the **github-hetzner-runners** service running on a cloud instance after it was manually stopped
+using the **github-hetzner-runners cloud start** command.
 
 .. code-block:: bash
 
-   github-runners cloud start
+   github-hetzner-runners cloud start
 
 ------------------------
 Installing Cloud Service
 ------------------------
 
-You can manually force installation of the **github-runners** service running on a cloud instance using
-the **github-runners cloud install** command.
+You can manually force installation of the **github-hetzner-runners** service running on a cloud instance using
+the **github-hetzner-runners cloud install** command.
 
 :✋ Note:
-   Just like with the `github-runners <options> service install` command,
-   the options that are passed to the `github-runners <options> cloud install` command
+   Just like with the `github-hetzner-runners <options> service install` command,
+   the options that are passed to the `github-hetzner-runners <options> cloud install` command
    will be the same options with which the service will be executed.
 
 You can specify **-f, --force** option to force service reinstallation if it is already installed.
 
 .. code-block:: bash
 
-   github-runners <options> cloud install -f
+   github-hetzner-runners <options> cloud install -f
 
 ------------------------------
 Uninstalling the Cloud Service
 ------------------------------
 
-You can manually force the uninstallation of the **github-runners** service running on a cloud instance using
-the **github-runners cloud uninstall** command.
+You can manually force the uninstallation of the **github-hetzner-runners** service running on a cloud instance using
+the **github-hetzner-runners cloud uninstall** command.
 
 .. code-block:: bash
 
-   github-runners cloud uninstall
+   github-hetzner-runners cloud uninstall
 
 -----------------------------------
 Upgrading the Cloud Service Package
 -----------------------------------
 
-You can manually upgrade the **github-runners** service package running on a cloud instance using
-the **github-runners cloud upgrade** command.
+You can manually upgrade the **github-hetzner-runners** service package running on a cloud instance using
+the **github-hetzner-runners cloud upgrade** command.
 
-If a specific '--version' is specified, then the *testflows.github.runners* package is upgraded to
+If a specific '--version' is specified, then the *testflows.github.hetzner.runners* package is upgraded to
 the specified version, otherwise the version is upgraded to the latest available.
 
 :✋ Note:
@@ -1456,7 +1456,7 @@ the specified version, otherwise the version is upgraded to the latest available
 
 .. code-block:: bash
 
-   github-runners cloud upgrade --version <version>
+   github-hetzner-runners cloud upgrade --version <version>
 
 The service is not reinstalled during the package upgrade process.
 Instead, it is stopped before the upgrade and then started back up
@@ -1470,7 +1470,7 @@ you can keep the existing server and use **cloud redeploy** command.
 
 .. code-block:: bash
 
-   github-runners <options> cloud redeploy --version latest
+   github-hetzner-runners <options> cloud redeploy --version latest
 
 When needed, you can also SSH into the cloud service manually and perform changes manually.
 
@@ -1478,8 +1478,8 @@ You can do a complete service teardown using the **cloud delete** and then the *
 
 .. code-block:: bash
 
-   github-runners cloud delete
-   github-runners <options> cloud deploy --version latest
+   github-hetzner-runners cloud delete
+   github-hetzner-runners <options> cloud deploy --version latest
 
 :✋ Note:
    A complete teardown will not affect any current jobs, as the service is designed to
@@ -1490,13 +1490,13 @@ You can do a complete service teardown using the **cloud delete** and then the *
 Deleting the Cloud Service
 --------------------------
 
-You can delete the **github-runners** cloud service and the cloud instance that is running on it using
-the **github-runners cloud delete** command.
+You can delete the **github-hetzner-runners** cloud service and the cloud instance that is running on it using
+the **github-hetzner-runners cloud delete** command.
 
 The **cloud delete** command, deletes the cloud service by first stopping the service and then deleting the server instance.
 
 :❗Warning:
-   The default server name where the cloud service is deployed is **github-runners**.
+   The default server name where the cloud service is deployed is **github-hetzner-runners**.
    Please make sure to specify the **cloud --name** option if you have deployed the service to a server with a different name.
 
 For example,
@@ -1504,12 +1504,12 @@ For example,
 :default name:
    .. code-block:: bash
 
-      github-runners cloud delete
+      github-hetzner-runners cloud delete
 
 :custom name:
    .. code-block:: bash
 
-      github-runners cloud --name <custom_name> delete
+      github-hetzner-runners cloud --name <custom_name> delete
 
 -----------------------
 SSH in to Cloud Service
@@ -1519,14 +1519,14 @@ You can open an SSH client to the cloud service using the **cloud ssh** command.
 
 .. code-block:: bash
 
-   github-runners cloud ssh
+   github-hetzner-runners cloud ssh
 
 You can also manually SSH into the cloud service using the **ssh** utility. For convenience, you can
 retrieve the SSH client command using the **cloud ssh command** command. For example,
 
 .. code-block:: bash
 
-   github-runners cloud ssh command
+   github-hetzner-runners cloud ssh command
 
 The output will contain the full **ssh** command including the IP address of the cloud service server.
 
@@ -1543,14 +1543,14 @@ For each such job, a corresponding Hetzner Cloud server instance is created with
 
 ::
 
-   github-runner-{job.run_id}-{job.id}
+   github-hetzner-runner-{job.run_id}-{job.id}
 
 The server is configured using the default **setup** and **startup** scripts. The runner's name is set
 to be the same as the server name so that servers can be deleted for any unused runner that, for some reason
 does not pick up a job for which it was created within the **max-unused-runner-time** period.
 
 :Note:
-   Given that the server name is fixed and specific for each *job.id*, if multiple `github-runners` are running in parallel, then
+   Given that the server name is fixed and specific for each *job.id*, if multiple `github-hetzner-runners` are running in parallel, then
    only 1 server will be created for a given `job` and any other attempts to create a server with the same name will be rejected
    by the Hetzner Cloud.
 
@@ -1570,7 +1570,7 @@ You can set the maximum number of runners using the **--max-runners** option.
 
 .. code-blocks::bash
 
-   github-runners --max-runners 10
+   github-hetzner-runners --max-runners 10
 
 ----------
 New Server
@@ -1854,7 +1854,7 @@ The following options are supported:
       cloud service commands
 
       * **-n server, --name server**
-        deployment server name, default: *github-runners*
+        deployment server name, default: *github-hetzner-runners*
 
       * **deploy**
         deploy cloud service
@@ -1984,4 +1984,4 @@ The following options are supported:
       * **stop**
         stop service
 
-.. _Config class: https://github.com/testflows/TestFlows-GitHub-Runners/blob/main/testflows/github/runners/config.py#L45
+.. _Config class: https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/blob/main/testflows/github/hetzner/runners/config.py#L45

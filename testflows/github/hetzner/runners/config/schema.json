@@ -1,11 +1,11 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "JSON Schema for TestFlows GitHub Runners configuration file.",
+    "title": "JSON Schema for TestFlows GitHub Hetzner Runners configuration file.",
     "type": "object",
     "additionalProperties": false,
     "properties": {
         "config": {
-            "description": "TestFlows GitHub Runners configuration object.",
+            "description": "TestFlows GitHub Hetzner Runners configuration object.",
             "type": "object",
             "properties": {
                 "github_token": {
@@ -16,7 +16,7 @@
                 "github_repository": {
                     "description": "GitHub repository",
                     "type": "string",
-                    "examples": ["${GITHUB_REPOSITORY}","testflows/testflows-github-runner"]
+                    "examples": ["${GITHUB_REPOSITORY}","testflows/testflows-github-hetzner-runner"]
                 },
                 "hetzner_token": {
                     "description": "Hetzner project token",
@@ -199,9 +199,9 @@
                     "type": "object",
                     "properties": {
                         "server_name": {
-                            "description": "The deployment server name, default: github-runners.",
+                            "description": "The deployment server name, default: github-hetzner-runners.",
                             "type": "string",
-                            "examples": ["github-runners"]
+                            "examples": ["github-hetzner-runners"]
                         },
                         "deploy": {
                             "description": "The cloud deploy command configuration.",

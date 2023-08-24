@@ -37,12 +37,12 @@ from .servers import ssh_client_command as server_ssh_client_command
 from .service import command_options
 
 current_dir = os.path.dirname(__file__)
-deploy_scripts_folder = "/home/ubuntu/.github-runners/scripts/"
-deploy_configs_folder = "/home/ubuntu/.github-runners/"
+deploy_scripts_folder = "/home/ubuntu/.github-hetzner-runners/scripts/"
+deploy_configs_folder = "/home/ubuntu/.github-hetzner-runners/"
 
 
 def deploy(args, config: Config, redeploy=False):
-    """Deploy or redeploy github-runners as a service to a
+    """Deploy or redeploy github-hetzner-runners as a service to a
     new Hetzner server instance."""
     config.check()
     version = args.version or __version__
@@ -136,11 +136,13 @@ def deploy(args, config: Config, redeploy=False):
         with Action("Executing setup.sh script"):
             ssh(server, f"bash -s  < {deploy_setup_script}", stacklevel=4)
 
-    with Action(f"Installing github-runners {version}"):
-        command = f"'sudo -u ubuntu pip3 install testflows.github.runners=={version}'"
+    with Action(f"Installing github-hetzner-runners {version}"):
+        command = (
+            f"'sudo -u ubuntu pip3 install testflows.github.hetzner.runners=={version}'"
+        )
 
         if version.strip().lower() == "latest":
-            command = f"'sudo -u ubuntu pip3 install testflows.github.runners'"
+            command = f"'sudo -u ubuntu pip3 install testflows.github.hetzner.runners'"
             if redeploy:
                 command.replace("pip3 install", "pip3 install --upgrade")
 
@@ -245,7 +247,7 @@ def install(args, config: Config, server: BoundServer = None):
 
     with Action("Installing service"):
         command = f"\"su - ubuntu -c '"
-        command += "github-runners"
+        command += "github-hetzner-runners"
         command += command_options(
             config,
             github_token=config.github_token,
@@ -258,7 +260,7 @@ def install(args, config: Config, server: BoundServer = None):
 
 
 def upgrade(args, config: Config):
-    """Upgrade github-runners application on a cloud instance."""
+    """Upgrade github-hetzner-runners application on a cloud instance."""
     config.check("hetzner_token")
     server_name = config.cloud.server_name
     upgrade_version = args.upgrade_version
@@ -274,17 +276,17 @@ def upgrade(args, config: Config):
     stop(args, config=config, server=server)
 
     if upgrade_version:
-        with Action(f"Upgrading github-runners to version {upgrade_version}"):
+        with Action(f"Upgrading github-hetzner-runners to version {upgrade_version}"):
             ssh(
                 server,
-                f"'sudo -u ubuntu pip3 install testflows.github.runners=={upgrade_version}'",
+                f"'sudo -u ubuntu pip3 install testflows.github.hetzner.runners=={upgrade_version}'",
                 stacklevel=4,
             )
     else:
-        with Action(f"Upgrading github-runners the latest version"):
+        with Action(f"Upgrading github-hetzner-runners the latest version"):
             ssh(
                 server,
-                f"'sudo -u ubuntu pip3 install --upgrade testflows.github.runners'",
+                f"'sudo -u ubuntu pip3 install --upgrade testflows.github.hetzner.runners'",
                 stacklevel=4,
             )
 
@@ -292,7 +294,7 @@ def upgrade(args, config: Config):
 
 
 def uninstall(args, config: Config, server: BoundServer = None):
-    """Uninstall github-runners service from a cloud instance."""
+    """Uninstall github-hetzner-runners service from a cloud instance."""
     if server is None:
         config.check("hetzner_token")
         server_name = config.cloud.server_name
@@ -306,12 +308,12 @@ def uninstall(args, config: Config, server: BoundServer = None):
                 raise ValueError(f"server {server_name} not found")
 
     with Action("Uninstalling service"):
-        command = f"\"su - ubuntu -c 'github-runners service uninstall'\""
+        command = f"\"su - ubuntu -c 'github-hetzner-runners service uninstall'\""
         ssh(server, command, stacklevel=4)
 
 
 def delete(args, config: Config):
-    """Delete github-runners service running
+    """Delete github-hetzner-runners service running
     on Hetzner server instance by stopping the service
     and deleting the server."""
     config.check("hetzner_token")
@@ -326,7 +328,7 @@ def delete(args, config: Config):
             raise ValueError(f"server {server_name} not found")
 
     with Action("Uninstalling service"):
-        command = f"\"su - ubuntu -c 'github-runners service uninstall'\""
+        command = f"\"su - ubuntu -c 'github-hetzner-runners service uninstall'\""
         ssh(server, command, stacklevel=4)
 
     with Action(f"Deleting server {server_name}"):
@@ -346,7 +348,7 @@ def log(args, config: Config, server: BoundServer = None):
             raise ValueError(f"server {server_name} not found")
 
     command = (
-        f"\"su - ubuntu -c 'github-runners service log"
+        f"\"su - ubuntu -c 'github-hetzner-runners service log"
         + (" -f" if args.follow else "")
         + (f" -c {args.columns.value}" if args.columns else "")
         + (f" -n {args.lines}" if args.lines else "")
@@ -368,7 +370,7 @@ def delete_log(args, config: Config, server: BoundServer = None):
         if not server:
             raise ValueError(f"server {server_name} not found")
 
-    command = f"\"su - ubuntu -c 'github-runners service log delete'\""
+    command = f"\"su - ubuntu -c 'github-hetzner-runners service log delete'\""
     ssh(server, command, use_logger=False, stacklevel=4)
 
 
@@ -387,7 +389,7 @@ def status(args, config: Config, server: BoundServer = None):
                 raise ValueError(f"server {server_name} not found")
 
     with Action("Getting status"):
-        command = f"\"su - ubuntu -c 'github-runners service status'\""
+        command = f"\"su - ubuntu -c 'github-hetzner-runners service status'\""
         ssh(server, command, stacklevel=4)
 
 
@@ -406,7 +408,7 @@ def start(args, config: Config, server: BoundServer = None):
                 raise ValueError(f"server {server_name} not found")
 
     with Action("Starting service"):
-        command = f"\"su - ubuntu -c 'github-runners service start'\""
+        command = f"\"su - ubuntu -c 'github-hetzner-runners service start'\""
         ssh(server, command, stacklevel=4)
 
 
@@ -425,12 +427,12 @@ def stop(args, config: Config, server: BoundServer = None):
                 raise ValueError(f"server {server_name} not found")
 
     with Action("Stopping service"):
-        command = f"\"su - ubuntu -c 'github-runners service stop'\""
+        command = f"\"su - ubuntu -c 'github-hetzner-runners service stop'\""
         ssh(server, command, stacklevel=4)
 
 
 def ssh_client(args, config: Config):
-    """Open ssh client to github-runners service running
+    """Open ssh client to github-hetzner-runners service running
     on Hetzner server instance.
     """
     config.check("hetzner_token")
@@ -440,7 +442,7 @@ def ssh_client(args, config: Config):
 
 
 def ssh_client_command(args, config: Config):
-    """Return ssh command to connect to github-runners service running
+    """Return ssh command to connect to github-hetzner-runners service running
     on Hetzner server instance.
     """
     config.check("hetzner_token")

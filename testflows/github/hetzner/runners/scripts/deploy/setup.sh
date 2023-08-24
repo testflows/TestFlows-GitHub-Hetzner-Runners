@@ -18,5 +18,5 @@ echo "Generate SSH Key"
 sudo -u ubuntu ssh-keygen -t rsa -q -f "/home/ubuntu/.ssh/id_rsa" -N ""
 
 echo "Create scripts folder"
-mkdir -p /home/ubuntu/.github-runners/scripts
-mkdir -p /home/ubuntu/.github-runners/configs
+mkdir -p /home/ubuntu/.github-hetzner-runners/scripts
+mkdir -p /home/ubuntu/.github-hetzner-runners/configs

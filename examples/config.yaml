@@ -24,7 +24,7 @@ config:
     debug: false
     # cloud service deployment configuration
     cloud:
-        server_name: "github-runners"
+        server_name: "github-hetzner-runners"
         deploy:
             server_type: cpx11
             image: "x86:system:ubuntu-22.04"
@@ -54,12 +54,12 @@ config:
                 level: DEBUG
                 formatter: standard
                 class: logging.handlers.RotatingFileHandler
-                filename: /tmp/github-runners.log
+                filename: /tmp/github-hetzner-runners.log
                 maxBytes: 10485760
                 backupCount: 1
 
         loggers:
-            testflows.github.runners:
+            testflows.github.hetzner.runners:
                 level: INFO
                 handlers:
                     - stdout

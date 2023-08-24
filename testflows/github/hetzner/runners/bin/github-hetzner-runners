@@ -32,25 +32,28 @@ from github.Repository import Repository
 
 from argparse import ArgumentParser, RawTextHelpFormatter
 
-from testflows.github.runners import __version__, __license__
-from testflows.github.runners.actions import Action
-from testflows.github.runners.scale_up import scale_up
-from testflows.github.runners.scale_down import scale_down
-from testflows.github.runners.api_watch import api_watch
-from testflows.github.runners.logger import logger, configure as configure_logger
-from testflows.github.runners.config import Config, check_image
-from testflows.github.runners.config import (
+from testflows.github.hetzner.runners import __version__, __license__
+from testflows.github.hetzner.runners.actions import Action
+from testflows.github.hetzner.runners.scale_up import scale_up
+from testflows.github.hetzner.runners.scale_down import scale_down
+from testflows.github.hetzner.runners.api_watch import api_watch
+from testflows.github.hetzner.runners.logger import (
+    logger,
+    configure as configure_logger,
+)
+from testflows.github.hetzner.runners.config import Config, check_image
+from testflows.github.hetzner.runners.config import (
     check_ssh_key,
     check_location,
     check_server_type,
     check_prices,
 )
 
-import testflows.github.runners.args as args
-import testflows.github.runners.cloud as cloud
-import testflows.github.runners.service as service
-import testflows.github.runners.delete as delete
-import testflows.github.runners.servers as servers
+import testflows.github.hetzner.runners.args as args
+import testflows.github.hetzner.runners.cloud as cloud
+import testflows.github.hetzner.runners.service as service
+import testflows.github.hetzner.runners.delete as delete
+import testflows.github.hetzner.runners.servers as servers
 
 from requests_cache import DO_NOT_CACHE, EXPIRE_IMMEDIATELY, install_cache
 from requests_cache.backends.filesystem import FileCache
@@ -366,7 +369,7 @@ def argparser():
         metavar="server",
         dest="cloud_server_name",
         type=str,
-        help="deployment server name, default: github-runners",
+        help="deployment server name, default: github-hetzner-runners",
     )
 
     cloud_commands = cloud_parser.add_subparsers(
@@ -568,9 +571,9 @@ def argparser():
         help="install cloud service",
         description=(
             "Install cloud service.\n\n"
-            "The `github-runners <options> service install` command will be executed on the cloud server instance.\n\n"
-            "Note: Just like with the `github-runners <options> service install` command,\n"
-            "      the options that are passed to the `github-runners <options> cloud install` command\n"
+            "The `github-hetzner-runners <options> service install` command will be executed on the cloud server instance.\n\n"
+            "Note: Just like with the `github-hetzner-runners <options> service install` command,\n"
+            "      the options that are passed to the `github-hetzner-runners <options> cloud install` command\n"
             "      will be the same options with which the service will be executed."
         ),
         formatter_class=RawTextHelpFormatter,
@@ -600,7 +603,7 @@ def argparser():
         help="upgrade cloud service",
         description=(
             "Upgrade cloud service application.\n\n"
-            "If specific '--version' is specified then the `testflows.github.runners`\n"
+            "If specific '--version' is specified then the `testflows.github.hetzner.runners`\n"
             "package is upgraded to the specified version otherwise the version is\n"
             "upgraded to the latest available.\n\n"
             "Note: The service is not re-installed during the package upgrade process.\n"
@@ -625,7 +628,7 @@ def argparser():
         help="delete cloud service",
         description=(
             "Delete cloud service.\n\n"
-            "Deletes `github-runners` service running on the cloud server instance\n"
+            "Deletes `github-hetzner-runners` service running on the cloud server instance\n"
             "by first stopping the service and then deleting the server."
         ),
         formatter_class=RawTextHelpFormatter,
@@ -651,8 +654,8 @@ def argparser():
         help="install",
         description=(
             "Install service.\n\n"
-            "The `/etc/systemd/system/github-runners.service` file will be created and service will be started.\n\n"
-            "Note: The options that are passed to the `github-runners <options> service install` command\n"
+            "The `/etc/systemd/system/github-hetzner-runners.service` file will be created and service will be started.\n\n"
+            "Note: The options that are passed to the `github-hetzner-runners <options> service install` command\n"
             "      will be the same options with which the service will be executed."
         ),
         formatter_class=RawTextHelpFormatter,
