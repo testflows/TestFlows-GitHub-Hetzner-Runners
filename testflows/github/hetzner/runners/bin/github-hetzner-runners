@@ -76,7 +76,7 @@ def argparser():
     """Command line argument parser."""
 
     parser = ArgumentParser(
-        "GitHub Actions runners scale up service",
+        "GitHub Actions Runners Using Hetzner Cloud Autoscaling Service",
         description=description,
         formatter_class=RawTextHelpFormatter,
     )
