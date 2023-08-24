@@ -217,7 +217,7 @@ def create_server(
     client = Client(token=hetzner_token)
 
     server_labels = {
-        f"github-runner-label-{i}": value for i, value in enumerate(labels)
+        f"github-hetzner-runner-label-{i}": value for i, value in enumerate(labels)
     }
     server_labels[server_ssh_key_label] = ssh_keys[0].name
 
@@ -272,7 +272,7 @@ def recycle_server(
     client = Client(token=hetzner_token, poll_interval=1)
 
     server_labels = {
-        f"github-runner-label-{i}": value for i, value in enumerate(labels)
+        f"github-hetzner-runner-label-{i}": value for i, value in enumerate(labels)
     }
     server_labels[server_ssh_key_label] = ssh_key.name
 
@@ -616,7 +616,7 @@ def scale_up(
                                 [
                                     value
                                     for name, value in server.labels.items()
-                                    if name.startswith("github-runner-label")
+                                    if name.startswith("github-hetzner-runner-label")
                                 ]
                             ),
                             server_type=server.server_type,
