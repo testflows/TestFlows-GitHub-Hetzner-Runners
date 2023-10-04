@@ -312,7 +312,7 @@ See these steps in action:
    :alt: Creating a GitHub Repository and Token
 
 ------------------------
-Creating a cloud service
+Creating A Cloud Service
 ------------------------
 
 With the GitHub repository and GitHub and Hetzner Cloud tokens in hand, we can deploy the **github-hetzner-runners** service
@@ -433,7 +433,7 @@ will create upto *5* runners for each queued up workflow run. If there is only o
 runners will be *5* unless more queued-up workflow runs appear, which could then speed up the execution of the run in progress.
 
 =============================
-Recycling powered-off servers
+Recycling Powered-Off Servers
 =============================
 
 By default, recycling of powered-off servers that have completed executing a job is turned on.
