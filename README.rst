@@ -21,7 +21,7 @@ A simple alternative to Github's `Recommended autoscaling solutions <https://doc
    You can easily navigate this documentation page by clicking on any title to jump to the `Table of Contents`_.
    Try it out, and remember, if you get lost, just click any title!
 
-The **github-hetzner-runners** service program starts and monitors queued up jobs for GitHub Actions workflows.
+The **github-hetzner-runners** service program starts and monitors queued-up jobs for GitHub Actions workflows.
 When a new job is queued up, it creates a new Hetzner Cloud server instance
 that provides an ephemeral GitHub Actions runner. Each server instance is automatically
 powered off when the job completes, and then powered off servers are
@@ -29,7 +29,7 @@ automatically deleted. Both **x64** (*x86*) and **arm64** (*arm*) runners are su
 See `Features`_ and `Limitations`_ for more details.
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GiHhub-Hetzner-Runners/master/docs/images/intro.gif
-   :align: center
+   :align: centre
    :alt: TestFlows GitHub Runners
 
 
@@ -42,7 +42,7 @@ Costs depend on the server type, number of jobs, and execution time. For each jo
 to avoid any cleanup. Server instances are not shared between jobs.
 
 :✋ Note:
-   Currently, Hetzner Cloud server instances are billed on an hourly basis. So a job that takes 1 min will be billed
+   Currently, Hetzner Cloud server instances are billed on an hourly basis. So a job that takes 1 minute will be billed
    the same way as for a job that takes 59 minutes. Therefore, the minimal cost
    for any job, the cost of the server for 1 hour plus the cost of one public IPv4 address.
 
@@ -58,7 +58,7 @@ Table of Contents
 Features
 ========
 
-* cost efficient on-demand runners using `Hetzner Cloud <https://www.hetzner.com/cloud>`_
+* cost-efficient on-demand runners using `Hetzner Cloud <https://www.hetzner.com/cloud>`_
 * supports server recycling to minimize costs
 * simple configuration, no Webhooks, no need for AWS lambdas, and no need to setup any GitHub application
 * supports specifying custom runner server types, images, and locations using job labels
@@ -70,7 +70,7 @@ Features
 * supports auto-replenishable fixed standby runner pools for jobs to be picked up immediately
 * supports limiting the maximum number of runners created for each workflow run
 * supports efficient GitHub API usage using HTTP caching and conditional requests
-* simpler alternative to what GitHub lists in `Recommended autoscaling solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_
+* simpler alternative to what GitHub lists in `Recommended Autoscaling Solutions: <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_
 
 ===========
 Limitations
@@ -104,7 +104,7 @@ Check that the **github-hetzner-runners** utility was installed correctly by exe
 
    github-hetzner-runners -v
 
-The **github-hetzner-runners** utility is installed in to the *~/.local/bin/* folder. Please make sure that this folder
+The **github-hetzner-runners** utility is installed in the *~/.local/bin/* folder. Please make sure that this folder
 is part of the **PATH**.
 
 .. code-block:: bash
@@ -115,7 +115,7 @@ is part of the **PATH**.
 
    ~/.local/bin/github-hetzner-runners
 
-If your **PATH** is missing this folder, on Ubuntu, modify your *~/.profile* and add the following section:
+If your **PATH** is missing this folder on Ubuntu, modify your *~/.profile* and add the following section:
 
 :~/.profile:
    .. code-block:: bash
@@ -148,8 +148,8 @@ Then, start the **github-hetzner-runners** program:
    07/22/2023 08:20:37 PM   INFO MainThread            main 🍀 Logging in to Hetzner Cloud
    07/22/2023 08:20:37 PM   INFO MainThread            main 🍀 Logging in to GitHub
    07/22/2023 08:20:37 PM   INFO MainThread            main 🍀 Getting repository testflows/testflows-github-hetzner-runners
-   07/22/2023 08:20:37 PM   INFO MainThread            main 🍀 Creating scale up service
-   07/22/2023 08:20:37 PM   INFO MainThread            main 🍀 Creating scale down service
+   07/22/2023 08:20:37 PM   INFO MainThread            main 🍀 Creating scale-up services
+   07/22/2023 08:20:37 PM   INFO MainThread            main 🍀 Creating scale-down services
    07/22/2023 08:20:38 PM   INFO   worker_2   create_server 🍀 Create server
    ...
 
@@ -214,13 +214,13 @@ Installing TestFlows Github Runners
 In order to launch the **github-hetzner-runners** program, we'll need to specify the GitHub repository as well as GitHub and
 Hetzner Cloud tokens. So, let's create these.
 
-----------------------------------------------------------
-Creating GitHub Repository with Actions Workflow and Token
-----------------------------------------------------------
+---------------------------------------------------------------
+Creating a GitHub repository with an Actions Workflow and Token
+---------------------------------------------------------------
 
 Before using the **github-hetzner-runners**, you need a GitHub repository with a GitHub Actions workflow set up.
 
-❶ First, create a GitHub Repository named **demo-testflows-github-hetzner-runners** and note the repository name.
+❶ First, create a GitHub repository named **demo-testflows-github-hetzner-runners** and note the repository name.
 
 The repository name will have the following format:
 
@@ -282,9 +282,9 @@ You should now have your GitHub repository ready.
 See these steps in action:
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Hetzner-Runners/master/docs/images/github_create_repo_and_token.gif
-   :align: center
+   :align: centre
    :width: 790px
-   :alt: Creating GitHub Repository and Token
+   :alt: Creating a GitHub Repository and Token
 
 ------------------------------------------
 Creating a Hetzner Cloud Project and Token
@@ -307,9 +307,9 @@ You should now have your Hetzner Cloud project ready.
 See these steps in action:
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Hetzner-Runners/master/docs/images/hetzner_create_project_and_token.gif
-   :align: center
+   :align: centre
    :width: 790px
-   :alt: Creating GitHub Repository and Token
+   :alt: Creating a GitHub Repository and Token
 
 ------------------------
 Creating a Cloud Service
