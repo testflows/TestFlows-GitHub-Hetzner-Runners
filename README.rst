@@ -412,7 +412,7 @@ By default, the maximum number of runners that could be created for a single wor
 is not defined.
 
 :❗Warning:
-   In general, GitHub does not allow you to assign a job to a specific runner or any available runner
+   In general, GitHub does not allow you to assign a job to a specific runner, so any available runner
    that matches the labels could be used. Therefore, one can't control how runners are allocated
    to queued workflow run jobs, and this is why the **--max-runners-in-workflow-run** option will not behave
    as one would intuitively expect.
