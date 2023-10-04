@@ -1710,7 +1710,7 @@ is set to *180* sec.
 Zombie Servers
 --------------
 
-The scale down service will delete any zombie servers. A zombie server is defined as any server that fails to register its runner within
+The scale-down service will delete any zombie servers. A zombie server is defined as any server that fails to register its runner within
 the **max-runner-registration-time**. The **max-runner-registration-time** can be specified using the **--max-runner-registration-time** option
 which by default is set to *180* sec.
 
@@ -1720,24 +1720,24 @@ Handling Failing Conditions
 
 The program is designed to handle the following failing conditions:
 
-:Server Never Registers a Runner:
-   The server will remain in **running** state and should be reclaimed by the scale down service when it checks the actual runners registered for current servers.
+:The server Never Registers a Runner:
+   The server will remain in a **running** state and should be reclaimed by the scale-down service when it checks the actual runners registered for the current servers.
    If it finds a server that is **running** but no runner is active for it it will be deleted after the **max-runner-registration-time** period.
 
 :The *./config.sh* Command Fails:
    The behavior will be the same as for the **Server Never Registers a Runner** case above.
 
 :The *./run.sh* Command Fails:
-   The server will be powered off by the **startup** script and deleted by the scale down service.
+   The server will be powered-off by the **startup** script and deleted by the scale-down service.
 
-:Creating Server For Queued Job Fails:
-   If creation of the server fails for some reason, then the scale up service will retry the operation in the next interval as the job's status will remain **queued**.
+:Creating A Server For Queued Job Fails:
+   If creation of the server fails for some reason, then the scale-up service will retry the operation in the next interval, as the job's status will remain **queued**.
 
 :Runner Never Gets a Job Assigned:
-   If the runner never gets a job assigned, then the scale down service will remove the runner and delete its server after the **max-unused-runner-time** period.
+   If the runner never gets a job assigned, then the scale-down service will remove the runner and delete its server after the **max-unused-runner-time** period.
 
 :Runner Created With a Mismatched Labels:
-   The behavior will be the same as for the **Runner Never Gets a Job Assigned** case above.
+   The behavior will be the same as in the **Runner Never Gets a Job Assigned** case above.
 
 ===============
 Program Options
@@ -1749,17 +1749,17 @@ The following options are supported:
   show this help message and exit
 
 * **-v, --version**
-  show program's version number and exit
+  show the program's version number and exit
 
 * **--license**
-  show program's license and exit
+  show the program's license and exit
 
 * **-r {on,off}, --recycle {on,off}**
-  turn on or off recycling of powered off servers, either 'on' or 'off', default: *on*
+  turn on or off recycling of powered-off servers, either 'on' or 'off', default: *on*
 
 * **--end-of-life minutes**
-  number of minutes in 1 hour (60 minutes) period after which a recyclable server
-  is considered to have reached its end of life and thus is deleted, default: *50*
+  number of minutes in an hour (60 minutes) period after which a recyclable server
+  is considered to have reached its end of life and thus is deleted; default: *50*
 
 * **-c path, --config path**
   program configuration file
@@ -1817,7 +1817,7 @@ The following options are supported:
   path to the custom ARM64 server startup script
 
 * **--max-powered-off-time sec**
-  maximum time after which a powered off server is deleted, default: *60* sec
+  maximum time after which a powered-off server is deleted, default: *60* sec
 
 * **--max-unused-runner-time sec**
   maximum time after which an unused runner is removed and its server deleted, default: *180* sec
@@ -1829,10 +1829,10 @@ The following options are supported:
   maximum time to wait for the server to be in the running state, default: *180* sec
 
 * **--scale-up-interval sec**
-  scale up service interval, default: *15* sec
+  scale-up service interval, default: *15* sec
 
 * **--scale-down-interval sec**
-  scale down service interval, default: *15* sec
+  scale-down service interval, default: *15* sec
 
 * **--debug**
   enable debugging mode, default: *False*
