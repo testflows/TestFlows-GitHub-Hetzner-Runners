@@ -1558,7 +1558,7 @@ Also,
 
 :Note:
    There is no guarantee that a given runner will pick the job with the exact *job.id* that caused it to be created.
-   This is expected, and for each **queued** job a unique runner will be created.The number of runners will be
+   This is expected, and for each **queued** job a unique runner will be created. The number of runners will be
    equal the number of jobs, and therefore, under normal conditions, all jobs will be executed as expected.
 
 -------------------------
