@@ -1583,7 +1583,7 @@ the **setup** and **startup** scripts.
 
    The default server type is **cx11** which is an Intel, 1 vCPU, 2GB RAM shared-cpu x64 instance.
 
-   You can specify different x64 server instance types by using the **type-{name}** runner label.
+   You can specify different x64 server instance type by using the **type-{name}** runner label.
    The **{name}** must be a valid `Hetzner Cloud <https://www.hetzner.com/cloud>`_
    server type name such as *cx11*, *cpx21* etc.
 
