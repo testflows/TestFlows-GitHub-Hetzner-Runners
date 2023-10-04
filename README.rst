@@ -312,17 +312,17 @@ See these steps in action:
    :alt: Creating a GitHub Repository and Token
 
 ------------------------
-Creating a Cloud Service
+Creating a cloud service
 ------------------------
 
 With the GitHub repository and GitHub and Hetzner Cloud tokens in hand, we can deploy the **github-hetzner-runners** service
-to Hetzner Cloud instance. This way, the service is not running on your local machine.
+to the Hetzner Cloud instance. This way, the service is not running on your local machine.
 
-The deployment, we'll create a **github-hetzner-runners** instance in your Hetzner Cloud project on which the service will be running.
+During the deployment, we'll create a **github-hetzner-runners** instance in your Hetzner Cloud project on which the service will be running.
 See the `Running as a Cloud Service`_ section for details.
 
 ❶ To deploy the service run the **github-hetzner-runners cloud deploy** command and specify your
-GitHub repository, GitHub and Hetzner Cloud tokens using
+GitHub repository, GitHub, and Hetzner Cloud tokens using
 **GITHUB_REPOSITORY**, **GITHUB_TOKEN**, and **HETZNER_TOKEN** environment variables.
 
 .. code-block:: bash
@@ -337,23 +337,23 @@ You should now have the cloud service up and running.
 See these steps in action:
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Hetzner-Runners/master/docs/images/cloud_deploy.gif
-   :align: center
+   :align: centre
    :width: 625px
    :alt: Deploying Cloud Service
 
 ------------------------------------------
-Waiting for GitHub Actions Job to Complete
+Waiting for the GitHub Actions Job to Complete
 ------------------------------------------
 
 ❶ The **github-hetzner-runners** cloud service is now running. So, now you can just sit back and wait until **github-hetzner-runners**
-spins up a new runner to complete any queued up GitHub Actions jobs in your GitHub repository.
+spins up a new runner to complete any queued-up GitHub Actions jobs in your GitHub repository.
 
 See this step in action:
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Hetzner-Runners/master/docs/images/github_job_completed.gif
-   :align: center
+   :align: centre
    :width: 790px
-   :alt: Waiting For GitHub Actions Job to Complete
+   :alt: Waiting For the GitHub Actions Job to Complete
 
 As you can see, our job was executed and completed using our own self-hosted runner!
 
@@ -367,7 +367,7 @@ As you can see, our job was executed and completed using our own self-hosted run
       github-hetzner-runners cloud log -f
 
 =========================
-Installation From Sources
+Installation from Sources
 =========================
 
 For development, you can install from sources as follows:
@@ -404,22 +404,22 @@ based on your Hetzner Cloud limits using the **-m count, --max-runners count** o
 
    github-hetzner-runners --max-runners 40
 
-=============================================================
-Specifying the Maximum Number of Runners Used in Workflow Run
-=============================================================
+===============================================================
+Specifying the Maximum Number of Runners Used in Workflow a Run
+===============================================================
 
 By default, the maximum number of runners that could be created for a single workflow run
 is not defined.
 
 :❗Warning:
-   In general, GitHub does not allow you to assign a job to a specific runner, and any available runner
+   In general, GitHub does not allow you to assign a job to a specific runner or any available runner
    that matches the labels could be used. Therefore, one can't control how runners are allocated
    to queued workflow run jobs, and this is why the **--max-runners-in-workflow-run** option will not behave
    as one would intuitively expect.
 
 If you set the **--max-runners-in-workflow-run** to some value *X*, then **github-hetzner-runners**
 will create the *X * number of queued workflow runs* runners. How these runners will be allocated by
-GitHub is out of our control. Therefore, the more runs queued up, the more runners will be created, up to the **--max-runners**
+GitHub is out of our control. Therefore, the more runs queued-up, the more runners will be created, up to the **--max-runners**
 limit, to try to complete the jobs faster. However, this does not mean that you will see exactly *X* number of jobs
 being executed in each queued workflow run.
 
@@ -430,22 +430,22 @@ For example,
    github-hetzner-runners --max-runners 40 --max-runners-in-workflow-run 5
 
 will create upto *5* runners for each queued up workflow run. If there is only one workflow running, then the maximum number of
-runners will be *5* unless more queued up workflow runs appear, which could then speed up the execution of the run in progress.
+runners will be *5* unless more queued-up workflow runs appear, which could then speed up the execution of the run in progress.
 
 =============================
-Recycling Powered-Off Servers
+Recycling powered-off servers
 =============================
 
 By default, recycling of powered-off servers that have completed executing a job is turned on.
 
 Recycling allows for minimizing costs by allowing multiple runners to be brought up on
-the same server instance as Hetzner Cloud, which bills servers in 1 hour increments.
+the same server instance as Hetzner Cloud, which bills servers in 1-hour increments.
 Therefore, it is inefficient to delete a server if it only executed a job
 that runs for a few minutes. Instead, after completing a job, the server is powered off
 and if it can be recycled, it is rebuilt from scratch by reinstalling the image
 thus providing a clean environment for the next job.
 
-Powered off servers are marked as recyclable by changing their name to **github-hetzner-runner-recycle-{uid}**.
+Powered-off servers are marked as recyclable by changing their name to **github-hetzner-runner-recycle-{uid}**.
 
 Recyclable servers are deleted when they reach their end of life period
 which is defined by the **--end-of-life** option, and by default is set to *50* minutes.
@@ -480,9 +480,9 @@ The *unused budget* is defined as follows:
 
 A recyclable server is recycled for a new job if it matches the following:
 
-* server type matches exactly what the job requires or the default type
-* server location matches exactly if a job requests a runner in a specific location or the default location is specified
-* server has matching SSH keys
+* The server type matches exactly what the job requires, or the default type
+* The server location matches exactly if a job requests a runner in a specific location or the default location is specified
+* The server has matching SSH keys
 
 :✋ Note:
    **Matching server type exactly means that even if a bigger, more expensive server type
@@ -525,7 +525,7 @@ that label.
 Jobs That Require the Docker Engine
 ===================================
 
-For jobs that require Docker to be installed, you can use the standard `Hetzner Docker CE application <https://docs.hetzner.com/cloud/apps/list/docker-ce/>`_
+For jobs that require Docker to be installed, you can use the standard `Hetzner Docker CE application: <https://docs.hetzner.com/cloud/apps/list/docker-ce/>`_
 which can be specified using the **image-** label. See `Specifying the Runner Image`_ for more details about specifying custom runner images.
 
 For example
@@ -552,12 +552,12 @@ Specifying the Runner Type
 x64 Runners
 -----------
 
-The default server type is **cx11** which is an Intel, 1 vCPU, 2GB RAM shared-cpu x64 instance.
+The default server type is **cx11**, which is an Intel, 1 vCPU, 2GB RAM shared-cpu x64 instance.
 
 :✋ Note:
-   You can use **--default-type** option to set a different default server type.
+   You can use the **--default-type** option to set a different default server type.
 
-You can specify different x64 server instance type by using the **type-{name}** runner label.
+You can specify different x64 server instance types by using the **type-{name}** runner label.
 The **{name}** must be a valid `Hetzner Cloud server type <https://www.hetzner.com/cloud>`_
 name such as *cx11*, *cpx21* etc.
 
@@ -573,13 +573,13 @@ as follows:
 ARM64 Runners
 -------------
 
-The default,server type is **cx11**, which is an Intel, 1 vCPU, 2GB RAM shared-cpu x64 instance.
+The default server type is **cx11**, which is an Intel, 1 vCPU, 2GB RAM shared-cpu x64 instance.
 Therefore, in order to use ARM64 runners, you must specify the ARM64 server instance type by using the **type-{name}** runner label.
 The **{name}** must be a valid `ARM64 Hetzner Cloud server type <https://www.hetzner.com/cloud>`_
 name such as *cax11*, *cax21* etc. which correspond to the Ampere Altra, 2 vCPU, 4GB RAM and
 4 vCPU, 8GB RAM shared-cpu ARM64 instances, respectively.
 
-For example, to use Ampere Altra, 4 vCPU, 8GB RAM shared-cpu ARM64 instance, you must define the **runs-on**
+For example, to use the Ampere Altra, 4 vCPU, 8GB RAM shared-cpu ARM64 instance, you must define the **runs-on**
 as follows:
 
 .. code-block:: yaml
@@ -587,9 +587,9 @@ as follows:
    job-name:
       runs-on: [self-hosted, type-cax21]
 
-==========================
-Specifying Runner Location
-==========================
+==============================
+Specifying the runner location
+==============================
 
 By default, the default location of the server where the runner will be running is not specified. You can use the **--default-location**
 option to force a specific default server location.
@@ -720,7 +720,7 @@ where,
 
 * **labels** specifies an array of labels with which standby runners in this group should be created
 * **count** specifies the count of how many runners should be created for the group
-* **replenish_immediately** specifies if the sandby runners should be replenished as soon as they become busy after picking up a job, default: true
+* **replenish_immediately** specifies if the sandby runners should be replenished as soon as they become busy after picking up a job; default: true
 
 For example,
 
@@ -738,14 +738,14 @@ For example,
 Specifying Logger Configuration
 ===============================
 
-You can specify custom logger configuration using a configuration file.
+You can specify a custom logger configuration using a configuration file.
 
 :✋ Note:
    A custom logger configuration can only be specified using a configuration file.
    See `Using a Configuration File`_ for more details.
 
 The logger configuration is specified in the configuration file using the **logger_config** object.
-For more information about the logger configuration, see `Configuration dictionary schema <https://docs.python.org/3/library/logging.config.html#logging-config-dictschema>`_ in Python documentation.
+For more information about the logger configuration, see `Configuration dictionary schema <https://docs.python.org/3/library/logging.config.html#logging-config-dictschema>`_ in the Python documentation.
 
 Any custom logger configuration must at least define **stdout** and **rotating_service_logfile** handlers
 as well as configure **testflows.github.hetzner.runners** in the **loggers**.
@@ -785,7 +785,7 @@ For example,
                           - rotating_service_logfile
 
 If the logger configuration is using a custom format for the **rotating_service_logfile**, then a custom **logger_format** object
-must be defined to specify the format of the service's rotating log file which is needed for the **service log** and **cloud log** commands.
+must be defined to specify the format of the service's rotating log file, which is needed for the **service log** and **cloud log** commands.
 
 For the example above, the custom **logger_format** is the following:
 
@@ -823,7 +823,7 @@ For the example above, the custom **logger_format** is the following:
                  width: 80
 
 Note that the *date*, *time*, and *time_ampm* columns come from the **datefmt** definition, which
-defines the **asctime** as a three column field consisting of *date*, *time*, and *time_ampm* columns
+defines the **asctime** as a three-column field consisting of *date*, *time*, and *time_ampm* columns
 separated by a space.
 
 .. code-block:: yaml
