@@ -214,9 +214,9 @@ Installing TestFlows Github Runners
 In order to launch the **github-hetzner-runners** program, we'll need to specify the GitHub repository as well as GitHub and
 Hetzner Cloud tokens. So, let's create these.
 
----------------------------------------------------------------
-Creating a GitHub repository with an Actions Workflow and Token
----------------------------------------------------------------
+------------------------------------------------------------
+Creating a GitHub Repository With Actions Workflow and Token
+------------------------------------------------------------
 
 Before using the **github-hetzner-runners**, you need a GitHub repository with a GitHub Actions workflow set up.
 
@@ -312,7 +312,7 @@ See these steps in action:
    :alt: Creating a GitHub Repository and Token
 
 ------------------------
-Creating A Cloud Service
+Creating a Cloud Service
 ------------------------
 
 With the GitHub repository and GitHub and Hetzner Cloud tokens in hand, we can deploy the **github-hetzner-runners** service
@@ -341,9 +341,9 @@ See these steps in action:
    :width: 625px
    :alt: Deploying Cloud Service
 
-------------------------------------------
+----------------------------------------------
 Waiting for the GitHub Actions Job to Complete
-------------------------------------------
+----------------------------------------------
 
 ❶ The **github-hetzner-runners** cloud service is now running. So, now you can just sit back and wait until **github-hetzner-runners**
 spins up a new runner to complete any queued-up GitHub Actions jobs in your GitHub repository.
