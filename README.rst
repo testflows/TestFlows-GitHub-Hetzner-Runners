@@ -545,7 +545,7 @@ For example
          runs-on: [self-hosted, type-cax11, image-arm-app-docker-ce]
 
 ==========================
-Specifying the Runner Type
+Specifying The Runner Type
 ==========================
 
 -----------
@@ -588,7 +588,7 @@ as follows:
       runs-on: [self-hosted, type-cax21]
 
 ==============================
-Specifying the runner location
+Specifying The Runner Location
 ==============================
 
 By default, the default location of the server where the runner will be running is not specified. You can use the **--default-location**
@@ -606,7 +606,7 @@ For example,
       runs-on: [self-hosted, type-cx11, in-ash]
 
 ===========================
-Specifying the Runner Image
+Specifying The Runner Image
 ===========================
 
 By default, the default image of the server for the runner is **ubuntu-22.04**. You can use the **--default-image**
@@ -648,7 +648,7 @@ For example,
          runs-on: [self-hosted, type-cx11, in-ash, image-x86-snapshot-snapshot_description]
 
 ================================================
-Specifying the Custom Runner Server Setup Script
+Specifying The Custom Runner Server Setup Script
 ================================================
 
 You can specify a custom runner server setup script using the **--setup-script** option.
@@ -854,9 +854,9 @@ For example,
    ❌ off        github-hetzner-runner-5811138574-15753660130
    ❌ off        github-hetzner-runner-recycle-1691595481.196499
 
-================================
-Opening SSH Client to the Server
-================================
+====================================
+Opening The SSH Client To The Server
+====================================
 
 For debugging, you can open an SSH client to the current server using the **ssh** command and specify the name of the server you would like to connect to.
 For the **ssh** command to work, you need to specify the **--hetzner-token** and have the correct private SSH key.
@@ -872,7 +872,7 @@ For example,
    github-hetzner-runners ssh github-hetzner-runner-5811138574-15753659850
 
 ======================================
-Deleting All Runners And Their Servers
+Deleting All Runners and Their Servers
 ======================================
 
 You can delete all runners, including standby runners, and their servers using the **delete** command.
@@ -897,13 +897,13 @@ You can delete all runners, including standby runners, and their servers using t
 Using a Configuration File
 ==========================
 
-Instead of passing configuration options using command line arguments, you can use
+Instead of passing configuration options using command-line arguments, you can use
 configuration file. The configuration file uses YAML format, and it is usually named **config.yaml**. You can find the complete schema
 in `schema.json <https://github.com/testflows/TestFlows-github-hetzner-runners/blob/main/testflows/github/hetzner/runners/config/schema.json>`_.
 
 :✋ Note:
-   When you mix command line options with a custom configuration file,
-   explicit command line options take precedence over the values that are defined
+   When you mix command-line options with a custom configuration file,
+   explicit command-line options take precedence over the values that are defined
    for the same parameters in the configuration file.
 
 You can specify the default configuration by placing the configuration in the *~/.github-hetzner-runners/config.yaml* file or
@@ -1175,7 +1175,7 @@ Selecting Log Columns
 =====================
 
 You can use the **-c name[:width][,...], --columns name[:width][,...]** option to specify
-a comma separated list of columns to include in the output as well as their optional width.
+a comma-separated list of columns to include in the output as well as their optional width.
 
 For example,
 
@@ -1187,7 +1187,7 @@ For example,
 
    Using config file: /home/user/.github-hetzner-runners/config.yaml
    Using config file: /home/user/.github-hetzner-runners/config.yaml
-   18:13:50 🍀 Consumed 0 calls in 60 sec, 5000 calls left,
+   18:13:50 🍀 Consumed 0 calls in 60 seconds, 5000 calls left,
             reset in 3599 sec
    18:14:50 🍀 Logging in to GitHub
    18:14:50 🍀 Checking current API calls consumption rate
@@ -1551,21 +1551,21 @@ does not pick up a job for which it was created within the **max-unused-runner-t
 
 :Note:
    Given that the server name is fixed and specific for each *job.id*, if multiple `github-hetzner-runners` are running in parallel, then
-   only 1 server will be created for a given `job` and any other attempts to create a server with the same name will be rejected
+   only one server will be created for a given `job`, and any other attempts to create a server with the same name will be rejected
    by the Hetzner Cloud.
 
 Also,
 
 :Note:
    There is no guarantee that a given runner will pick the job with the exact *job.id* that caused it to be created.
-   This is expected, and for each **queued** job a unique runner will be created the number of runners will be
+   This is expected, and for each **queued** job a unique runner will be created.The number of runners will be
    equal the number of jobs, and therefore, under normal conditions, all jobs will be executed as expected.
 
 -------------------------
 Maximum Number of Runners
 -------------------------
 
-By default, the maximum number of runners and, therefore the maximum number of server instances are not set and are therefore unlimited.
+By default, the maximum number of runners and, therefore, the maximum number of server instances are not set and are therefore unlimited.
 You can set the maximum number of runners using the **--max-runners** option.
 
 .. code-blocks::bash
@@ -1583,7 +1583,7 @@ the **setup** and **startup** scripts.
 
    The default server type is **cx11** which is an Intel, 1 vCPU, 2GB RAM shared-cpu x64 instance.
 
-   You can specify different x64 server instance type by using the **type-{name}** runner label.
+   You can specify different x64 server instance types by using the **type-{name}** runner label.
    The **{name}** must be a valid `Hetzner Cloud <https://www.hetzner.com/cloud>`_
    server type name such as *cx11*, *cpx21* etc.
 
@@ -1606,7 +1606,7 @@ the **setup** and **startup** scripts.
 
 :SSH Access:
 
-   The server is configured to be accessed using *ssh* utility, and the SSH public key path is specified using the **--ssh-key**
+   The server is configured to be accessed using the *ssh* utility, and the SSH public key path is specified using the **--ssh-key**
    option.
 
 :Image Configuration:
@@ -1616,7 +1616,7 @@ the **setup** and **startup** scripts.
 The Setup Script
 ----------------
 
-The **setup** script creates and configures **runner** user that has **sudo** privileges.
+The **setup** script creates and configures a **runner** user that has **sudo** privileges.
 
 :Setup:
 
@@ -1640,9 +1640,9 @@ The **startup** script installs the GitHub Actions runner. After installation, i
 The *--ephemeral* mode causes the runner to exit as soon as it completes a job. After the runner exits, the server is powered off.
 
 :✋ Note:
-   The **startup** script is executed as **ubuntu** user and therefore you must use **sudo** for any commands that need *root* privileges.
+   The **startup** script is executed as a **ubuntu** user, and therefore you must use **sudo** for any commands that need *root* privileges.
 
-The x64 **startup** script installs and configures x64 version of the runner.
+The x64 **startup** script installs and configures the x64 version of the runner.
 
 :x64:
 
@@ -1690,20 +1690,20 @@ Scaling Down Runners
 Powered Off Servers
 -------------------
 
-The program scales down runners by first cleaning up powered off servers. The scaled down service relies on the fact
+The program scales down runners by first cleaning up powered-off servers. The scaled-down service relies on the fact
 that the `startup <#the-start-up-script>`_ script starts an ephemeral runner that will pick up only 1 job and then power itself off after the job is complete.
 
-The powered off servers are deleted after the **max-powered-off-time** interval which
+The powered-off servers are deleted after the **max-powered-off-time** interval, which
 can be specified using the **--max-powered-off-time** option, which by default is set to *20* sec.
 
 --------------
 Unused Runners
 --------------
 
-The scale down service also monitors all the runners that have **unused** status and tries to delete any servers associated with such
+The scale-down service also monitors all the runners that have **unused** status and tries to delete any servers associated with such
 runners if the runner is **unused** for more than the **max-unused-runner-time** period. This is needed in case a runner never gets a job
-assigned to it, and the server will stay in the power on state. This cycle relies on the fact that the runner's name
-is the same as server's name. The **max-unused-runner-time** can be specified using the **--max-unused-runner-time** option, which by default
+assigned to it, and the server will stay in the power-on state. This cycle relies on the fact that the runner's name
+is the same as the server's name. The **max-unused-runner-time** can be specified using the **--max-unused-runner-time** option, which by default
 is set to *180* sec.
 
 --------------
