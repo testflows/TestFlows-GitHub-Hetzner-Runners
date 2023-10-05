@@ -29,7 +29,7 @@ automatically deleted. Both **x64** (*x86*) and **arm64** (*arm*) runners are su
 See `Features`_ and `Limitations`_ for more details.
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GiHhub-Hetzner-Runners/master/docs/images/intro.gif
-   :align: centre
+   :align: center
    :alt: TestFlows GitHub Runners
 
 
@@ -282,7 +282,7 @@ You should now have your GitHub repository ready.
 See these steps in action:
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Hetzner-Runners/master/docs/images/github_create_repo_and_token.gif
-   :align: centre
+   :align: center
    :width: 790px
    :alt: Creating a GitHub Repository and Token
 
@@ -307,7 +307,7 @@ You should now have your Hetzner Cloud project ready.
 See these steps in action:
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Hetzner-Runners/master/docs/images/hetzner_create_project_and_token.gif
-   :align: centre
+   :align: center
    :width: 790px
    :alt: Creating a GitHub Repository and Token
 
@@ -337,7 +337,7 @@ You should now have the cloud service up and running.
 See these steps in action:
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Hetzner-Runners/master/docs/images/cloud_deploy.gif
-   :align: centre
+   :align: center
    :width: 625px
    :alt: Deploying Cloud Service
 
@@ -351,7 +351,7 @@ spins up a new runner to complete any queued-up GitHub Actions jobs in your GitH
 See this step in action:
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Hetzner-Runners/master/docs/images/github_job_completed.gif
-   :align: centre
+   :align: center
    :width: 790px
    :alt: Waiting For the GitHub Actions Job to Complete
 
