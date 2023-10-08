@@ -1263,7 +1263,7 @@ using the **cloud deploy** command.
    export GITHUB_REPOSITORY=testflows/github-hetzner-runners
    export HETZNER_TOKEN=GJzdc...
 
-   github-hetzner-runners deploy
+   github-hetzner-runners cloud deploy
 
 You can specify the version of the package to be installed using the **--version** option. By default, the current local package
 version will be installed on the cloud service server. You can also pass *latest* as the value to install the latest available
@@ -1271,7 +1271,7 @@ version.
 
 .. code-block:: bash
 
-   github-hetzner-runners deploy --version latest
+   github-hetzner-runners cloud deploy --version latest
 
 The **deploy** command will use the following default values:
 
@@ -1309,7 +1309,7 @@ You can customize deployment server location, type, and image using the *--locat
 
 .. code-block:: bash
 
-   github-hetzner-runners deploy --location nbg1 --type cx11 --image ubuntu-22.04
+   github-hetzner-runners cloud deploy --location nbg1 --type cx11 --image ubuntu-22.04
 
 The cloud instance that runs the **github-hetzner-runners** service can either be x64 or ARM64 instance. By default, **cpx11**
 AMD, 2 vCPU, 2GB RAM, shared-cpu x64 instance type is used.
@@ -1328,7 +1328,7 @@ as the value of the **--type** as follows:
 
 .. code-block:: bash
 
-   github-hetzner-runners deploy --location fsn1 --type cax21 --image ubuntu-22.04
+   github-hetzner-runners cloud deploy --location fsn1 --type cax21 --image ubuntu-22.04
 
 Using x64 Instance
 ==================
