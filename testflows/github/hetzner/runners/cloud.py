@@ -327,7 +327,7 @@ def delete(args, config: Config):
         if not server:
             raise ValueError(f"server {server_name} not found")
 
-    with Action("Uninstalling service"):
+    with Action("Uninstalling service", ignore_fail=True):
         command = f"\"su - ubuntu -c 'github-hetzner-runners service uninstall'\""
         ssh(server, command, stacklevel=4)
 
