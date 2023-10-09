@@ -508,8 +508,9 @@ def parse_config(filename: str):
                         label, str
                     ), f"config.standby_runners[{i}].labels[{j}]: {label} is not a string"
             if entry.get("count") is not None:
+                v = entry["count"]
                 assert (
-                    isinstance(entry["count"], int) and v > 0
+                    isinstance(v, int) and v > 0
                 ), f"config.standby_runners[{i}].count: is not an integer > 0"
             if entry.get("replenish_immediately") is not None:
                 assert isinstance(

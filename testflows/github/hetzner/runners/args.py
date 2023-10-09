@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import sys
 import argparse
 
 from hcloud.images.domain import Image
@@ -143,7 +144,8 @@ def config_type(v):
         config = parse_config(v)
         config.config_file = v
     except Exception as e:
-        # print_exception(e)
+        if "--debug" in sys.argv:
+            print_exception(e)
         raise ArgumentTypeError(str(e))
 
     return config
