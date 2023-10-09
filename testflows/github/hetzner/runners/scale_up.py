@@ -763,7 +763,9 @@ def scale_up(
                                     servers=servers, labels=labels
                                 )
                             else:
-                                available = count_present(server=servers, labels=labels)
+                                available = count_present(
+                                    servers=servers, labels=labels
+                                )
 
                             if available < standby_runner.count:
                                 for _ in range(standby_runner.count - available):
