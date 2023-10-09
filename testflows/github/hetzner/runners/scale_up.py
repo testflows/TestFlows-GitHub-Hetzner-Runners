@@ -307,10 +307,22 @@ def recycle_server(
     )
 
 
+def count_available_runners(runners: list[SelfHostedActionsRunner], labels: set[str]):
+    """Return number of available runners that match labels (subset)."""
+    count = 0
+
+    for runner in runners:
+        if runner.status == "online":
+            runner_labels = set([label["name"] for label in runner.labels()])
+            if labels.issubset(runner_labels):
+                if not runner.busy:
+                    count += 1
+
+    return count
+
+
 def count_available(servers: list[RunnerServer], labels: set[str]):
-    """Return number of available servers that match
-    that match labels (subset).
-    """
+    """Return number of available servers that match labels (subset)."""
     count = 0
 
     for runner_server in servers:
@@ -324,9 +336,7 @@ def count_available(servers: list[RunnerServer], labels: set[str]):
 
 
 def count_present(servers: list[RunnerServer], labels: set[str]):
-    """Return number of present servers that match
-    that match labels (subset).
-    """
+    """Return number of present servers that match labels (subset)."""
     count = 0
 
     for runner_server in servers:
@@ -735,6 +745,18 @@ def scale_up(
                                                 f"Skipping {job} with {labels} as it is missing label '{with_label}'",
                                                 server_name=server_name,
                                                 interval=interval,
+                                            ):
+                                                continue
+
+                                    with Action(
+                                        f"Checking available runners for {job}"
+                                    ):
+                                        available = count_available_runners(
+                                            runners=runners, labels=labels
+                                        )
+                                        if available > 0:
+                                            with Action(
+                                                f"Found at least one potentially available runner for {job}"
                                             ):
                                                 continue
 
