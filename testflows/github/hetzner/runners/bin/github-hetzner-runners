@@ -16,6 +16,7 @@
 import os
 import sys
 import time
+import queue
 import tempfile
 import logging
 import threading
@@ -806,6 +807,7 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
     """Auto-scale runners service."""
     ssh_keys: list[SSHKey] = []
     terminate = threading.Event()
+    mailbox = queue.Queue(maxsize=0)
 
     try:
         with Action("Logging in to Hetzner Cloud"):
@@ -844,6 +846,7 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
                 scale_up_service: Future = worker_pool.submit(
                     scale_up,
                     terminate=terminate,
+                    mailbox=mailbox,
                     ssh_keys=ssh_keys,
                     worker_pool=worker_pool,
                     config=config,
@@ -854,6 +857,7 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
                     scale_down,
                     ssh_key=ssh_keys[0],
                     terminate=terminate,
+                    mailbox=mailbox,
                     config=config,
                 )
 
@@ -923,11 +927,11 @@ if __name__ == "__main__":
     else:
         config = Config()
 
+    config.update(args)
+
     if config.debug:
         Action.debug = True
         logging_level = logging.DEBUG
-
-    config.update(args)
 
     configure_logger(
         config=config,

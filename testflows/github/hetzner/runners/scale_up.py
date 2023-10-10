@@ -13,10 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import math
 import time
-import uuid
-import random
+import queue
 import logging
 import threading
 
@@ -31,7 +29,7 @@ from .config import standby_runner as StandbyRunner
 
 from .server import wait_ssh, ssh, wait_ready, age
 
-from hcloud import Client
+from hcloud import Client, APIException
 from hcloud.ssh_keys.domain import SSHKey
 from hcloud.server_types.domain import ServerType
 from hcloud.locations.domain import Location
@@ -54,6 +52,23 @@ standby_server_name_prefix = f"{server_name_prefix}standby-"
 standby_runner_name_prefix = standby_server_name_prefix
 recycle_server_name_prefix = f"{server_name_prefix}recycle-"
 server_ssh_key_label = "github-hetzner-runner-ssh-key"
+
+
+@dataclass
+class ScaleUpFailureMessage:
+    """Scale up server failure."""
+
+    time: float
+    labels: set[str]
+    server_name: str
+    exception: Exception
+
+
+class MaxNumberOfServersReached(Exception):
+    """Exception to indicate that scale up service
+    reached maximum number of servers."""
+
+    pass
 
 
 @dataclass
@@ -196,6 +211,11 @@ def get_startup_script(server_type: ServerType, x64, arm64):
     if server_type.name.lower().startswith("ca"):
         return arm64
     return x64
+
+
+def raise_exception(exc):
+    """Task to raise an exception using the worker pool."""
+    raise exc
 
 
 def create_server(
@@ -398,6 +418,7 @@ def recyclable_server_match(
 
 def scale_up(
     terminate: threading.Event,
+    mailbox: queue.Queue,
     worker_pool: ThreadPoolExecutor,
     ssh_keys: list[SSHKey],
     config: Config,
@@ -416,7 +437,6 @@ def scale_up(
     debug: bool = config.debug
     standby_runners: list[StandbyRunner] = config.standby_runners
     recycle: bool = config.recycle
-    server_prices: dict[str, float] = config.server_prices
     with_label: str = config.with_label
     label_prefix: str = config.label_prefix
     interval: int = -1
@@ -495,6 +515,7 @@ def scale_up(
                             timeout=max_server_ready_time,
                         )
                         future.server_name = name
+                        future.server_labels = labels
                         futures.append(future)
                         servers.pop(servers.index(server))
                         servers.append(
@@ -522,45 +543,16 @@ def scale_up(
                     stacklevel=3,
                     server_name=name,
                 ):
-                    if recyclable_servers:
-                        picking = "randomly picked"
-                        if server_prices is None:
-                            random.shuffle(recyclable_servers)
-                        else:
-                            picking = "the cheapest"
-
-                            def sorting_key(server):
-                                server_type_name = server.server_type.name
-                                server_location_name = server.server_location.name
-                                server_age = age(server.server) if server.server else 0
-                                try:
-                                    return (60 - server_age.minutes) - server_prices[
-                                        server_type_name
-                                    ][server_location_name] / 60
-                                except KeyError:
-                                    with Action(
-                                        f"price for {server_type_name} at {server_location_name} is missing",
-                                        level=logging.ERROR,
-                                        stacklevel=4,
-                                        server_name=name,
-                                    ):
-                                        return math.inf
-
-                            recyclable_servers.sort(key=sorting_key, reverse=True)
-
-                        recyclable_server = recyclable_servers.pop()
-
-                        with Action(
-                            f"Deleting {picking} recyclable server {recyclable_server.name} with type "
-                            f"{recyclable_server.server_type.name}",
-                            stacklevel=3,
-                            ignore_fail=True,
-                            server_name=name,
-                        ):
-                            recyclable_server.server.delete()
-                        servers.pop(servers.index(recyclable_server))
-                    else:
-                        raise StopIteration("maximum number of servers reached")
+                    future = worker_pool.submit(
+                        raise_exception,
+                        exc=MaxNumberOfServersReached(
+                            f"maximum number of servers reached {len(servers)}/{max_servers}"
+                        ),
+                    )
+                    future.server_name = name
+                    future.server_labels = labels
+                    futures.append(future)
+                    raise StopIteration("maximum number of servers reached")
 
         future = worker_pool.submit(
             create_server,
@@ -579,6 +571,7 @@ def scale_up(
             timeout=max_server_ready_time,
         )
         future.server_name = name
+        future.server_labels = labels
         futures.append(future)
         servers.append(
             RunnerServer(
@@ -815,7 +808,35 @@ def scale_up(
                         server_name=future.server_name,
                         interval=interval,
                     ):
-                        future.result()
+                        try:
+                            future.result()
+                        except Exception as exc:
+                            try:
+                                send_failure = False
+
+                                if isinstance(exc, MaxNumberOfServersReached):
+                                    send_failure = True
+
+                                if isinstance(exc, APIException):
+                                    if exc.code == "resource_limit_exceeded":
+                                        send_failure = True
+
+                                if send_failure:
+                                    with Action(
+                                        f"Adding scale up failure {exc} message to mailbox for {future.server_name}",
+                                        server_name=future.server_name,
+                                        interval=interval,
+                                    ):
+                                        mailbox.put(
+                                            ScaleUpFailureMessage(
+                                                time=time.time(),
+                                                labels=future.server_labels,
+                                                server_name=future.server_name,
+                                                exception=exc,
+                                            )
+                                        )
+                            finally:
+                                raise
 
             except Exception as exc:
                 msg = f"❗ Error: {type(exc).__name__} {exc}"

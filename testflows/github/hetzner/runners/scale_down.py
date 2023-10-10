@@ -12,8 +12,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import math
 import time
 import copy
+import queue
+import random
 import logging
 import threading
 
@@ -28,6 +31,7 @@ from .scale_up import (
     server_ssh_key_label,
     uid,
     StandbyRunner,
+    ScaleUpFailureMessage,
 )
 from .logger import logger
 from .server import age
@@ -40,6 +44,18 @@ from github.SelfHostedActionsRunner import SelfHostedActionsRunner
 from hcloud import Client
 from hcloud.servers.client import BoundServer
 from hcloud.ssh_keys.domain import SSHKey
+
+
+@dataclass
+class ScaleUpFailure:
+    """Scale up server failure."""
+
+    time: float
+    labels: set[str]
+    server_name: str
+    exception: Exception
+    count: int
+    observed_interval: float
 
 
 @dataclass
@@ -67,6 +83,60 @@ class UnusedRunner:
     time: float
     runner: SelfHostedActionsRunner
     observed_interval: float
+
+
+def delete_recyclable_server(
+    server_name,
+    recyclable_servers: list[BoundServer],
+    server_prices: dict[str, float],
+    stack_level=2,
+):
+    """Deleting recycle server either randomly or the cheapest if server prices are available.
+
+    :param server_name: name of the server that we are trying to create
+    :param recyclable_servers: list of recyclable servers
+    :param server_prices: dictionary of server prices
+    """
+    if not recyclable_servers:
+        return
+
+    picking = "randomly picked"
+    if server_prices is None:
+        random.shuffle(recyclable_servers)
+    else:
+        picking = "the cheapest"
+
+        def sorting_key(server):
+            server_type_name = server.server_type.name
+            server_location_name = server.datacenter.location.name
+            server_age = age(server) if server else 0
+            try:
+                return (60 - server_age.minutes) - server_prices[server_type_name][
+                    server_location_name
+                ] / 60
+            except KeyError:
+                with Action(
+                    f"price for {server_type_name} at {server_location_name} is missing",
+                    level=logging.ERROR,
+                    stacklevel=stack_level + 1,
+                    server_name=server_name,
+                ):
+                    return math.inf
+
+        recyclable_servers.sort(key=sorting_key, reverse=True)
+
+    recyclable_server = recyclable_servers.pop()
+
+    with Action(
+        f"Deleting {picking} recyclable server {recyclable_server.name} with type "
+        f"{recyclable_server.server_type.name}",
+        stacklevel=stack_level,
+        ignore_fail=True,
+        server_name=server_name,
+    ):
+        recyclable_server.delete()
+
+    return recyclable_server.name
 
 
 def recycle_server(reason: str, server: BoundServer, ssh_key: SSHKey, end_of_life: int):
@@ -128,7 +198,9 @@ def recycle_server(reason: str, server: BoundServer, ssh_key: SSHKey, end_of_lif
             server.update(name=f"{recycle_server_name_prefix}{uid()}")
 
 
-def scale_down(terminate: threading.Event, ssh_key: SSHKey, config: Config):
+def scale_down(
+    terminate: threading.Event, mailbox: queue.Queue, ssh_key: SSHKey, config: Config
+):
     """Scale down service by deleting any powered off server,
     any server that has unused runner, or any server that failed to register its
     runner (zombie server).
@@ -136,6 +208,7 @@ def scale_down(terminate: threading.Event, ssh_key: SSHKey, config: Config):
     debug: bool = config.debug
     standby_runners: list[StandbyRunner] = config.standby_runners
     interval_period: int = config.scale_down_interval
+    scaleup_interval_period: int = config.scale_up_interval
     hetzner_token: str = config.hetzner_token
     github_token: str = config.github_token
     github_repository: str = config.github_repository
@@ -144,9 +217,11 @@ def scale_down(terminate: threading.Event, ssh_key: SSHKey, config: Config):
     max_powered_off_time: int = config.max_powered_off_time
     max_unused_runner_time: int = config.max_unused_runner_time
     max_runner_registration_time: int = config.max_runner_registration_time
+    server_prices: dict[str, float] = config.server_prices
     powered_off_servers: dict[str, PoweredOffServer] = {}
     unused_runners: dict[str, UnusedRunner] = {}
     zombie_servers: dict[str, ZombieServer] = {}
+    scaleup_failures: dict[str, ScaleUpFailure] = {}
     interval: int = -1
 
     with Action("Logging in to Hetzner Cloud"):
@@ -161,7 +236,7 @@ def scale_down(terminate: threading.Event, ssh_key: SSHKey, config: Config):
     while True:
         interval += 1
         current_interval = time.time()
-        recyclable_servers: dict[str] = {}
+        recyclable_servers: dict[str, BoundServer] = {}
 
         if terminate.is_set():
             with Action("Terminating scale down service", interval=interval):
@@ -177,6 +252,21 @@ def scale_down(terminate: threading.Event, ssh_key: SSHKey, config: Config):
                     for server in servers
                     if server.name.startswith(server_name_prefix)
                 ]
+
+            with Action(
+                "Getting runner labels for each server",
+                level=logging.DEBUG,
+                interval=interval,
+            ):
+                servers_labels = {}
+                for server in servers:
+                    servers_labels[server.name] = set(
+                        [
+                            value
+                            for name, value in server.labels.items()
+                            if name.startswith("github-hetzner-runner-label")
+                        ]
+                    )
 
             with Action(
                 "Getting list of self-hosted runners",
@@ -282,6 +372,43 @@ def scale_down(terminate: threading.Event, ssh_key: SSHKey, config: Config):
                             unused_runners[
                                 runner.name
                             ].observed_interval = current_interval
+
+            with Action(
+                "Checking for scale up failures", level=logging.DEBUG, interval=interval
+            ):
+                while not mailbox.empty():
+                    try:
+                        scaleup_failure: ScaleUpFailureMessage = mailbox.get(
+                            block=False
+                        )
+
+                        if scaleup_failure.server_name not in scaleup_failures:
+                            with Action(
+                                f"Found new scale up failure for {scaleup_failure.server_name}",
+                                server_name=scaleup_failure.server_name,
+                                interval=interval,
+                            ):
+                                scaleup_failures[
+                                    scaleup_failure.server_name
+                                ] = ScaleUpFailure(
+                                    time=scaleup_failure.time,
+                                    labels=scaleup_failure.labels,
+                                    server_name=scaleup_failure.server_name,
+                                    exception=scaleup_failure.exception,
+                                    count=1,
+                                    observed_interval=current_interval,
+                                )
+                        else:
+                            scaleup_failures[
+                                scaleup_failure.server_name
+                            ].exception = scaleup_failure.exception
+                            scaleup_failures[scaleup_failure.server_name].count += 1
+                            scaleup_failures[
+                                scaleup_failure.server_name
+                            ].observed_interval = current_interval
+
+                    except queue.Empty:
+                        continue
 
             with Action(
                 "Checking which powered off servers need to be deleted",
@@ -427,6 +554,75 @@ def scale_down(terminate: threading.Event, ssh_key: SSHKey, config: Config):
                         ssh_key=ssh_key,
                         end_of_life=end_of_life,
                     )
+                    recyclable_servers.pop(server_name)
+
+            with Action(
+                "Checking which recyclable servers need to be deleted to try to resolve scale up failures",
+                level=logging.DEBUG,
+                interval=interval,
+            ):
+                process_failures = []
+
+                for server_name in list(scaleup_failures.keys()):
+                    scaleup_failure: ScaleUpFailure = scaleup_failures[server_name]
+
+                    if terminate.is_set():
+                        break
+
+                    forget_reason = ""
+                    forget_failure = False
+                    for labels in servers_labels.values():
+                        if scaleup_failure.labels.issubset(labels):
+                            forget_reason = " at least one server could match labels"
+                            forget_failure = True
+
+                    if scaleup_failure.count < 2 and (
+                        current_interval - scaleup_failure.time
+                        > 2 * scaleup_interval_period
+                    ):
+                        forget_reason = " sporadic fail"
+                        forget_failure = True
+
+                    if not recyclable_servers:
+                        forget_reason = " no recyclable servers to delete"
+                        forget_failure = True
+
+                    if forget_failure:
+                        with Action(
+                            f"Forgetting about scale up failure for {server_name}{forget_reason}",
+                            server_name=server_name,
+                            interval=interval,
+                        ):
+                            scaleup_failures.pop(server_name)
+                    else:
+                        process_failures.append(scaleup_failure)
+
+                if recyclable_servers:
+                    for scaleup_failure in process_failures:
+                        if scaleup_failure.count > 2 and (
+                            current_interval - scaleup_failure.time
+                            > 2 * scaleup_interval_period
+                        ):
+                            with Action(
+                                f"Picking recyclable server to be deleted to resolve scale up failure for {scaleup_failure.server_name}",
+                                server_name=scaleup_failure.server_name,
+                                interval=interval,
+                            ):
+                                deleted_recyclable_server_name = (
+                                    delete_recyclable_server(
+                                        recyclable_servers=list(
+                                            recyclable_servers.values()
+                                        ),
+                                        server_prices=server_prices,
+                                        stack_level=3,
+                                        server_name=server_name,
+                                    )
+                                )
+                                if deleted_recyclable_server_name is not None:
+                                    recyclable_servers.pop(
+                                        deleted_recyclable_server_name
+                                    )
+                                    scaleup_failures.pop(scaleup_failure.server_name)
 
         except Exception as exc:
             msg = f"❗ Error: {type(exc).__name__} {exc}"
