@@ -560,12 +560,20 @@ def check_ssh_key(client: Client, ssh_key: str, is_file=True):
         name=name, public_key=public_key, fingerprint=fingerprint(public_key)
     )
 
-    if not client.ssh_keys.get_by_fingerprint(fingerprint=ssh_key.fingerprint):
+    existing_ssh_key = client.ssh_keys.get_by_fingerprint(
+        fingerprint=ssh_key.fingerprint
+    )
+
+    if not existing_ssh_key:
         with Action(
             f"Creating SSH key {ssh_key.name} with fingerprint {ssh_key.fingerprint}",
             stacklevel=3,
         ):
-            client.ssh_keys.create(name=ssh_key.name, public_key=ssh_key.public_key)
+            ssh_key = client.ssh_keys.create(
+                name=ssh_key.name, public_key=ssh_key.public_key
+            )
+    else:
+        ssh_key = existing_ssh_key
 
     return ssh_key
 
