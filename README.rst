@@ -577,15 +577,16 @@ The default server type is **cx11**, which is an Intel, 1 vCPU, 2GB RAM shared-c
 Therefore, in order to use ARM64 runners, you must specify the ARM64 server instance type by using the **type-{name}** runner label.
 The **{name}** must be a valid `ARM64 Hetzner Cloud server type <https://www.hetzner.com/cloud>`_
 name such as *cax11*, *cax21* etc. which correspond to the Ampere Altra, 2 vCPU, 4GB RAM and
-4 vCPU, 8GB RAM shared-cpu ARM64 instances, respectively.
+4 vCPU, 8GB RAM shared-cpu ARM64 instances, respectively. You must also specify a valid
+ARM image using the **image-arm-{type}-{name}** runner label.
 
-For example, to use the Ampere Altra, 4 vCPU, 8GB RAM shared-cpu ARM64 instance, you must define the **runs-on**
-as follows:
+For example, to use the Ampere Altra, 4 vCPU, 8GB RAM shared-cpu ARM64 instance, running the **ubuntu-22.04** image,
+you must define the **runs-on** as follows:
 
 .. code-block:: yaml
 
    job-name:
-      runs-on: [self-hosted, type-cax21]
+      runs-on: [self-hosted, type-cax21, image-arm-system-ubuntu-22.04]
 
 ==============================
 Specifying The Runner Location
@@ -1280,7 +1281,7 @@ The **deploy** command will use the following default values:
 :type:
    *cpx11*
 :image:
-   *ubuntu-22.04*
+   *x86:system:ubuntu-22.04*
 
 The **cloud deploy** command uses the following setup script.
 
@@ -1309,7 +1310,7 @@ You can customize deployment server location, type, and image using the *--locat
 
 .. code-block:: bash
 
-   github-hetzner-runners cloud deploy --location nbg1 --type cx11 --image ubuntu-22.04
+   github-hetzner-runners cloud deploy --location nbg1 --type cx11 --image x86:system:ubuntu-22.04
 
 The cloud instance that runs the **github-hetzner-runners** service can either be x64 or ARM64 instance. By default, **cpx11**
 AMD, 2 vCPU, 2GB RAM, shared-cpu x64 instance type is used.
@@ -1328,7 +1329,7 @@ as the value of the **--type** as follows:
 
 .. code-block:: bash
 
-   github-hetzner-runners cloud deploy --location fsn1 --type cax21 --image ubuntu-22.04
+   github-hetzner-runners cloud deploy --location fsn1 --type cax21 --image arm:system:ubuntu-22.04
 
 Using x64 Instance
 ==================
@@ -1786,7 +1787,7 @@ The following options are supported:
   default runner server image type and name or description,
   where the architecture is either: 'x86' or 'arm',
   and type is either: 'system','snapshot','backup','app',
-  default: *system:ubuntu-22.04*
+  default: *x86:system:ubuntu-22.04*
 
 * **-m count, --max-runners count**
   maximum number of active runners, default: *10*
@@ -1876,7 +1877,7 @@ The following options are supported:
           deployment server image type and name or description,
           where the architecture is either: 'x86' or 'arm',
           and the type is either: 'system','snapshot','backup','app',
-          default: *system:ubuntu-22.04*
+          default: *x86:system:ubuntu-22.04*
 
         * **--setup-script path**
           path to custom deployment server setup script
