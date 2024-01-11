@@ -6,6 +6,7 @@ import base64
 import hashlib
 import logging
 import logging.config
+import dataclasses
 
 from dataclasses import dataclass
 
@@ -81,7 +82,7 @@ class deploy:
 @dataclass
 class cloud:
     server_name: str = "github-hetzner-runners"
-    deploy: deploy = deploy()
+    deploy: deploy = dataclasses.field(default_factory=deploy)
 
 
 @dataclass
@@ -123,7 +124,7 @@ class Config:
     embedded_mode: bool = False
     logger_config: dict = None
     logger_format: dict = None
-    cloud: cloud = cloud()
+    cloud: cloud = dataclasses.field(default_factory=cloud)
     standby_runners: list[standby_runner] = None
     server_prices: dict[str, float] = None
     config_file: str = None
