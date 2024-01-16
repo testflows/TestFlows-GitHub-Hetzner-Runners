@@ -123,7 +123,7 @@ def server_setup(
         ssh(
             server,
             f"'sudo -u ubuntu "
-            f"GITHUB_REPOSITORY=\"{os.getenv('GITHUB_REPOSITORY')}\" "
+            f'GITHUB_REPOSITORY="{github_repository}" '
             f'GITHUB_RUNNER_TOKEN="{GITHUB_RUNNER_TOKEN}" '
             f"GITHUB_RUNNER_GROUP=Default "
             f'GITHUB_RUNNER_LABELS="{runner_labels}" '
@@ -591,7 +591,6 @@ def scale_up(
     with ThreadPoolExecutor(
         max_workers=worker_pool._max_workers, thread_name_prefix=f"setup-worker"
     ) as setup_worker_pool:
-
         while True:
             interval += 1
             if terminate.is_set():

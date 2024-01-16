@@ -488,7 +488,6 @@ def scale_down(
                 level=logging.DEBUG,
                 interval=interval,
             ):
-
                 for runner_name in list(unused_runners.keys()):
                     unused_runner = unused_runners[runner_name]
 
