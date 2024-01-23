@@ -1569,7 +1569,7 @@ Maximum Number of Runners
 By default, the maximum number of runners and, therefore, the maximum number of server instances are not set and are therefore unlimited.
 You can set the maximum number of runners using the **--max-runners** option.
 
-.. code-blocks::bash
+.. code-block:: bash
 
    github-hetzner-runners --max-runners 10
 
