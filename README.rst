@@ -207,7 +207,7 @@ for a GitHub repository and a Hetzner Cloud project that you'll create.
 Installing TestFlows Github Runners
 -----------------------------------
 
-❶ Before we get started, you will need to install **testflows.github.hetzner.runners** Python package. See the `Installation`_ section for more details.
+❶ Before we get started, you will need to install **testflows.github.hetzner.runners** Python package. See the `Installation <../../wiki/Installation>`_ section for more details.
 
 .. code-block:: bash
 
