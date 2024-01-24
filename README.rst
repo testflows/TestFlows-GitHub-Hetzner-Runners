@@ -17,7 +17,7 @@ Autoscaling GitHub Actions Runners Using Hetzner Cloud
 A simple alternative to Github's `Recommended autoscaling solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_.
 
 :🔍 Tip:
-   See `Wiki <../../wiki>`_ for full documentation.
+   See `Wiki <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki>`_ for full documentation.
 
 The **github-hetzner-runners** service program starts and monitors queued-up jobs for GitHub Actions workflows.
 When a new job is queued up, it creates a new Hetzner Cloud server instance
@@ -48,34 +48,34 @@ to avoid any cleanup. Server instances are not shared between jobs.
 Table of Contents
 =================
 
-* `Home <../../wiki>`_
-* `Installation <../../wiki/Installation>`_
-* `Quick Start <../../wiki/Quick-Start>`_
-* `Getting Started Tutorial <../../wiki/Getting-Started-Tutorial>`_
-* `Basic Configuration <../../wiki/Basic-Configuration>`_
-* `Specifying the Maximum Number of Runners <../../wiki/Specifying-the-Maximum-Number-of-Runners>`_
-* `Specifying the Maximum Number of Runners Used in Workflow a Run <../../wiki/Specifying-the-Maximum-Number-of-Runners-Used-in-Workflow-a-Run>`_
-* `Recycling Powered‐Off Servers <../../wiki/Recycling-Powered‐Off-Servers>`_
-* `Skipping Jobs <../../wiki/Skipping-Jobs>`_
-* `Jobs That Require the Docker Engine <../../wiki/Jobs-That-Require-the-Docker-Engine>`_
-* `Specifying The Runner Type <../../wiki/Specifying-The-Runner-Type>`_
-* `Specifying The Runner Location <../../wiki/Specifying-The-Runner-Location>`_
-* `Specifying The Runner Image <../../wiki/Specifying-The-Runner-Image>`_
-* `Specifying The Custom Runner Server Setup Script <../../wiki/Specifying-The-Custom-Runner-Server-Setup-Script>`_
-* `Specifying Standby Runners <../../wiki/Specifying-Standby-Runners>`_
-* `Specifying Logger Configuration <../../wiki/Specifying-Logger-Configuration>`_
-* `Listing All Current Servers <../../wiki/Listing-All-Current-Servers>`_
-* `Opening The SSH Client To The Server <../../wiki/Opening-The-SSH-Client-To-The-Server>`_
-* `Deleting All Runners and Their Servers <../../wiki/Deleting-All-Runners-and-Their-Servers>`_
-* `Using a Configuration File <../../wiki/Using-a-Configuration-File>`_
-* `Specifying SSH Key <../../wiki/Specifying-SSH-Key>`_
-* `Specifying Additional SSH Keys <../../wiki/Specifying-Additional-SSH-Keys>`_
-* `Running as a Service <../../wiki/Running-as-a-Service>`_
-* `Running as a Cloud Service <../../wiki/Running-as-a-Cloud-Service>`_
-* `Scaling Up Runners <../../wiki/Scaling-Up-Runners>`_
-* `Scaling Down Runners <../../wiki/Scaling-Down-Runners>`_
-* `Handling Failing Conditions <../../wiki/Handling-Failing-Conditions>`_
-* `Program Options <../../wiki/Program-Options>`_
+* `Home <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki>`_
+* `Installation <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Installation>`_
+* `Quick Start <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Quick-Start>`_
+* `Getting Started Tutorial <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Getting-Started-Tutorial>`_
+* `Basic Configuration <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Basic-Configuration>`_
+* `Specifying the Maximum Number of Runners <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-the-Maximum-Number-of-Runners>`_
+* `Specifying the Maximum Number of Runners Used in Workflow a Run <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-the-Maximum-Number-of-Runners-Used-in-Workflow-a-Run>`_
+* `Recycling Powered‐Off Servers <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Recycling-Powered‐Off-Servers>`_
+* `Skipping Jobs <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Skipping-Jobs>`_
+* `Jobs That Require the Docker Engine <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Jobs-That-Require-the-Docker-Engine>`_
+* `Specifying The Runner Type <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Type>`_
+* `Specifying The Runner Location <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Location>`_
+* `Specifying The Runner Image <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Image>`_
+* `Specifying The Custom Runner Server Setup Script <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Custom-Runner-Server-Setup-Script>`_
+* `Specifying Standby Runners <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-Standby-Runners>`_
+* `Specifying Logger Configuration <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-Logger-Configuration>`_
+* `Listing All Current Servers <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Listing-All-Current-Servers>`_
+* `Opening The SSH Client To The Server <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Opening-The-SSH-Client-To-The-Server>`_
+* `Deleting All Runners and Their Servers <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Deleting-All-Runners-and-Their-Servers>`_
+* `Using a Configuration File <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Using-a-Configuration-File>`_
+* `Specifying SSH Key <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-SSH-Key>`_
+* `Specifying Additional SSH Keys <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-Additional-SSH-Keys>`_
+* `Running as a Service <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Running-as-a-Service>`_
+* `Running as a Cloud Service <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Running-as-a-Cloud-Service>`_
+* `Scaling Up Runners <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Scaling-Up-Runners>`_
+* `Scaling Down Runners <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Scaling-Down-Runners>`_
+* `Handling Failing Conditions <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Handling-Failing-Conditions>`_
+* `Program Options <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Program-Options>`_
 
 ========
 Features
@@ -207,7 +207,7 @@ for a GitHub repository and a Hetzner Cloud project that you'll create.
 Installing TestFlows Github Runners
 -----------------------------------
 
-❶ Before we get started, you will need to install **testflows.github.hetzner.runners** Python package. See the `Installation`_ section for more details.
+❶ Before we get started, you will need to install **testflows.github.hetzner.runners** Python package. See the `Installation <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Installation>`_ section for more details.
 
 .. code-block:: bash
 
@@ -353,7 +353,7 @@ With the GitHub repository and GitHub and Hetzner Cloud tokens in hand, we can d
 to the Hetzner Cloud instance. This way, the service is not running on your local machine.
 
 During the deployment, we'll create a **github-hetzner-runners** instance in your Hetzner Cloud project on which the service will be running.
-See the `Running as a Cloud Service`_ section for details.
+See the `Running as a Cloud Service <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Running-as-a-Cloud-Service>`_ section for details.
 
 ❶ To deploy the service run the **github-hetzner-runners cloud deploy** command and specify your
 GitHub repository, GitHub, and Hetzner Cloud tokens using
@@ -394,7 +394,7 @@ As you can see, our job was executed and completed using our own self-hosted run
 :✋ Note:
 
    If you run into any issues, you can check the cloud service log using the
-   **github-hetzner-runners cloud log -f** command. For other cloud service commands, see the `Running as a Cloud Service`_ section.
+   **github-hetzner-runners cloud log -f** command. For other cloud service commands, see the `Running as a Cloud Service <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Running-as-a-Cloud-Service>`_ section.
 
    .. code-block:: bash
 
@@ -402,7 +402,7 @@ As you can see, our job was executed and completed using our own self-hosted run
 
 ----
 
-🔍 See `Wiki <../../wiki>`_ for full documentation.
+🔍 See `Wiki <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki>`_ for full documentation.
 
 Developed and maintained by the `TestFlows <https://testflows.com>`_ team.
 
