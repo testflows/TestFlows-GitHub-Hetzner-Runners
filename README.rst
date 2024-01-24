@@ -17,7 +17,7 @@ Autoscaling GitHub Actions Runners Using Hetzner Cloud
 A simple alternative to Github's `Recommended autoscaling solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_.
 
 :🔍 Tip:
-   See `Wiki <wiki>`_ for full documentation.
+   See `Wiki <../../wiki>`_ for full documentation.
 
 The **github-hetzner-runners** service program starts and monitors queued-up jobs for GitHub Actions workflows.
 When a new job is queued up, it creates a new Hetzner Cloud server instance
@@ -402,6 +402,6 @@ As you can see, our job was executed and completed using our own self-hosted run
 
 ----
 
-🔍 See `Wiki <wiki>`_ for full documentation.
+🔍 See `Wiki <../../wiki>`_ for full documentation.
 
 .. _Config class: https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/blob/main/testflows/github/hetzner/runners/config.py#L45
