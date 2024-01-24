@@ -404,4 +404,6 @@ As you can see, our job was executed and completed using our own self-hosted run
 
 🔍 See `Wiki <../../wiki>`_ for full documentation.
 
+Developed and maintained by the `TestFlows <https://testflows.com>`_ team.
+
 .. _Config class: https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/blob/main/testflows/github/hetzner/runners/config.py#L45
