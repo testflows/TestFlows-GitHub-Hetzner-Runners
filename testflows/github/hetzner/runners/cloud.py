@@ -151,45 +151,21 @@ def deploy(args, config: Config, redeploy=False):
     with Action("Copying any custom scripts"):
         ip = ip_address(server)
 
-        if config.setup_script:
-            with Action(f"Copying custom setup script {config.setup_script}"):
+        if config.scripts:
+            with Action(f"Copying custom scripts {config.scripts}"):
                 scp(
-                    source=config.setup_script,
+                    source=os.path.join(config.scripts, "*.sh"),
                     destination=f"root@{ip}:{deploy_scripts_folder}.",
                 )
-                config.setup_script = os.path.join(
-                    deploy_scripts_folder,
-                    os.path.basename(config.setup_script),
-                )
-
-        if config.startup_x64_script:
-            with Action(
-                f"Copying custom startup x64 script {config.startup_x64_script}"
-            ):
-                scp(
-                    source=config.startup_x64_script,
-                    destination=f"root@{ip}:{deploy_scripts_folder}.",
-                )
-                config.startup_x64_script = os.path.join(
-                    deploy_scripts_folder,
-                    os.path.basename(config.startup_x64_script),
-                )
-
-        if config.startup_arm64_script:
-            with Action(
-                f"Copying custom startup ARM64 script {config.startup_arm64_script}"
-            ):
-                scp(
-                    source=config.startup_arm64_script,
-                    destination=f"root@{ip}:{deploy_scripts_folder}.",
-                )
-                config.startup_arm64_script = os.path.join(
-                    deploy_scripts_folder,
-                    os.path.basename(config.startup_arm64_script),
-                )
+                config.scripts = deploy_scripts_folder
 
     with Action("Fixing ownership of any copied scripts"):
         ssh(server, f"chown -R ubuntu:ubuntu {deploy_scripts_folder}", stacklevel=4)
+        ssh(
+            server,
+            f"find {deploy_scripts_folder} -type f -exec chmod +rx {{}} \;",
+            stacklevel=4,
+        )
 
     with Action(
         f"Copying config file{(' ' + config.config_file) if config.config_file else ''}"

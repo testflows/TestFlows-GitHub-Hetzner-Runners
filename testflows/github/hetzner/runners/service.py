@@ -14,7 +14,6 @@
 # limitations under the License.
 import os
 import sys
-import json
 import textwrap
 
 NAME = "github-hetzner-runners"
@@ -59,17 +58,7 @@ def command_options(
         if config.max_runners_in_workflow_run
         else ""
     )
-    command += f" --setup-script {config.setup_script}" if config.setup_script else ""
-    command += (
-        f" --startup-x64-script {config.startup_x64_script}"
-        if config.startup_x64_script
-        else ""
-    )
-    command += (
-        f" --startup-arm64-script {config.startup_arm64_script}"
-        if config.startup_arm64_script
-        else ""
-    )
+    command += f" --scripts {config.scripts}" if config.scripts else ""
     command += (
         f" --max-powered-off-time {config.max_powered_off_time}"
         f" --max-unused-runner-time {config.max_unused_runner_time}"

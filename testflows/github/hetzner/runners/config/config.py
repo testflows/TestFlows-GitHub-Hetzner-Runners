@@ -48,6 +48,14 @@ class ImageError(Exception):
     pass
 
 
+class SetupScriptError(Exception):
+    pass
+
+
+class StartupScriptError(Exception):
+    pass
+
+
 class ServerTypeError(Exception):
     pass
 
@@ -105,13 +113,7 @@ class Config:
     default_server_type: ServerType = server_type("cx11")
     default_location: Location = None
     workers: int = 10
-    setup_script: str = os.path.join(current_dir, "..", "scripts", "setup.sh")
-    startup_x64_script: str = os.path.join(
-        current_dir, "..", "scripts", "startup_x64.sh"
-    )
-    startup_arm64_script: str = os.path.join(
-        current_dir, "..", "scripts", "startup_arm64.sh"
-    )
+    scripts: str = os.path.join(current_dir, "..", "scripts")
     max_powered_off_time: int = 60
     max_unused_runner_time: int = 180
     max_runner_registration_time: int = 180
@@ -287,23 +289,11 @@ def parse_config(filename: str):
         v = doc["workers"]
         assert isinstance(v, int) and v > 0, "config.workers: is not an integer > 0"
 
-    if doc.get("setup_script") is not None:
+    if doc.get("scripts") is not None:
         try:
-            doc["setup_script"] = path(doc["setup_script"])
+            doc["scripts"] = path(doc["scripts"])
         except Exception as e:
-            assert False, f"config.setup_script: {e}"
-
-    if doc.get("startup_x64_script") is not None:
-        try:
-            doc["startup_x64_script"] = path(doc["startup_x64_script"])
-        except Exception as e:
-            assert False, f"config.startup_x64_script: {e}"
-
-    if doc.get("startup_arm64_script") is not None:
-        try:
-            doc["startup_arm64_script"] = path(doc["startup_arm64_script"])
-        except Exception as e:
-            assert False, f"config.startup_arm64_script: {e}"
+            assert False, f"config.scripts: {e}"
 
     if doc.get("max_powered_off_time") is not None:
         v = doc["max_powered_off_time"]
@@ -351,7 +341,7 @@ def parse_config(filename: str):
         assert (
             doc["logger_config"]["loggers"].get("testflows.github.hetzner.runners")
             is not None
-        ), 'config.logger_config.loggers."tesflows.github.hetzner.runners" is not defined'
+        ), 'config.logger_config.loggers."testflows.github.hetzner.runners" is not defined'
         assert (
             doc["logger_config"]["loggers"]["testflows.github.hetzner.runners"].get(
                 "handlers"
@@ -628,6 +618,7 @@ def check_server_type(client: Client, server_type: ServerType):
 
 
 def check_prices(client: Client):
+    """Check server prices."""
     server_types: list[ServerType] = client.server_types.get_all()
     return {
         t.name.lower(): {
@@ -636,3 +627,15 @@ def check_prices(client: Client):
         }
         for t in server_types
     }
+
+
+def check_setup_script(script: str):
+    """Check if setup script is valid."""
+    if not os.path.exists(script):
+        raise SetupScriptError(f"invalid setup script path '{script}'")
+
+
+def check_startup_script(script: str):
+    """Check if startup script is valid."""
+    if not os.path.exists(script):
+        raise StartupScriptError(f"invalid startup script path '{script}'")

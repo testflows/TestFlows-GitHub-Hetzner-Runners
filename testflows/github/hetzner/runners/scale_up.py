@@ -24,7 +24,7 @@ from .actions import Action
 from .request import request
 from .args import image_type
 from .logger import logger
-from .config import Config, check_image
+from .config import Config, check_image, check_startup_script, check_setup_script
 from .config import standby_runner as StandbyRunner
 
 from .server import wait_ssh, ssh, wait_ready, age
@@ -140,11 +140,10 @@ def get_server_type(labels: set[str], default: ServerType, label_prefix: str = "
         label_prefix += "-"
     label_prefix += "type-"
 
-    if server_type is None:
-        for label in labels:
-            if label.startswith(label_prefix):
-                server_type_name = label.split(label_prefix, 1)[-1].lower()
-                server_type = ServerType(name=server_type_name)
+    for label in labels:
+        if label.startswith(label_prefix):
+            server_type_name = label.split(label_prefix, 1)[-1].lower()
+            server_type = ServerType(name=server_type_name)
 
     if server_type is None:
         server_type = default
@@ -166,11 +165,10 @@ def get_server_location(
         label_prefix += "-"
     label_prefix += "in-"
 
-    if server_location is None:
-        for label in labels:
-            if label.startswith(label_prefix):
-                server_location_name = label.split(label_prefix, 1)[-1].lower()
-                server_location = Location(name=server_location_name)
+    for label in labels:
+        if label.startswith(label_prefix):
+            server_location_name = label.split(label_prefix, 1)[-1].lower()
+            server_location = Location(name=server_location_name)
 
     if server_location is None and default:
         server_location = default
@@ -188,13 +186,12 @@ def get_server_image(
         label_prefix += "-"
     label_prefix += "image-"
 
-    if server_image is None:
-        for label in labels:
-            if label.startswith(label_prefix):
-                server_image = check_image(
-                    client,
-                    image_type(label.split(label_prefix, 1)[-1].lower(), separator="-"),
-                )
+    for label in labels:
+        if label.startswith(label_prefix):
+            server_image = check_image(
+                client,
+                image_type(label.split(label_prefix, 1)[-1].lower(), separator="-"),
+            )
 
     if server_image is None:
         server_image = default
@@ -202,15 +199,68 @@ def get_server_image(
     return server_image
 
 
-def get_startup_script(server_type: ServerType, x64, arm64):
-    """Get startup script based on the requested server type.
+def get_server_arch(server_type: ServerType):
+    """Get server architecture base on the requested server type.
     ARM64 servers type names start with "CA" prefix.
 
     For example, CAX11, CAX21, CAX31, and CAX41
     """
     if server_type.name.lower().startswith("ca"):
-        return arm64
-    return x64
+        return "arm64"
+    return "x64"
+
+
+def get_setup_script(
+    scripts: str, labels: set[str], default: str = "setup.sh", label_prefix: str = ""
+):
+    """Get setup script."""
+    script = None
+
+    if label_prefix and not label_prefix.endswith("-"):
+        label_prefix += "-"
+    label_prefix += "setup-"
+
+    for label in labels:
+        if label.startswith(label_prefix):
+            script = label.split(label_prefix, 1)[-1] + ".sh"
+
+    if script is None:
+        script = default
+
+    script = check_setup_script(os.path.join(scripts, script))
+
+    return script
+
+
+def get_startup_script(
+    scripts: str,
+    server_type: ServerType,
+    labels: set[str],
+    default: str = "startup-{arch}.sh",
+    label_prefix: str = "",
+):
+    """Get startup script based on the requested server type.
+    ARM64 servers type names start with "CA" prefix.
+
+    For example, CAX11, CAX21, CAX31, and CAX41
+    """
+    script = None
+    default = default.format(arch=get_server_arch(server_type))
+
+    if label_prefix and not label_prefix.endswith("-"):
+        label_prefix += "-"
+    label_prefix += "startup-"
+
+    for label in labels:
+        if label.startswith(label_prefix):
+            script = label.split(label_prefix, 1)[-1] + ".sh"
+
+    if script is None:
+        script = default
+
+    script = check_startup_script(os.path.join(scripts, script))
+
+    return script
 
 
 def raise_exception(exc):
@@ -439,6 +489,7 @@ def scale_up(
     recycle: bool = config.recycle
     with_label: str = config.with_label
     label_prefix: str = config.label_prefix
+    scripts: str = config.scripts
     interval: int = -1
 
     with Action("Logging in to Hetzner Cloud"):
@@ -466,11 +517,16 @@ def scale_up(
             default=default_image,
             label_prefix=label_prefix,
         )
-        setup_script = config.setup_script
+        setup_script = get_setup_script(
+            scripts=scripts,
+            labels=labels,
+            label_prefix=label_prefix,
+        )
         startup_script = get_startup_script(
+            scripts=scripts,
             server_type=server_type,
-            x64=config.startup_x64_script,
-            arm64=config.startup_arm64_script,
+            labels=labels,
+            label_prefix=label_prefix,
         )
 
         with Action(

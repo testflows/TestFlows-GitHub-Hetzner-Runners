@@ -91,16 +91,8 @@
                     "type": "integer",
                     "examples": [10]
                 },
-                "setup_script": {
-                    "description": "Path to custom server setup script.",
-                    "type": "string"
-                },
-                "startup_x64_script": {
-                    "description": "Path to custom x64 server startup script.",
-                    "type": "string"
-                },
-                "startup_arm64_script": {
-                    "description": "Path to custom ARM64 server startup script.",
+                "scripts": {
+                    "description": "Path to the folder that contains custom server scripts.",
                     "type": "string"
                 },
                 "max_powered_off_time": {

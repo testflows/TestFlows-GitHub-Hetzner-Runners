@@ -12,9 +12,7 @@ config:
     default_server_type: cpx11
     #default_location:
     workers: 10
-    #setup_script:
-    #startup_x64_script:
-    #startup_arm64_script:
+    #scripts:
     max_powered_off_time: 60
     max_unused_runner_time: 120
     max_runner_registration_time: 120
