@@ -655,9 +655,11 @@ def check_setup_script(script: str):
     """Check if setup script is valid."""
     if not os.path.exists(script):
         raise SetupScriptError(f"invalid setup script path '{script}'")
+    return script
 
 
 def check_startup_script(script: str):
     """Check if startup script is valid."""
     if not os.path.exists(script):
         raise StartupScriptError(f"invalid startup script path '{script}'")
+    return script
