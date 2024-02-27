@@ -129,6 +129,14 @@ def server_type(v):
     return ServerType(name=v)
 
 
+def meta_labels_type(v):
+    """Meta labels type argument."""
+    try:
+        return {l[0]: set(l[1].split(",") if l[1] else []) for l in v}
+    except Exception as e:
+        raise ArgumentTypeError(str(e))
+
+
 def config_type(v):
     """Program configuration file type."""
     from .config import parse_config, default_user_config

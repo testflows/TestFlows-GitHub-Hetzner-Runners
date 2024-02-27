@@ -184,7 +184,16 @@ def argparser():
         "--label-prefix",
         metavar="prefix",
         type=str,
-        help="support type, image, and location job labels with the specified prefix",
+        help="support type, image, location, setup, and startup job labels with the specified prefix",
+    )
+
+    parser.add_argument(
+        "--meta-labels",
+        metavar="name label,... --max-labels",
+        type=str,
+        action='append',
+        nargs=2,
+        help="runner meta label that will be expanded to a list of given labels",
     )
 
     parser.add_argument(
@@ -906,16 +915,19 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
 
 
 if __name__ == "__main__":
-    args = argparser().parse_args()
+    arguments = argparser().parse_args()
 
     logging_level = logging.INFO
 
-    if args.config_file:
-        config = args.config_file
+    if arguments.config_file:
+        config = arguments.config_file
     else:
         config = Config()
 
-    config.update(args)
+    if arguments.meta_labels:
+        arguments.meta_labels = args.meta_labels_type(arguments.meta_labels)
+
+    config.update(arguments)
 
     if config.debug:
         Action.debug = True
@@ -932,9 +944,9 @@ if __name__ == "__main__":
             sys.stdout.write(f"Using config file: {config.config_file}\n")
             sys.stdout.flush()
 
-    if hasattr(args, "func"):
+    if hasattr(arguments, "func"):
         try:
-            args.func(args=args, config=config)
+            arguments.func(args=arguments, config=config)
         except KeyboardInterrupt:
             if config.debug:
                 raise

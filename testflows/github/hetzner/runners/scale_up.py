@@ -263,6 +263,23 @@ def get_startup_script(
     return script
 
 
+def expand_meta_labels(
+    meta_labels: dict[str, set[str]], labels: set[str], label_prefix: str = ""
+):
+    """Expand any meta labels."""
+    expanded_labels = []
+
+    for label in labels:
+        expanded_labels.append(label)
+        if label.startswith(label_prefix):
+            raw_label = label.split(label_prefix, 1)[-1]
+            if raw_label in meta_labels:
+                expanded_labels.pop()
+                expanded_labels += list(meta_labels[label])
+
+    return set(expanded_labels)
+
+
 def raise_exception(exc):
     """Task to raise an exception using the worker pool."""
     raise exc
@@ -489,6 +506,7 @@ def scale_up(
     recycle: bool = config.recycle
     with_label: str = config.with_label
     label_prefix: str = config.label_prefix
+    meta_labels: dict[str, set[str]] = config.meta_labels
     scripts: str = config.scripts
     interval: int = -1
 
@@ -504,6 +522,8 @@ def scale_up(
     ):
         """Create new server that would provide a runner with given labels."""
         recyclable_servers: list[BoundServer] = []
+
+        labels = expand_meta_labels(meta_labels=meta_labels, labels=labels)
 
         server_type = get_server_type(
             labels=labels, default=default_server_type, label_prefix=label_prefix

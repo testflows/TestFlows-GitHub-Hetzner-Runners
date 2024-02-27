@@ -44,6 +44,12 @@ def command_options(
     command += f" --recycle " + ("on" if config.recycle else "off")
     command += f" --end-of-life {config.end_of_life}" if config.end_of_life else ""
     command += f" --with-label {config.with_label}" if config.with_label else ""
+    for k in config.meta_labels:
+        command += (
+            f" --meta-labels \"{k}\" \"{','.join(config.meta_labels[k])}\""
+            if config.meta_labels[k]
+            else ""
+        )
     command += f" --workers {config.workers}"
     command += f" --default-type {config.default_server_type.name}"
     command += (

@@ -46,6 +46,15 @@
                     "description": "Support type, image, and location job labels with the specified prefix.",
                     "type": "string"
                 },
+                "meta_labels": {
+                    "description": "Meta labels.",
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                    }
+                },
                 "recycle": {
                     "description": "Turn on recycling of powered off servers, either 'true' or 'false', default: true.",
                     "type": "boolean",

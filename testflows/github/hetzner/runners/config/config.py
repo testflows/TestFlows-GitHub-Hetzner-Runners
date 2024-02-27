@@ -70,6 +70,7 @@ image = args.image_type
 location = args.location_type
 server_type = args.server_type
 end_of_life = args.end_of_life_type
+meta_labels_type = args.meta_labels_type
 
 
 @dataclass
@@ -104,6 +105,7 @@ class Config:
     additional_ssh_keys: list[str] = None
     with_label: str = None
     label_prefix: str = ""
+    meta_labels: dict[str, set[str]] = None
     recycle: bool = True
     end_of_life: int = 50
     delete_random: bool = False
@@ -137,6 +139,9 @@ class Config:
 
         if self.additional_ssh_keys is None:
             self.additional_ssh_keys = []
+
+        if self.meta_labels is None:
+            self.meta_labels = {}
 
         if self.logger_format is None:
             self.logger_format = logger_format
@@ -241,6 +246,23 @@ def parse_config(filename: str):
         assert isinstance(
             doc["label_prefix"], str
         ), "config.label_prefix: is not a string"
+
+    if doc.get("meta_labels") is not None:
+        assert isinstance(
+            doc["meta_labels"], dict
+        ), "config.meta_labels is not a dictionary"
+        for i, meta in enumerate(doc["meta_labels"]):
+            assert isinstance(
+                meta, str
+            ), f"config.meta_labels.{meta}: name is not a string"
+            assert isinstance(
+                doc["meta_labels"][meta], list
+            ), f"config.meta_labels.{meta}: is not a list"
+            for j, v in enumerate(doc["meta_labels"][meta]):
+                assert isinstance(
+                    v, str
+                ), f"config.meta_labels.{meta}[{j}]: is not a string"
+            doc["meta_labels"][meta] = set(doc["meta_labels"][meta])
 
     if doc.get("recycle") is not None:
         assert isinstance(doc["recycle"], bool), "config.recycle: is not a boolean"
