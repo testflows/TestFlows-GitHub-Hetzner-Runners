@@ -154,6 +154,8 @@ def config_type(v):
     except Exception as e:
         if "--debug" in sys.argv:
             print_exception(e)
+        if "unexpected keyword argument" in str(e):
+            e = str(e).replace(".__init__()", "")
         raise ArgumentTypeError(str(e))
 
     return config

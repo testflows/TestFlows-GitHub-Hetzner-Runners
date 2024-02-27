@@ -32,7 +32,12 @@ default_user_config = os.path.expanduser("~/.github-hetzner-runners/config.yaml"
 def env_constructor(loader, node):
     value = loader.construct_scalar(node)
     for group in env_pattern.findall(value):
-        value = value.replace(f"${{{group}}}", os.environ.get(group))
+        env_value = os.environ.get(group)
+        if env_value is None:
+            assert (
+                False
+            ), f"environment variable ${group} used in the config is not defined"
+        value = value.replace(f"${{{group}}}", env_value)
     return value
 
 
