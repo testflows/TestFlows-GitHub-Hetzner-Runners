@@ -129,17 +129,10 @@ def server_type(v):
     return ServerType(name=v)
 
 
-def meta_labels_type(v, meta_labels=None):
+def meta_labels_type(v):
     """Meta labels type argument."""
     try:
-        if meta_labels is None:
-            meta_labels = {l[0]: set(l[1].split(",") if l[1] else []) for l in v}
-        names = set(list(meta_labels.keys()))
-        for name, labels in meta_labels.items():
-            assert names.isdisjoint(
-                labels
-            ), f"labels for meta label '{name}' can't include any meta labels"
-        return meta_labels
+        return {l[0]: set(l[1].split(",") if l[1] else []) for l in v}
     except Exception as e:
         raise ArgumentTypeError(str(e))
 
@@ -162,7 +155,7 @@ def config_type(v):
         if "--debug" in sys.argv:
             print_exception(e)
         if "unexpected keyword argument" in str(e):
-            e = str(e).replace(".__init__()", "")
+            e = str(e).replace(".__init__()", "") + ", please remove it"
         raise ArgumentTypeError(str(e))
 
     return config
