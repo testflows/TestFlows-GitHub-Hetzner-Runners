@@ -14,7 +14,6 @@
 # limitations under the License.
 import os
 import sys
-import json
 import textwrap
 
 NAME = "github-hetzner-runners"
@@ -45,6 +44,12 @@ def command_options(
     command += f" --recycle " + ("on" if config.recycle else "off")
     command += f" --end-of-life {config.end_of_life}" if config.end_of_life else ""
     command += f" --with-label {config.with_label}" if config.with_label else ""
+    for k in config.meta_labels:
+        command += (
+            f" --meta-labels \"{k}\" \"{','.join(config.meta_labels[k])}\""
+            if config.meta_labels[k]
+            else ""
+        )
     command += f" --workers {config.workers}"
     command += f" --default-type {config.default_server_type.name}"
     command += (
@@ -59,17 +64,7 @@ def command_options(
         if config.max_runners_in_workflow_run
         else ""
     )
-    command += f" --setup-script {config.setup_script}" if config.setup_script else ""
-    command += (
-        f" --startup-x64-script {config.startup_x64_script}"
-        if config.startup_x64_script
-        else ""
-    )
-    command += (
-        f" --startup-arm64-script {config.startup_arm64_script}"
-        if config.startup_arm64_script
-        else ""
-    )
+    command += f" --scripts {config.scripts}" if config.scripts else ""
     command += (
         f" --max-powered-off-time {config.max_powered_off_time}"
         f" --max-unused-runner-time {config.max_unused_runner_time}"

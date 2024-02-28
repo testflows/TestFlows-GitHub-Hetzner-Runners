@@ -46,6 +46,15 @@
                     "description": "Support type, image, and location job labels with the specified prefix.",
                     "type": "string"
                 },
+                "meta_labels": {
+                    "description": "Meta labels.",
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                    }
+                },
                 "recycle": {
                     "description": "Turn on recycling of powered off servers, either 'true' or 'false', default: true.",
                     "type": "boolean",
@@ -91,16 +100,8 @@
                     "type": "integer",
                     "examples": [10]
                 },
-                "setup_script": {
-                    "description": "Path to custom server setup script.",
-                    "type": "string"
-                },
-                "startup_x64_script": {
-                    "description": "Path to custom x64 server startup script.",
-                    "type": "string"
-                },
-                "startup_arm64_script": {
-                    "description": "Path to custom ARM64 server startup script.",
+                "scripts": {
+                    "description": "Path to the folder that contains custom server scripts.",
                     "type": "string"
                 },
                 "max_powered_off_time": {

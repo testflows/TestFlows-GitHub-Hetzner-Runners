@@ -129,6 +129,14 @@ def server_type(v):
     return ServerType(name=v)
 
 
+def meta_labels_type(v):
+    """Meta labels type argument."""
+    try:
+        return {l[0]: set(l[1].split(",") if l[1] else []) for l in v}
+    except Exception as e:
+        raise ArgumentTypeError(str(e))
+
+
 def config_type(v):
     """Program configuration file type."""
     from .config import parse_config, default_user_config
@@ -146,6 +154,8 @@ def config_type(v):
     except Exception as e:
         if "--debug" in sys.argv:
             print_exception(e)
+        if "unexpected keyword argument" in str(e):
+            e = str(e).replace(".__init__()", "") + ", please remove it"
         raise ArgumentTypeError(str(e))
 
     return config

@@ -32,7 +32,12 @@ default_user_config = os.path.expanduser("~/.github-hetzner-runners/config.yaml"
 def env_constructor(loader, node):
     value = loader.construct_scalar(node)
     for group in env_pattern.findall(value):
-        value = value.replace(f"${{{group}}}", os.environ.get(group))
+        env_value = os.environ.get(group)
+        if env_value is None:
+            assert (
+                False
+            ), f"environment variable ${group} used in the config is not defined"
+        value = value.replace(f"${{{group}}}", env_value)
     return value
 
 
@@ -45,6 +50,14 @@ class LocationError(Exception):
 
 
 class ImageError(Exception):
+    pass
+
+
+class SetupScriptError(Exception):
+    pass
+
+
+class StartupScriptError(Exception):
     pass
 
 
@@ -62,6 +75,7 @@ image = args.image_type
 location = args.location_type
 server_type = args.server_type
 end_of_life = args.end_of_life_type
+meta_labels_type = args.meta_labels_type
 
 
 @dataclass
@@ -96,6 +110,7 @@ class Config:
     additional_ssh_keys: list[str] = None
     with_label: str = None
     label_prefix: str = ""
+    meta_labels: dict[str, set[str]] = None
     recycle: bool = True
     end_of_life: int = 50
     delete_random: bool = False
@@ -105,13 +120,7 @@ class Config:
     default_server_type: ServerType = server_type("cx11")
     default_location: Location = None
     workers: int = 10
-    setup_script: str = os.path.join(current_dir, "..", "scripts", "setup.sh")
-    startup_x64_script: str = os.path.join(
-        current_dir, "..", "scripts", "startup_x64.sh"
-    )
-    startup_arm64_script: str = os.path.join(
-        current_dir, "..", "scripts", "startup_arm64.sh"
-    )
+    scripts: str = os.path.join(current_dir, "..", "scripts")
     max_powered_off_time: int = 60
     max_unused_runner_time: int = 180
     max_runner_registration_time: int = 180
@@ -135,6 +144,9 @@ class Config:
 
         if self.additional_ssh_keys is None:
             self.additional_ssh_keys = []
+
+        if self.meta_labels is None:
+            self.meta_labels = {}
 
         if self.logger_format is None:
             self.logger_format = logger_format
@@ -240,6 +252,23 @@ def parse_config(filename: str):
             doc["label_prefix"], str
         ), "config.label_prefix: is not a string"
 
+    if doc.get("meta_labels") is not None:
+        assert isinstance(
+            doc["meta_labels"], dict
+        ), "config.meta_labels is not a dictionary"
+        for i, meta in enumerate(doc["meta_labels"]):
+            assert isinstance(
+                meta, str
+            ), f"config.meta_labels.{meta}: name is not a string"
+            assert isinstance(
+                doc["meta_labels"][meta], list
+            ), f"config.meta_labels.{meta}: is not a list"
+            for j, v in enumerate(doc["meta_labels"][meta]):
+                assert isinstance(
+                    v, str
+                ), f"config.meta_labels.{meta}[{j}]: is not a string"
+            doc["meta_labels"][meta] = set(doc["meta_labels"][meta])
+
     if doc.get("recycle") is not None:
         assert isinstance(doc["recycle"], bool), "config.recycle: is not a boolean"
 
@@ -287,23 +316,11 @@ def parse_config(filename: str):
         v = doc["workers"]
         assert isinstance(v, int) and v > 0, "config.workers: is not an integer > 0"
 
-    if doc.get("setup_script") is not None:
+    if doc.get("scripts") is not None:
         try:
-            doc["setup_script"] = path(doc["setup_script"])
+            doc["scripts"] = path(doc["scripts"])
         except Exception as e:
-            assert False, f"config.setup_script: {e}"
-
-    if doc.get("startup_x64_script") is not None:
-        try:
-            doc["startup_x64_script"] = path(doc["startup_x64_script"])
-        except Exception as e:
-            assert False, f"config.startup_x64_script: {e}"
-
-    if doc.get("startup_arm64_script") is not None:
-        try:
-            doc["startup_arm64_script"] = path(doc["startup_arm64_script"])
-        except Exception as e:
-            assert False, f"config.startup_arm64_script: {e}"
+            assert False, f"config.scripts: {e}"
 
     if doc.get("max_powered_off_time") is not None:
         v = doc["max_powered_off_time"]
@@ -351,7 +368,7 @@ def parse_config(filename: str):
         assert (
             doc["logger_config"]["loggers"].get("testflows.github.hetzner.runners")
             is not None
-        ), 'config.logger_config.loggers."tesflows.github.hetzner.runners" is not defined'
+        ), 'config.logger_config.loggers."testflows.github.hetzner.runners" is not defined'
         assert (
             doc["logger_config"]["loggers"]["testflows.github.hetzner.runners"].get(
                 "handlers"
@@ -628,6 +645,7 @@ def check_server_type(client: Client, server_type: ServerType):
 
 
 def check_prices(client: Client):
+    """Check server prices."""
     server_types: list[ServerType] = client.server_types.get_all()
     return {
         t.name.lower(): {
@@ -636,3 +654,17 @@ def check_prices(client: Client):
         }
         for t in server_types
     }
+
+
+def check_setup_script(script: str):
+    """Check if setup script is valid."""
+    if not os.path.exists(script):
+        raise SetupScriptError(f"invalid setup script path '{script}'")
+    return script
+
+
+def check_startup_script(script: str):
+    """Check if startup script is valid."""
+    if not os.path.exists(script):
+        raise StartupScriptError(f"invalid startup script path '{script}'")
+    return script
