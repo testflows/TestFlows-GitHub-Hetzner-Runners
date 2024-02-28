@@ -163,7 +163,7 @@ def deploy(args, config: Config, redeploy=False):
         ssh(server, f"chown -R ubuntu:ubuntu {deploy_scripts_folder}", stacklevel=4)
         ssh(
             server,
-            f"find {deploy_scripts_folder} -type f -exec chmod +rx {{}} \;",
+            f'"find {deploy_scripts_folder} -type f -exec chmod +rx {{}} \;"',
             stacklevel=4,
         )
 
