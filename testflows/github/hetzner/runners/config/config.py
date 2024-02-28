@@ -231,6 +231,21 @@ def parse_config(filename: str):
 
     doc = doc["config"]
 
+    if doc.get("setup_script"):
+        assert (
+            False
+        ), "config.setup_script is deprecated, use the new config.scripts option"
+
+    if doc.get("startup_x64_script"):
+        assert (
+            False
+        ), "config.startup_x64_script is deprecated, use the new config.scripts option"
+
+    if doc.get("startup_arm64_script"):
+        assert (
+            False
+        ), "config.startup_x64_script is deprecated, see the new config.scripts option"
+
     if doc.get("ssh_key") is not None:
         assert isinstance(doc["ssh_key"], str), "config.ssh_key: is not a string"
         doc["ssh_key"] = path(doc["ssh_key"], check_exists=False)
