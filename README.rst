@@ -62,6 +62,7 @@ Table of Contents
 * `Specifying The Runner Location <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Location>`_
 * `Specifying The Runner Image <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Image>`_
 * `Specifying The Custom Runner Server Setup Script <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Custom-Runner-Server-Setup-Script>`_
+* `Specifying The Custom Runner Server Startup Script <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Custom-Runner-Server-Startup-Script>`_
 * `Specifying Standby Runners <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-Standby-Runners>`_
 * `Specifying Logger Configuration <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-Logger-Configuration>`_
 * `Listing All Current Servers <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Listing-All-Current-Servers>`_
