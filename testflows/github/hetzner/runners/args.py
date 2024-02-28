@@ -129,10 +129,17 @@ def server_type(v):
     return ServerType(name=v)
 
 
-def meta_labels_type(v):
+def meta_labels_type(v, meta_labels=None):
     """Meta labels type argument."""
     try:
-        return {l[0]: set(l[1].split(",") if l[1] else []) for l in v}
+        if meta_labels is None:
+            meta_labels = {l[0]: set(l[1].split(",") if l[1] else []) for l in v}
+        names = set(list(meta_labels.keys()))
+        for name, labels in meta_labels.items():
+            assert names.isdisjoint(
+                labels
+            ), f"labels for meta label '{name}' can't include any meta labels"
+        return meta_labels
     except Exception as e:
         raise ArgumentTypeError(str(e))
 

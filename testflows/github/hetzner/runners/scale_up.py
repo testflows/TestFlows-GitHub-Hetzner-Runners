@@ -274,7 +274,6 @@ def expand_meta_labels(
         if label.startswith(label_prefix):
             raw_label = label.split(label_prefix, 1)[-1] if label_prefix else label
             if raw_label in meta_labels:
-                expanded_labels.pop()
                 expanded_labels += list(meta_labels[label])
 
     return set(expanded_labels)

@@ -148,6 +148,8 @@ class Config:
         if self.meta_labels is None:
             self.meta_labels = {}
 
+        self.meta_labels = meta_labels_type(None, meta_labels=self.meta_labels)
+
         if self.logger_format is None:
             self.logger_format = logger_format
 

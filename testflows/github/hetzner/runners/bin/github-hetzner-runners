@@ -31,7 +31,7 @@ from hcloud.ssh_keys.domain import SSHKey
 from github import Github
 from github.Repository import Repository
 
-from argparse import ArgumentParser, RawTextHelpFormatter
+from argparse import ArgumentParser, RawTextHelpFormatter, ArgumentTypeError
 
 from testflows.github.hetzner.runners import __version__, __license__
 from testflows.github.hetzner.runners.actions import Action
@@ -915,7 +915,8 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
 
 
 if __name__ == "__main__":
-    arguments = argparser().parse_args()
+    parser = argparser()
+    arguments = parser.parse_args()
 
     logging_level = logging.INFO
 
@@ -925,7 +926,10 @@ if __name__ == "__main__":
         config = Config()
 
     if arguments.meta_labels:
-        arguments.meta_labels = args.meta_labels_type(arguments.meta_labels)
+        try:
+            arguments.meta_labels = args.meta_labels_type(arguments.meta_labels)
+        except ArgumentTypeError as e:
+            parser.error(str(e))
 
     config.update(arguments)
 
