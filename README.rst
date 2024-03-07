@@ -44,6 +44,25 @@ to avoid any cleanup. Server instances are not shared between jobs.
    the same way as for a job that takes 59 minutes. Therefore, the minimal cost
    for any job, the cost of the server for 1 hour plus the cost of one public IPv4 address.
 
+========
+Features
+========
+
+* simpler alternative to what GitHub lists in `Recommended Autoscaling Solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_
+* cost-efficient on-demand runners using `Hetzner Cloud <https://www.hetzner.com/cloud>`_
+* supports server recycling to minimize costs
+* simple configuration, no Webhooks, no need for AWS lambdas, and no need to setup any GitHub application
+* supports specifying custom runner server types, images, and locations using job labels
+* self-contained program that you can use to deploy, redeploy, and manage the service on a cloud instance
+* supports x64 (x86) and ARM64 (arm) runners
+* supports using any Hetzner Cloud server types
+* supports runners with pre-installed Docker
+* supports using any standard Hetzner Cloud images and applications
+* supports auto-replenishable fixed standby runner pools for jobs to be picked up immediately
+* supports limiting the maximum number of runners created for each workflow run
+* supports efficient GitHub API usage using HTTP caching and conditional requests
+* supports meta labels keep your job label list short
+
 =================
 Table of Contents
 =================
@@ -63,7 +82,7 @@ Table of Contents
 * `Specifying The Runner Image <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Image>`_
 * `Specifying The Custom Runner Server Setup Script <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Custom-Runner-Server-Setup-Script>`_
 * `Specifying The Custom Runner Server Startup Script <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Custom-Runner-Server-Startup-Script>`_
-* `Disable Setup or Startup Scripts <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Disable-Setup-Or-Startup-Scripts>`_
+* `Disabling Setup or Startup Scripts <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Disabling-Setup-Or-Startup-Scripts>`_
 * `Specifying Standby Runners <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-Standby-Runners>`_
 * `Specifying Logger Configuration <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-Logger-Configuration>`_
 * `Listing All Current Servers <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Listing-All-Current-Servers>`_
@@ -79,24 +98,6 @@ Table of Contents
 * `Handling Failing Conditions <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Handling-Failing-Conditions>`_
 * `Meta Labels <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Meta-Labels>`_
 * `Program Options <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Program-Options>`_
-
-========
-Features
-========
-
-* cost-efficient on-demand runners using `Hetzner Cloud <https://www.hetzner.com/cloud>`_
-* supports server recycling to minimize costs
-* simple configuration, no Webhooks, no need for AWS lambdas, and no need to setup any GitHub application
-* supports specifying custom runner server types, images, and locations using job labels
-* self-contained program that you can use to deploy, redeploy, and manage the service on a cloud instance
-* supports x64 (x86) and ARM64 (arm) runners
-* supports using any Hetzner Cloud server types
-* supports runners with pre-installed Docker
-* supports using any standard Hetzner Cloud images and applications
-* supports auto-replenishable fixed standby runner pools for jobs to be picked up immediately
-* supports limiting the maximum number of runners created for each workflow run
-* supports efficient GitHub API usage using HTTP caching and conditional requests
-* simpler alternative to what GitHub lists in `Recommended Autoscaling Solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_
 
 ===========
 Limitations

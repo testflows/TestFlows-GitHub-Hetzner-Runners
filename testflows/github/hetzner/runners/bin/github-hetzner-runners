@@ -172,11 +172,11 @@ def argparser():
 
     parser.add_argument(
         "--with-label",
-        metavar="label",
+        metavar="label --with-label ...",
         type=str,
+        action='append',
         help=(
-            "only create runners for jobs that have the specified label,\n"
-            "by default jobs are not filtered and runners will be created for any queued job"
+            "only create runners for jobs that have the specified label, default: self-hosted"
         ),
     )
 
@@ -188,12 +188,12 @@ def argparser():
     )
 
     parser.add_argument(
-        "--meta-labels",
-        metavar="name label,... --max-labels",
+        "--meta-label",
+        metavar="name label,... --meta-label",
         type=str,
         action='append',
         nargs=2,
-        help="runner meta label that will be expanded to a list of given labels",
+        help="define runner meta label that will be expanded to a list of given labels",
     )
 
     parser.add_argument(
@@ -925,9 +925,9 @@ if __name__ == "__main__":
     else:
         config = Config()
 
-    if arguments.meta_labels:
+    if arguments.meta_label:
         try:
-            arguments.meta_labels = args.meta_labels_type(arguments.meta_labels)
+            arguments.meta_label = args.meta_label_type(arguments.meta_label)
         except ArgumentTypeError as e:
             parser.error(str(e))
 

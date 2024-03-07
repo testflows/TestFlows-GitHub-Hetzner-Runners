@@ -43,11 +43,12 @@ def command_options(
     command += f" --config {config.config_file}" if config.config_file else ""
     command += f" --recycle " + ("on" if config.recycle else "off")
     command += f" --end-of-life {config.end_of_life}" if config.end_of_life else ""
-    command += f" --with-label {config.with_label}" if config.with_label else ""
-    for k in config.meta_labels:
+    for l in config.with_label:
+        command += f' --with-label "{l}"' if l else ""
+    for k in config.meta_label:
         command += (
-            f" --meta-labels \"{k}\" \"{','.join(config.meta_labels[k])}\""
-            if config.meta_labels[k]
+            f" --meta-label \"{k}\" \"{','.join(config.meta_label[k])}\""
+            if config.meta_label[k]
             else ""
         )
     command += f" --workers {config.workers}"

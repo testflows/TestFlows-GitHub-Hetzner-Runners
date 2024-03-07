@@ -263,8 +263,8 @@ def get_startup_script(
     return script
 
 
-def expand_meta_labels(
-    meta_labels: dict[str, set[str]], labels: set[str], label_prefix: str = ""
+def expand_meta_label(
+    meta_label: dict[str, set[str]], labels: set[str], label_prefix: str = ""
 ):
     """Expand any meta labels."""
     expanded_labels = []
@@ -273,8 +273,8 @@ def expand_meta_labels(
         expanded_labels.append(label)
         if label.startswith(label_prefix):
             raw_label = label.split(label_prefix, 1)[-1] if label_prefix else label
-            if raw_label in meta_labels:
-                expanded_labels += list(meta_labels[label])
+            if raw_label in meta_label:
+                expanded_labels += list(meta_label[label])
 
     return set(expanded_labels)
 
@@ -503,9 +503,9 @@ def scale_up(
     debug: bool = config.debug
     standby_runners: list[StandbyRunner] = config.standby_runners
     recycle: bool = config.recycle
-    with_label: str = config.with_label
+    with_label: list[str] = config.with_label
     label_prefix: str = config.label_prefix
-    meta_labels: dict[str, set[str]] = config.meta_labels
+    meta_label: dict[str, set[str]] = config.meta_label
     scripts: str = config.scripts
     interval: int = -1
 
@@ -522,7 +522,7 @@ def scale_up(
         """Create new server that would provide a runner with given labels."""
         recyclable_servers: list[BoundServer] = []
 
-        labels = expand_meta_labels(meta_labels=meta_labels, labels=labels)
+        labels = expand_meta_label(meta_label=meta_label, labels=labels)
 
         server_type = get_server_type(
             labels=labels, default=default_server_type, label_prefix=label_prefix
@@ -807,13 +807,18 @@ def scale_up(
                                             break
 
                                     if with_label is not None:
-                                        if not with_label in labels:
-                                            with Action(
-                                                f"Skipping {job} with {labels} as it is missing label '{with_label}'",
-                                                server_name=server_name,
-                                                interval=interval,
-                                            ):
-                                                continue
+                                        found_all_with_labels = True
+                                        for label in with_label:
+                                            if not label in labels:
+                                                found_all_with_labels = False
+                                                with Action(
+                                                    f"Skipping {job} with {labels} as it is missing label '{label}'",
+                                                    server_name=server_name,
+                                                    interval=interval,
+                                                ):
+                                                    break
+                                        if not found_all_with_labels:
+                                            continue
 
                                     with Action(
                                         f"Checking available runners for {job}"

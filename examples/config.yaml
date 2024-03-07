@@ -4,13 +4,23 @@ config:
     hetzner_token: ${HETZNER_TOKEN}
     ssh_key: "~/.ssh/id_rsa.pub"
     #additional_ssh_keys:
+    # - additional_key
+    # - ...
     max_runners: 10
+    #max_runners_in_workflow_run:
     recycle: true
     end_of_life: 50
+    #label_prefix:
+    with_label:
+      - "self-hosted"
+    #meta_label:
+    #  name:
+    #    - label
+    #    - ...
     delete_random: false
     default_image: "x86:system:ubuntu-22.04"
     default_server_type: cpx11
-    #default_location:
+    #default_location: ash
     workers: 10
     #scripts:
     max_powered_off_time: 60

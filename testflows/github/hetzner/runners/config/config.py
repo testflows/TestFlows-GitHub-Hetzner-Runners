@@ -75,7 +75,7 @@ image = args.image_type
 location = args.location_type
 server_type = args.server_type
 end_of_life = args.end_of_life_type
-meta_labels_type = args.meta_labels_type
+meta_label_type = args.meta_label_type
 
 
 @dataclass
@@ -108,9 +108,9 @@ class Config:
     hetzner_token: str = os.getenv("HETZNER_TOKEN")
     ssh_key: str = os.path.expanduser("~/.ssh/id_rsa.pub")
     additional_ssh_keys: list[str] = None
-    with_label: str = None
+    with_label: list[str] = None
     label_prefix: str = ""
-    meta_labels: dict[str, set[str]] = None
+    meta_label: dict[str, set[str]] = None
     recycle: bool = True
     end_of_life: int = 50
     delete_random: bool = False
@@ -139,14 +139,17 @@ class Config:
     config_file: str = None
 
     def __post_init__(self):
+        if self.with_label is None:
+            self.with_label = ["self-hosted"]
+
         if self.standby_runners is None:
             self.standby_runners = []
 
         if self.additional_ssh_keys is None:
             self.additional_ssh_keys = []
 
-        if self.meta_labels is None:
-            self.meta_labels = {}
+        if self.meta_label is None:
+            self.meta_label = {}
 
         if self.logger_format is None:
             self.logger_format = logger_format
@@ -260,29 +263,31 @@ def parse_config(filename: str):
             ), f"config.additional_ssh_keys[{i}]: is not a string"
 
     if doc.get("with_label") is not None:
-        assert isinstance(doc["with_label"], str), "config.with_label: is not a string"
+        assert isinstance(doc["with_label"], list), "config.with_label: is not a list"
+        for i, label in enumerate(doc["with_label"]):
+            assert isinstance(label, str), f"config.with_label[{i}]: is not a string"
 
     if doc.get("label_prefix") is not None:
         assert isinstance(
             doc["label_prefix"], str
         ), "config.label_prefix: is not a string"
 
-    if doc.get("meta_labels") is not None:
+    if doc.get("meta_label") is not None:
         assert isinstance(
-            doc["meta_labels"], dict
-        ), "config.meta_labels is not a dictionary"
-        for i, meta in enumerate(doc["meta_labels"]):
+            doc["meta_label"], dict
+        ), "config.meta_label is not a dictionary"
+        for i, meta in enumerate(doc["meta_label"]):
             assert isinstance(
                 meta, str
-            ), f"config.meta_labels.{meta}: name is not a string"
+            ), f"config.meta_label.{meta}: name is not a string"
             assert isinstance(
-                doc["meta_labels"][meta], list
-            ), f"config.meta_labels.{meta}: is not a list"
-            for j, v in enumerate(doc["meta_labels"][meta]):
+                doc["meta_label"][meta], list
+            ), f"config.meta_label.{meta}: is not a list"
+            for j, v in enumerate(doc["meta_label"][meta]):
                 assert isinstance(
                     v, str
-                ), f"config.meta_labels.{meta}[{j}]: is not a string"
-            doc["meta_labels"][meta] = set(doc["meta_labels"][meta])
+                ), f"config.meta_label.{meta}[{j}]: is not a string"
+            doc["meta_label"][meta] = set(doc["meta_label"][meta])
 
     if doc.get("recycle") is not None:
         assert isinstance(doc["recycle"], bool), "config.recycle: is not a boolean"

@@ -38,21 +38,26 @@
                     }
                 },
                 "with_label": {
-                    "description": "Only create runners for jobs that have the specified label, by default jobs are not filtered and runners will be created for any queued job.",
-                    "type": "string",
-                    "examples": ["on-demand"]
+                    "description": "Only create runners for jobs that have the specified label, default: self-hosted.",
+                    "type": "array",
+                    "items": {
+                        "description": "Label name.",
+                        "type": "string",
+                        "examples": ["self-hosted"]
+                    }
                 },
                 "label_prefix": {
                     "description": "Support type, image, and location job labels with the specified prefix.",
                     "type": "string"
                 },
-                "meta_labels": {
+                "meta_label": {
                     "description": "Meta labels.",
                     "type": "object",
                     "additionalProperties": {
                       "type": "array",
                       "items": {
                         "type": "string"
+                      }
                     }
                 },
                 "recycle": {
