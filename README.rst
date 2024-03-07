@@ -61,7 +61,7 @@ Features
 * supports auto-replenishable fixed standby runner pools for jobs to be picked up immediately
 * supports limiting the maximum number of runners created for each workflow run
 * supports efficient GitHub API usage using HTTP caching and conditional requests
-* supports meta labels keep your job label list short
+* supports meta labels to keep your job label list short
 
 =================
 Table of Contents
