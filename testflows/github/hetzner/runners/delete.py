@@ -19,7 +19,7 @@ from github import Github
 from github.Repository import Repository
 from github.SelfHostedActionsRunner import SelfHostedActionsRunner
 
-from .scale_up import server_name_prefix
+from .scale_up import server_name_prefix, runner_name_prefix
 from .config import Config
 from .actions import Action
 from .request import request
@@ -42,6 +42,9 @@ def all(args, config: Config):
         runners: list[SelfHostedActionsRunner] = repo.get_self_hosted_runners()
 
     for runner in runners:
+        if not runner.name.startswith(runner_name_prefix):
+            continue
+
         with Action(f"Deleting runner {runner.name}") as action:
             _, resp = request(
                 f"https://api.github.com/repos/{config.github_repository}/actions/runners/{runner.id}",

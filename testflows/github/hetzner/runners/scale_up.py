@@ -40,7 +40,6 @@ from hcloud.helpers.labels import LabelValidator
 
 from github import Github
 from github.Repository import Repository
-from github.WorkflowJob import WorkflowJob
 from github.WorkflowRun import WorkflowRun
 from github.SelfHostedActionsRunner import SelfHostedActionsRunner
 
@@ -52,6 +51,7 @@ standby_server_name_prefix = f"{server_name_prefix}standby-"
 standby_runner_name_prefix = standby_server_name_prefix
 recycle_server_name_prefix = f"{server_name_prefix}recycle-"
 server_ssh_key_label = "github-hetzner-runner-ssh-key"
+runner_name_v2 = "-v2-"
 
 
 @dataclass
@@ -85,6 +85,24 @@ class RunnerServer:
 def uid():
     """Return unique id - just a timestamp."""
     return str(time.time())
+
+
+def get_runner_server_name(runner_name: str) -> str:
+    """Determine runner's server name."""
+    return runner_name.split(runner_name_v2, 1)[0]
+
+
+def get_runner_server_type_and_location(runner_name: str):
+    """Determine runner's server type, and location."""
+    server_type, server_location = None, None
+
+    if runner_name.startswith(runner_name_prefix):
+        if runner_name_v2 in runner_name:
+            server_type, server_location = runner_name.split(runner_name_v2, 1)[
+                -1
+            ].split("-")
+
+    return server_type, server_location
 
 
 def server_setup(
@@ -127,6 +145,9 @@ def server_setup(
             f'GITHUB_RUNNER_TOKEN="{GITHUB_RUNNER_TOKEN}" '
             f"GITHUB_RUNNER_GROUP=Default "
             f'GITHUB_RUNNER_LABELS="{runner_labels}" '
+            f'SERVER_ID="{server.id}" '
+            f'SERVER_TYPE_NAME="{server.server_type.name}" '
+            f'SERVER_LOCATION_NAME="{server.datacenter.location.name}" '
             f"bash -s' < {startup_script}",
             stacklevel=5,
         )
@@ -722,7 +743,7 @@ def scale_up(
                 ):
                     for runner in runners:
                         for server in servers:
-                            if server.name == runner.name:
+                            if runner.name.startswith(server.name):
                                 if runner.status == "online":
                                     server.status = "busy" if runner.busy else "ready"
 

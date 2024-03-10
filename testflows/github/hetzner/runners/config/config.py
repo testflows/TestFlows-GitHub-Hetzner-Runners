@@ -135,7 +135,7 @@ class Config:
     logger_format: dict = None
     cloud: cloud = dataclasses.field(default_factory=cloud)
     standby_runners: list[standby_runner] = None
-    server_prices: dict[str, float] = None
+    server_prices: dict[str, dict[str, float]] = None
     config_file: str = None
 
     def __post_init__(self):

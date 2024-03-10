@@ -55,6 +55,7 @@ import testflows.github.hetzner.runners.cloud as cloud
 import testflows.github.hetzner.runners.service as service
 import testflows.github.hetzner.runners.delete as delete
 import testflows.github.hetzner.runners.servers as servers
+import testflows.github.hetzner.runners.estimate as estimate
 
 from requests_cache import DO_NOT_CACHE, EXPIRE_IMMEDIATELY, install_cache
 from requests_cache.backends.filesystem import FileCache
@@ -174,7 +175,7 @@ def argparser():
         "--with-label",
         metavar="label --with-label ...",
         type=str,
-        action='append',
+        action="append",
         help=(
             "only create runners for jobs that have the specified label, default: self-hosted"
         ),
@@ -191,7 +192,7 @@ def argparser():
         "--meta-label",
         metavar="name label,... --meta-label",
         type=str,
-        action='append',
+        action="append",
         nargs=2,
         help="define runner meta label that will be expanded to a list of given labels",
     )
@@ -774,6 +775,134 @@ def argparser():
     )
 
     delete_log_service_parser.set_defaults(func=service.delete_log)
+
+    estimate_parser = commands.add_parser(
+        "estimate",
+        help="cost estimator commands",
+        description="Estimate costs for workflow job, run or runs.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    estimate_parser.add_argument(
+        "--ipv4",
+        metavar="price",
+        dest="ipv4_price",
+        help="IPv4 price per hour, default: 0.0008",
+        type=float,
+        default=0.0008,
+    )
+
+    estimate_parser.add_argument(
+        "--ipv6",
+        metavar="price",
+        dest="ipv6_price",
+        help="IPv6 price per hour, default: 0.0000",
+        type=float,
+        default=0.0000,
+    )
+
+    estimate_parser_commands = estimate_parser.add_subparsers(
+        title="commands", metavar="command", description=None, help=None
+    )
+
+    estimate_parser_commands.required = True
+
+    estimate_run_parser = estimate_parser_commands.add_parser(
+        "run",
+        help="run cost estimator",
+        description="Estimate costs for a specific workflow run.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    estimate_run_parser.add_argument("id", help="run id", type=int)
+    estimate_run_parser.add_argument(
+        "--attempt",
+        metavar="number",
+        dest="run_attempt",
+        help="attempt number",
+        type=int,
+    )
+
+    estimate_run_parser.set_defaults(func=estimate.workflow_run)
+
+    estimate_job_parser = estimate_parser_commands.add_parser(
+        "job",
+        help="job cost estimator",
+        description="Estimate costs for a specific workflow job.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    estimate_job_parser.add_argument("id", help="job id", type=int)
+
+    estimate_job_parser.set_defaults(func=estimate.workflow_job)
+
+    estimate_runs_parser = estimate_parser_commands.add_parser(
+        "runs",
+        help="runs cost estimator",
+        description="Estimate costs for workflow runs.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    estimate_runs_parser.add_argument(
+        "--actor",
+        metavar="name",
+        dest="runs_actor",
+        help="actor name",
+        type=str,
+    )
+
+    estimate_runs_parser.add_argument(
+        "--branch",
+        metavar="name",
+        dest="runs_branch",
+        help="branch name",
+        type=str,
+    )
+
+    estimate_runs_parser.add_argument(
+        "--event",
+        metavar="name",
+        dest="runs_event",
+        help="event name",
+        type=str,
+    )
+
+    estimate_runs_parser.add_argument(
+        "--status",
+        dest="runs_status",
+        help="status value",
+        choices=[
+            "queued",
+            "in_progress",
+            "completed",
+            "success",
+            "failure",
+            "neutral",
+            "cancelled",
+            "skipped",
+            "timed_out",
+            "action_required",
+        ],
+        type=str,
+    )
+
+    estimate_runs_parser.add_argument(
+        "--exclude-pull-requests",
+        dest="runs_exclude_pull_requests",
+        action="store_true",
+        help="exclude pull requests",
+        default=False,
+    )
+
+    estimate_runs_parser.add_argument(
+        "--head-sha",
+        metavar="value",
+        dest="runs_head_sha",
+        help="head SHA value",
+        type=str,
+    )
+
+    estimate_runs_parser.set_defaults(func=estimate.workflow_runs)
 
     return parser
 

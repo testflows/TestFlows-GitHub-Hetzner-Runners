@@ -32,6 +32,7 @@ from .scale_up import (
     uid,
     StandbyRunner,
     ScaleUpFailureMessage,
+    get_runner_server_name,
 )
 from .logger import logger
 from .server import age
@@ -88,7 +89,7 @@ class UnusedRunner:
 def delete_recyclable_server(
     server_name,
     recyclable_servers: list[BoundServer],
-    server_prices: dict[str, float],
+    server_prices: dict[str, dict[str, float]],
     stack_level=2,
 ):
     """Deleting recycle server either randomly or the cheapest if server prices are available.
@@ -217,7 +218,7 @@ def scale_down(
     max_powered_off_time: int = config.max_powered_off_time
     max_unused_runner_time: int = config.max_unused_runner_time
     max_runner_registration_time: int = config.max_runner_registration_time
-    server_prices: dict[str, float] = config.server_prices
+    server_prices: dict[str, dict[str, float]] = config.server_prices
     powered_off_servers: dict[str, PoweredOffServer] = {}
     unused_runners: dict[str, UnusedRunner] = {}
     zombie_servers: dict[str, ZombieServer] = {}
@@ -312,7 +313,13 @@ def scale_down(
                             ].observed_interval = current_interval
 
                     elif server.status == server.STATUS_RUNNING:
-                        if server.name not in [runner.name for runner in runners]:
+                        if not any(
+                            [
+                                runner.name
+                                for runner in runners
+                                if runner.name.startswith(server.name)
+                            ]
+                        ):
                             if server.name not in zombie_servers:
                                 with Action(
                                     f"Found new potential zombie server {server.name}",
@@ -360,7 +367,7 @@ def scale_down(
                             if runner.name not in unused_runners:
                                 with Action(
                                     f"Found new unused runner {runner.name}",
-                                    server_name=runner.name,
+                                    server_name=get_runner_server_name(runner.name),
                                     interval=interval,
                                 ):
                                     unused_runners[runner.name] = UnusedRunner(
@@ -494,7 +501,7 @@ def scale_down(
                     if unused_runner.observed_interval != current_interval:
                         with Action(
                             f"Forgetting about unused runner {runner_name}",
-                            server_name=runner_name,
+                            server_name=get_runner_server_name(runner_name),
                             interval=interval,
                         ):
                             unused_runners.pop(runner_name)
@@ -506,10 +513,12 @@ def scale_down(
                             with Action(
                                 f"Try to find server for the runner {runner_name}",
                                 ignore_fail=True,
-                                server_name=runner_name,
+                                server_name=get_runner_server_name(runner_name),
                                 interval=interval,
                             ):
-                                runner_server = client.servers.get_by_name(runner_name)
+                                runner_server = client.servers.get_by_name(
+                                    get_runner_server_name(runner_name)
+                                )
 
                             if runner_server is not None:
                                 if recycle:
@@ -533,7 +542,7 @@ def scale_down(
                                 with Action(
                                     f"Removing self-hosted runner {runner_name}",
                                     ignore_fail=True,
-                                    server_name=runner_name,
+                                    server_name=get_runner_server_name(runner_name),
                                     interval=interval,
                                 ):
                                     repo.remove_self_hosted_runner(unused_runner.runner)
