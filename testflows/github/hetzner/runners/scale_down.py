@@ -308,9 +308,9 @@ def scale_down(
                                         observed_interval=current_interval,
                                     )
                             powered_off_servers[server.name].server = server
-                            powered_off_servers[
-                                server.name
-                            ].observed_interval = current_interval
+                            powered_off_servers[server.name].observed_interval = (
+                                current_interval
+                            )
 
                     elif server.status == server.STATUS_RUNNING:
                         if not any(
@@ -332,9 +332,9 @@ def scale_down(
                                         observed_interval=current_interval,
                                     )
                             zombie_servers[server.name].server = server
-                            zombie_servers[
-                                server.name
-                            ].observed_interval = current_interval
+                            zombie_servers[server.name].observed_interval = (
+                                current_interval
+                            )
 
                         else:
                             zombie_servers.pop(server.name, None)
@@ -376,9 +376,9 @@ def scale_down(
                                         observed_interval=current_interval,
                                     )
                             unused_runners[runner.name].runner = runner
-                            unused_runners[
-                                runner.name
-                            ].observed_interval = current_interval
+                            unused_runners[runner.name].observed_interval = (
+                                current_interval
+                            )
 
             with Action(
                 "Checking for scale up failures", level=logging.DEBUG, interval=interval
@@ -395,20 +395,20 @@ def scale_down(
                                 server_name=scaleup_failure.server_name,
                                 interval=interval,
                             ):
-                                scaleup_failures[
-                                    scaleup_failure.server_name
-                                ] = ScaleUpFailure(
-                                    time=scaleup_failure.time,
-                                    labels=scaleup_failure.labels,
-                                    server_name=scaleup_failure.server_name,
-                                    exception=scaleup_failure.exception,
-                                    count=1,
-                                    observed_interval=current_interval,
+                                scaleup_failures[scaleup_failure.server_name] = (
+                                    ScaleUpFailure(
+                                        time=scaleup_failure.time,
+                                        labels=scaleup_failure.labels,
+                                        server_name=scaleup_failure.server_name,
+                                        exception=scaleup_failure.exception,
+                                        count=1,
+                                        observed_interval=current_interval,
+                                    )
                                 )
                         else:
-                            scaleup_failures[
-                                scaleup_failure.server_name
-                            ].exception = scaleup_failure.exception
+                            scaleup_failures[scaleup_failure.server_name].exception = (
+                                scaleup_failure.exception
+                            )
                             scaleup_failures[scaleup_failure.server_name].count += 1
                             scaleup_failures[
                                 scaleup_failure.server_name
