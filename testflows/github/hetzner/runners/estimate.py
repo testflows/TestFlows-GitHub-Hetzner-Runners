@@ -14,7 +14,6 @@
 # limitations under the License.
 import sys
 import math
-import yaml
 import types
 import github
 
@@ -30,6 +29,21 @@ from github import Github
 from github.Repository import Repository
 from github.WorkflowRun import WorkflowRun
 from github.WorkflowJob import WorkflowJob
+
+
+class Output:
+    """Output to multiple streams."""
+
+    def __init__(self, *streams):
+        self.streams = streams
+
+    def write(self, message):
+        for stream in self.streams:
+            stream.write(message)
+
+    def flush(self):
+        for stream in self.streams:
+            stream.flush()
 
 
 def get_workflow_job(self, id_or_name) -> WorkflowJob:
@@ -151,7 +165,6 @@ def get_estimate_for_jobs(
     server_prices: dict[str, dict[str, float]],
     ipv4_price: float,
     ipv6_price: float,
-    indent: int = 2,
 ):
     """Collect estimate for the given jobs."""
 
@@ -161,13 +174,19 @@ def get_estimate_for_jobs(
     unknown_jobs = 0
 
     for i, job in enumerate(jobs, 1):
-        duration = job.completed_at - job.started_at
+        duration = timedelta()
+
+        if job.completed_at and job.started_at:
+            duration = job.completed_at - job.started_at
+
         runner_name = job.raw_data["runner_name"]
 
         job_entry = {
             "name": job.name,
             "id": job.id,
             "status": job.status,
+            "started_at": job.started_at,
+            "completed_at": job.completed_at,
             "duration": str(duration),
             "url": job.url,
             "run_id": job.run_id,
@@ -227,8 +246,10 @@ def workflow_run(
 ):
     """Estimate cost for a given workflow run."""
     run_attempt = None
+
     if writer is None:
-        writer = StreamingYAMLWriter(stream=sys.stdout, indent=0)
+        streams = Output(*([sys.stdout] + ([args.output] if args.output else [])))
+        writer = StreamingYAMLWriter(stream=streams, indent=0)
 
     if workflow_run is None:
         run_id = args.id
@@ -295,10 +316,12 @@ def workflow_runs(args, config: Config):
     if args.runs_head_sha:
         runs_args["head_sha"] = args.runs_head_sha
 
+    streams = Output(*([sys.stdout] + ([args.output] if args.output else [])))
+
     with Action(f"Getting workflow runs") as action:
         for run in repo.get_workflow_runs(**runs_args):
             run = extend_workflow_run(run)
-            writer = StreamingYAMLWriter(stream=sys.stdout, indent=0)
+            writer = StreamingYAMLWriter(stream=streams, indent=0)
             workflow_run(
                 args=args,
                 config=config,
@@ -319,7 +342,8 @@ def workflow_job(args, config: Config):
 
     repo, server_prices = login_and_get_prices(args, config)
     repo = extend_repository(repo)
-    writer = StreamingYAMLWriter(stream=sys.stdout, indent=0)
+    streams = Output(*([sys.stdout] + ([args.output] if args.output else [])))
+    writer = StreamingYAMLWriter(stream=streams, indent=0)
 
     with Action(f"Getting workflow job id {args.id}") as action:
         workflow_job = repo.get_workflow_job(args.id)

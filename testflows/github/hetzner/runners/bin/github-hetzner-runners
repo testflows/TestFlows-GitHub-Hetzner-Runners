@@ -784,6 +784,15 @@ def argparser():
     )
 
     estimate_parser.add_argument(
+        "-o",
+        "--output",
+        dest="output",
+        metavar="path",
+        type=args.file_type(mode="w"),
+        help="save estimate into the given file using the YAML format",
+    )
+
+    estimate_parser.add_argument(
         "--ipv4",
         metavar="price",
         dest="ipv4_price",
