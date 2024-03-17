@@ -284,7 +284,7 @@ def workflow_run(
             worst_estimate,
             best_estimate,
         ) = get_estimate_for_jobs(
-            jobs_writer, jobs, server_prices, args.ipv4_price, args.ipv6_price, indent=2
+            jobs_writer, jobs, server_prices, args.ipv4_price, args.ipv6_price
         )
 
         workflow_totals = {}

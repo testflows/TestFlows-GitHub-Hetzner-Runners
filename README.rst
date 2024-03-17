@@ -62,6 +62,7 @@ Features
 * supports limiting the maximum number of runners created for each workflow run
 * supports efficient GitHub API usage using HTTP caching and conditional requests
 * supports meta labels to keep your job label list short
+* supports estimating the cost of a job, a run, or a set of runs 
 
 =================
 Table of Contents
@@ -98,7 +99,6 @@ Table of Contents
 * `Scaling Down Runners <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Scaling-Down-Runners>`_
 * `Handling Failing Conditions <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Handling-Failing-Conditions>`_
 * `Meta Labels <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Meta-Labels>`_
-* `Estimating Costs <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Estimating-Costs>`_
 * `Program Options <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Program-Options>`_
 
 ===========
