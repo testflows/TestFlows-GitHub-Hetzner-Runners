@@ -7,7 +7,7 @@ echo "b0a090336f0d0a439dac7505475a1fb822f61bbb36420c7b3b3fe6b1bdc4dbaa  actions-
 tar xzf ./actions-runner-linux-x64-2.306.0.tar.gz
 
 echo "Configure runner"
-./config.sh --unattended --replace --url https://github.com/${GITHUB_REPOSITORY} --token ${GITHUB_RUNNER_TOKEN} --name "$(hostname)-v2-${SERVER_TYPE_NAME}-${SERVER_LOCATION_NAME}" --runnergroup "${GITHUB_RUNNER_GROUP}" --labels "${GITHUB_RUNNER_LABELS}" --work _work --ephemeral
+./config.sh --unattended --replace --url https://github.com/${GITHUB_REPOSITORY} --token ${GITHUB_RUNNER_TOKEN} --name "$(hostname)-${SERVER_TYPE_NAME}-${SERVER_LOCATION_NAME}" --runnergroup "${GITHUB_RUNNER_GROUP}" --labels "${GITHUB_RUNNER_LABELS}" --work _work --ephemeral
 
 echo "Start runner"
 bash -c "screen -d -m bash -c './run.sh; sudo poweroff'"

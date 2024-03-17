@@ -51,7 +51,6 @@ standby_server_name_prefix = f"{server_name_prefix}standby-"
 standby_runner_name_prefix = standby_server_name_prefix
 recycle_server_name_prefix = f"{server_name_prefix}recycle-"
 server_ssh_key_label = "github-hetzner-runner-ssh-key"
-runner_name_v2 = "-v2-"
 
 
 @dataclass
@@ -89,7 +88,7 @@ def uid():
 
 def get_runner_server_name(runner_name: str) -> str:
     """Determine runner's server name."""
-    return runner_name.split(runner_name_v2, 1)[0]
+    return "-".join(runner_name.split("-")[:5])
 
 
 def get_runner_server_type_and_location(runner_name: str):
@@ -97,10 +96,8 @@ def get_runner_server_type_and_location(runner_name: str):
     server_type, server_location = None, None
 
     if runner_name.startswith(runner_name_prefix):
-        if runner_name_v2 in runner_name:
-            server_type, server_location = runner_name.split(runner_name_v2, 1)[
-                -1
-            ].split("-")
+        if len(runner_name.split("-")) == 8:
+            server_type, server_location = runner_name.split("-")[5:]
 
     return server_type, server_location
 
