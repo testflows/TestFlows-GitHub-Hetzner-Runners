@@ -181,8 +181,7 @@ def get_estimate_for_jobs(
     """Collect estimate for the given jobs."""
 
     best_estimate, worst_estimate = None, None
-    total_duration = timedelta()
-    unknown_duration = timedelta()
+    total_duration, unknown_duration = None, None
     unknown_jobs = 0
 
     for i, job in enumerate(jobs, 1):
@@ -222,6 +221,12 @@ def get_estimate_for_jobs(
             "best": None,
         }
 
+        if duration is not None:
+            if unknown_duration is None:
+                unknown_duration = timedelta()
+            if total_duration is None:
+                total_duration = timedelta()
+
         if price is not None and duration is not None:
             job_best_estimate = duration.total_seconds() * price
             job_worst_estimate = (
@@ -240,9 +245,11 @@ def get_estimate_for_jobs(
 
         else:
             unknown_jobs += 1
-            unknown_duration += duration if duration is not None else timedelta()
+            if duration is not None:
+                unknown_duration += duration
 
-        total_duration += duration if duration is not None else timedelta()
+        if duration is not None:
+            total_duration += duration
 
         writer.add_list_element(value=job_entry)
 
@@ -312,7 +319,7 @@ def workflow_run(
         workflow_totals["total_duration"] = duration_str(total_duration)
         workflow_totals["known_jobs"] = count - unknown_jobs
         workflow_totals["known_duration"] = duration_str(
-            total_duration - unknown_duration
+            (total_duration - unknown_duration) if total_duration is not None else None
         )
         workflow_totals["unknown_jobs"] = unknown_jobs
         workflow_totals["unknown_duration"] = duration_str(unknown_duration)
