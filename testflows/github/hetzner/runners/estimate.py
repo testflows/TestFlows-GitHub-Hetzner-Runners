@@ -46,6 +46,18 @@ class Output:
             stream.flush()
 
 
+def duration_str(duration: timedelta):
+    """Convert timedelta duration to string 'hh:mm:ss'."""
+
+    if duration is None:
+        return None
+
+    s = duration.total_seconds()
+    hours, remainder = divmod(s, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return "{:02}:{:02}:{:02}".format(int(hours), int(minutes), int(seconds))
+
+
 def get_workflow_job(self, id_or_name) -> WorkflowJob:
     """
     Repository get_workflow_job method.
@@ -132,7 +144,7 @@ def get_runner_server_price_per_second(
     if server_price_per_hour is not None:
         price_per_second = server_price_per_hour / 3600
 
-    return price_per_second
+    return price_per_second, server_type, server_location
 
 
 def login_and_get_prices(
@@ -168,13 +180,13 @@ def get_estimate_for_jobs(
 ):
     """Collect estimate for the given jobs."""
 
-    best_estimate, worst_estimate = 0, 0
+    best_estimate, worst_estimate = None, None
     total_duration = timedelta()
     unknown_duration = timedelta()
     unknown_jobs = 0
 
     for i, job in enumerate(jobs, 1):
-        duration = timedelta()
+        duration = None
 
         if job.completed_at and job.started_at:
             duration = job.completed_at - job.started_at
@@ -187,7 +199,7 @@ def get_estimate_for_jobs(
             "status": job.status,
             "started_at": job.started_at,
             "completed_at": job.completed_at,
-            "duration": str(duration),
+            "duration": duration_str(duration),
             "url": job.url,
             "run_id": job.run_id,
             "run_url": job.run_url,
@@ -198,31 +210,39 @@ def get_estimate_for_jobs(
             "workflow_name": job.raw_data["workflow_name"],
         }
 
-        price = get_runner_server_price_per_second(
+        price, server_type, server_location = get_runner_server_price_per_second(
             server_prices, runner_name, ipv4_price, ipv6_price
         )
 
-        job_entry["estimate"] = {"worst": None, "best": None}
+        job_entry["estimate"] = {
+            "server_type": server_type,
+            "server_location": server_location,
+            "server_price": (price * 3600) if price is not None else price,
+            "worst": None,
+            "best": None,
+        }
 
-        if price is not None:
+        if price is not None and duration is not None:
             job_best_estimate = duration.total_seconds() * price
             job_worst_estimate = (
                 math.ceil(duration.total_seconds() / 3600) * 3600 * price
             )
             # update total
-            best_estimate += job_best_estimate
-            worst_estimate += job_worst_estimate
+            best_estimate = (
+                best_estimate if best_estimate is not None else 0
+            ) + job_best_estimate
+            worst_estimate = (
+                worst_estimate if worst_estimate is not None else 0
+            ) + job_worst_estimate
 
-            job_entry["estimate"] = {
-                "worst": job_worst_estimate,
-                "best": job_best_estimate,
-            }
+            job_entry["estimate"]["worst"] = job_worst_estimate
+            job_entry["estimate"]["best"] = job_best_estimate
 
         else:
             unknown_jobs += 1
-            unknown_duration += duration
+            unknown_duration += duration if duration is not None else timedelta()
 
-        total_duration += duration
+        total_duration += duration if duration is not None else timedelta()
 
         writer.add_list_element(value=job_entry)
 
@@ -289,9 +309,13 @@ def workflow_run(
 
         workflow_totals = {}
         workflow_totals["total_jobs"] = count
-        workflow_totals["total_duration"] = str(total_duration)
+        workflow_totals["total_duration"] = duration_str(total_duration)
+        workflow_totals["known_jobs"] = count - unknown_jobs
+        workflow_totals["known_duration"] = duration_str(
+            total_duration - unknown_duration
+        )
         workflow_totals["unknown_jobs"] = unknown_jobs
-        workflow_totals["unknown_duration"] = str(unknown_duration)
+        workflow_totals["unknown_duration"] = duration_str(unknown_duration)
         workflow_totals["worst_estimate"] = worst_estimate
         workflow_totals["best_estimate"] = best_estimate
 
