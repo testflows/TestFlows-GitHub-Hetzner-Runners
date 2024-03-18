@@ -99,6 +99,7 @@ Table of Contents
 * `Scaling Down Runners <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Scaling-Down-Runners>`_
 * `Handling Failing Conditions <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Handling-Failing-Conditions>`_
 * `Meta Labels <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Meta-Labels>`_
+* `Estimating Costs <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Estimating-Costs>`_
 * `Program Options <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Program-Options>`_
 
 ===========
