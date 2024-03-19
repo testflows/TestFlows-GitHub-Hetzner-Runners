@@ -180,6 +180,7 @@ def get_estimate_for_jobs(
 ):
     """Collect estimate for the given jobs."""
 
+    servers = {}
     best_estimate, worst_estimate = None, None
     total_duration, unknown_duration = None, None
     unknown_jobs = 0
@@ -214,18 +215,43 @@ def get_estimate_for_jobs(
         )
 
         job_entry["estimate"] = {
-            "server_type": server_type,
-            "server_location": server_location,
-            "server_price": (price * 3600) if price is not None else price,
+            "servers": [
+                {
+                    "type": server_type,
+                    "location": server_location,
+                    "price": (price * 3600) if price is not None else price,
+                    "duration": None,
+                    "worst": None,
+                    "best": None,
+                }
+            ],
             "worst": None,
             "best": None,
         }
+
+        if not (server_type, server_location) in servers:
+            servers[(server_type, server_location)] = {
+                "price": job_entry["estimate"]["servers"][0]["price"],
+                "duration": None,
+                "worst": None,
+                "best": None,
+            }
+
+        server = servers[(server_type, server_location)]
 
         if duration is not None:
             if unknown_duration is None:
                 unknown_duration = timedelta()
             if total_duration is None:
                 total_duration = timedelta()
+
+            server["duration"] = (
+                server["duration"] if server["duration"] is not None else timedelta()
+            ) + duration
+
+            job_entry["estimate"]["servers"][0]["duration"] = duration_str(
+                server["duration"]
+            )
 
         if price is not None and duration is not None:
             job_best_estimate = duration.total_seconds() * price
@@ -240,8 +266,21 @@ def get_estimate_for_jobs(
                 worst_estimate if worst_estimate is not None else 0
             ) + job_worst_estimate
 
+            job_entry["estimate"]["servers"][0]["worst"] = job_worst_estimate
+            job_entry["estimate"]["servers"][0]["best"] = job_best_estimate
+
+            # estimates for the server are the same as the whole job
+            # as only 1 server is used per job
             job_entry["estimate"]["worst"] = job_worst_estimate
             job_entry["estimate"]["best"] = job_best_estimate
+
+            # update server["worst"] and server["best"] total estimates
+            server["best"] = (
+                server["best"] if server["best"] is not None else 0
+            ) + job_best_estimate
+            server["worst"] = (
+                server["worst"] if server["worst"] is not None else 0
+            ) + job_worst_estimate
 
         else:
             unknown_jobs += 1
@@ -258,6 +297,7 @@ def get_estimate_for_jobs(
         total_duration,
         unknown_jobs,
         unknown_duration,
+        servers,
         worst_estimate,
         best_estimate,
     )
@@ -308,6 +348,7 @@ def workflow_run(
             total_duration,
             unknown_jobs,
             unknown_duration,
+            servers,
             worst_estimate,
             best_estimate,
         ) = get_estimate_for_jobs(
@@ -315,16 +356,41 @@ def workflow_run(
         )
 
         workflow_totals = {}
-        workflow_totals["total_jobs"] = count
-        workflow_totals["total_duration"] = duration_str(total_duration)
-        workflow_totals["known_jobs"] = count - unknown_jobs
-        workflow_totals["known_duration"] = duration_str(
-            (total_duration - unknown_duration) if total_duration is not None else None
-        )
-        workflow_totals["unknown_jobs"] = unknown_jobs
-        workflow_totals["unknown_duration"] = duration_str(unknown_duration)
-        workflow_totals["worst_estimate"] = worst_estimate
-        workflow_totals["best_estimate"] = best_estimate
+
+        workflow_totals["total"] = {
+            "jobs": count,
+            "duration": duration_str(total_duration),
+        }
+        workflow_totals["known"] = {
+            "jobs": count - unknown_jobs,
+            "duration": duration_str(
+                (total_duration - unknown_duration)
+                if total_duration is not None
+                else None
+            ),
+        }
+        workflow_totals["unknown"] = {
+            "jobs": unknown_jobs,
+            "duration": duration_str(unknown_duration),
+        }
+        workflow_totals["estimate"] = {
+            "servers": [],
+            "worst": worst_estimate,
+            "best": best_estimate,
+        }
+
+        for server_type, server_location in servers:
+            server = servers[(server_type, server_location)]
+            workflow_totals["estimate"]["servers"].append(
+                {
+                    "type": server_type,
+                    "location": server_location,
+                    "price": server["price"],
+                    "duration": duration_str(server["duration"]),
+                    "worst": server["worst"],
+                    "best": server["best"],
+                }
+            )
 
         list_value_writer.add_value(workflow_totals)
 
