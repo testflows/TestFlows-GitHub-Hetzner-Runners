@@ -931,6 +931,7 @@ def http_cache():
             cache_control=True,
             urls_expire_after={
                 "*.github.com": EXPIRE_IMMEDIATELY,
+                "*.hetzner.cloud": EXPIRE_IMMEDIATELY,
                 "*": DO_NOT_CACHE,
             },
         )
