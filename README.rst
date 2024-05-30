@@ -120,6 +120,9 @@ Prerequisites
 * `Hetzner Cloud <https://www.hetzner.com/cloud>`_ account
 * GitHub API classic token with privileges to manage self-hosted runners
 
+:❗Warning:
+   You must use a classic token. Fine-grained tokens are not supported.
+
 ============
 Installation
 ============
