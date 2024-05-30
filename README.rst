@@ -316,8 +316,7 @@ So, the complete *demo.yml* that uses a self-hosted runner is as follows:
 ❸ Finally, you will need to create a GitHub API token with the **workflow** privileges. Make sure to save the token!
 
 :❗Warning:
-
-   You must use classic tokens. Fine-grained tokens are not supported.
+   You must use a classic token. Fine-grained tokens are not supported.
    
 
 For me, my *demo* GitHub token is:
