@@ -86,7 +86,7 @@ class standby_runner:
 
 
 @dataclass
-class deploy:
+class deploy_:
     server_type: ServerType = server_type("cpx11")
     image: Image = image("x86:system:ubuntu-22.04")
     location: Location = None
@@ -96,7 +96,7 @@ class deploy:
 @dataclass
 class cloud:
     server_name: str = "github-hetzner-runners"
-    deploy: deploy = dataclasses.field(default_factory=deploy)
+    deploy: deploy_ = dataclasses.field(default_factory=deploy_)
 
 
 @dataclass
