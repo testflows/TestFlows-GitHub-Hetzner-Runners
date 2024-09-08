@@ -795,6 +795,12 @@ def scale_up(
                                             continue
 
                                     if job.status == "in_progress":
+                                        # skip jobs that were assigned to some other runners
+                                        if not job.raw_data["runner_name"].startswith(
+                                            runner_name_prefix
+                                        ):
+                                            continue
+                                            
                                         # check if the job is running on a standby runner
                                         if job.raw_data["runner_name"].startswith(
                                             standby_runner_name_prefix
