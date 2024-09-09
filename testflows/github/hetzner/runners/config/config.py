@@ -521,11 +521,11 @@ def parse_config(filename: str):
         if doc["cloud"].get("server_name"):
             doc["cloud"] = cloud(
                 doc["cloud"]["server_name"],
-                deploy=deploy(**doc["cloud"].get("deploy", {})),
+                deploy=deploy_(**doc["cloud"].get("deploy", {})),
             )
         else:
             doc["cloud"] = cloud(
-                deploy=deploy(**doc["cloud"].get("deploy", {})),
+                deploy=deploy_(**doc["cloud"].get("deploy", {})),
             )
 
     if doc.get("standby_runners"):

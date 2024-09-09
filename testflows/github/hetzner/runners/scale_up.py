@@ -800,7 +800,7 @@ def scale_up(
                                             runner_name_prefix
                                         ):
                                             continue
-                                            
+
                                         # check if the job is running on a standby runner
                                         if job.raw_data["runner_name"].startswith(
                                             standby_runner_name_prefix
