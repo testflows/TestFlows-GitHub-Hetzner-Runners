@@ -303,7 +303,7 @@ def scale_down(
                                     interval=interval,
                                 ):
                                     powered_off_servers[server.name] = PoweredOffServer(
-                                        time=time.time(),
+                                        time=current_interval,
                                         server=server,
                                         observed_interval=current_interval,
                                     )
@@ -327,7 +327,7 @@ def scale_down(
                                     interval=interval,
                                 ):
                                     zombie_servers[server.name] = ZombieServer(
-                                        time=time.time(),
+                                        time=current_interval,
                                         server=server,
                                         observed_interval=current_interval,
                                     )
@@ -371,7 +371,7 @@ def scale_down(
                                     interval=interval,
                                 ):
                                     unused_runners[runner.name] = UnusedRunner(
-                                        time=time.time(),
+                                        time=current_interval,
                                         runner=runner,
                                         observed_interval=current_interval,
                                     )
@@ -434,7 +434,10 @@ def scale_down(
                             powered_off_servers.pop(server_name)
 
                     else:
-                        if time.time() - powered_off_server.time > max_powered_off_time:
+                        if (
+                            current_interval - powered_off_server.time
+                            > max_powered_off_time
+                        ):
                             if recycle:
                                 recycle_server(
                                     reason="powered off",
@@ -470,7 +473,7 @@ def scale_down(
 
                     else:
                         if (
-                            time.time() - zombie_server.time
+                            current_interval - zombie_server.time
                             > max_runner_registration_time
                         ):
                             if recycle:
@@ -507,7 +510,10 @@ def scale_down(
                             unused_runners.pop(runner_name)
 
                     else:
-                        if time.time() - unused_runner.time > max_unused_runner_time:
+                        if (
+                            current_interval - unused_runner.time
+                            > max_unused_runner_time
+                        ):
                             runner_server = None
 
                             with Action(
