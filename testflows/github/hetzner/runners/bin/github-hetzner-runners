@@ -56,6 +56,7 @@ import testflows.github.hetzner.runners.service as service
 import testflows.github.hetzner.runners.delete as delete
 import testflows.github.hetzner.runners.servers as servers
 import testflows.github.hetzner.runners.estimate as estimate
+import testflows.github.hetzner.runners.snapshots as snapshots
 
 from requests_cache import DO_NOT_CACHE, EXPIRE_IMMEDIATELY, install_cache
 from requests_cache.backends.filesystem import FileCache
@@ -912,6 +913,94 @@ def argparser():
     )
 
     estimate_runs_parser.set_defaults(func=estimate.workflow_runs)
+
+    snapshots_parser = commands.add_parser(
+        "snapshots",
+        help="snapshots commands",
+        description="Snapshots commands.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    snapshots_commands = snapshots_parser.add_subparsers(
+        title="commands", metavar="command", description=None, help=None
+    )
+
+    snapshots_commands.required = True
+
+    create_snapshots_parser = snapshots_commands.add_parser(
+        "create",
+        help="create snapshot",
+        description=(
+            "Create custom snapshot by customizing the default image using the specified setup script."
+        ),
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    create_snapshots_parser.add_argument(
+        "-n",
+        "--name",
+        metavar="name",
+        dest="create_snapshots_name",
+        type=str,
+        required=True,
+        help="snapshot name (required)",
+    )
+
+    create_snapshots_parser.add_argument(
+        "--setup-script",
+        metavar="path",
+        dest="create_snapshots_setup_script",
+        type=args.path_type,
+        help="path to custom setup script that will be executed on the server to customize the default image (required)",
+        required=True,
+    )
+
+    create_snapshots_parser.add_argument(
+        "-l",
+        "--location",
+        metavar="name",
+        dest="create_snapshots_server_location",
+        type=args.location_type,
+        help="server location",
+        default=None,
+    )
+
+    create_snapshots_parser.add_argument(
+        "-t",
+        "--type",
+        metavar="name",
+        dest="create_snapshots_server_type",
+        type=args.server_type,
+        help="server type, default: cpx11",
+        default=args.server_type("cpx11"),
+    )
+
+    create_snapshots_parser.add_argument(
+        "-i",
+        "--image",
+        metavar="architecture:type:name_or_description",
+        dest="create_snapshots_server_image",
+        type=args.image_type,
+        help=(
+            "base server image type and name or description,\n"
+            "where the architecture is either: 'x86' or 'arm', \n"
+            "the type is either: 'system','snapshot','backup','app', \n"
+            "followed by the name, "
+            "default: x86:system:ubuntu-22.04"
+        ),
+        default=args.image_type("x86:system:ubuntu-22.04"),
+    )
+
+    create_snapshots_parser.add_argument(
+        "--server-name",
+        metavar="name",
+        dest="create_snapshots_server_name",
+        type=str,
+        help="server name, default: snapshot-server",
+        default="snapshot-server",
+    )
+
+    create_snapshots_parser.set_defaults(func=snapshots.create)
 
     return parser
 
