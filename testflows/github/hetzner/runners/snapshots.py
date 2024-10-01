@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from hcloud import Client
-from hcloud.ssh_keys.domain import SSHKey
 from hcloud.servers.client import BoundServer
 
 from .actions import Action
