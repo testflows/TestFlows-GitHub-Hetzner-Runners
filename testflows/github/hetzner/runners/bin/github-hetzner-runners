@@ -1009,7 +1009,7 @@ def argparser():
     delete_image_parser = images_commands.add_parser(
         "delete",
         help="delete image",
-        description="Delete image.\nOnly images of type snapshot and backup can be deleted.",
+        description="Delete image. Only images of type snapshot and backup can be deleted.",
         formatter_class=RawTextHelpFormatter,
     )
 
@@ -1028,7 +1028,9 @@ def argparser():
         "create",
         help="create snapshot",
         description=(
-            "Create custom snapshot by customizing the default image using the specified setup script."
+            "Create snapshot by customizing the image using the specified setup script.\n\n"
+            "The snapshot is created from the new server created using the specified image\n"
+            "and is deleted after the snapshot is created. You can specify server type and location."
         ),
         formatter_class=RawTextHelpFormatter,
     )
