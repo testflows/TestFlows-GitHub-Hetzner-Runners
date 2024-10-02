@@ -917,7 +917,7 @@ def argparser():
     images_parser = commands.add_parser(
         "images",
         help="images commands",
-        description="images commands.",
+        description="Images commands.",
         formatter_class=RawTextHelpFormatter,
     )
 
@@ -1009,7 +1009,7 @@ def argparser():
     delete_image_parser = images_commands.add_parser(
         "delete",
         help="delete image",
-        description="Delete image. Only images of type snapshot and backup can be deleted.",
+        description="Delete image.\n\nOnly images of type snapshot and backup can be deleted.",
         formatter_class=RawTextHelpFormatter,
     )
 
