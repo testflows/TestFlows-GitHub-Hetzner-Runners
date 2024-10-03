@@ -63,8 +63,8 @@ def list(args, config: Config):
                 + f"status: {image.status}\n  "
                 + f"architecture: {image.architecture}\n  "
                 + f"labels: {image.labels}\n  "
-                + f"image size: {image.image_size:.02f}GB\n  "
-                + f"disk size: {image.disk_size:.02f}GB\n  "
+                + f"image size: {image.image_size or 0:.02f}GB\n  "
+                + f"disk size: {image.disk_size or 0:.02f}GB\n  "
                 + (f"bound to: ")
                 + ("None" if not image.bound_to else f"{image.bound_to.name}")
                 + ("\n  ")
