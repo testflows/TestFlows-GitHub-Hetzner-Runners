@@ -100,6 +100,9 @@ Table of Contents
 * `Handling Failing Conditions <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Handling-Failing-Conditions>`_
 * `Meta Labels <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Meta-Labels>`_
 * `Estimating Costs <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Estimating-Costs>`_
+* `Listing Images <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Listing-Images>`_
+* `Deleting Images <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Deleting-Images>`_
+* `Creating Custom Images <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Creating-Custom-Images>`_
 * `Program Options <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Program-Options>`_
 
 ===========
