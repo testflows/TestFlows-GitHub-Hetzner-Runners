@@ -33,10 +33,6 @@
 
 A simple alternative to Github's `Recommended autoscaling solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_.
 
-.. image:: https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/blob/main/docs/images/github_runners.gif
-   :align: center
-   :alt: TestFlows GitHub Runners in Action
-
 :🔍 Tip:
    See `Wiki <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki>`_ for full documentation.
 
@@ -45,7 +41,11 @@ When a new job is queued up, it creates a new Hetzner Cloud server instance
 that provides an ephemeral GitHub Actions runner. Each server instance is automatically
 powered off when the job completes, and then powered off servers are
 automatically deleted. Both **x64** (*x86*) and **arm64** (*arm*) runners are supported.
-See `Features`_ and `Limitations`_ for more details.
+See `<Features>`_ and `<Limitations>`_ for more details.
+
+.. image:: https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/blob/main/docs/images/github_runners.gif
+   :align: center
+   :alt: TestFlows GitHub Runners in Action
 
 .. image:: https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/blob/main/docs/images/intro.gif
    :align: center
