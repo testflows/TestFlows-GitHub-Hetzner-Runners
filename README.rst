@@ -10,11 +10,15 @@
 :License:
    `Apache-2.0 <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/blob/main/LICENSE>`_
 
-======================================================
-Autoscaling GitHub Actions Runners Using Hetzner Cloud
-======================================================
+==================================================================
+Autoscaling Self-Hosted GitHub Actions Runners Using Hetzner Cloud
+==================================================================
 
 A simple alternative to Github's `Recommended autoscaling solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_.
+
+.. image:: https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/blob/main/docs/images/github_runners.gif
+   :align: center
+   :alt: TestFlows GitHub Runners in Action
 
 :🔍 Tip:
    See `Wiki <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki>`_ for full documentation.
@@ -26,7 +30,7 @@ powered off when the job completes, and then powered off servers are
 automatically deleted. Both **x64** (*x86*) and **arm64** (*arm*) runners are supported.
 See `Features`_ and `Limitations`_ for more details.
 
-.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GiHhub-Hetzner-Runners/master/docs/images/intro.gif
+.. image:: https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/blob/main/docs/images/intro.gif
    :align: center
    :alt: TestFlows GitHub Runners
 
