@@ -1,10 +1,26 @@
-.. image:: https://raw.githubusercontent.com/testflows/TestFlows-ArtWork/master/images/logo_small.png
-   :align: center
-   :target: https://testflows.com
-   :alt: TestFlows Open-source Testing Framework
+.. image:: https://img.shields.io/github/v/release/testflows/TestFlows-GitHub-Hetzner-Runners
+   :target: https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/releases
+   :alt: Latest Release
+
+.. image:: https://img.shields.io/github/contributors/testflows/TestFlows-GitHub-Hetzner-Runners
+   :target: https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/graphs/contributors
+   :alt: Contributors
+
+.. image:: https://img.shields.io/github/issues/testflows/TestFlows-GitHub-Hetzner-Runners
+   :target: https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/issues
+   :alt: Open Issues
+
+.. image:: https://img.shields.io/github/stars/testflows/TestFlows-GitHub-Hetzner-Runners?style=plastic
+   :target: https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/stargazers
+   :alt: GitHub stars
 
 ----
 
+.. image:: https://raw.githubusercontent.com/testflows/TestFlows-ArtWork/master/images/logo_small.png
+   :align: right
+   :target: https://testflows.com
+   :alt: TestFlows Open-source Testing Framework
+  
 :PyPi:
    `Versions <https://pypi.org/project/testflows.github.hetzner.runners/>`_
 :License:
