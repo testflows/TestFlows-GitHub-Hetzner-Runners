@@ -1,3 +1,8 @@
+.. image:: https://raw.githubusercontent.com/testflows/TestFlows-ArtWork/master/images/logo_small.png
+   :align: right
+   :target: https://testflows.com
+   :alt: TestFlows Open-source Testing Framework
+
 .. image:: https://img.shields.io/github/v/release/testflows/TestFlows-GitHub-Hetzner-Runners
    :target: https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/releases
    :alt: Latest Release
@@ -16,11 +21,7 @@
 
 ----
 
-.. image:: https://raw.githubusercontent.com/testflows/TestFlows-ArtWork/master/images/logo_small.png
-   :align: right
-   :target: https://testflows.com
-   :alt: TestFlows Open-source Testing Framework
-  
+
 :PyPi:
    `Versions <https://pypi.org/project/testflows.github.hetzner.runners/>`_
 :License:
