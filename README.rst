@@ -47,11 +47,6 @@ See `<Features>`_ and `<Limitations>`_ for more details.
    :align: center
    :alt: TestFlows GitHub Runners in Action
 
-.. image:: https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/blob/main/docs/images/intro.gif
-   :align: center
-   :alt: TestFlows GitHub Runners
-
-
 :❗Warning:
    This program is provided on "AS IS" basis without warranties or conditions of any kind. See LICENSE.
    Use it at your own risk. Manual monitoring is required to make sure server instances are cleaned up properly
