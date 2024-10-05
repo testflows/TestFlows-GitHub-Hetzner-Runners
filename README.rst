@@ -27,9 +27,9 @@
 :License:
    `Apache-2.0 <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/blob/main/LICENSE>`_
 
-==================================================================
-Autoscaling Self-Hosted GitHub Actions Runners Using Hetzner Cloud
-==================================================================
+=====================================================================
+🚀 Autoscaling Self-Hosted GitHub Actions Runners Using Hetzner Cloud
+=====================================================================
 
 A simple alternative to Github's `Recommended autoscaling solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_.
 
@@ -65,9 +65,9 @@ to avoid any cleanup. Server instances are not shared between jobs.
    the same way as for a job that takes 59 minutes. Therefore, the minimal cost
    for any job, the cost of the server for 1 hour plus the cost of one public IPv4 address.
 
-========
-Features
-========
+===========
+🌟 Features
+===========
 
 * simpler alternative to what GitHub lists in `Recommended Autoscaling Solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_
 * cost-efficient on-demand runners using `Hetzner Cloud <https://www.hetzner.com/cloud>`_
@@ -85,9 +85,9 @@ Features
 * supports meta labels to keep your job label list short
 * supports estimating the cost of a job, a run, or a set of runs 
 
-=================
-Table of Contents
-=================
+====================
+📝 Table of Contents
+====================
 
 * `Home <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki>`_
 * `Installation <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Installation>`_
@@ -126,9 +126,9 @@ Table of Contents
 * `Creating Custom Images <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Creating-Custom-Images>`_
 * `Program Options <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Program-Options>`_
 
-===========
-Limitations
-===========
+==============
+🔧 Limitations
+==============
 
 **Group runners are not supported**
   ✎ However, you can run individual services for each repository using different Hetzner Cloud projects.
@@ -136,9 +136,9 @@ Limitations
 **A unique Hetzner Cloud project must be used for each repository**
    ✎ However, unique projects allow you to easily keep track of runner costs per repository.
 
-=============
-Prerequisites
-=============
+================
+💻 Prerequisites
+================
 
 * Python >= 3.7
 * `Hetzner Cloud <https://www.hetzner.com/cloud>`_ account
@@ -147,9 +147,9 @@ Prerequisites
 :❗Warning:
    You must use a classic token. Fine-grained tokens are not supported.
 
-============
-Installation
-============
+==============
+⌨️ Installation
+==============
 
 .. code-block:: bash
 
@@ -193,9 +193,9 @@ For development, you can install from sources as follows:
    git clone https://github.com/testflows/testflows-github-hetzner-runners.git
    ./package && ./install
 
-===========
-Quick Start
-===========
+==============
+🏃 Quick Start
+==============
 
 Set environment variables corresponding to your GitHub repository and Hetzner Cloud project.
 
@@ -227,9 +227,9 @@ Alternatively, you can pass the required options using the command line as follo
 
    github-hetzner-runners --github-token <GITHUB_TOKEN> --github-repository <GITHUB_REPOSITORY> --hetzner-token <HETZNER_TOKEN>
 
-========================
-Getting Started Tutorial
-========================
+===========================
+🎯 Getting Started Tutorial
+===========================
 
 :✅ Launch your first self-hosted runner in:
    5 minutes
