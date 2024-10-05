@@ -28,7 +28,7 @@
    `Apache-2.0 <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/blob/main/LICENSE>`_
 
 =====================================================================
-🚀 Autoscaling Self-Hosted GitHub Actions Runners On Hetzner Cloud
+🚀 Autoscaling Self-Hosted GitHub Actions Runners on Hetzner Cloud
 =====================================================================
 
 A simple alternative to Github's `Recommended autoscaling solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_.
