@@ -142,9 +142,9 @@ to avoid any cleanup. Server instances are not shared between jobs.
 :❗Warning:
    You must use a classic token. Fine-grained tokens are not supported.
 
-==============
-⌨️ Installation
-==============
+================
+⌨️  Installation
+================
 
 .. code-block:: bash
 
