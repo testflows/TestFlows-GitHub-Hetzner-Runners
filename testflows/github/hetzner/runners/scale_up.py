@@ -27,7 +27,7 @@ from .logger import logger
 from .config import Config, check_image, check_startup_script, check_setup_script
 from .config import standby_runner as StandbyRunner
 
-from .server import wait_ssh, ssh, wait_ready, age
+from .server import wait_ssh, ssh
 
 from hcloud import Client, APIException
 from hcloud.ssh_keys.domain import SSHKey
@@ -341,11 +341,6 @@ def create_server(
         )
         server: BoundServer = response.server
 
-    with Action(
-        f"Waiting for server {server.name} to be ready", server_name=name
-    ) as action:
-        wait_ready(server=server, timeout=timeout, action=action)
-
     setup_worker_pool.submit(
         server_setup,
         server=response.server,
@@ -393,11 +388,6 @@ def recycle_server(
 
     with Action(f"Rebuilding recycled server {server.name} image", server_name=name):
         server.rebuild(image=server_image).wait_until_finished(max_retries=timeout)
-
-    with Action(
-        f"Waiting for server {server.name} to be ready", server_name=name
-    ) as action:
-        wait_ready(server=server, timeout=timeout, action=action)
 
     setup_worker_pool.submit(
         server_setup,
