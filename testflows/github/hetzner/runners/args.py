@@ -125,7 +125,7 @@ def location_type(v):
 
 
 def server_type(v):
-    """Server type argument. Example: cx11"""
+    """Server type argument. Example: cx22"""
     return ServerType(name=v)
 
 

@@ -91,9 +91,9 @@
                     "examples": ["x86:system:ubuntu-22.04"]
                 },
                 "default_server_type": {
-                    "description": "The default runner server type name, default: cx11.",
+                    "description": "The default runner server type name, default: cx22.",
                     "type": "string",
-                    "examples": ["cx11"]
+                    "examples": ["cx22"]
                 },
                 "default_location": {
                     "description": "The default runner server location name, by default not specified.",

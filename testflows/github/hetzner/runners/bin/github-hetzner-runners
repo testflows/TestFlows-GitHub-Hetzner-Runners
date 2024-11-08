@@ -216,7 +216,7 @@ def argparser():
         dest="default_server_type",
         metavar="name",
         type=args.server_type,
-        help=("default runner server type name, default: cx11"),
+        help=("default runner server type name, default: cx22"),
     )
 
     parser.add_argument(
