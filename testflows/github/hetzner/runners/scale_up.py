@@ -83,7 +83,7 @@ class RunnerServer:
 
 def uid():
     """Return unique id - just a timestamp."""
-    return str(time.time())
+    return str(time.time()).replace(".", "")
 
 
 def get_runner_server_name(runner_name: str) -> str:
@@ -127,9 +127,6 @@ def server_setup(
             format="json",
         )
         GITHUB_RUNNER_TOKEN = content["token"]
-
-    with Action("Getting current directory", server_name=server.name):
-        current_dir = os.path.dirname(__file__)
 
     with Action("Executing setup.sh script", server_name=server.name):
         ssh(server, f"bash -s  < {setup_script}", stacklevel=5)
