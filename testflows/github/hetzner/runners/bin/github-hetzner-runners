@@ -287,6 +287,7 @@ def argparser():
         "--debug",
         action="store_true",
         help="enable debugging mode, default: False",
+        default=None,
     )
 
     parser.add_argument(
