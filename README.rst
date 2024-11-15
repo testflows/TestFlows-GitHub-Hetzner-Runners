@@ -28,7 +28,7 @@
    `Apache-2.0 <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/blob/main/LICENSE>`_
 
 =====================================================================
-🚀 Autoscaling Self-Hosted GitHub Actions Runners on Hetzner Cloud
+🛸 Autoscaling Self-Hosted GitHub Actions Runners on Hetzner Cloud 
 =====================================================================
 
 A simple alternative to Github's `Recommended autoscaling solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_.
@@ -59,6 +59,19 @@ to avoid any cleanup. Server instances are not shared between jobs.
    Currently, Hetzner Cloud server instances are billed on an hourly basis. So a job that takes 1 minute will be billed
    the same way as for a job that takes 59 minutes. Therefore, the minimal cost
    for any job, the cost of the server for 1 hour plus the cost of one public IPv4 address.
+
+==================
+🧑‍💻 Who's using it?
+==================
+
+The following projects are using **github-hetzner-runners** to enable self-hosted, on-demand runners for their CI/CD pipelines:
+
+- `Altinity Regression Tests for ClickHouse® <https://github.com/Altinity/clickhouse-regression/blob/main/.github/workflows/run-regression.yml>`_
+- `Altinity Grafana Datasource Plugin for ClickHouse® <https://github.com/Altinity/clickhouse-grafana/blob/master/.github/workflows/testflows.yml>`_
+- `Altinity Sink Connector for ClickHouse® <https://github.com/Altinity/clickhouse-sink-connector/blob/develop/.github/workflows/testflows-sink-connector-lightweight.yml>`_
+
+:✋ Note:
+   🌐 **Let us know if you're using it in your project!** 👍
 
 ===========
 🌟 Features
