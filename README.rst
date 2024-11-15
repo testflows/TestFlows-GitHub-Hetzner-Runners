@@ -71,7 +71,7 @@ The following projects are using **github-hetzner-runners** to enable self-hoste
 - `Altinity Sink Connector for ClickHouse® <https://github.com/Altinity/clickhouse-sink-connector/blob/develop/.github/workflows/testflows-sink-connector-lightweight.yml>`_
 
 :✋ Note:
-   🌐 **Let us know if you're using it in your project!** 👍
+   🌐 Let us know if you're using it in your project by filing an issue or making a PR to update this list! 👍
 
 ===========
 🌟 Features
