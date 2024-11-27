@@ -61,7 +61,7 @@ to avoid any cleanup. Server instances are not shared between jobs.
    for any job, the cost of the server for 1 hour plus the cost of one public IPv4 address.
 
 ==================
-🧑‍💻 Who's using it?
+🧑 Who's using it?
 ==================
 
 The following projects are using **github-hetzner-runners** to enable self-hosted, on-demand runners for their CI/CD pipelines:
