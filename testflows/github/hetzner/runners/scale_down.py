@@ -263,7 +263,7 @@ def scale_down(
                 for server in servers:
                     servers_labels[server.name] = set(
                         [
-                            value
+                            value.lower()
                             for name, value in server.labels.items()
                             if name.startswith("github-hetzner-runner-label")
                         ]
@@ -354,7 +354,10 @@ def scale_down(
                                 for standby_runner in _standby_runners:
                                     if set(standby_runner.labels).issubset(
                                         set(
-                                            [label["name"] for label in runner.labels()]
+                                            [
+                                                label["name"].lower()
+                                                for label in runner.labels()
+                                            ]
                                         )
                                     ):
                                         standby_runner.count -= 1

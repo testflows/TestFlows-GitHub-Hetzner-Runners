@@ -266,11 +266,13 @@ def parse_config(filename: str):
         assert isinstance(doc["with_label"], list), "config.with_label: is not a list"
         for i, label in enumerate(doc["with_label"]):
             assert isinstance(label, str), f"config.with_label[{i}]: is not a string"
+        doc["with_label"] = [label.lower().strip() for label in doc["with_label"]]
 
     if doc.get("label_prefix") is not None:
         assert isinstance(
             doc["label_prefix"], str
         ), "config.label_prefix: is not a string"
+        doc["label_prefix"] = doc["label_prefix"].lower().strip()
 
     if doc.get("meta_label") is not None:
         assert isinstance(
@@ -288,6 +290,13 @@ def parse_config(filename: str):
                     v, str
                 ), f"config.meta_label.{meta}[{j}]: is not a string"
             doc["meta_label"][meta] = set(doc["meta_label"][meta])
+
+        doc["meta_label"] = {
+            meta.lower().strip(): [
+                label.lower().strip() for label in doc["meta_label"][meta]
+            ]
+            for meta in doc["meta_label"]
+        }
 
     if doc.get("recycle") is not None:
         assert isinstance(doc["recycle"], bool), "config.recycle: is not a boolean"
@@ -545,6 +554,7 @@ def parse_config(filename: str):
                     assert isinstance(
                         label, str
                     ), f"config.standby_runners[{i}].labels[{j}]: {label} is not a string"
+                entry["labels"] = [label.lower().strip() for label in entry["labels"]]
             if entry.get("count") is not None:
                 v = entry["count"]
                 assert (

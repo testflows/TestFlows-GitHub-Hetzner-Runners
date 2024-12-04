@@ -154,8 +154,10 @@ def get_server_type(labels: set[str], default: ServerType, label_prefix: str = "
     if label_prefix and not label_prefix.endswith("-"):
         label_prefix += "-"
     label_prefix += "type-"
+    label_prefix = label_prefix.lower()
 
     for label in labels:
+        label = label.lower()
         if label.startswith(label_prefix):
             server_type_name = label.split(label_prefix, 1)[-1].lower()
             server_type = ServerType(name=server_type_name)
@@ -179,8 +181,10 @@ def get_server_location(
     if label_prefix and not label_prefix.endswith("-"):
         label_prefix += "-"
     label_prefix += "in-"
+    label_prefix = label_prefix.lower()
 
     for label in labels:
+        label = label.lower()
         if label.startswith(label_prefix):
             server_location_name = label.split(label_prefix, 1)[-1].lower()
             server_location = Location(name=server_location_name)
@@ -200,8 +204,10 @@ def get_server_image(
     if label_prefix and not label_prefix.endswith("-"):
         label_prefix += "-"
     label_prefix += "image-"
+    label_prefix = label_prefix.lower()
 
     for label in labels:
+        label = label.lower()
         if label.startswith(label_prefix):
             server_image = check_image(
                 client,
@@ -234,8 +240,10 @@ def get_setup_script(
     if label_prefix and not label_prefix.endswith("-"):
         label_prefix += "-"
     label_prefix += "setup-"
+    label_prefix = label_prefix.lower()
 
     for label in labels:
+        label = label.lower()
         if label.startswith(label_prefix):
             script = label.split(label_prefix, 1)[-1] + ".sh"
 
@@ -265,8 +273,10 @@ def get_startup_script(
     if label_prefix and not label_prefix.endswith("-"):
         label_prefix += "-"
     label_prefix += "startup-"
+    label_prefix = label_prefix.lower()
 
     for label in labels:
+        label = label.lower()
         if label.startswith(label_prefix):
             script = label.split(label_prefix, 1)[-1] + ".sh"
 
@@ -283,8 +293,10 @@ def expand_meta_label(
 ):
     """Expand any meta labels."""
     expanded_labels = []
+    label_prefix = label_prefix.lower()
 
     for label in labels:
+        label = label.lower()
         expanded_labels.append(label)
         if label.startswith(label_prefix):
             raw_label = label.split(label_prefix, 1)[-1] if label_prefix else label
@@ -404,7 +416,7 @@ def count_available_runners(runners: list[SelfHostedActionsRunner], labels: set[
 
     for runner in runners:
         if runner.status == "online":
-            runner_labels = set([label["name"] for label in runner.labels()])
+            runner_labels = set([label["name"].lower() for label in runner.labels()])
             if labels.issubset(runner_labels):
                 if not runner.busy:
                     count += 1
@@ -696,7 +708,7 @@ def scale_up(
                             server_status=server.status,
                             labels=set(
                                 [
-                                    value
+                                    value.lower()
                                     for name, value in server.labels.items()
                                     if name.startswith("github-hetzner-runner-label")
                                 ]
@@ -763,7 +775,10 @@ def scale_up(
                                     interval=interval,
                                 ):
                                     pass
-                                labels = set(job.raw_data["labels"])
+
+                                labels = set(
+                                    [label.lower() for label in job.raw_data["labels"]]
+                                )
 
                                 server_name = (
                                     f"{server_name_prefix}{job.run_id}-{job.id}"
@@ -801,7 +816,7 @@ def scale_up(
                                         ):
                                             labels = set(
                                                 [
-                                                    label["name"]
+                                                    label["name"].lower()
                                                     for label in repo.get_self_hosted_runner(
                                                         job.raw_data["runner_id"]
                                                     ).labels()
@@ -820,7 +835,7 @@ def scale_up(
                                     if with_label is not None:
                                         found_all_with_labels = True
                                         for label in with_label:
-                                            if not label in labels:
+                                            if not label.lower() in labels:
                                                 found_all_with_labels = False
                                                 with Action(
                                                     f"Skipping {job} with {labels} as it is missing label '{label}'",
