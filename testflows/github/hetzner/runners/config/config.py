@@ -10,7 +10,6 @@ import dataclasses
 
 from dataclasses import dataclass
 
-from hcloud import Client
 from hcloud.images.domain import Image
 from hcloud.server_types.domain import ServerType
 from hcloud.locations.domain import Location
@@ -18,6 +17,7 @@ from hcloud.ssh_keys.domain import SSHKey
 
 import testflows.github.hetzner.runners.args as args
 
+from ..hclient import HClient as Client
 from ..actions import Action
 from ..logger import default_format as logger_format
 

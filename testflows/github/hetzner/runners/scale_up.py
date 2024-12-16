@@ -26,10 +26,11 @@ from .args import image_type
 from .logger import logger
 from .config import Config, check_image, check_startup_script, check_setup_script
 from .config import standby_runner as StandbyRunner
+from .hclient import HClient as Client
 
 from .server import wait_ssh, ssh
 
-from hcloud import Client, APIException
+from hcloud import APIException
 from hcloud.ssh_keys.domain import SSHKey
 from hcloud.server_types.domain import ServerType
 from hcloud.locations.domain import Location

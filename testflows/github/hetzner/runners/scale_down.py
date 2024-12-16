@@ -37,12 +37,12 @@ from .scale_up import (
 from .logger import logger
 from .server import age
 from .config import Config
+from .hclient import HClient as Client
 
 from github import Github
 from github.Repository import Repository
 from github.SelfHostedActionsRunner import SelfHostedActionsRunner
 
-from hcloud import Client
 from hcloud.servers.client import BoundServer
 from hcloud.ssh_keys.domain import SSHKey
 
