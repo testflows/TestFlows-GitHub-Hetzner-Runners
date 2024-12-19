@@ -25,7 +25,6 @@ import logging.config
 from contextlib import contextmanager
 from concurrent.futures import ThreadPoolExecutor, Future
 
-from hcloud import Client
 from hcloud.ssh_keys.domain import SSHKey
 
 from github import Github
@@ -34,6 +33,7 @@ from github.Repository import Repository
 from argparse import ArgumentParser, RawTextHelpFormatter, ArgumentTypeError
 
 from testflows.github.hetzner.runners import __version__, __license__
+from testflows.github.hetzner.runners.hclient import HClient as Client
 from testflows.github.hetzner.runners.actions import Action
 from testflows.github.hetzner.runners.scale_up import scale_up
 from testflows.github.hetzner.runners.scale_down import scale_down

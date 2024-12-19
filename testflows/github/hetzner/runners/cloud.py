@@ -15,7 +15,6 @@
 import os
 import tempfile
 
-from hcloud import Client
 from hcloud.ssh_keys.domain import SSHKey
 from hcloud.servers.client import BoundServer
 
@@ -35,6 +34,7 @@ from .server import wait_ready, wait_ssh, ssh, scp, ip_address, ssh_command
 from .servers import ssh_client as server_ssh_client
 from .servers import ssh_client_command as server_ssh_client_command
 from .service import command_options
+from .hclient import HClient as Client
 
 current_dir = os.path.dirname(__file__)
 deploy_scripts_folder = "/home/ubuntu/.github-hetzner-runners/scripts/"

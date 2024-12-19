@@ -13,9 +13,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from hcloud import Client
 from hcloud.servers.client import BoundServer
 
+from .hclient import HClient as Client
 from .actions import Action
 from .config import Config, check_ssh_key, check_setup_script
 from .server import wait_ready, wait_ssh, ssh
