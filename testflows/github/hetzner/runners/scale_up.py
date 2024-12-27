@@ -397,7 +397,7 @@ def recycle_server(
         server = server.update(name=name, labels=server_labels)
 
     with Action(f"Rebuilding recycled server {server.name} image", server_name=name):
-        server.rebuild(image=server_image).wait_until_finished(max_retries=timeout)
+        server.rebuild(image=server_image).action.wait_until_finished(max_retries=timeout)
 
     setup_worker_pool.submit(
         server_setup,
