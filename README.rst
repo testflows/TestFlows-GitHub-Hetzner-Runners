@@ -41,7 +41,7 @@ When a new job is queued up, it creates a new Hetzner Cloud server instance
 that provides an ephemeral GitHub Actions runner. Each server instance is automatically
 powered off when the job completes, and then powered off servers are
 automatically deleted. Both **x64** (*x86*) and **arm64** (*arm*) runners are supported.
-See `Features <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki#features>`_ and `Limitations <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki#limitations>`_ for more details.
+See `Features <./?tab=readme-ov-file#-features>`_ and `Limitations <./?tab=readme-ov-file#-limitations>`_ for more details.
 
 .. image:: https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/blob/main/docs/images/github_runners.gif
    :align: center
