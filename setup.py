@@ -53,9 +53,9 @@ setup(
     zip_safe=False,
     install_requires=[
         "PyGithub==1.59.0",
-        "hcloud==1.26.0",
+        "hcloud==2.3.0",
         "requests-cache==1.1.0",
-        "PyYAML==6.0",
+        "PyYAML==6.0.2",
     ],
     extras_require={"dev": []},
 )

@@ -16,7 +16,9 @@ import json as json
 
 from http.client import HTTPResponse
 from urllib.request import urlopen, Request, HTTPError
+from . import __version__ as project_version, __name__ as project_name
 
+user_agent = f"{project_name}/{project_version}"
 
 def request(
     url,
@@ -31,6 +33,8 @@ def request(
     """Perform URL request."""
     if headers is None:
         headers = {}
+
+    headers["User-Agent"] = user_agent
 
     r = Request(url, headers=headers, data=data, method=method)
 

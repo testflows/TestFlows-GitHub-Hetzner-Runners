@@ -15,13 +15,13 @@
 import os
 import sys
 
-from hcloud import Client
 from hcloud.servers.client import BoundServer
 
 from .actions import Action
 from .config import Config
 from .server import ssh_command
 from .scale_up import server_name_prefix
+from .hclient import HClient as Client
 
 
 def list(args, config: Config):

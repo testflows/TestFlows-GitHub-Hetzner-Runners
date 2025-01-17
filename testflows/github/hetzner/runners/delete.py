@@ -12,13 +12,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from hcloud import Client
 from hcloud.servers.client import BoundServer
 
 from github import Github
 from github.Repository import Repository
 from github.SelfHostedActionsRunner import SelfHostedActionsRunner
 
+from .hclient import HClient as Client
 from .scale_up import server_name_prefix, runner_name_prefix
 from .config import Config
 from .actions import Action

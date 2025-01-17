@@ -25,7 +25,6 @@ import logging.config
 from contextlib import contextmanager
 from concurrent.futures import ThreadPoolExecutor, Future
 
-from hcloud import Client
 from hcloud.ssh_keys.domain import SSHKey
 
 from github import Github
@@ -34,6 +33,7 @@ from github.Repository import Repository
 from argparse import ArgumentParser, RawTextHelpFormatter, ArgumentTypeError
 
 from testflows.github.hetzner.runners import __version__, __license__
+from testflows.github.hetzner.runners.hclient import HClient as Client
 from testflows.github.hetzner.runners.actions import Action
 from testflows.github.hetzner.runners.scale_up import scale_up
 from testflows.github.hetzner.runners.scale_down import scale_down
@@ -56,6 +56,7 @@ import testflows.github.hetzner.runners.service as service
 import testflows.github.hetzner.runners.delete as delete
 import testflows.github.hetzner.runners.servers as servers
 import testflows.github.hetzner.runners.estimate as estimate
+import testflows.github.hetzner.runners.images as images
 
 from requests_cache import DO_NOT_CACHE, EXPIRE_IMMEDIATELY, install_cache
 from requests_cache.backends.filesystem import FileCache
@@ -215,7 +216,7 @@ def argparser():
         dest="default_server_type",
         metavar="name",
         type=args.server_type,
-        help=("default runner server type name, default: cx11"),
+        help=("default runner server type name, default: cx22"),
     )
 
     parser.add_argument(
@@ -286,6 +287,7 @@ def argparser():
         "--debug",
         action="store_true",
         help="enable debugging mode, default: False",
+        default=None,
     )
 
     parser.add_argument(
@@ -912,6 +914,193 @@ def argparser():
     )
 
     estimate_runs_parser.set_defaults(func=estimate.workflow_runs)
+
+    images_parser = commands.add_parser(
+        "images",
+        help="images commands",
+        description="Images commands.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    images_commands = images_parser.add_subparsers(
+        title="commands", metavar="command", description=None, help=None
+    )
+
+    images_commands.required = True
+
+    list_images_parser = images_commands.add_parser(
+        "list",
+        help="list images",
+        description="List images.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    list_images_parser.add_argument(
+        "--name",
+        metavar="name",
+        dest="list_images_name",
+        type=str,
+        help="can be used to filter images by their name (optional)",
+    )
+
+    list_images_parser.add_argument(
+        "--label",
+        metavar="selector",
+        dest="list_images_label_selector",
+        action="append",
+        help="can be used to filter servers by labels (optional)",
+    )
+
+    list_images_parser.add_argument(
+        "--bound-to",
+        metavar="id",
+        dest="list_images_bound_to",
+        action="append",
+        help="server id linked to the image. Only available for images of type backup (optional)",
+    )
+
+    list_images_parser.add_argument(
+        "--type",
+        metavar="type",
+        dest="list_images_type",
+        action="append",
+        help="choices: 'system', 'snapshot', 'backup', 'app' (optional)",
+        choices=["system", "snapshot", "backup", "app"],
+    )
+
+    list_images_parser.add_argument(
+        "--arch",
+        metavar="architecture",
+        dest="list_images_architecture",
+        action="append",
+        help="choices: 'x86' or 'arm' (optional)",
+        choices=["x86", "arm"],
+    )
+
+    list_images_parser.add_argument(
+        "--status",
+        metavar="status",
+        dest="list_images_status",
+        action="append",
+        help="can be used to filter images by their status (optional)",
+    )
+
+    list_images_parser.add_argument(
+        "--sort",
+        metavar="sort",
+        dest="list_images_sort",
+        action="append",
+        choices=["id", "id:asc", "id:desc", "name", "name:asc", "name:desc", "created", "created:asc", "created:desc"], 
+        help=(
+            "sort by 'id', 'name', 'created',\n"
+            "you can add one of ':asc', ':desc' to modify sort order, ':asc' is default (optional)"
+        ),
+    )
+
+    list_images_parser.add_argument(
+        "--include-deprecated",
+        dest="list_images_include_deprecated",
+        action="store_true",
+        help="include deprecated images in the response, default: False",
+        default=False,
+    )
+
+    list_images_parser.set_defaults(func=images.list)
+
+    delete_image_parser = images_commands.add_parser(
+        "delete",
+        help="delete image",
+        description="Delete image.\n\nOnly images of type snapshot and backup can be deleted.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    delete_image_parser.add_argument(
+        "--id",
+        metavar="id",
+        dest="delete_image_id",
+        help="image id",
+        type=int,
+        required=True,
+    )
+
+    delete_image_parser.set_defaults(func=images.delete)
+
+    create_snapshot_parser = images_commands.add_parser(
+        "create",
+        help="create snapshot",
+        description=(
+            "Create snapshot by customizing the image using the specified setup script.\n\n"
+            "The snapshot is created from the new server created using the specified image\n"
+            "and is deleted after the snapshot is created. You can specify server type and location."
+        ),
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    create_snapshot_parser.add_argument(
+        "-n",
+        "--name",
+        metavar="name",
+        dest="create_snapshot_name",
+        type=str,
+        required=True,
+        help="snapshot name (required)",
+    )
+
+    create_snapshot_parser.add_argument(
+        "--setup-script",
+        metavar="path",
+        dest="create_snapshot_setup_script",
+        type=args.path_type,
+        help="path to custom setup script that will be executed on the server to customize the default image (required)",
+        required=True,
+    )
+
+    create_snapshot_parser.add_argument(
+        "-l",
+        "--location",
+        metavar="name",
+        dest="create_snapshot_server_location",
+        type=args.location_type,
+        help="server location",
+        default=None,
+    )
+
+    create_snapshot_parser.add_argument(
+        "-t",
+        "--type",
+        metavar="name",
+        dest="create_snapshot_server_type",
+        type=args.server_type,
+        help="server type, default: cpx11",
+        default=args.server_type("cpx11"),
+    )
+
+    create_snapshot_parser.add_argument(
+        "-i",
+        "--image",
+        metavar="architecture:type:name_or_description",
+        dest="create_snapshot_server_image",
+        type=args.image_type,
+        help=(
+            "base server image type and name or description,\n"
+            "where the architecture is either: 'x86' or 'arm', \n"
+            "the type is either: 'system','snapshot','backup','app', \n"
+            "followed by the name, "
+            "default: x86:system:ubuntu-22.04"
+        ),
+        default=args.image_type("x86:system:ubuntu-22.04"),
+    )
+
+    create_snapshot_parser.add_argument(
+        "--server-name",
+        metavar="name",
+        dest="create_snapshot_server_name",
+        type=str,
+        help="server name, default: snapshot-server",
+        default="snapshot-server",
+    )
+
+    create_snapshot_parser.set_defaults(func=images.create_snapshot)
 
     return parser
 

@@ -10,7 +10,6 @@ import dataclasses
 
 from dataclasses import dataclass
 
-from hcloud import Client
 from hcloud.images.domain import Image
 from hcloud.server_types.domain import ServerType
 from hcloud.locations.domain import Location
@@ -18,6 +17,7 @@ from hcloud.ssh_keys.domain import SSHKey
 
 import testflows.github.hetzner.runners.args as args
 
+from ..hclient import HClient as Client
 from ..actions import Action
 from ..logger import default_format as logger_format
 
@@ -117,7 +117,7 @@ class Config:
     max_runners: int = 10
     max_runners_in_workflow_run: int = None
     default_image: Image = image("x86:system:ubuntu-22.04")
-    default_server_type: ServerType = server_type("cx11")
+    default_server_type: ServerType = server_type("cx22")
     default_location: Location = None
     workers: int = 10
     scripts: str = os.path.join(current_dir, "..", "scripts")
@@ -266,11 +266,13 @@ def parse_config(filename: str):
         assert isinstance(doc["with_label"], list), "config.with_label: is not a list"
         for i, label in enumerate(doc["with_label"]):
             assert isinstance(label, str), f"config.with_label[{i}]: is not a string"
+        doc["with_label"] = [label.lower().strip() for label in doc["with_label"]]
 
     if doc.get("label_prefix") is not None:
         assert isinstance(
             doc["label_prefix"], str
         ), "config.label_prefix: is not a string"
+        doc["label_prefix"] = doc["label_prefix"].lower().strip()
 
     if doc.get("meta_label") is not None:
         assert isinstance(
@@ -288,6 +290,13 @@ def parse_config(filename: str):
                     v, str
                 ), f"config.meta_label.{meta}[{j}]: is not a string"
             doc["meta_label"][meta] = set(doc["meta_label"][meta])
+
+        doc["meta_label"] = {
+            meta.lower().strip(): [
+                label.lower().strip() for label in doc["meta_label"][meta]
+            ]
+            for meta in doc["meta_label"]
+        }
 
     if doc.get("recycle") is not None:
         assert isinstance(doc["recycle"], bool), "config.recycle: is not a boolean"
@@ -545,6 +554,7 @@ def parse_config(filename: str):
                     assert isinstance(
                         label, str
                     ), f"config.standby_runners[{i}].labels[{j}]: {label} is not a string"
+                entry["labels"] = [label.lower().strip() for label in entry["labels"]]
             if entry.get("count") is not None:
                 v = entry["count"]
                 assert (

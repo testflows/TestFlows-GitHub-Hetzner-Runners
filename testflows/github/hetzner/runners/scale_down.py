@@ -37,12 +37,12 @@ from .scale_up import (
 from .logger import logger
 from .server import age
 from .config import Config
+from .hclient import HClient as Client
 
 from github import Github
 from github.Repository import Repository
 from github.SelfHostedActionsRunner import SelfHostedActionsRunner
 
-from hcloud import Client
 from hcloud.servers.client import BoundServer
 from hcloud.ssh_keys.domain import SSHKey
 
@@ -263,7 +263,7 @@ def scale_down(
                 for server in servers:
                     servers_labels[server.name] = set(
                         [
-                            value
+                            value.lower()
                             for name, value in server.labels.items()
                             if name.startswith("github-hetzner-runner-label")
                         ]
@@ -354,7 +354,10 @@ def scale_down(
                                 for standby_runner in _standby_runners:
                                     if set(standby_runner.labels).issubset(
                                         set(
-                                            [label["name"] for label in runner.labels()]
+                                            [
+                                                label["name"].lower()
+                                                for label in runner.labels()
+                                            ]
                                         )
                                     ):
                                         standby_runner.count -= 1
