@@ -57,8 +57,9 @@ to avoid any cleanup. Server instances are not shared between jobs.
 
 :✋ Note:
    Currently, Hetzner Cloud server instances are billed on an hourly basis. So a job that takes 1 minute will be billed
-   the same way as for a job that takes 59 minutes. Therefore, the minimal cost
-   for any job, the cost of the server for 1 hour plus the cost of one public IPv4 address.
+   the same way as for a job that takes 59 minutes. Therefore, unless server reuse is enabled using `server recycling <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Recycling-Powered%E2%80%90Off-Servers>`_, 
+   the minimal cost for any job is the cost of the server for one hour plus the cost of one public IPv4 address. 
+   If server recycling is used, the amortized cost could be close to per-minute billing depending on server utilization.
 
 ==================
 🧑 Who's using it?
