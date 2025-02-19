@@ -519,14 +519,27 @@ def recyclable_server_match(
     server: BoundServer,
     server_type: ServerType,
     server_location: Location,
+    server_net_config: ServerCreatePublicNetwork,
     ssh_key: SSHKey,
 ):
     """Check if a recyclable server matches for the specified
-    server type, location and ssh key."""
+    server type, location, and ssh key."""
     if server.server_type.name != server_type.name:
         return False
 
     if server_location and server.server_location.name != server_location.name:
+        return False
+
+    if server_net_config.enable_ipv4 and server.public_net.ipv4 is None:
+        return False
+
+    if not server_net_config.enable_ipv4 and server.public_net.ipv4 is not None:
+        return False
+
+    if server_net_config.enable_ipv6 and server.public_net.ipv6 is None:
+        return False
+
+    if not server_net_config.enable_ipv6 and server.public_net.ipv6 is not None:
         return False
 
     return ssh_key.name == server.server.labels.get(server_ssh_key_label)
@@ -626,6 +639,7 @@ def scale_up(
                         server=server,
                         server_type=server_type,
                         server_location=server_location,
+                        server_net_config=server_net_config,
                         ssh_key=ssh_keys[0],
                     ):
                         future = worker_pool.submit(
