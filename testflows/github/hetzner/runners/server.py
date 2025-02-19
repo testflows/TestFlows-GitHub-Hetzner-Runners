@@ -37,8 +37,10 @@ def age(server: BoundServer):
 
 
 def ip_address(server: BoundServer):
-    """Return IPv4 address of the server."""
-    return server.public_net.primary_ipv4.ip
+    """Return IPv4 (default) or IPv6 address of the server."""
+    if server.public_net.primary_ipv4 is not None:
+        return server.public_net.primary_ipv4.ip
+    return server.public_net.primary_ipv6.ip
 
 
 def wait_ssh(server: BoundServer, timeout: float):
