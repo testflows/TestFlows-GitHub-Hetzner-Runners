@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import time
+import ipaddress
 
 from datetime import datetime, timezone
 from collections import namedtuple
@@ -40,7 +41,12 @@ def ip_address(server: BoundServer):
     """Return IPv4 (default) or IPv6 address of the server."""
     if server.public_net.primary_ipv4 is not None:
         return server.public_net.primary_ipv4.ip
-    return server.public_net.primary_ipv6.ip
+    return (
+        ipaddress.IPv6Network(
+            server.public_net.primary_ipv6.ip, strict=False
+        ).network_address
+        + 1
+    )
 
 
 def wait_ssh(server: BoundServer, timeout: float):
