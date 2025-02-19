@@ -35,7 +35,7 @@ from hcloud.ssh_keys.domain import SSHKey
 from hcloud.server_types.domain import ServerType
 from hcloud.locations.domain import Location
 from hcloud.servers.client import BoundServer
-from hcloud.servers.domain import Server
+from hcloud.servers.domain import Server, ServerCreatePublicNetwork
 from hcloud.images.domain import Image
 from hcloud.helpers.labels import LabelValidator
 
@@ -289,6 +289,36 @@ def get_startup_script(
     return script
 
 
+def get_server_net_config(labels: set[str], label_prefix: str = ""):
+    """Get server network configuration."""
+
+    if label_prefix and not label_prefix.endswith("-"):
+        label_prefix += "-"
+    label_prefix += "net-"
+    label_prefix = label_prefix.lower()
+
+    enable_ipv4 = False
+    enable_ipv6 = False
+
+    for label in labels:
+        label = label.lower()
+        if label.startswith(label_prefix):
+            ip_version = label.split(label_prefix, 1)[-1].lower()
+            if ip_version == "ipv4":
+                enable_ipv4 = True
+            elif ip_version == "ipv6":
+                enable_ipv6 = True
+
+    if not enable_ipv4 and not enable_ipv6:
+        enable_ipv4 = enable_ipv6 = True
+
+    server_net_config = ServerCreatePublicNetwork(
+        enable_ipv4=enable_ipv4, enable_ipv6=enable_ipv6
+    )
+
+    return server_net_config
+
+
 def expand_meta_label(
     meta_label: dict[str, set[str]], labels: set[str], label_prefix: str = ""
 ):
@@ -320,6 +350,7 @@ def create_server(
     server_type: ServerType,
     server_location: Location,
     server_image: Image,
+    server_net_config: ServerCreatePublicNetwork,
     startup_script: str,
     setup_script: str,
     github_token: str,
@@ -348,6 +379,7 @@ def create_server(
             image=server_image,
             ssh_keys=ssh_keys,
             labels=server_labels,
+            public_net=server_net_config,
         )
         server: BoundServer = response.server
 
@@ -566,6 +598,10 @@ def scale_up(
             label_prefix=label_prefix,
         )
 
+        server_net_config = get_server_net_config(
+            labels=labels, label_prefix=label_prefix
+        )
+
         with Action(
             f"Trying to create server {name}",
             stacklevel=3,
@@ -656,6 +692,7 @@ def scale_up(
             server_type=server_type,
             server_location=server_location,
             server_image=server_image,
+            server_net_config=server_net_config,
             setup_script=setup_script,
             startup_script=startup_script,
             github_token=github_token,
