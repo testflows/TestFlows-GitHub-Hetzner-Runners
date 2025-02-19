@@ -291,20 +291,30 @@ def get_startup_script(
 
 def get_server_net_config(labels: set[str], label_prefix: str = ""):
     """Get server network configuration."""
-    server_net_config = ServerCreatePublicNetwork()
 
     if label_prefix and not label_prefix.endswith("-"):
         label_prefix += "-"
     label_prefix += "net-"
     label_prefix = label_prefix.lower()
 
+    enable_ipv4 = False
+    enable_ipv6 = False
+
     for label in labels:
         label = label.lower()
         if label.startswith(label_prefix):
-            server_net_config = ServerCreatePublicNetwork(
-                enable_ipv4=False if "noipv4" in label else True,
-                enable_ipv6=False if "noipv6" in label else True,
-            )
+            ip_version = label.split(label_prefix, 1)[-1].lower()
+            if ip_version == "ipv4":
+                enable_ipv4 = True
+            elif ip_version == "ipv6":
+                enable_ipv6 = True
+
+    if not enable_ipv4 and not enable_ipv6:
+        enable_ipv4 = enable_ipv6 = True
+
+    server_net_config = ServerCreatePublicNetwork(
+        enable_ipv4=enable_ipv4, enable_ipv6=enable_ipv6
+    )
 
     return server_net_config
 
