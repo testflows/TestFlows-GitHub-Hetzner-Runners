@@ -1,7 +1,9 @@
 set -x
 
 echo "Configuring IPv6 DNS by adding entries to the top of /etc/resolv.conf..."
-# Define the IPv6 DNS servers to add at the top
+# Define the IPv6 DNS servers to add at the top.
+# Use public NAT64 service (https://nat64.net/)
+# to be able to connect to IPv4 only services like https://github.com
 DNS_ENTRIES=(
     "nameserver 2a01:4f9:c010:3f02::1"
     "nameserver 2a00:1098:2b::1"
