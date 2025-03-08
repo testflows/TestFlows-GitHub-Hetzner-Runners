@@ -70,6 +70,7 @@ The following projects are using **github-hetzner-runners** to enable self-hoste
 - `Altinity Regression Tests for ClickHouse® <https://github.com/Altinity/clickhouse-regression/blob/main/.github/workflows/run-regression.yml>`_
 - `Altinity Grafana Datasource Plugin for ClickHouse® <https://github.com/Altinity/clickhouse-grafana/blob/master/.github/workflows/testflows.yml>`_
 - `Altinity Sink Connector for ClickHouse® <https://github.com/Altinity/clickhouse-sink-connector/blob/develop/.github/workflows/testflows-sink-connector-lightweight.yml>`_
+- `Overte social-VR <https://github.com/overte-org/overte/tree/master/.github/workflows>`_
 
 :✋ Note:
    🌐 Let us know if you're using it in your project by filing an issue or making a PR to update this list!
