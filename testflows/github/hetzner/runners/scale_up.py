@@ -71,6 +71,12 @@ class MaxNumberOfServersReached(Exception):
     pass
 
 
+class CanceledServerCreation(Exception):
+    """Exception to indicate that server creation was canceled."""
+
+    pass
+
+
 @dataclass
 class RunnerServer:
     name: str
@@ -148,9 +154,9 @@ def server_setup(
         )
 
 
-def get_server_type(labels: set[str], default: ServerType, label_prefix: str = ""):
-    """Get server type for the specified job."""
-    server_type = None
+def get_server_types(labels: set[str], default: ServerType, label_prefix: str = ""):
+    """Get server types for the specified job."""
+    server_types: list[ServerType] = []
 
     if label_prefix and not label_prefix.endswith("-"):
         label_prefix += "-"
@@ -162,22 +168,23 @@ def get_server_type(labels: set[str], default: ServerType, label_prefix: str = "
         if label.startswith(label_prefix):
             server_type_name = label.split(label_prefix, 1)[-1].lower()
             server_type = ServerType(name=server_type_name)
+            server_types.append(server_type)
 
-    if server_type is None:
-        server_type = default
+    if not server_types:
+        server_types = [default]
 
-    return server_type
+    return server_types
 
 
-def get_server_location(
+def get_server_locations(
     labels: set[str], default: Location = None, label_prefix: str = ""
 ):
-    """Get preferred server location for the specified job.
+    """Get preferred server locations for the specified job.
 
     By default, location is set to `None` to avoid server type mismatching
     the location as some server types are not available at some locations.
     """
-    server_location: Location = None
+    server_locations: list[Location] = []
 
     if label_prefix and not label_prefix.endswith("-"):
         label_prefix += "-"
@@ -189,11 +196,12 @@ def get_server_location(
         if label.startswith(label_prefix):
             server_location_name = label.split(label_prefix, 1)[-1].lower()
             server_location = Location(name=server_location_name)
+            server_locations.append(server_location)
 
-    if server_location is None and default:
-        server_location = default
+    if not server_locations:
+        server_locations = [default]
 
-    return server_location
+    return server_locations
 
 
 def get_server_image(
@@ -356,32 +364,69 @@ def create_server(
     github_token: str,
     github_repository: str,
     ssh_keys: list[SSHKey],
-    timeout=60,
+    timeout: float = 60,
+    canceled: threading.Event = None,
+    semaphore: threading.Semaphore = None,
 ):
     """Create specified number of server instances."""
-    client = Client(token=hetzner_token)
 
-    server_labels = {
-        f"github-hetzner-runner-label-{i}": value for i, value in enumerate(labels)
-    }
-    server_labels[server_ssh_key_label] = ssh_keys[0].name
+    while True:
+        if canceled is not None and canceled.is_set():
+            with Action(
+                f"Server creation for {name} of {server_type} in {server_location} canceled",
+                level=logging.DEBUG,
+                stacklevel=3,
+                server_name=name,
+            ):
+                raise CanceledServerCreation("Server creation canceled")
 
-    with Action(f"Validating server {name} labels", server_name=name):
-        valid, error_msg = LabelValidator.validate_verbose(labels=server_labels)
-        if not valid:
-            raise ValueError(f"invalid server labels {server_labels}: {error_msg}")
+        if (
+            semaphore is not None and semaphore.acquire(timeout=1.0)
+        ) or semaphore is None:
+            try:
+                client = Client(token=hetzner_token)
+                server_labels = {
+                    f"github-hetzner-runner-label-{i}": value
+                    for i, value in enumerate(labels)
+                }
+                server_labels[server_ssh_key_label] = ssh_keys[0].name
 
-    with Action(f"Creating server {name} with labels {labels}", server_name=name):
-        response = client.servers.create(
-            name=name,
-            server_type=server_type,
-            location=server_location,
-            image=server_image,
-            ssh_keys=ssh_keys,
-            labels=server_labels,
-            public_net=server_net_config,
-        )
-        server: BoundServer = response.server
+                with Action(f"Validating server {name} labels", server_name=name):
+                    valid, error_msg = LabelValidator.validate_verbose(
+                        labels=server_labels
+                    )
+                    if not valid:
+                        raise ValueError(
+                            f"invalid server labels {server_labels}: {error_msg}"
+                        )
+
+                with Action(
+                    f"Creating server {name} with labels {labels}", server_name=name
+                ):
+                    response = client.servers.create(
+                        name=name,
+                        server_type=server_type,
+                        location=server_location,
+                        image=server_image,
+                        ssh_keys=ssh_keys,
+                        labels=server_labels,
+                        public_net=server_net_config,
+                    )
+                    server: BoundServer = response.server
+
+                with Action(
+                    f"Successfully created server {name} of {server_type} in {server_location}, canceling other attempts",
+                    level=logging.DEBUG,
+                    stacklevel=3,
+                    server_name=name,
+                ):
+                    canceled.set()
+                # break out of the loop
+                break
+
+            finally:
+                if semaphore is not None:
+                    semaphore.release()
 
     setup_worker_pool.submit(
         server_setup,
@@ -587,12 +632,17 @@ def scale_up(
         """Create new server that would provide a runner with given labels."""
         recyclable_servers: list[BoundServer] = []
 
+        # signal to stop creating a new server
+        create_server_canceled = threading.Event()
+        # semaphore to limit the number of concurrent server creations to 1
+        create_server_semaphore = threading.Semaphore(1)
+
         labels = expand_meta_label(meta_label=meta_label, labels=labels)
 
-        server_type = get_server_type(
+        server_types = get_server_types(
             labels=labels, default=default_server_type, label_prefix=label_prefix
         )
-        server_location = get_server_location(
+        server_locations = get_server_locations(
             labels=labels, default=default_location, label_prefix=label_prefix
         )
         server_image = get_server_image(
@@ -606,117 +656,139 @@ def scale_up(
             labels=labels,
             label_prefix=label_prefix,
         )
-        startup_script = get_startup_script(
-            scripts=scripts,
-            server_type=server_type,
-            labels=labels,
-            label_prefix=label_prefix,
-        )
-
         server_net_config = get_server_net_config(
             labels=labels, label_prefix=label_prefix
         )
 
-        with Action(
-            f"Trying to create server {name}",
-            stacklevel=3,
-            level=logging.DEBUG,
-            server_name=name,
-        ):
-            pass
-
         if recycle:
-            for server in servers:
-                if server.name.startswith(recycle_server_name_prefix):
-                    recyclable_servers.append(server)
+            for server_type in server_types:
+                for server_location in server_locations:
+                    startup_script = get_startup_script(
+                        scripts=scripts,
+                        server_type=server_type,
+                        labels=labels,
+                        label_prefix=label_prefix,
+                    )
+
                     with Action(
-                        f"Checking if we can recycle {server.name}",
+                        f"Trying to create recycled server {name} of {server_type} in {server_location}",
                         stacklevel=3,
                         level=logging.DEBUG,
                         server_name=name,
                     ):
                         pass
 
-                    if recyclable_server_match(
-                        server=server,
-                        server_type=server_type,
-                        server_location=server_location,
-                        server_net_config=server_net_config,
-                        ssh_key=ssh_keys[0],
-                    ):
-                        future = worker_pool.submit(
-                            recycle_server,
-                            server_name=server.name,
-                            hetzner_token=hetzner_token,
-                            setup_worker_pool=setup_worker_pool,
-                            labels=labels,
-                            name=name,
-                            server_image=server_image,
-                            startup_script=startup_script,
-                            setup_script=setup_script,
-                            github_token=github_token,
-                            github_repository=github_repository,
-                            ssh_key=ssh_keys[0],
-                            timeout=max_server_ready_time,
-                        )
-                        future.server_name = name
-                        future.server_type = server_type
-                        future.server_location = server_location
-                        future.server_labels = labels
-                        futures.append(future)
-                        servers.pop(servers.index(server))
-                        return
-                    else:
-                        with Action(
-                            f"Recyclable server {server.name} did not match {name}",
-                            stacklevel=3,
-                            level=logging.DEBUG,
-                            server_name=name,
-                        ):
-                            pass
+                    for server in servers:
+                        if server.name.startswith(recycle_server_name_prefix):
+                            recyclable_servers.append(server)
 
-        if max_servers is not None:
-            if len(servers) >= max_servers:
+                            with Action(
+                                f"Checking if we can recycle {server.name}",
+                                stacklevel=3,
+                                level=logging.DEBUG,
+                                server_name=name,
+                            ):
+                                pass
+
+                            if recyclable_server_match(
+                                server=server,
+                                server_type=server_type,
+                                server_location=server_location,
+                                server_net_config=server_net_config,
+                                ssh_key=ssh_keys[0],
+                            ):
+                                future = worker_pool.submit(
+                                    recycle_server,
+                                    server_name=server.name,
+                                    hetzner_token=hetzner_token,
+                                    setup_worker_pool=setup_worker_pool,
+                                    labels=labels,
+                                    name=name,
+                                    server_image=server_image,
+                                    startup_script=startup_script,
+                                    setup_script=setup_script,
+                                    github_token=github_token,
+                                    github_repository=github_repository,
+                                    ssh_key=ssh_keys[0],
+                                    timeout=max_server_ready_time,
+                                )
+                                future.server_name = name
+                                future.server_type = server_type
+                                future.server_location = server_location
+                                future.server_labels = labels
+                                futures.append(future)
+                                servers.pop(servers.index(server))
+                                return
+                            else:
+                                with Action(
+                                    f"Recyclable server {server.name} did not match {name}",
+                                    stacklevel=3,
+                                    level=logging.DEBUG,
+                                    server_name=name,
+                                ):
+                                    pass
+
+        for server_type in server_types:
+            for server_location in server_locations:
+                startup_script = get_startup_script(
+                    scripts=scripts,
+                    server_type=server_type,
+                    labels=labels,
+                    label_prefix=label_prefix,
+                )
+
                 with Action(
-                    f"Maximum number of servers {max_servers} has been reached",
+                    f"Trying to create new server {name} of {server_type} in {server_location}",
                     stacklevel=3,
+                    level=logging.DEBUG,
                     server_name=name,
                 ):
-                    future = worker_pool.submit(
-                        raise_exception,
-                        exc=MaxNumberOfServersReached(
-                            f"maximum number of servers reached {len(servers)}/{max_servers}"
-                        ),
-                    )
-                    future.server_name = name
-                    future.server_type = server_type
-                    future.server_location = server_location
-                    future.server_labels = labels
-                    futures.append(future)
-                    raise StopIteration("maximum number of servers reached")
+                    pass
 
-        future = worker_pool.submit(
-            create_server,
-            hetzner_token=hetzner_token,
-            setup_worker_pool=setup_worker_pool,
-            labels=labels,
-            name=name,
-            server_type=server_type,
-            server_location=server_location,
-            server_image=server_image,
-            server_net_config=server_net_config,
-            setup_script=setup_script,
-            startup_script=startup_script,
-            github_token=github_token,
-            github_repository=github_repository,
-            ssh_keys=ssh_keys,
-            timeout=max_server_ready_time,
-        )
-        future.server_name = name
-        future.server_type = server_type
-        future.server_location = server_location
-        future.server_labels = labels
-        futures.append(future)
+                if max_servers is not None:
+                    if len(servers) >= max_servers:
+                        with Action(
+                            f"Maximum number of servers {max_servers} has been reached",
+                            stacklevel=3,
+                            server_name=name,
+                        ):
+                            future = worker_pool.submit(
+                                raise_exception,
+                                exc=MaxNumberOfServersReached(
+                                    f"maximum number of servers reached {len(servers)}/{max_servers}"
+                                ),
+                            )
+                            future.server_name = name
+                            future.server_type = server_type
+                            future.server_location = server_location
+                            future.server_labels = labels
+                            futures.append(future)
+                            raise StopIteration("maximum number of servers reached")
+
+                future = worker_pool.submit(
+                    create_server,
+                    hetzner_token=hetzner_token,
+                    setup_worker_pool=setup_worker_pool,
+                    labels=labels,
+                    name=name,
+                    server_type=server_type,
+                    server_location=server_location,
+                    server_image=server_image,
+                    server_net_config=server_net_config,
+                    setup_script=setup_script,
+                    startup_script=startup_script,
+                    github_token=github_token,
+                    github_repository=github_repository,
+                    ssh_keys=ssh_keys,
+                    timeout=max_server_ready_time,
+                    canceled=create_server_canceled,
+                    semaphore=create_server_semaphore,
+                )
+                future.server_name = name
+                future.server_type = server_type
+                future.server_location = server_location
+                future.server_labels = labels
+                futures.append(future)
 
     with Action("Logging in to GitHub"):
         github = Github(login_or_token=github_token, per_page=100)
@@ -977,6 +1049,9 @@ def scale_up(
                                     labels=future.server_labels,
                                 )
                             )
+
+                        except CanceledServerCreation:
+                            pass
 
                         except Exception as exc:
                             try:
