@@ -15,8 +15,7 @@ set -x
     echo "Install fail2ban"
     apt-get update
     apt-get install --yes --no-install-recommends \
-        fail2ban 
-    
+        fail2ban
     echo "Launch fail2ban"
     systemctl start fail2ban
 }
