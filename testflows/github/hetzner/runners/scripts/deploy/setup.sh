@@ -22,6 +22,7 @@ set -x
     apt-get update
     apt-get install --yes --no-install-recommends \
         fail2ban
+
     echo "Launch fail2ban"
     systemctl start fail2ban
 }
