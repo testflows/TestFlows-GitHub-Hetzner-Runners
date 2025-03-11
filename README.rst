@@ -152,6 +152,7 @@ The following projects are using **github-hetzner-runners** to enable self-hoste
 💻 Prerequisites
 ================
 
+* Linux OS (tested on Ubuntu 22.04)
 * Python >= 3.7
 * `Hetzner Cloud <https://www.hetzner.com/cloud>`_ account
 * GitHub API classic token with privileges to manage self-hosted runners
