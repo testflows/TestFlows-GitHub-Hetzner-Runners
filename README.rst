@@ -86,6 +86,7 @@ The following projects are using **github-hetzner-runners** to enable self-hoste
 * supports specifying custom runner server types, images, and locations using job labels
 * self-contained program that you can use to deploy, redeploy, and manage the service on a cloud instance
 * supports x64 (x86) and ARM64 (arm) runners
+* supports IPv6 only runners
 * supports using any Hetzner Cloud server types
 * supports runners with pre-installed Docker
 * supports using any standard Hetzner Cloud images and applications
@@ -112,6 +113,7 @@ The following projects are using **github-hetzner-runners** to enable self-hoste
 * `Jobs That Require the Docker Engine <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Jobs-That-Require-the-Docker-Engine>`_
 * `Specifying The Runner Type <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Type>`_
 * `Specifying The Runner Location <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Location>`_
+* `Specifying The Runner Network <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Network>`_
 * `Specifying The Runner Image <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Image>`_
 * `Specifying The Custom Runner Server Setup Script <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Custom-Runner-Server-Setup-Script>`_
 * `Specifying The Custom Runner Server Startup Script <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Custom-Runner-Server-Startup-Script>`_
