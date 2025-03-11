@@ -51,6 +51,7 @@ def ssh_client(args, config: Config, server_name: str = None):
 
     with Action(f"Getting server {server_name}"):
         server: BoundServer = client.servers.get_by_name(server_name)
+
         if server is None:
             raise ValueError(f"server not found")
 
@@ -73,6 +74,7 @@ def ssh_client_command(args, config: Config, server_name: str = None):
 
     with Action(f"Getting server {server_name}"):
         server: BoundServer = client.servers.get_by_name(server_name)
+
         if server is None:
             raise ValueError(f"server not found")
 

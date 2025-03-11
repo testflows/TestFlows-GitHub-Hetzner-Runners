@@ -243,7 +243,9 @@ def scale_down(
             with Action("Terminating scale down service", interval=interval):
                 break
 
-        try:
+        with Action(
+            "Scale down cycle", level=logging.DEBUG, ignore_fail=True, interval=interval
+        ):
             with Action(
                 "Getting list of servers", level=logging.DEBUG, interval=interval
             ):
@@ -640,13 +642,6 @@ def scale_down(
                                         deleted_recyclable_server_name
                                     )
                                     scaleup_failures.pop(scaleup_failure.server_name)
-
-        except Exception as exc:
-            msg = f"❗ Error: {type(exc).__name__} {exc}"
-            if debug:
-                logger.exception(f"{msg}\n{exc}", extra={"interval": interval})
-            else:
-                logger.error(msg, extra={"interval": interval})
 
         with Action(
             f"Sleeping until next interval {interval_period}s",

@@ -63,19 +63,25 @@ class Action:
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         if exc_value is not None:
-            msg = f"❌ {exc_type.__name__ or 'Error'}: {exc_value}"
+            msg = f"❌ {self.name}: {exc_type.__name__ or 'Error'}: {exc_value}"
             if not self.debug:
-                logger.log(
+                logger.error(
                     msg=msg,
                     stacklevel=self.stacklevel + 1,
-                    level=logging.ERROR,
                     extra=self.extra,
                 )
             else:
                 logger.exception(
                     msg=msg, stacklevel=self.stacklevel + 1, extra=self.extra
                 )
+
             exc_value.processed = True
+
+            # Propagate anything that's not a regular exception
+            if not isinstance(exc_value, Exception):
+                return False
+
             if self.ignore_fail:
                 return True
-            raise
+
+            return False

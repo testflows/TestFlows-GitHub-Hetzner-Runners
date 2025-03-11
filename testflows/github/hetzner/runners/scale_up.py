@@ -429,7 +429,9 @@ def recycle_server(
         server = server.update(name=name, labels=server_labels)
 
     with Action(f"Rebuilding recycled server {server.name} image", server_name=name):
-        server.rebuild(image=server_image).action.wait_until_finished(max_retries=timeout)
+        server.rebuild(image=server_image).action.wait_until_finished(
+            max_retries=timeout
+        )
 
     setup_worker_pool.submit(
         server_setup,
@@ -658,17 +660,11 @@ def scale_up(
                             timeout=max_server_ready_time,
                         )
                         future.server_name = name
+                        future.server_type = server_type
+                        future.server_location = server_location
                         future.server_labels = labels
                         futures.append(future)
                         servers.pop(servers.index(server))
-                        servers.append(
-                            RunnerServer(
-                                name=name,
-                                server_type=server_type,
-                                server_location=server_location,
-                                labels=labels,
-                            )
-                        )
                         return
                     else:
                         with Action(
@@ -693,6 +689,8 @@ def scale_up(
                         ),
                     )
                     future.server_name = name
+                    future.server_type = server_type
+                    future.server_location = server_location
                     future.server_labels = labels
                     futures.append(future)
                     raise StopIteration("maximum number of servers reached")
@@ -715,16 +713,10 @@ def scale_up(
             timeout=max_server_ready_time,
         )
         future.server_name = name
+        future.server_type = server_type
+        future.server_location = server_location
         future.server_labels = labels
         futures.append(future)
-        servers.append(
-            RunnerServer(
-                name=name,
-                server_type=server_type,
-                server_location=server_location,
-                labels=labels,
-            )
-        )
 
     with Action("Logging in to GitHub"):
         github = Github(login_or_token=github_token, per_page=100)
@@ -741,15 +733,23 @@ def scale_up(
                 with Action("Terminating scale up service", interval=interval):
                     break
 
-            try:
+            with Action(
+                "Scale up cycle",
+                level=logging.DEBUG,
+                ignore_fail=True,
+                interval=interval,
+            ):
+                futures: list[Future] = []
+                workflow_runs = []
+                servers = []
+                runners = []
+
                 with Action(
                     "Getting workflow runs", level=logging.DEBUG, interval=interval
                 ):
                     workflow_runs: list[WorkflowRun] = repo.get_workflow_runs(
                         status="queued"
                     )
-
-                futures: list[Future] = []
 
                 with Action(
                     "Getting list of servers", level=logging.DEBUG, interval=interval
@@ -796,7 +796,9 @@ def scale_up(
                                     server.status = "busy" if runner.busy else "ready"
 
                 with Action(
-                    "Looking for queued jobs", level=logging.DEBUG, interval=interval
+                    "Looking for queued jobs",
+                    level=logging.DEBUG,
+                    interval=interval,
                 ):
                     try:
                         for run in workflow_runs:
@@ -967,6 +969,15 @@ def scale_up(
                     ):
                         try:
                             future.result()
+                            servers.append(
+                                RunnerServer(
+                                    name=future.server_name,
+                                    server_type=future.server_type,
+                                    server_location=future.server_location,
+                                    labels=future.server_labels,
+                                )
+                            )
+
                         except Exception as exc:
                             try:
                                 send_failure = False
@@ -994,13 +1005,6 @@ def scale_up(
                                         )
                             finally:
                                 raise
-
-            except Exception as exc:
-                msg = f"❗ Error: {type(exc).__name__} {exc}"
-                if debug:
-                    logger.exception(f"{msg}\n{exc}", extra={"interval": interval})
-                else:
-                    logger.error(msg, extra={"interval": interval})
 
             with Action(
                 f"Sleeping until next interval {interval_period}s",
