@@ -139,6 +139,11 @@
                     "type": "integer",
                     "examples": [15]
                 },
+                "metrics_port": {
+                    "description": "Port for the prometheus metrics server, default: 9090.",
+                    "type": "integer",
+                    "examples": [9090]
+                },
                 "debug": {
                     "description": "Enable debugging mode, default: false",
                     "type": "boolean",

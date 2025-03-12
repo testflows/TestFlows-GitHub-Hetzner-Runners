@@ -24,6 +24,7 @@ import logging.config
 
 from contextlib import contextmanager
 from concurrent.futures import ThreadPoolExecutor, Future
+from prometheus_client import start_http_server
 
 from hcloud.ssh_keys.domain import SSHKey
 
@@ -281,6 +282,13 @@ def argparser():
         metavar="sec",
         type=args.count_type,
         help="scale down service interval, default: 15 sec",
+    )
+
+    parser.add_argument(
+        "--metrics-port",
+        metavar="port",
+        type=args.count_type,
+        help="port for the prometheus metrics server, default: 9090",
     )
 
     parser.add_argument(
@@ -1137,6 +1145,9 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
     try:
         with Action("Logging in to Hetzner Cloud"):
             client = Client(token=config.hetzner_token)
+
+        with Action(f"Starting prometheus metrics server on port {config.metrics_port}"):
+            start_http_server(config.metrics_port)
 
         with Action("Logging in to GitHub"):
             github = Github(login_or_token=config.github_token, per_page=100)

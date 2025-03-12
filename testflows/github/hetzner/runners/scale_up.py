@@ -24,6 +24,7 @@ from .actions import Action
 from .request import request
 from .args import image_type
 from .logger import logger
+from . import metrics
 from .config import Config, check_image, check_startup_script, check_setup_script
 from .config import standby_runner as StandbyRunner
 from .hclient import HClient as Client
@@ -367,8 +368,11 @@ def create_server(
     timeout: float = 60,
     canceled: threading.Event = None,
     semaphore: threading.Semaphore = None,
+    active_attempt: list[int] = None,
+    attempt: int = 0,
 ):
     """Create specified number of server instances."""
+    start_time = time.time()
 
     while True:
         if canceled is not None and canceled.is_set():
@@ -380,10 +384,16 @@ def create_server(
             ):
                 raise CanceledServerCreation("Server creation canceled")
 
-        if (
-            semaphore is not None and semaphore.acquire(timeout=1.0)
-        ) or semaphore is None:
+        if semaphore is None or semaphore.acquire(timeout=1.0):
             try:
+                if active_attempt is not None:
+                    # only proceed if this is our turn
+                    if active_attempt[0] != attempt:
+                        continue
+                    # increment the attempt number so that if we fail
+                    # another attempt can proceed next time
+                    active_attempt[0] += 1
+
                 client = Client(token=hetzner_token)
                 server_labels = {
                     f"github-hetzner-runner-label-{i}": value
@@ -413,6 +423,12 @@ def create_server(
                         public_net=server_net_config,
                     )
                     server: BoundServer = response.server
+
+                    metrics.record_server_creation(
+                        server_type=server_type.name,
+                        location=server_location.name if server_location else None,
+                        creation_time=time.time() - start_time,
+                    )
 
                 with Action(
                     f"Successfully created server {name} of {server_type} in {server_location}, canceling other attempts",
@@ -617,6 +633,7 @@ def scale_up(
     label_prefix: str = config.label_prefix
     meta_label: dict[str, set[str]] = config.meta_label
     scripts: str = config.scripts
+    server_prices: dict[str, dict[str, float]] = config.server_prices
     interval: int = -1
 
     with Action("Logging in to Hetzner Cloud"):
@@ -636,6 +653,10 @@ def scale_up(
         create_server_canceled = threading.Event()
         # semaphore to limit the number of concurrent server creations to 1
         create_server_semaphore = threading.Semaphore(1)
+        # active_attempt
+        create_server_active_attempt = [0]
+        # attempt number
+        create_server_attempt = -1
 
         labels = expand_meta_label(meta_label=meta_label, labels=labels)
 
@@ -730,6 +751,9 @@ def scale_up(
 
         for server_type in server_types:
             for server_location in server_locations:
+                # pre-increment the attempt number that starts from 0
+                create_server_attempt += 1
+
                 startup_script = get_startup_script(
                     scripts=scripts,
                     server_type=server_type,
@@ -783,6 +807,8 @@ def scale_up(
                     timeout=max_server_ready_time,
                     canceled=create_server_canceled,
                     semaphore=create_server_semaphore,
+                    active_attempt=create_server_active_attempt,
+                    attempt=create_server_attempt,
                 )
                 future.server_name = name
                 future.server_type = server_type
@@ -811,6 +837,9 @@ def scale_up(
                 ignore_fail=True,
                 interval=interval,
             ):
+                # Update service heartbeat
+                metrics.update_heartbeat()
+
                 futures: list[Future] = []
                 workflow_runs = []
                 servers = []
@@ -822,6 +851,8 @@ def scale_up(
                     workflow_runs: list[WorkflowRun] = repo.get_workflow_runs(
                         status="queued"
                     )
+                    # Update job metrics
+                    metrics.update_jobs(workflow_runs)
 
                 with Action(
                     "Getting list of servers", level=logging.DEBUG, interval=interval
@@ -866,6 +897,20 @@ def scale_up(
                             if runner.name.startswith(server.name):
                                 if runner.status == "online":
                                     server.status = "busy" if runner.busy else "ready"
+
+                # Update all metrics
+                metrics.update_servers(servers, server_prices)
+                metrics.update_runners(
+                    runners,
+                    github_repository,
+                    max_server_ready_time,
+                    get_runner_server_type_and_location_fn=get_runner_server_type_and_location,
+                )
+                metrics.update_pools(
+                    servers,
+                    standby_runners,
+                    count_available_fn=count_available,
+                )
 
                 with Action(
                     "Looking for queued jobs",
@@ -1057,12 +1102,39 @@ def scale_up(
                             try:
                                 send_failure = False
 
+                                error_type = "error"
+                                error_details = {
+                                    "error": str(exc),
+                                    "server_type": future.server_type.name,
+                                    "location": (
+                                        future.server_location.name
+                                        if future.server_location
+                                        else ""
+                                    ),
+                                    "labels": ",".join(future.server_labels),
+                                }
+
                                 if isinstance(exc, MaxNumberOfServersReached):
                                     send_failure = True
+                                    error_type = "max_servers_reached"
 
                                 if isinstance(exc, APIException):
+                                    error_type = "api_exception"
                                     if exc.code == "resource_limit_exceeded":
                                         send_failure = True
+                                        error_type = "resource_limit_exceeded"
+
+                                metrics.record_scale_up_failure(
+                                    error_type=error_type,
+                                    server_name=future.server_name,
+                                    server_type=future.server_type.name,
+                                    location=(
+                                        future.server_location.name
+                                        if future.server_location
+                                        else ""
+                                    ),
+                                    error_details=error_details,
+                                )
 
                                 if send_failure:
                                     with Action(

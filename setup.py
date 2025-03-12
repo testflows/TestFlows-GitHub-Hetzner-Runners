@@ -56,6 +56,7 @@ setup(
         "hcloud==2.3.0",
         "requests-cache==1.1.0",
         "PyYAML==6.0.2",
+        "prometheus_client==0.19.0",
     ],
     extras_require={"dev": []},
 )

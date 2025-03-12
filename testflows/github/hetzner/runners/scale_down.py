@@ -23,6 +23,7 @@ import threading
 from dataclasses import dataclass
 
 from .actions import Action
+from . import metrics
 from .scale_up import (
     server_name_prefix,
     runner_name_prefix,
@@ -246,6 +247,7 @@ def scale_down(
         with Action(
             "Scale down cycle", level=logging.DEBUG, ignore_fail=True, interval=interval
         ):
+
             with Action(
                 "Getting list of servers", level=logging.DEBUG, interval=interval
             ):
@@ -457,6 +459,11 @@ def scale_down(
                                     server_name=server_name,
                                     interval=interval,
                                 ) as action:
+                                    metrics.record_server_deletion(
+                                        server_type=powered_off_server.server.server_type.name,
+                                        location=powered_off_server.server.datacenter.location.name,
+                                        reason="powered_off",
+                                    )
                                     powered_off_server.server.delete()
                             powered_off_servers.pop(server_name)
 
@@ -495,6 +502,11 @@ def scale_down(
                                     server_name=server_name,
                                     interval=interval,
                                 ) as action:
+                                    metrics.record_server_deletion(
+                                        server_type=zombie_server.server.server_type.name,
+                                        location=zombie_server.server.datacenter.location.name,
+                                        reason="zombie",
+                                    )
                                     zombie_server.server.delete()
                             zombie_servers.pop(server_name)
 
@@ -546,6 +558,11 @@ def scale_down(
                                         server_name=runner_server.name,
                                         interval=interval,
                                     ):
+                                        metrics.record_server_deletion(
+                                            server_type=runner_server.server_type.name,
+                                            location=runner_server.datacenter.location.name,
+                                            reason="unused",
+                                        )
                                         runner_server.delete()
                                 runner_server = None
 
@@ -557,6 +574,7 @@ def scale_down(
                                     interval=interval,
                                 ):
                                     repo.remove_self_hosted_runner(unused_runner.runner)
+                                    unused_runners.pop(runner_name)
 
             with Action(
                 "Checking which recyclable servers need to be deleted",

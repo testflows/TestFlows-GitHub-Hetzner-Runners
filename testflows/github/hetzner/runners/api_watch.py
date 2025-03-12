@@ -18,6 +18,7 @@ from threading import Event
 from github import Github
 
 from .actions import Action
+from . import metrics
 
 
 def api_watch(terminate: Event, github_token: str, interval: int = 60):
@@ -28,8 +29,12 @@ def api_watch(terminate: Event, github_token: str, interval: int = 60):
 
     with Action("Checking current API calls consumption rate"):
         calls, total = github.rate_limiting
+        next_resettime = github.rate_limiting_resettime
+
         with Action(f"Consumed {total-calls} calls out of {total}"):
             pass
+
+        metrics.update_github_api(calls, total, next_resettime)
 
     i = 0
     while True:
@@ -49,6 +54,8 @@ def api_watch(terminate: Event, github_token: str, interval: int = 60):
                     f"Consumed {(calls-current) if not calls < current else (total-current)} calls in {interval} sec, {current} calls left, reset in {int(next_resettime - time.time())} sec"
                 ):
                     calls = current
+
+                metrics.update_github_api(current, total, next_resettime)
             i = 0
 
         time.sleep(1)
