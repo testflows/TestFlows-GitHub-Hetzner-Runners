@@ -16,17 +16,17 @@ from datetime import datetime, timedelta
 import plotly.graph_objs as go
 from dash import html, dcc
 
-from ..colors import COLORS, STATE_COLORS
+from ..colors import COLORS
 from ..metrics import get_metric_value, metric_history
 
 
 def create_panel():
-    """Create servers total panel."""
+    """Create servers total count panel."""
     return html.Div(
         className="tui-container",
         children=[
             html.H3(
-                "servers by status",
+                "servers total count",
                 style={
                     "color": COLORS["accent"],
                     "marginBottom": "20px",
@@ -34,9 +34,9 @@ def create_panel():
                     "paddingBottom": "10px",
                 },
             ),
-            dcc.Graph(id="servers-total-graph"),
+            dcc.Graph(id="servers-total-count-graph"),
             dcc.Interval(
-                id="interval-component",
+                id="interval-component-total-count",
                 interval=30 * 1000,
                 n_intervals=0,
             ),
@@ -45,49 +45,25 @@ def create_panel():
 
 
 def update_graph(n):
-    """Update servers total graph."""
-    current_time = datetime.now()
-    states = ["running", "off", "initializing", "ready", "busy"]
-    current_values = {}
-    total_servers = 0
+    """Update servers total count graph."""
+    total_count = get_metric_value("github_hetzner_runners_servers_total_count")
+    metric_time = datetime.now()
+    print(f"\nTotal servers count: {total_count}")
 
-    print("\nCurrent server states:")
-    for status in states:
-        value = get_metric_value(
-            "github_hetzner_runners_servers_total", {"status": status}
-        )
-        current_values[status] = value if value is not None else 0
-        total_servers += current_values[status]
-        print(f"  {status}: {current_values[status]}")
-    print(f"Total servers: {total_servers}")
+    key = "github_hetzner_runners_servers_total_count"
+    if key not in metric_history:
+        metric_history[key] = {"timestamps": [], "values": []}
 
-    traces = []
-    for status in states:
-        key = f"github_hetzner_runners_servers_total_status={status}"
-        if key not in metric_history:
-            metric_history[key] = {"timestamps": [], "values": []}
+    metric_history[key]["timestamps"].append(metric_time)
+    metric_history[key]["values"].append(total_count)
 
-        metric_history[key]["timestamps"].append(current_time)
-        metric_history[key]["values"].append(current_values[status])
-
-        cutoff_time = current_time - timedelta(minutes=15)
-        while (
-            metric_history[key]["timestamps"]
-            and metric_history[key]["timestamps"][0] < cutoff_time
-        ):
-            metric_history[key]["timestamps"].pop(0)
-            metric_history[key]["values"].pop(0)
-
-        traces.append(
-            go.Scatter(
-                x=metric_history[key]["timestamps"],
-                y=metric_history[key]["values"],
-                name=f"{status} ({current_values[status]})",
-                mode="lines",
-                line={"width": 2, "shape": "hv", "color": STATE_COLORS[status]},
-                hovertemplate="%{y:.0f} %{fullData.name}<extra></extra>",
-            )
-        )
+    cutoff_time = metric_time - timedelta(minutes=15)
+    while (
+        metric_history[key]["timestamps"]
+        and metric_history[key]["timestamps"][0] < cutoff_time
+    ):
+        metric_history[key]["timestamps"].pop(0)
+        metric_history[key]["values"].pop(0)
 
     common_style = {
         "font": {
@@ -100,10 +76,19 @@ def update_graph(n):
     }
 
     return {
-        "data": traces,
+        "data": [
+            go.Scatter(
+                x=metric_history[key]["timestamps"],
+                y=metric_history[key]["values"],
+                name=f"total ({total_count})",
+                mode="lines",
+                line={"width": 2, "shape": "hv", "color": COLORS["accent"]},
+                hovertemplate="%{y:.0f} servers<extra></extra>",
+            )
+        ],
         "layout": {
             "title": {
-                "text": "servers by status",
+                "text": "servers total count",
                 "font": {"size": 16, "weight": "bold", **common_style["font"]},
                 "x": 0.5,
                 "y": 0.95,
@@ -114,27 +99,19 @@ def update_graph(n):
             "font": common_style["font"],
             "xaxis": {
                 "title": "Time",
-                "range": [current_time - timedelta(minutes=15), current_time],
+                "range": [metric_time - timedelta(minutes=15), metric_time],
                 "tickformat": "%H:%M",
                 **common_style,
             },
             "yaxis": {
                 "title": "Number of Servers",
-                "range": [0, max(2, total_servers + 1)],
+                "range": [0, max(2, total_count + 1)],
                 "tickformat": "d",
                 "dtick": 1,
                 **common_style,
             },
             "margin": {"t": 60, "b": 50, "l": 50, "r": 50},
-            "showlegend": True,
-            "legend": {
-                "x": 0,
-                "y": 1,
-                "xanchor": "left",
-                "yanchor": "top",
-                "bgcolor": COLORS["paper"],
-                "font": {"size": 10},
-            },
+            "showlegend": False,
             "dragmode": False,
         },
         "config": {

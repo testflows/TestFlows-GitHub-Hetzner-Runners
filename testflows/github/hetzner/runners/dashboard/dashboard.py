@@ -20,7 +20,7 @@ from dash.dependencies import Input, Output
 from flask import send_from_directory
 
 from .colors import COLORS
-from .panels import servers_total
+from .panels import servers_total, servers_total_count
 
 # Get the directory containing this file
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -139,6 +139,8 @@ app.layout = html.Div(
                 "margin": "0 auto",
             },
             children=[
+                # Total Servers Count Panel
+                servers_total_count.create_panel(),
                 # Servers Total Panel
                 servers_total.create_panel(),
             ],
@@ -156,11 +158,29 @@ def update_interval(value):
 
 
 @app.callback(
+    Output("interval-component-total-count", "interval"),
+    Input("interval-dropdown", "value"),
+)
+def update_total_count_interval(value):
+    """Update the interval time for total count panel based on dropdown selection"""
+    return value * 1000  # Convert seconds to milliseconds
+
+
+@app.callback(
     Output("servers-total-graph", "figure"), Input("interval-component", "n_intervals")
 )
 def update_servers_total_graph(n):
     """Update servers total graph."""
     return servers_total.update_graph(n)
+
+
+@app.callback(
+    Output("servers-total-count-graph", "figure"),
+    Input("interval-component-total-count", "n_intervals"),
+)
+def update_servers_total_count_graph(n):
+    """Update servers total count graph."""
+    return servers_total_count.update_graph(n)
 
 
 def start_http_server(
