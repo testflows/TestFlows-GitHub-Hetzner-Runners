@@ -1,0 +1,169 @@
+/* Base styles */
+body {
+    background-color: #000000;
+    margin: 0;
+    padding: 0;
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+}
+
+h2, h3 {
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+/* Title container */
+.title-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.title-logo {
+    height: 32px;
+    width: auto;
+    margin-right: 10px;
+    filter: brightness(1);
+}
+
+.title-logo svg {
+    height: 100%;
+    width: auto;
+    fill: currentColor;
+}
+
+.title-text {
+    color: #008080;
+    white-space: nowrap;
+}
+
+/* TUI-style container borders */
+.tui-container {
+    border: 1px solid #008080;
+    border-radius: 0;
+    padding: 15px;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+/* Navigation bar styling */
+.nav-bar {
+    border-bottom: 1px solid #008080;
+    position: relative;
+}
+
+.nav-bar::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    border-bottom: 1px solid #008080;
+}
+
+/* Dropdown styling */
+.Select-control {
+    background-color: #111111 !important;
+    border: 1px solid #008080 !important;
+    border-radius: 0 !important;
+    font-family: "JetBrains Mono, Fira Code, Consolas, monospace" !important;
+}
+
+.Select-menu-outer {
+    background-color: #111111 !important;
+    border: 1px solid #008080 !important;
+    border-radius: 0 !important;
+    font-family: "JetBrains Mono, Fira Code, Consolas, monospace" !important;
+    margin-top: -1px !important;
+}
+
+.Select-value-label {
+    color: #008080 !important;
+    font-family: "JetBrains Mono, Fira Code, Consolas, monospace" !important;
+}
+
+.Select-menu-outer .Select-option {
+    background-color: #111111 !important;
+    color: #008080 !important;
+    font-family: "JetBrains Mono, Fira Code, Consolas, monospace" !important;
+}
+
+.Select-menu-outer .Select-option:hover {
+    background-color: #008080 !important;
+    color: #000000 !important;
+}
+
+.Select-menu-outer .Select-option.is-selected {
+    background-color: #008080 !important;
+    color: #000000 !important;
+}
+
+.Select-menu-outer .Select-option.is-focused {
+    background-color: #008080 !important;
+    color: #000000 !important;
+}
+
+.Select-placeholder {
+    color: #008080 !important;
+    font-family: "JetBrains Mono, Fira Code, Consolas, monospace" !important;
+}
+
+.Select-input > input {
+    color: #008080 !important;
+    font-family: "JetBrains Mono, Fira Code, Consolas, monospace" !important;
+}
+
+.Select.is-focused > .Select-control {
+    border-color: #008080 !important;
+    box-shadow: none !important;
+}
+
+.Select-arrow-zone {
+    color: #008080 !important;
+}
+
+.VirtualizedSelectOption {
+    background-color: #111111 !important;
+    color: #008080 !important;
+    font-family: "JetBrains Mono, Fira Code, Consolas, monospace" !important;
+}
+
+.VirtualizedSelectFocusedOption {
+    background-color: #008080 !important;
+    color: #000000 !important;
+}
+
+.Select--single > .Select-control .Select-value {
+    background-color: #111111 !important;
+    color: #008080 !important;
+    font-family: "JetBrains Mono, Fira Code, Consolas, monospace" !important;
+}
+
+/* Labels styling */
+.label {
+    color: #008080 !important;
+    font-size: 0.9em;
+    letter-spacing: 0.5px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .nav-content {
+        flex-direction: column;
+        gap: 15px;
+    }
+    .title-container {
+        justify-content: center;
+    }
+    .controls-container {
+        width: 100%;
+        justify-content: center;
+    }
+    .title-text {
+        font-size: 1.5em;
+    }
+    .title-logo {
+        height: 24px;
+    }
+} 
