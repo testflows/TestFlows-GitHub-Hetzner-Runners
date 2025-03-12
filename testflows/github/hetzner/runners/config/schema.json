@@ -144,10 +144,20 @@
                     "type": "integer",
                     "examples": [9090]
                 },
+                "metrics_host": {
+                    "description": "Host address to bind the prometheus metrics server to, default: '127.0.0.1'.",
+                    "type": "string",
+                    "examples": ["127.0.0.1"]
+                },
                 "dashboard_port": {
                     "description": "Port for the dashboard server, default: 8050.",
                     "type": "integer",
                     "examples": [8050]
+                },
+                "dashboard_host": {
+                    "description": "Host address to bind the dashboard server to, default: '127.0.0.1'.",
+                    "type": "string",
+                    "examples": ["127.0.0.1"]
                 },
                 "debug": {
                     "description": "Enable debugging mode, default: false",

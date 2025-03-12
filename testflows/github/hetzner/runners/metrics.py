@@ -325,6 +325,9 @@ def update_servers(servers, server_prices=None):
     standby_counts = {}
     recycled_counts = {}
 
+    # Define all possible statuses
+    all_statuses = ["running", "off", "initializing", "ready", "busy"]
+
     for server in servers:
         # Count servers by status
         status = normalize_status(server, "server_status")
@@ -408,9 +411,9 @@ def update_servers(servers, server_prices=None):
     # Set total counts
     SERVERS_TOTAL_COUNT.set(total_servers)
 
-    # Set counts by status
-    for status, count in status_counts.items():
-        SERVERS_TOTAL.labels(status=status).set(count)
+    # Set counts for all possible statuses, defaulting to 0 if not present
+    for status in all_statuses:
+        SERVERS_TOTAL.labels(status=status).set(status_counts.get(status, 0))
 
     # Set standby server counts
     for (status, server_type, location), count in standby_counts.items():

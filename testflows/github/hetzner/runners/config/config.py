@@ -128,7 +128,9 @@ class Config:
     scale_up_interval: int = 15
     scale_down_interval: int = 15
     metrics_port: int = 9090
+    metrics_host: str = "127.0.0.1"
     dashboard_port: int = 8090
+    dashboard_host: str = "127.0.0.1"
     debug: bool = False
     # special
     service_mode: bool = False
@@ -395,11 +397,21 @@ def parse_config(filename: str):
             isinstance(v, int) and v > 0 and v < 65536
         ), "config.metrics_port: is not an integer between 1 and 65535"
 
+    if doc.get("metrics_host") is not None:
+        v = doc["metrics_host"]
+        assert isinstance(v, str), "config.metrics_host: is not a string"
+        assert v.strip(), "config.metrics_host: cannot be empty"
+
     if doc.get("dashboard_port") is not None:
         v = doc["dashboard_port"]
         assert (
             isinstance(v, int) and v > 0 and v < 65536
         ), "config.dashboard_port: is not an integer between 1 and 65535"
+
+    if doc.get("dashboard_host") is not None:
+        v = doc["dashboard_host"]
+        assert isinstance(v, str), "config.dashboard_host: is not a string"
+        assert v.strip(), "config.dashboard_host: cannot be empty"
 
     if doc.get("debug") is not None:
         assert isinstance(doc["debug"], bool), "config.debug: not a boolean"

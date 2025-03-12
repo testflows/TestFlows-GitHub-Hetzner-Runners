@@ -293,10 +293,24 @@ def argparser():
     )
 
     parser.add_argument(
+        "--metrics-host",
+        metavar="host",
+        type=str,
+        help="host address to bind the prometheus metrics server to, default: 127.0.0.1",
+    )
+
+    parser.add_argument(
         "--dashboard-port",
         metavar="port",
         type=args.count_type,
         help="port for the dashboard server, default: 8050",
+    )
+
+    parser.add_argument(
+        "--dashboard-host",
+        metavar="host",
+        type=str,
+        help="host address to bind the dashboard server to, default: 127.0.0.1",
     )
 
     parser.add_argument(
@@ -1155,10 +1169,10 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
             client = Client(token=config.hetzner_token)
 
         with Action(f"Starting prometheus metrics server on port {config.metrics_port}"):
-            start_prometheus_server(config.metrics_port)
+            start_prometheus_server(port=config.metrics_port, addr=config.metrics_host)
 
         with Action(f"Starting dashboard server on port {config.dashboard_port}"):
-            start_dashboard_server(port=config.dashboard_port)
+            start_dashboard_server(port=config.dashboard_port, host=config.dashboard_host)
 
         with Action("Logging in to GitHub"):
             github = Github(login_or_token=config.github_token, per_page=100)
