@@ -144,6 +144,11 @@
                     "type": "integer",
                     "examples": [9090]
                 },
+                "dashboard_port": {
+                    "description": "Port for the dashboard server, default: 8050.",
+                    "type": "integer",
+                    "examples": [8050]
+                },
                 "debug": {
                     "description": "Enable debugging mode, default: false",
                     "type": "boolean",

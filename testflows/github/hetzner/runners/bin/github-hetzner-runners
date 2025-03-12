@@ -24,7 +24,7 @@ import logging.config
 
 from contextlib import contextmanager
 from concurrent.futures import ThreadPoolExecutor, Future
-from prometheus_client import start_http_server
+from prometheus_client import start_http_server as start_prometheus_server
 
 from hcloud.ssh_keys.domain import SSHKey
 
@@ -50,6 +50,7 @@ from testflows.github.hetzner.runners.config import (
     check_server_type,
     check_prices,
 )
+from testflows.github.hetzner.runners.dashboard import start_http_server as start_dashboard_server
 
 import testflows.github.hetzner.runners.args as args
 import testflows.github.hetzner.runners.cloud as cloud
@@ -289,6 +290,13 @@ def argparser():
         metavar="port",
         type=args.count_type,
         help="port for the prometheus metrics server, default: 9090",
+    )
+
+    parser.add_argument(
+        "--dashboard-port",
+        metavar="port",
+        type=args.count_type,
+        help="port for the dashboard server, default: 8050",
     )
 
     parser.add_argument(
@@ -1147,7 +1155,10 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
             client = Client(token=config.hetzner_token)
 
         with Action(f"Starting prometheus metrics server on port {config.metrics_port}"):
-            start_http_server(config.metrics_port)
+            start_prometheus_server(config.metrics_port)
+
+        with Action(f"Starting dashboard server on port {config.dashboard_port}"):
+            start_dashboard_server(port=config.dashboard_port)
 
         with Action("Logging in to GitHub"):
             github = Github(login_or_token=config.github_token, per_page=100)

@@ -128,6 +128,7 @@ class Config:
     scale_up_interval: int = 15
     scale_down_interval: int = 15
     metrics_port: int = 9090
+    dashboard_port: int = 8090
     debug: bool = False
     # special
     service_mode: bool = False
@@ -393,6 +394,12 @@ def parse_config(filename: str):
         assert (
             isinstance(v, int) and v > 0 and v < 65536
         ), "config.metrics_port: is not an integer between 1 and 65535"
+
+    if doc.get("dashboard_port") is not None:
+        v = doc["dashboard_port"]
+        assert (
+            isinstance(v, int) and v > 0 and v < 65536
+        ), "config.dashboard_port: is not an integer between 1 and 65535"
 
     if doc.get("debug") is not None:
         assert isinstance(doc["debug"], bool), "config.debug: not a boolean"

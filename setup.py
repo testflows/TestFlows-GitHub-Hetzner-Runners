@@ -57,6 +57,8 @@ setup(
         "requests-cache==1.1.0",
         "PyYAML==6.0.2",
         "prometheus_client==0.19.0",
+        "dash==2.14.2",
+        "plotly==5.18.0",
     ],
     extras_require={"dev": []},
 )
