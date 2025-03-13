@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from datetime import datetime, timedelta
-import plotly.graph_objs as go
 from dash import html, dcc
 
 from ..colors import COLORS
@@ -48,7 +47,6 @@ def update_graph(n):
     """Update servers total count graph."""
     total_count = get_metric_value("github_hetzner_runners_servers_total_count")
     metric_time = datetime.now()
-    print(f"\nTotal servers count: {total_count}")
 
     key = "github_hetzner_runners_servers_total_count"
     if key not in metric_history:
@@ -107,7 +105,7 @@ def update_graph(n):
             },
             "yaxis": {
                 "title": "Number of Servers",
-                "range": [0, max(2, total_count + 1)],
+                "range": [0, max(2, max(metric_history[key]["values"]) + 1)],
                 "tickformat": "d",
                 "dtick": 1,
                 **common_style,

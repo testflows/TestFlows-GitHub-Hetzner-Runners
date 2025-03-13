@@ -13,8 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import threading
 import dash
+import threading
+
 from dash import html, dcc
 from dash.dependencies import Input, Output
 from flask import send_from_directory

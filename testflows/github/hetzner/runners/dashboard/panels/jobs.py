@@ -12,11 +12,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import logging
+
 from datetime import datetime, timedelta
-import plotly.graph_objs as go
 from dash import html, dcc
-import json
-from prometheus_client.parser import text_string_to_metric_families
 
 from ..colors import COLORS
 from ..metrics import get_metric_value, metric_history, get_metric_info
@@ -28,12 +27,6 @@ def create_job_list():
     running_jobs_info = get_metric_info("github_hetzner_runners_running_job")
     queued_count = get_metric_value("github_hetzner_runners_queued_jobs") or 0
     running_count = get_metric_value("github_hetzner_runners_running_jobs") or 0
-
-    print(f"\nCreating job list:")
-    print(f"Queued count: {queued_count}")
-    print(f"Running count: {running_count}")
-    print(f"Queued jobs info: {queued_jobs_info}")
-    print(f"Running jobs info: {running_jobs_info}")
 
     if queued_count == 0 and running_count == 0:
         return html.Div(
@@ -53,7 +46,6 @@ def create_job_list():
 
         for key, _ in jobs_info.items():
             try:
-                print(f"\nProcessing job info from key: {key}")
                 # Parse the key string into a dictionary
                 info = {}
                 for item in key.split(","):
@@ -64,7 +56,6 @@ def create_job_list():
                 job_id = info.get("job_id")
                 run_id = info.get("run_id")
                 if not job_id or not run_id:
-                    print(f"Missing job_id or run_id")
                     continue
 
                 # Get wait time for this job
@@ -77,7 +68,6 @@ def create_job_list():
                     metric_name,
                     {"job_id": job_id, "run_id": run_id},
                 )
-                print(f"Time value: {time_value}")
                 time_str = f"{int(time_value)} seconds" if time_value else "unknown"
                 time_label = "Run time: " if is_running else "Wait time: "
 
@@ -87,7 +77,6 @@ def create_job_list():
                     if not is_running
                     else "github_hetzner_runners_running_job_labels"
                 )
-                print(f"Job labels info: {job_labels_info}")
                 job_labels_list = []
                 for label_key, label_value in job_labels_info.items():
                     if (
@@ -103,7 +92,6 @@ def create_job_list():
                                 label_dict[k] = v
                         if "label" in label_dict:
                             job_labels_list.append(label_dict["label"])
-                print(f"Final job labels list: {job_labels_list}")
 
                 status_color = COLORS["success"] if is_running else COLORS["warning"]
                 status_text = "Running" if is_running else "Queued"
@@ -251,7 +239,7 @@ def create_job_list():
                     )
                 )
             except (ValueError, KeyError, AttributeError) as e:
-                print(f"Error processing job info {info}: {str(e)}")
+                logging.exception(f"Error processing job info {info}")
                 continue
 
     # If we have queued jobs but no details, show a simple message
@@ -323,12 +311,6 @@ def update_graph(n):
     current_time = datetime.now()
     queued_jobs = get_metric_value("github_hetzner_runners_queued_jobs") or 0
     running_jobs = get_metric_value("github_hetzner_runners_running_jobs") or 0
-    total_jobs = queued_jobs + running_jobs
-
-    print(f"\nJobs status:")
-    print(f"  queued: {queued_jobs}")
-    print(f"  running: {running_jobs}")
-    print(f"Total jobs: {total_jobs}")
 
     # Update history for both metrics
     metrics = {
@@ -420,7 +402,25 @@ def update_graph(n):
             },
             "yaxis": {
                 "title": "Number of Jobs",
-                "range": [0, max(2, total_jobs + 1)],
+                "range": [
+                    0,
+                    max(
+                        2,
+                        max(
+                            max(
+                                metric_history["github_hetzner_runners_queued_jobs"][
+                                    "values"
+                                ]
+                            ),
+                            max(
+                                metric_history["github_hetzner_runners_running_jobs"][
+                                    "values"
+                                ]
+                            ),
+                        )
+                        + 1,
+                    ),
+                ],
                 "tickformat": "d",
                 "dtick": 1,
                 **common_style,

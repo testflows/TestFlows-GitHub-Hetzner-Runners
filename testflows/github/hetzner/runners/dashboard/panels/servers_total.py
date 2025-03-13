@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from datetime import datetime, timedelta
-import plotly.graph_objs as go
 from dash import html, dcc
 
 from ..colors import COLORS, STATE_COLORS
@@ -51,15 +50,12 @@ def update_graph(n):
     current_values = {}
     total_servers = 0
 
-    print("\nCurrent server states:")
     for status in states:
         value = get_metric_value(
             "github_hetzner_runners_servers_total", {"status": status}
         )
         current_values[status] = value if value is not None else 0
         total_servers += current_values[status]
-        print(f"  {status}: {current_values[status]}")
-    print(f"Total servers: {total_servers}")
 
     traces = []
     for status in states:
@@ -122,7 +118,21 @@ def update_graph(n):
             },
             "yaxis": {
                 "title": "Number of Servers",
-                "range": [0, max(2, total_servers + 1)],
+                "range": [
+                    0,
+                    max(
+                        2,
+                        max(
+                            max(
+                                metric_history[
+                                    f"github_hetzner_runners_servers_total_status={status}"
+                                ]["values"]
+                            )
+                            for status in states
+                        )
+                        + 1,
+                    ),
+                ],
                 "tickformat": "d",
                 "dtick": 1,
                 **common_style,

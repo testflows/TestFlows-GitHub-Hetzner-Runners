@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import time
+import dateutil.parser
 
 from prometheus_client import Counter, Gauge, Histogram, Info
 
@@ -140,7 +141,6 @@ RUNNER_STATUS = Gauge(
 
 # Job metrics
 QUEUED_JOBS = Gauge("github_hetzner_runners_queued_jobs", "Number of queued jobs")
-
 RUNNING_JOBS = Gauge("github_hetzner_runners_running_jobs", "Number of running jobs")
 
 # Detailed job metrics
@@ -150,15 +150,33 @@ QUEUED_JOB_INFO = Info(
     ["job_id", "run_id"],  # job_id and run_id as labels to uniquely identify jobs
 )
 
+RUNNING_JOB_INFO = Info(
+    "github_hetzner_runners_running_job",
+    "Information about a running job",
+    ["job_id", "run_id"],  # job_id and run_id as labels to uniquely identify jobs
+)
+
 QUEUED_JOB_LABELS = Gauge(
     "github_hetzner_runners_queued_job_labels",
     "Labels requested by queued jobs",
     ["job_id", "run_id", "label"],  # track each label separately
 )
 
+RUNNING_JOB_LABELS = Gauge(
+    "github_hetzner_runners_running_job_labels",
+    "Labels assigned to running jobs",
+    ["job_id", "run_id", "label"],  # track each label separately
+)
+
 QUEUED_JOB_WAIT_TIME = Gauge(
     "github_hetzner_runners_queued_job_wait_time_seconds",
     "Time job has been waiting in queue",
+    ["job_id", "run_id"],
+)
+
+RUNNING_JOB_TIME = Gauge(
+    "github_hetzner_runners_running_job_time_seconds",
+    "Time job has been running",
     ["job_id", "run_id"],
 )
 
@@ -541,26 +559,30 @@ def update_jobs(workflow_runs):
     QUEUED_JOB_INFO._metrics.clear()
     QUEUED_JOB_LABELS._metrics.clear()
     QUEUED_JOB_WAIT_TIME._metrics.clear()
+    RUNNING_JOB_INFO._metrics.clear()
+    RUNNING_JOB_LABELS._metrics.clear()
+    RUNNING_JOB_TIME._metrics.clear()
 
     for run in workflow_runs:
         for job in run.jobs():
             # Normalize job status
             status = normalize_status(job)
 
+            job_info = {
+                "name": job.name,
+                "workflow_name": run.name,
+                "repository": run.repository.full_name,
+                "status": status,
+                "queued_at": job.raw_data.get("started_at", ""),
+                "run_attempt": str(run.run_attempt),
+                "run_number": str(run.run_number),
+                "head_branch": run.head_branch or "",
+                "head_sha": run.head_sha or "",
+            }
+
             if status == "queued":
                 queued_count += 1
                 # Track detailed job info
-                job_info = {
-                    "name": job.name,
-                    "workflow_name": run.name,
-                    "repository": run.repository.full_name,
-                    "status": status,
-                    "queued_at": job.raw_data.get("started_at", ""),
-                    "run_attempt": str(run.run_attempt),
-                    "run_number": str(run.run_number),
-                    "head_branch": run.head_branch or "",
-                    "head_sha": run.head_sha or "",
-                }
                 QUEUED_JOB_INFO.labels(job_id=str(job.id), run_id=str(run.id)).info(
                     job_info
                 )
@@ -574,9 +596,6 @@ def update_jobs(workflow_runs):
                 # Track job wait time
                 started_at = job.raw_data.get("started_at")
                 if started_at:
-                    from datetime import datetime
-                    import dateutil.parser
-
                     started_at = dateutil.parser.parse(started_at)
                     wait_time = current_time - started_at.timestamp()
                     QUEUED_JOB_WAIT_TIME.labels(
@@ -585,6 +604,25 @@ def update_jobs(workflow_runs):
 
             elif status == "in_progress":
                 running_count += 1
+                # Track detailed job info
+                RUNNING_JOB_INFO.labels(job_id=str(job.id), run_id=str(run.id)).info(
+                    job_info
+                )
+
+                # Track job labels
+                for label in job.raw_data.get("labels", []):
+                    RUNNING_JOB_LABELS.labels(
+                        job_id=str(job.id), run_id=str(run.id), label=label.lower()
+                    ).set(1)
+
+                # Track job run time
+                started_at = job.raw_data.get("started_at")
+                if started_at:
+                    started_at = dateutil.parser.parse(started_at)
+                    run_time = current_time - started_at.timestamp()
+                    RUNNING_JOB_TIME.labels(job_id=str(job.id), run_id=str(run.id)).set(
+                        run_time
+                    )
 
     QUEUED_JOBS.set(queued_count)
     RUNNING_JOBS.set(running_count)

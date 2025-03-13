@@ -848,11 +848,14 @@ def scale_up(
                 with Action(
                     "Getting workflow runs", level=logging.DEBUG, interval=interval
                 ):
-                    workflow_runs: list[WorkflowRun] = repo.get_workflow_runs(
-                        status="queued"
+                    queued_runs = list(repo.get_workflow_runs(status="queued"))
+                    in_progress_runs = list(
+                        repo.get_workflow_runs(status="in_progress")
                     )
-                    # Update job metrics
-                    metrics.update_jobs(workflow_runs)
+                    # Update job metrics with all runs
+                    metrics.update_jobs(queued_runs + in_progress_runs)
+                    # For job processing, we'll use only queued runs
+                    workflow_runs = queued_runs
 
                 with Action(
                     "Getting list of servers", level=logging.DEBUG, interval=interval
