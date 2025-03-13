@@ -21,7 +21,8 @@ from dash.dependencies import Input, Output
 from flask import send_from_directory
 
 from .colors import COLORS
-from .panels import servers_total, servers_total_count, jobs
+from .panels import servers, jobs
+from .metrics import get_metric_value
 
 # Get the directory containing this file
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -143,12 +144,109 @@ app.layout = html.Div(
                 "margin": "0 auto",
             },
             children=[
+                # Top Gauges Section
+                html.Div(
+                    style={
+                        "display": "flex",
+                        "gap": "20px",
+                        "marginBottom": "20px",
+                        "justifyContent": "center",
+                        "flexWrap": "wrap",
+                    },
+                    children=[
+                        # Servers Gauge
+                        html.Div(
+                            style={
+                                "textAlign": "center",
+                                "padding": "15px",
+                                "backgroundColor": COLORS["paper"],
+                                "borderRadius": "4px",
+                                "minWidth": "150px",
+                                "flex": "0 1 auto",
+                            },
+                            children=[
+                                html.Div(
+                                    "Servers",
+                                    style={
+                                        "color": COLORS["accent"],
+                                        "fontSize": "1.1em",
+                                        "marginBottom": "5px",
+                                    },
+                                ),
+                                html.Div(
+                                    id="total-servers-gauge",
+                                    style={
+                                        "fontSize": "2em",
+                                        "fontWeight": "bold",
+                                        "color": COLORS["warning"],
+                                    },
+                                ),
+                            ],
+                        ),
+                        # Queued Jobs Gauge
+                        html.Div(
+                            style={
+                                "textAlign": "center",
+                                "padding": "15px",
+                                "backgroundColor": COLORS["paper"],
+                                "borderRadius": "4px",
+                                "minWidth": "150px",
+                                "flex": "0 1 auto",
+                            },
+                            children=[
+                                html.Div(
+                                    "Queued Jobs",
+                                    style={
+                                        "color": COLORS["accent"],
+                                        "fontSize": "1.1em",
+                                        "marginBottom": "5px",
+                                    },
+                                ),
+                                html.Div(
+                                    id="queued-jobs-gauge",
+                                    style={
+                                        "fontSize": "2em",
+                                        "fontWeight": "bold",
+                                        "color": COLORS["warning"],
+                                    },
+                                ),
+                            ],
+                        ),
+                        # Running Jobs Gauge
+                        html.Div(
+                            style={
+                                "textAlign": "center",
+                                "padding": "15px",
+                                "backgroundColor": COLORS["paper"],
+                                "borderRadius": "4px",
+                                "minWidth": "150px",
+                                "flex": "0 1 auto",
+                            },
+                            children=[
+                                html.Div(
+                                    "Running Jobs",
+                                    style={
+                                        "color": COLORS["accent"],
+                                        "fontSize": "1.1em",
+                                        "marginBottom": "5px",
+                                    },
+                                ),
+                                html.Div(
+                                    id="running-jobs-gauge",
+                                    style={
+                                        "fontSize": "2em",
+                                        "fontWeight": "bold",
+                                        "color": COLORS["warning"],
+                                    },
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
                 # Jobs Panel
                 jobs.create_panel(),
-                # Total Servers Count Panel
-                servers_total_count.create_panel(),
-                # Servers Total Panel
-                servers_total.create_panel(),
+                # Servers Panel
+                servers.create_panel(),
             ],
         ),
     ],
@@ -164,29 +262,21 @@ def update_interval(value):
 
 
 @app.callback(
-    Output("interval-component-total-count", "interval"),
-    Input("interval-dropdown", "value"),
+    Output("servers-graph", "figure"), Input("interval-component", "n_intervals")
 )
-def update_total_count_interval(value):
-    """Update the interval time for total count panel based on dropdown selection"""
-    return value * 1000  # Convert seconds to milliseconds
+def update_servers_graph(n):
+    """Update servers graph."""
+    return servers.update_graph(n)
 
 
 @app.callback(
-    Output("servers-total-graph", "figure"), Input("interval-component", "n_intervals")
+    Output("total-servers-gauge", "children"),
+    Input("interval-component", "n_intervals"),
 )
-def update_servers_total_graph(n):
-    """Update servers total graph."""
-    return servers_total.update_graph(n)
-
-
-@app.callback(
-    Output("servers-total-count-graph", "figure"),
-    Input("interval-component-total-count", "n_intervals"),
-)
-def update_servers_total_count_graph(n):
-    """Update servers total count graph."""
-    return servers_total_count.update_graph(n)
+def update_total_servers_gauge(n):
+    """Update total servers gauge."""
+    total_servers = get_metric_value("github_hetzner_runners_servers_total_count") or 0
+    return str(int(total_servers))
 
 
 @app.callback(
@@ -195,7 +285,7 @@ def update_servers_total_count_graph(n):
 )
 def update_servers_list(n):
     """Update servers list."""
-    return servers_total.create_server_list()
+    return servers.create_server_list()
 
 
 @app.callback(
@@ -223,6 +313,26 @@ def update_jobs_graph(n):
 def update_jobs_list(n):
     """Update jobs list."""
     return jobs.create_job_list()
+
+
+@app.callback(
+    Output("queued-jobs-gauge", "children"),
+    Input("interval-component", "n_intervals"),
+)
+def update_queued_jobs_gauge(n):
+    """Update queued jobs gauge."""
+    queued_jobs = get_metric_value("github_hetzner_runners_queued_jobs") or 0
+    return str(int(queued_jobs))
+
+
+@app.callback(
+    Output("running-jobs-gauge", "children"),
+    Input("interval-component", "n_intervals"),
+)
+def update_running_jobs_gauge(n):
+    """Update running jobs gauge."""
+    running_jobs = get_metric_value("github_hetzner_runners_running_jobs") or 0
+    return str(int(running_jobs))
 
 
 def start_http_server(

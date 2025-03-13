@@ -22,12 +22,12 @@ from ..metrics import get_metric_value, metric_history, get_metric_info
 
 
 def create_panel():
-    """Create servers total panel."""
+    """Create servers panel."""
     return html.Div(
         className="tui-container",
         children=[
             html.H3(
-                "servers by status",
+                "Servers",
                 style={
                     "color": COLORS["accent"],
                     "marginBottom": "20px",
@@ -35,7 +35,7 @@ def create_panel():
                     "paddingBottom": "10px",
                 },
             ),
-            dcc.Graph(id="servers-total-graph"),
+            dcc.Graph(id="servers-graph"),
             # Server list
             html.Div(
                 id="servers-list",
@@ -291,7 +291,7 @@ def create_server_list():
 
 
 def update_graph(n):
-    """Update servers total graph."""
+    """Update servers graph."""
     current_time = datetime.now()
     states = ["running", "off", "initializing", "ready", "busy"]
     current_values = {}
@@ -348,7 +348,7 @@ def update_graph(n):
         "data": traces,
         "layout": {
             "title": {
-                "text": "servers by status",
+                "text": "Servers",
                 "font": {"size": 16, "weight": "bold", **common_style["font"]},
                 "x": 0.5,
                 "y": 0.95,
