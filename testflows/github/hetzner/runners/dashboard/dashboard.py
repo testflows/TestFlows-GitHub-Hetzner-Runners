@@ -190,6 +190,15 @@ def update_servers_total_count_graph(n):
 
 
 @app.callback(
+    Output("servers-list", "children"),
+    Input("interval-component", "n_intervals"),
+)
+def update_servers_list(n):
+    """Update servers list."""
+    return servers_total.create_server_list()
+
+
+@app.callback(
     Output("interval-component-jobs", "interval"),
     Input("interval-dropdown", "value"),
 )

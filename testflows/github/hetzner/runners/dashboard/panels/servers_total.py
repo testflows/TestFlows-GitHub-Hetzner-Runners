@@ -14,9 +14,11 @@
 # limitations under the License.
 from datetime import datetime, timedelta
 from dash import html, dcc
+import logging
+import ast
 
 from ..colors import COLORS, STATE_COLORS
-from ..metrics import get_metric_value, metric_history
+from ..metrics import get_metric_value, metric_history, get_metric_info
 
 
 def create_panel():
@@ -34,12 +36,257 @@ def create_panel():
                 },
             ),
             dcc.Graph(id="servers-total-graph"),
+            # Server list
+            html.Div(
+                id="servers-list",
+                style={
+                    "marginTop": "20px",
+                    "borderTop": f"1px solid {COLORS['accent']}",
+                    "paddingTop": "20px",
+                },
+            ),
             dcc.Interval(
                 id="interval-component",
                 interval=30 * 1000,
                 n_intervals=0,
             ),
         ],
+    )
+
+
+def create_server_list():
+    """Create a list of servers with their descriptions."""
+    servers_info = get_metric_info("github_hetzner_runners_server")
+
+    # Get total number of servers from metrics
+    total_servers = get_metric_value("github_hetzner_runners_servers_total_count") or 0
+
+    if not servers_info:
+        if total_servers > 0:
+            # We have servers but no details
+            return html.Div(
+                f"Total servers: {int(total_servers)} (details not available)",
+                style={
+                    "color": COLORS["warning"],
+                    "padding": "10px",
+                    "fontFamily": "JetBrains Mono, Fira Code, Consolas, monospace",
+                },
+            )
+        return html.Div(
+            "No servers",
+            style={
+                "color": COLORS["text"],
+                "padding": "10px",
+                "fontFamily": "JetBrains Mono, Fira Code, Consolas, monospace",
+            },
+        )
+
+    server_items = []
+    for key, info in servers_info.items():
+        try:
+            # Parse the server info from the key
+            server_dict = {}
+            for item in key.split(","):
+                if "=" in item:
+                    k, v = item.split("=", 1)
+                    if k == "cost":
+                        try:
+                            server_dict[k] = ast.literal_eval(v)
+                        except:
+                            server_dict[k] = v
+                    else:
+                        server_dict[k] = v
+
+            server_id = server_dict.get("server_id")
+            server_name = server_dict.get("name")
+            if not server_id or not server_name:
+                continue
+
+            # Get server labels
+            server_labels_info = get_metric_info("github_hetzner_runners_server_labels")
+            server_labels_list = []
+            for label_key, label_value in server_labels_info.items():
+                if (
+                    label_value == 1.0
+                    and server_id in label_key
+                    and server_name in label_key
+                ):
+                    # Parse the raw key-value pairs
+                    label_dict = {}
+                    for item in label_key.split(","):
+                        if "=" in item:
+                            k, v = item.split("=", 1)
+                            label_dict[k] = v
+                    if "label" in label_dict:
+                        server_labels_list.append(label_dict["label"])
+
+            status = server_dict.get("status", "unknown")
+            status_color = STATE_COLORS.get(status, STATE_COLORS["unknown"])
+
+            server_items.append(
+                html.Div(
+                    className="server-item",
+                    style={
+                        "borderLeft": f"4px solid {status_color}",
+                        "padding": "10px",
+                        "marginBottom": "10px",
+                        "backgroundColor": COLORS["paper"],
+                    },
+                    children=[
+                        html.Div(
+                            [
+                                html.Span(
+                                    f"Server: {server_name}",
+                                    style={
+                                        "color": COLORS["accent"],
+                                        "fontWeight": "bold",
+                                    },
+                                ),
+                                html.Span(
+                                    f" ({status})",
+                                    style={
+                                        "color": status_color,
+                                        "marginLeft": "10px",
+                                    },
+                                ),
+                            ],
+                            style={"marginBottom": "5px"},
+                        ),
+                        html.Div(
+                            [
+                                html.Span(
+                                    "Type: ",
+                                    style={"color": COLORS["text"]},
+                                ),
+                                html.Span(
+                                    server_dict.get("type", "Unknown"),
+                                    style={"color": COLORS["warning"]},
+                                ),
+                            ],
+                            style={"marginBottom": "2px"},
+                        ),
+                        html.Div(
+                            [
+                                html.Span(
+                                    "Location: ",
+                                    style={"color": COLORS["text"]},
+                                ),
+                                html.Span(
+                                    server_dict.get("location", "Unknown"),
+                                    style={"color": COLORS["warning"]},
+                                ),
+                            ],
+                            style={"marginBottom": "2px"},
+                        ),
+                        html.Div(
+                            [
+                                html.Span(
+                                    "IPv4: ",
+                                    style={"color": COLORS["text"]},
+                                ),
+                                html.Span(
+                                    server_dict.get("ipv4", "Unknown"),
+                                    style={"color": COLORS["warning"]},
+                                ),
+                            ],
+                            style={"marginBottom": "2px"},
+                        ),
+                        html.Div(
+                            [
+                                html.Span(
+                                    "IPv6: ",
+                                    style={"color": COLORS["text"]},
+                                ),
+                                html.Span(
+                                    server_dict.get("ipv6", "Unknown"),
+                                    style={"color": COLORS["warning"]},
+                                ),
+                            ],
+                            style={"marginBottom": "2px"},
+                        ),
+                        html.Div(
+                            [
+                                html.Span(
+                                    "Created: ",
+                                    style={"color": COLORS["text"]},
+                                ),
+                                html.Span(
+                                    server_dict.get("created", "Unknown"),
+                                    style={"color": COLORS["warning"]},
+                                ),
+                            ],
+                            style={"marginBottom": "2px"},
+                        ),
+                        html.Div(
+                            [
+                                html.Span(
+                                    "Runner Status: ",
+                                    style={"color": COLORS["text"]},
+                                ),
+                                html.Span(
+                                    server_dict.get("runner_status", "Unknown"),
+                                    style={"color": COLORS["warning"]},
+                                ),
+                            ],
+                            style={"marginBottom": "2px"},
+                        ),
+                        html.Div(
+                            [
+                                html.Span(
+                                    "Labels: ",
+                                    style={"color": COLORS["text"]},
+                                ),
+                                html.Span(
+                                    ", ".join(server_labels_list) or "None",
+                                    style={"color": COLORS["warning"]},
+                                ),
+                            ],
+                        ),
+                        # Add cost information if available
+                        (
+                            html.Div(
+                                [
+                                    html.Span(
+                                        "Cost: ",
+                                        style={"color": COLORS["text"]},
+                                    ),
+                                    html.Span(
+                                        (
+                                            f"{server_dict['cost_hourly']} {server_dict['cost_currency']}/hour"
+                                            + (
+                                                f" (total: {server_dict['cost_total']} {server_dict['cost_currency']})"
+                                                if server_dict.get("cost_total")
+                                                else ""
+                                            )
+                                            if server_dict.get("cost_hourly")
+                                            else "Unknown"
+                                        ),
+                                        style={"color": COLORS["warning"]},
+                                    ),
+                                ],
+                                style={"marginBottom": "2px"},
+                            )
+                            if server_dict.get("cost_hourly")
+                            else None
+                        ),
+                    ],
+                )
+            )
+        except (ValueError, KeyError, AttributeError) as e:
+            logging.exception(f"Error processing server info key: {key}")
+            continue
+
+    return html.Div(
+        children=server_items,
+        style={
+            "maxHeight": "400px",
+            "overflowY": "auto",
+            "marginTop": "20px",
+            "paddingRight": "4px",
+            "backgroundColor": COLORS["background"],
+            "border": f"1px solid {COLORS['grid']}",
+            "borderRadius": "4px",
+        },
     )
 
 

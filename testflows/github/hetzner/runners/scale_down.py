@@ -24,12 +24,14 @@ from dataclasses import dataclass
 
 from .actions import Action
 from . import metrics
-from .scale_up import (
+from .constants import (
     server_name_prefix,
     runner_name_prefix,
     standby_runner_name_prefix,
     recycle_server_name_prefix,
     server_ssh_key_label,
+)
+from .scale_up import (
     uid,
     StandbyRunner,
     ScaleUpFailureMessage,

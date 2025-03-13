@@ -14,8 +14,11 @@
 # limitations under the License.
 import time
 import dateutil.parser
+import logging
 
 from prometheus_client import Counter, Gauge, Histogram, Info
+from .estimate import get_server_price
+from .constants import standby_server_name_prefix, recycle_server_name_prefix
 
 # Server metrics
 SERVERS_TOTAL = Gauge(
@@ -334,8 +337,65 @@ def nested_getattr(obj, *attrs, default=""):
         return default
 
 
-def update_servers(servers, server_prices=None):
-    """Update all server-related metrics."""
+def format_server_lifetime(created_dt):
+    """Format server lifetime into a human readable string.
+
+    Args:
+        created_dt: datetime object of server creation time
+
+    Returns:
+        Tuple of (formatted creation time, lifetime string)
+    """
+    # Convert to UTC if not already
+    if created_dt.tzinfo is None:
+        created_dt = created_dt.replace(tzinfo=dateutil.tz.UTC)
+
+    lifetime_seconds = time.time() - created_dt.timestamp()
+    days = int(lifetime_seconds // (24 * 3600))
+    hours = int((lifetime_seconds % (24 * 3600)) // 3600)
+    minutes = int((lifetime_seconds % 3600) // 60)
+    lifetime_str = f"{days}d {hours}h {minutes}m"
+    created_str = created_dt.strftime("%Y-%m-%d %H:%M:%S UTC")
+    return created_str, lifetime_str
+
+
+def normalize_server_creation_time(server):
+    """Helper function to normalize server creation time with consistent error handling.
+
+    Args:
+        server: Server object containing the creation timestamp
+
+    Returns:
+        Normalized creation time string with lifetime, defaults to empty string
+    """
+    created = nested_getattr(server, "server", "created")
+    if not created:
+        return ""
+
+    try:
+        created_str, lifetime_str = format_server_lifetime(created)
+        return f"{created_str} ({lifetime_str})"
+    except (ValueError, TypeError) as e:
+        logging.debug(f"Failed to handle created timestamp {created}: {e}")
+        return str(created)  # Fallback to string representation
+
+
+def update_servers(servers, server_prices=None, ipv4_price=0.0008, ipv6_price=0.0000):
+    """Update all server-related metrics.
+
+    Args:
+        servers: List of servers to track metrics for
+        server_prices: Dictionary of server prices by type and location
+        ipv4_price: Price per hour for IPv4 address (default: 0.0008 EUR)
+        ipv6_price: Price per hour for IPv6 address (default: 0.0000 EUR)
+    """
+    # Clear all existing server metrics
+    SERVER_INFO._metrics.clear()
+    SERVER_LABELS._metrics.clear()
+    SERVER_STATUS._metrics.clear()
+    STANDBY_SERVERS_LABELS._metrics.clear()
+    RECYCLED_SERVERS_LABELS._metrics.clear()
+
     total_servers = 0
 
     # Track counts by status
@@ -352,15 +412,42 @@ def update_servers(servers, server_prices=None):
         status_counts[status] = status_counts.get(status, 0) + 1
         total_servers += 1
 
-        # Track server cost
-        if status != "off" and server_prices:
+        # Calculate costs once
+        total_cost = None
+        base_cost = None
+        server_ipv4_cost = None
+        server_ipv6_cost = None
+
+        if server_prices:
             try:
                 server_type = server.server_type.name
                 location = server.server_location.name
-                COST_ESTIMATE.labels(
-                    server_type=server_type,
-                    location=location,
-                ).set(server_prices[server_type.lower()][location])
+                base_cost = server_prices[server_type.lower()][location]
+                server_ipv4_cost = (
+                    ipv4_price
+                    if nested_getattr(server, "server", "public_net", "ipv4", "ip")
+                    else 0
+                )
+                server_ipv6_cost = (
+                    ipv6_price
+                    if nested_getattr(server, "server", "public_net", "ipv6", "ip")
+                    else 0
+                )
+
+                total_cost = get_server_price(
+                    server_prices,
+                    server_type,
+                    location,
+                    ipv4_price=server_ipv4_cost,
+                    ipv6_price=server_ipv6_cost,
+                )
+
+                # Set cost estimate metric
+                if total_cost is not None:
+                    COST_ESTIMATE.labels(
+                        server_type=server_type,
+                        location=location,
+                    ).set(total_cost)
             except (KeyError, AttributeError):
                 pass
 
@@ -374,8 +461,24 @@ def update_servers(servers, server_prices=None):
                 "runner_status": normalize_status(server),
                 "ipv4": nested_getattr(server, "server", "public_net", "ipv4", "ip"),
                 "ipv6": nested_getattr(server, "server", "public_net", "ipv6", "ip"),
-                "created": nested_getattr(server, "server", "created", "unknown"),
+                "created": normalize_server_creation_time(server),
+                "cost_hourly": str(total_cost) if total_cost is not None else None,
+                "cost_currency": "EUR",
             }
+
+            # Calculate total cost based on server lifetime
+            try:
+                created = nested_getattr(server, "server", "created")
+                if created and total_cost is not None:
+                    lifetime_seconds = time.time() - created.timestamp()
+                    lifetime_hours = max(
+                        1.0, lifetime_seconds / 3600.0
+                    )  # minimum 1 hour billing
+                    total_cost_so_far = total_cost * lifetime_hours
+                    server_info["cost_total"] = f"{total_cost_so_far:.3f}"
+            except (AttributeError, TypeError):
+                pass
+
             SERVER_INFO.labels(
                 server_id=str(server.server.id), server_name=server.name
             ).info(server_info)
@@ -400,7 +503,7 @@ def update_servers(servers, server_prices=None):
             ).set(1)
 
             # Track standby servers
-            if server.name.startswith("github-hetzner-runner-standby-"):
+            if server.name.startswith(standby_server_name_prefix):
                 key = (status, server.server_type.name, server.server_location.name)
                 standby_counts[key] = standby_counts.get(key, 0) + 1
 
@@ -412,7 +515,7 @@ def update_servers(servers, server_prices=None):
                     ).set(1)
 
             # Track recycled servers
-            if server.name.startswith("github-hetzner-runner-recycle-"):
+            if server.name.startswith(recycle_server_name_prefix):
                 key = (status, server.server_type.name, server.server_location.name)
                 recycled_counts[key] = recycled_counts.get(key, 0) + 1
 
@@ -634,7 +737,7 @@ def update_pools(servers, standby_runners, count_available_fn=None):
         try:
             pool_type = (
                 "standby"
-                if server.name.startswith("github-hetzner-runner-standby-")
+                if server.name.startswith(standby_server_name_prefix)
                 else "regular"
             )
             RUNNER_POOL_STATUS.labels(

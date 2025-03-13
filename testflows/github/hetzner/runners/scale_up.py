@@ -28,6 +28,15 @@ from . import metrics
 from .config import Config, check_image, check_startup_script, check_setup_script
 from .config import standby_runner as StandbyRunner
 from .hclient import HClient as Client
+from .utils import get_runner_server_type_and_location
+from .constants import (
+    server_name_prefix,
+    runner_name_prefix,
+    standby_server_name_prefix,
+    standby_runner_name_prefix,
+    recycle_server_name_prefix,
+    server_ssh_key_label,
+)
 
 from .server import wait_ssh, ssh
 
@@ -46,13 +55,6 @@ from github.WorkflowRun import WorkflowRun
 from github.SelfHostedActionsRunner import SelfHostedActionsRunner
 
 from concurrent.futures import ThreadPoolExecutor, Future
-
-server_name_prefix = "github-hetzner-runner-"
-runner_name_prefix = server_name_prefix
-standby_server_name_prefix = f"{server_name_prefix}standby-"
-standby_runner_name_prefix = standby_server_name_prefix
-recycle_server_name_prefix = f"{server_name_prefix}recycle-"
-server_ssh_key_label = "github-hetzner-runner-ssh-key"
 
 
 @dataclass

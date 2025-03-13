@@ -20,9 +20,9 @@ import github
 from .actions import Action
 from .config import Config
 from .config import check_prices
-from .scale_up import get_runner_server_type_and_location
 from .streamingyaml import StreamingYAMLWriter
 from .hclient import HClient as Client
+from .utils import get_runner_server_type_and_location
 
 from datetime import timedelta
 from github import Github
