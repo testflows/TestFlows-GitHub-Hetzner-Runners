@@ -23,8 +23,8 @@ from dash.dependencies import Input, Output
 from flask import send_from_directory
 
 from .colors import COLORS
-from .panels import servers, jobs, runners, scaleup_errors
-from .metrics import get_metric_value, get_metric_info
+from .panels import servers, jobs, runners, scaleup_errors, gauges
+from .metrics import get_metric_value
 
 # Get the directory containing this file
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -153,199 +153,12 @@ app.layout = html.Div(
             },
             children=[
                 # Top Gauges Section
-                html.Div(
-                    style={
-                        "display": "flex",
-                        "gap": "20px",
-                        "marginBottom": "20px",
-                        "justifyContent": "center",
-                        "flexWrap": "wrap",
-                    },
-                    children=[
-                        # Heartbeat Gauge
-                        html.Div(
-                            style={
-                                "textAlign": "center",
-                                "padding": "15px",
-                                "backgroundColor": COLORS["paper"],
-                                "borderRadius": "4px",
-                                "minWidth": "150px",
-                                "flex": "0 1 auto",
-                            },
-                            children=[
-                                html.Div(
-                                    "Heartbeat",
-                                    style={
-                                        "color": COLORS["accent"],
-                                        "fontSize": "1.1em",
-                                        "marginBottom": "5px",
-                                    },
-                                ),
-                                html.Div(
-                                    id="heartbeat-gauge",
-                                    style={
-                                        "fontSize": "2em",
-                                        "fontWeight": "bold",
-                                        "color": COLORS["warning"],
-                                    },
-                                ),
-                            ],
-                        ),
-                        # Servers Gauge
-                        html.Div(
-                            style={
-                                "textAlign": "center",
-                                "padding": "15px",
-                                "backgroundColor": COLORS["paper"],
-                                "borderRadius": "4px",
-                                "minWidth": "150px",
-                                "flex": "0 1 auto",
-                            },
-                            children=[
-                                html.Div(
-                                    "Servers",
-                                    style={
-                                        "color": COLORS["accent"],
-                                        "fontSize": "1.1em",
-                                        "marginBottom": "5px",
-                                    },
-                                ),
-                                html.Div(
-                                    id="total-servers-gauge",
-                                    style={
-                                        "fontSize": "2em",
-                                        "fontWeight": "bold",
-                                        "color": COLORS["warning"],
-                                    },
-                                ),
-                            ],
-                        ),
-                        # Runners Gauge
-                        html.Div(
-                            style={
-                                "textAlign": "center",
-                                "padding": "15px",
-                                "backgroundColor": COLORS["paper"],
-                                "borderRadius": "4px",
-                                "minWidth": "150px",
-                                "flex": "0 1 auto",
-                            },
-                            children=[
-                                html.Div(
-                                    "Runners",
-                                    style={
-                                        "color": COLORS["accent"],
-                                        "fontSize": "1.1em",
-                                        "marginBottom": "5px",
-                                    },
-                                ),
-                                html.Div(
-                                    id="total-runners-gauge",
-                                    style={
-                                        "fontSize": "2em",
-                                        "fontWeight": "bold",
-                                        "color": COLORS["warning"],
-                                    },
-                                ),
-                            ],
-                        ),
-                        # Queued Jobs Gauge
-                        html.Div(
-                            style={
-                                "textAlign": "center",
-                                "padding": "15px",
-                                "backgroundColor": COLORS["paper"],
-                                "borderRadius": "4px",
-                                "minWidth": "150px",
-                                "flex": "0 1 auto",
-                            },
-                            children=[
-                                html.Div(
-                                    "Queued Jobs",
-                                    style={
-                                        "color": COLORS["accent"],
-                                        "fontSize": "1.1em",
-                                        "marginBottom": "5px",
-                                    },
-                                ),
-                                html.Div(
-                                    id="queued-jobs-gauge",
-                                    style={
-                                        "fontSize": "2em",
-                                        "fontWeight": "bold",
-                                        "color": COLORS["warning"],
-                                    },
-                                ),
-                            ],
-                        ),
-                        # Running Jobs Gauge
-                        html.Div(
-                            style={
-                                "textAlign": "center",
-                                "padding": "15px",
-                                "backgroundColor": COLORS["paper"],
-                                "borderRadius": "4px",
-                                "minWidth": "150px",
-                                "flex": "0 1 auto",
-                            },
-                            children=[
-                                html.Div(
-                                    "Running Jobs",
-                                    style={
-                                        "color": COLORS["accent"],
-                                        "fontSize": "1.1em",
-                                        "marginBottom": "5px",
-                                    },
-                                ),
-                                html.Div(
-                                    id="running-jobs-gauge",
-                                    style={
-                                        "fontSize": "2em",
-                                        "fontWeight": "bold",
-                                        "color": COLORS["warning"],
-                                    },
-                                ),
-                            ],
-                        ),
-                        # Scale-up Errors Gauge
-                        html.Div(
-                            style={
-                                "textAlign": "center",
-                                "padding": "15px",
-                                "backgroundColor": COLORS["paper"],
-                                "borderRadius": "4px",
-                                "minWidth": "150px",
-                                "flex": "0 1 auto",
-                            },
-                            children=[
-                                html.Div(
-                                    "Scale-up Errors",
-                                    style={
-                                        "color": COLORS["accent"],
-                                        "fontSize": "1.1em",
-                                        "marginBottom": "5px",
-                                    },
-                                ),
-                                html.Div(
-                                    id="scale-up-errors-gauge",
-                                    style={
-                                        "fontSize": "2em",
-                                        "fontWeight": "bold",
-                                        "color": COLORS["error"],
-                                    },
-                                ),
-                            ],
-                        ),
-                    ],
-                ),
-                # Errors Panel (add before other panels)
-                scaleup_errors.create_panel(),
-                # Jobs Panel
-                jobs.create_panel(),
-                # Runners Panel
-                runners.create_panel(),
-                # Servers Panel
+                gauges.create_panel(),
+                # Rest of the panels
                 servers.create_panel(),
+                jobs.create_panel(),
+                runners.create_panel(),
+                scaleup_errors.create_panel(),
             ],
         ),
     ],

@@ -77,40 +77,26 @@ def create_runner_list():
         )
 
     runner_items = []
-    for key, info in runners_info.items():
+    for info in runners_info:
         try:
-            # Parse the runner info from the key
-            runner_dict = {}
-            for item in key.split(","):
-                if "=" in item:
-                    k, v = item.split("=", 1)
-                    runner_dict[k] = v
-
-            runner_id = runner_dict.get("runner_id")
-            runner_name = runner_dict.get("name")
+            runner_id = info.get("runner_id")
+            runner_name = info.get("name")
             if not runner_id or not runner_name:
                 continue
 
             # Get runner labels
             runner_labels_info = get_metric_info("github_hetzner_runners_runner_labels")
             runner_labels_list = []
-            for label_key, label_value in runner_labels_info.items():
+            for label_dict in runner_labels_info:
                 if (
-                    label_value == 1.0
-                    and runner_id in label_key
-                    and runner_name in label_key
+                    label_dict.get("runner_id") == runner_id
+                    and label_dict.get("runner_name") == runner_name
+                    and "label" in label_dict
                 ):
-                    # Parse the raw key-value pairs
-                    label_dict = {}
-                    for item in label_key.split(","):
-                        if "=" in item:
-                            k, v = item.split("=", 1)
-                            label_dict[k] = v
-                    if "label" in label_dict:
-                        runner_labels_list.append(label_dict["label"])
+                    runner_labels_list.append(label_dict["label"])
 
-            status = runner_dict.get("status", "unknown")
-            busy = runner_dict.get("busy", "false").lower() == "true"
+            status = info.get("status", "unknown")
+            busy = info.get("busy", "false").lower() == "true"
             status_color = STATE_COLORS.get(status, STATE_COLORS["unknown"])
 
             runner_items.append(
@@ -160,7 +146,7 @@ def create_runner_list():
                                     style={"color": COLORS["text"]},
                                 ),
                                 html.Span(
-                                    runner_dict.get("os", "Unknown"),
+                                    info.get("os", "Unknown"),
                                     style={"color": COLORS["warning"]},
                                 ),
                             ],
@@ -173,7 +159,7 @@ def create_runner_list():
                                     style={"color": COLORS["text"]},
                                 ),
                                 html.Span(
-                                    runner_dict.get("repository", "Unknown"),
+                                    info.get("repository", "Unknown"),
                                     style={"color": COLORS["warning"]},
                                 ),
                             ],
@@ -195,7 +181,7 @@ def create_runner_list():
                 )
             )
         except (ValueError, KeyError, AttributeError) as e:
-            logging.exception(f"Error processing runner info key: {key}")
+            logging.exception(f"Error processing runner info key: {info}")
             continue
 
     return html.Div(

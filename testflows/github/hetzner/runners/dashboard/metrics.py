@@ -50,10 +50,10 @@ def get_metric_info(metric_name, job_id=None):
         job_id: Optional job ID to filter by
 
     Returns:
-        dict: Dictionary of metric info, or empty dict if not found
+        list: List of parsed metric info dictionaries, or empty list if not found
     """
     try:
-        metrics = {}
+        metrics = []
 
         for metric in REGISTRY.collect():
             if metric.name == metric_name:
@@ -66,23 +66,18 @@ def get_metric_info(metric_name, job_id=None):
                         if sample_job_id != job_id:
                             continue
 
-                    # Use all labels as the key
-                    key = ",".join(f"{k}={v}" for k, v in sorted(sample.labels.items()))
                     # Store all labels except internal ones
                     labels = {
                         k: v
                         for k, v in sample.labels.items()
                         if k not in ("__name__", "instance", "job")
                     }
-                    if key not in metrics:
-                        metrics[key] = labels
-                    else:
-                        metrics[key].update(labels)
+                    metrics.append(labels)
 
         return metrics
     except Exception as e:
         logging.exception(f"Error getting metric info {metric_name}")
-        return {}
+        return []
 
 
 def update_metric_history(metric_name, labels, value, timestamp):

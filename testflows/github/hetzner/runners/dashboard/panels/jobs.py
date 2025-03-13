@@ -44,15 +44,8 @@ def create_job_list():
         if not jobs_info:
             continue
 
-        for key, _ in jobs_info.items():
+        for info in jobs_info:
             try:
-                # Parse the key string into a dictionary
-                info = {}
-                for item in key.split(","):
-                    if "=" in item:
-                        k, v = item.split("=", 1)
-                        info[k] = v
-
                 job_id = info.get("job_id")
                 run_id = info.get("run_id")
                 if not job_id or not run_id:
@@ -77,21 +70,17 @@ def create_job_list():
                     if not is_running
                     else "github_hetzner_runners_running_job_labels"
                 )
+
                 job_labels_list = []
-                for label_key, label_value in job_labels_info.items():
+                for label_dict in job_labels_info:
                     if (
-                        label_value == 1.0
-                        and job_id in label_key
-                        and run_id in label_key
+                        label_dict.get("job_id") == job_id
+                        and label_dict.get("run_id") == run_id
+                        and "label" in label_dict
                     ):
-                        # Parse the raw key-value pairs
-                        label_dict = {}
-                        for item in label_key.split(","):
-                            if "=" in item:
-                                k, v = item.split("=", 1)
-                                label_dict[k] = v
-                        if "label" in label_dict:
-                            job_labels_list.append(label_dict["label"])
+                        job_labels_list.append(label_dict["label"])
+
+                logging.info(f"Final labels list for job {job_id}: {job_labels_list}")
 
                 status_color = COLORS["success"] if is_running else COLORS["warning"]
                 status_text = "Running" if is_running else "Queued"

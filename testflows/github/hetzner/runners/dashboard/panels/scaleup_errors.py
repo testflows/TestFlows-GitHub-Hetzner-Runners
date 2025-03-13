@@ -3,7 +3,7 @@ from dash import html, dcc
 import logging
 
 from ..colors import COLORS
-from ..metrics import get_metric_value, metric_history, get_metric_info
+from ..metrics import get_metric_value
 
 
 def create_panel():

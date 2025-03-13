@@ -77,45 +77,25 @@ def create_server_list():
         )
 
     server_items = []
-    for key, info in servers_info.items():
+    for info in servers_info:
         try:
-            # Parse the server info from the key
-            server_dict = {}
-            for item in key.split(","):
-                if "=" in item:
-                    k, v = item.split("=", 1)
-                    if k == "cost":
-                        try:
-                            server_dict[k] = ast.literal_eval(v)
-                        except:
-                            server_dict[k] = v
-                    else:
-                        server_dict[k] = v
-
-            server_id = server_dict.get("server_id")
-            server_name = server_dict.get("name")
+            server_id = info.get("server_id")
+            server_name = info.get("name")
             if not server_id or not server_name:
                 continue
 
             # Get server labels
             server_labels_info = get_metric_info("github_hetzner_runners_server_labels")
             server_labels_list = []
-            for label_key, label_value in server_labels_info.items():
+            for label_dict in server_labels_info:
                 if (
-                    label_value == 1.0
-                    and server_id in label_key
-                    and server_name in label_key
+                    label_dict.get("server_id") == server_id
+                    and label_dict.get("server_name") == server_name
+                    and "label" in label_dict
                 ):
-                    # Parse the raw key-value pairs
-                    label_dict = {}
-                    for item in label_key.split(","):
-                        if "=" in item:
-                            k, v = item.split("=", 1)
-                            label_dict[k] = v
-                    if "label" in label_dict:
-                        server_labels_list.append(label_dict["label"])
+                    server_labels_list.append(label_dict["label"])
 
-            status = server_dict.get("status", "unknown")
+            status = info.get("status", "unknown")
             status_color = STATE_COLORS.get(status, STATE_COLORS["unknown"])
 
             server_items.append(
@@ -154,7 +134,7 @@ def create_server_list():
                                     style={"color": COLORS["text"]},
                                 ),
                                 html.Span(
-                                    server_dict.get("type", "Unknown"),
+                                    info.get("type", "Unknown"),
                                     style={"color": COLORS["warning"]},
                                 ),
                             ],
@@ -167,7 +147,7 @@ def create_server_list():
                                     style={"color": COLORS["text"]},
                                 ),
                                 html.Span(
-                                    server_dict.get("location", "Unknown"),
+                                    info.get("location", "Unknown"),
                                     style={"color": COLORS["warning"]},
                                 ),
                             ],
@@ -180,7 +160,7 @@ def create_server_list():
                                     style={"color": COLORS["text"]},
                                 ),
                                 html.Span(
-                                    server_dict.get("ipv4", "Unknown"),
+                                    info.get("ipv4", "Unknown"),
                                     style={"color": COLORS["warning"]},
                                 ),
                             ],
@@ -193,7 +173,7 @@ def create_server_list():
                                     style={"color": COLORS["text"]},
                                 ),
                                 html.Span(
-                                    server_dict.get("ipv6", "Unknown"),
+                                    info.get("ipv6", "Unknown"),
                                     style={"color": COLORS["warning"]},
                                 ),
                             ],
@@ -206,7 +186,7 @@ def create_server_list():
                                     style={"color": COLORS["text"]},
                                 ),
                                 html.Span(
-                                    server_dict.get("created", "Unknown"),
+                                    info.get("created", "Unknown"),
                                     style={"color": COLORS["warning"]},
                                 ),
                             ],
@@ -219,7 +199,7 @@ def create_server_list():
                                     style={"color": COLORS["text"]},
                                 ),
                                 html.Span(
-                                    server_dict.get("runner_status", "Unknown"),
+                                    info.get("runner_status", "Unknown"),
                                     style={"color": COLORS["warning"]},
                                 ),
                             ],
@@ -247,13 +227,13 @@ def create_server_list():
                                     ),
                                     html.Span(
                                         (
-                                            f"{server_dict['cost_hourly']} {server_dict['cost_currency']}/hour"
+                                            f"{info['cost_hourly']} {info['cost_currency']}/hour"
                                             + (
-                                                f" (total: {server_dict['cost_total']} {server_dict['cost_currency']})"
-                                                if server_dict.get("cost_total")
+                                                f" (total: {info['cost_total']} {info['cost_currency']})"
+                                                if info.get("cost_total")
                                                 else ""
                                             )
-                                            if server_dict.get("cost_hourly")
+                                            if info.get("cost_hourly")
                                             else "Unknown"
                                         ),
                                         style={"color": COLORS["warning"]},
@@ -261,14 +241,14 @@ def create_server_list():
                                 ],
                                 style={"marginBottom": "2px"},
                             )
-                            if server_dict.get("cost_hourly")
+                            if info.get("cost_hourly")
                             else None
                         ),
                     ],
                 )
             )
         except (ValueError, KeyError, AttributeError) as e:
-            logging.exception(f"Error processing server info key: {key}")
+            logging.exception(f"Error processing server info key: {info}")
             continue
 
     return html.Div(
