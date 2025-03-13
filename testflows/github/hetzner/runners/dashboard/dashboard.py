@@ -21,7 +21,7 @@ from dash.dependencies import Input, Output
 from flask import send_from_directory
 
 from .colors import COLORS
-from .panels import servers, jobs
+from .panels import servers, jobs, runners
 from .metrics import get_metric_value
 
 # Get the directory containing this file
@@ -154,6 +154,35 @@ app.layout = html.Div(
                         "flexWrap": "wrap",
                     },
                     children=[
+                        # Heartbeat Gauge
+                        html.Div(
+                            style={
+                                "textAlign": "center",
+                                "padding": "15px",
+                                "backgroundColor": COLORS["paper"],
+                                "borderRadius": "4px",
+                                "minWidth": "150px",
+                                "flex": "0 1 auto",
+                            },
+                            children=[
+                                html.Div(
+                                    "Heartbeat",
+                                    style={
+                                        "color": COLORS["accent"],
+                                        "fontSize": "1.1em",
+                                        "marginBottom": "5px",
+                                    },
+                                ),
+                                html.Div(
+                                    id="heartbeat-gauge",
+                                    style={
+                                        "fontSize": "2em",
+                                        "fontWeight": "bold",
+                                        "color": COLORS["warning"],
+                                    },
+                                ),
+                            ],
+                        ),
                         # Servers Gauge
                         html.Div(
                             style={
@@ -175,6 +204,35 @@ app.layout = html.Div(
                                 ),
                                 html.Div(
                                     id="total-servers-gauge",
+                                    style={
+                                        "fontSize": "2em",
+                                        "fontWeight": "bold",
+                                        "color": COLORS["warning"],
+                                    },
+                                ),
+                            ],
+                        ),
+                        # Runners Gauge
+                        html.Div(
+                            style={
+                                "textAlign": "center",
+                                "padding": "15px",
+                                "backgroundColor": COLORS["paper"],
+                                "borderRadius": "4px",
+                                "minWidth": "150px",
+                                "flex": "0 1 auto",
+                            },
+                            children=[
+                                html.Div(
+                                    "Runners",
+                                    style={
+                                        "color": COLORS["accent"],
+                                        "fontSize": "1.1em",
+                                        "marginBottom": "5px",
+                                    },
+                                ),
+                                html.Div(
+                                    id="total-runners-gauge",
                                     style={
                                         "fontSize": "2em",
                                         "fontWeight": "bold",
@@ -245,6 +303,8 @@ app.layout = html.Div(
                 ),
                 # Jobs Panel
                 jobs.create_panel(),
+                # Runners Panel
+                runners.create_panel(),
                 # Servers Panel
                 servers.create_panel(),
             ],
@@ -277,6 +337,16 @@ def update_total_servers_gauge(n):
     """Update total servers gauge."""
     total_servers = get_metric_value("github_hetzner_runners_servers_total_count") or 0
     return str(int(total_servers))
+
+
+@app.callback(
+    Output("total-runners-gauge", "children"),
+    Input("interval-component", "n_intervals"),
+)
+def update_total_runners_gauge(n):
+    """Update total runners gauge."""
+    total_runners = get_metric_value("github_hetzner_runners_runners_total_count") or 0
+    return str(int(total_runners))
 
 
 @app.callback(
@@ -333,6 +403,66 @@ def update_running_jobs_gauge(n):
     """Update running jobs gauge."""
     running_jobs = get_metric_value("github_hetzner_runners_running_jobs") or 0
     return str(int(running_jobs))
+
+
+@app.callback(
+    Output("interval-component-runners", "interval"),
+    Input("interval-dropdown", "value"),
+)
+def update_runners_interval(value):
+    """Update the interval time for runners panel based on dropdown selection"""
+    return value * 1000  # Convert seconds to milliseconds
+
+
+@app.callback(
+    Output("runners-graph", "figure"),
+    Input("interval-component-runners", "n_intervals"),
+)
+def update_runners_graph(n):
+    """Update runners graph."""
+    return runners.update_graph(n)
+
+
+@app.callback(
+    Output("runners-list", "children"),
+    Input("interval-component-runners", "n_intervals"),
+)
+def update_runners_list(n):
+    """Update runners list."""
+    return runners.create_runner_list()
+
+
+@app.callback(
+    [Output("heartbeat-gauge", "children"), Output("heartbeat-gauge", "style")],
+    Input("interval-component", "n_intervals"),
+)
+def update_heartbeat_gauge(n, old_value=[0]):
+    """Update heartbeat gauge."""
+    heartbeat = get_metric_value("github_hetzner_runners_heartbeat_timestamp") or 0
+    heartbeat_icon = "◉"
+
+    if heartbeat == 0:
+        old_value[0] = 0
+        return heartbeat_icon, {
+            "fontSize": "2em",
+            "fontWeight": "bold",
+            "color": COLORS["warning"],
+        }
+
+    # Check if we got a new heartbeat value
+    is_new_heartbeat = heartbeat > old_value[0]
+    old_value[0] = heartbeat
+
+    style = {
+        "fontSize": "2em",
+        "fontWeight": "bold",
+        "color": COLORS["success"],
+        # Only reduce opacity if it's not a new value
+        "opacity": "0.5" if not is_new_heartbeat else "1",
+        "transition": "opacity 0.5s ease-in-out",
+    }
+
+    return heartbeat_icon, style
 
 
 def start_http_server(

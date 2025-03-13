@@ -560,6 +560,11 @@ def update_runners(
     get_runner_server_type_and_location_fn=None,
 ):
     """Update all runner-related metrics."""
+    # Clear all existing runner metrics
+    RUNNER_INFO._metrics.clear()
+    RUNNER_LABELS._metrics.clear()
+    RUNNER_STATUS._metrics.clear()
+
     total_runners = 0
     total_unused_runners = 0
     busy_runners = 0
@@ -641,8 +646,8 @@ def update_runners(
     UNUSED_RUNNERS_TOTAL_COUNT.set(total_unused_runners)
 
     # Set counts by status
-    for status, count in status_counts.items():
-        RUNNERS_TOTAL.labels(status=status).set(count)
+    for status in ["online", "offline"]:
+        RUNNERS_TOTAL.labels(status=status).set(status_counts.get(status, 0))
 
     # Set unused runner counts
     for (server_type, location), count in unused_counts.items():
