@@ -15,7 +15,7 @@
 import logging
 
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import timedelta
 from prometheus_client import REGISTRY
 
 
