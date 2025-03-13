@@ -380,7 +380,7 @@ def update_graph(n):
         "data": traces,
         "layout": {
             "title": {
-                "text": "jobs over time",
+                "text": "Jobs",
                 "font": {"size": 16, "weight": "bold", **common_style["font"]},
                 "x": 0.5,
                 "y": 0.95,
