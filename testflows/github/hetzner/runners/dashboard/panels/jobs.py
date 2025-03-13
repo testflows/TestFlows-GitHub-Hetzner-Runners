@@ -297,11 +297,6 @@ def create_panel():
                     "paddingTop": "20px",
                 },
             ),
-            # Interval component
-            dcc.Interval(
-                id="interval-component-jobs",
-                n_intervals=0,
-            ),
         ],
     )
 

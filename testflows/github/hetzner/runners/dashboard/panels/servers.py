@@ -45,11 +45,6 @@ def create_panel():
                     "paddingTop": "20px",
                 },
             ),
-            dcc.Interval(
-                id="interval-component",
-                interval=30 * 1000,
-                n_intervals=0,
-            ),
         ],
     )
 

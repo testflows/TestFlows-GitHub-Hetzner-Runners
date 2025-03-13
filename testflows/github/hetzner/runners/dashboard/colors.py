@@ -23,6 +23,7 @@ COLORS = {
     "nav": "#111111",  # Navigation bar background
     "warning": "#FFA500",  # Orange for warnings/queued jobs
     "success": "#00FF00",  # Green for success/running jobs
+    "error": "#FF0000",  # Red for errors
 }
 
 # Server state colors

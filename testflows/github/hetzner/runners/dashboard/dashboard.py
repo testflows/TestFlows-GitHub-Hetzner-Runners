@@ -15,14 +15,16 @@
 import os
 import dash
 import threading
+from datetime import datetime, timedelta
+import logging
 
 from dash import html, dcc
 from dash.dependencies import Input, Output
 from flask import send_from_directory
 
 from .colors import COLORS
-from .panels import servers, jobs, runners
-from .metrics import get_metric_value
+from .panels import servers, jobs, runners, scaleup_errors
+from .metrics import get_metric_value, get_metric_info
 
 # Get the directory containing this file
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -56,6 +58,12 @@ app.layout = html.Div(
         "padding": 0,
     },
     children=[
+        # Single interval component for all updates
+        dcc.Interval(
+            id="interval-component",
+            interval=60 * 1000,  # Default to 1 minute
+            n_intervals=0,
+        ),
         # Navigation/Control Bar
         html.Div(
             style={
@@ -299,8 +307,39 @@ app.layout = html.Div(
                                 ),
                             ],
                         ),
+                        # Scale-up Errors Gauge
+                        html.Div(
+                            style={
+                                "textAlign": "center",
+                                "padding": "15px",
+                                "backgroundColor": COLORS["paper"],
+                                "borderRadius": "4px",
+                                "minWidth": "150px",
+                                "flex": "0 1 auto",
+                            },
+                            children=[
+                                html.Div(
+                                    "Scale-up Errors",
+                                    style={
+                                        "color": COLORS["accent"],
+                                        "fontSize": "1.1em",
+                                        "marginBottom": "5px",
+                                    },
+                                ),
+                                html.Div(
+                                    id="scale-up-errors-gauge",
+                                    style={
+                                        "fontSize": "2em",
+                                        "fontWeight": "bold",
+                                        "color": COLORS["error"],
+                                    },
+                                ),
+                            ],
+                        ),
                     ],
                 ),
+                # Errors Panel (add before other panels)
+                scaleup_errors.create_panel(),
                 # Jobs Panel
                 jobs.create_panel(),
                 # Runners Panel
@@ -322,114 +361,88 @@ def update_interval(value):
 
 
 @app.callback(
-    Output("servers-graph", "figure"), Input("interval-component", "n_intervals")
-)
-def update_servers_graph(n):
-    """Update servers graph."""
-    return servers.update_graph(n)
-
-
-@app.callback(
-    Output("total-servers-gauge", "children"),
+    [
+        Output("servers-graph", "figure"),
+        Output("total-servers-gauge", "children"),
+        Output("servers-list", "children"),
+    ],
     Input("interval-component", "n_intervals"),
 )
-def update_total_servers_gauge(n):
-    """Update total servers gauge."""
+def update_servers_components(n):
+    """Update all servers-related components."""
     total_servers = get_metric_value("github_hetzner_runners_servers_total_count") or 0
-    return str(int(total_servers))
+    return (
+        servers.update_graph(n),
+        str(int(total_servers)),
+        servers.create_server_list(),
+    )
 
 
 @app.callback(
-    Output("total-runners-gauge", "children"),
+    [
+        Output("jobs-graph", "figure"),
+        Output("jobs-list", "children"),
+        Output("queued-jobs-gauge", "children"),
+        Output("running-jobs-gauge", "children"),
+    ],
     Input("interval-component", "n_intervals"),
 )
-def update_total_runners_gauge(n):
-    """Update total runners gauge."""
-    total_runners = get_metric_value("github_hetzner_runners_runners_total_count") or 0
-    return str(int(total_runners))
-
-
-@app.callback(
-    Output("servers-list", "children"),
-    Input("interval-component", "n_intervals"),
-)
-def update_servers_list(n):
-    """Update servers list."""
-    return servers.create_server_list()
-
-
-@app.callback(
-    Output("interval-component-jobs", "interval"),
-    Input("interval-dropdown", "value"),
-)
-def update_jobs_interval(value):
-    """Update the interval time for jobs panel based on dropdown selection"""
-    return value * 1000  # Convert seconds to milliseconds
-
-
-@app.callback(
-    Output("jobs-graph", "figure"),
-    Input("interval-component-jobs", "n_intervals"),
-)
-def update_jobs_graph(n):
-    """Update jobs graph."""
-    return jobs.update_graph(n)
-
-
-@app.callback(
-    Output("jobs-list", "children"),
-    Input("interval-component-jobs", "n_intervals"),
-)
-def update_jobs_list(n):
-    """Update jobs list."""
-    return jobs.create_job_list()
-
-
-@app.callback(
-    Output("queued-jobs-gauge", "children"),
-    Input("interval-component", "n_intervals"),
-)
-def update_queued_jobs_gauge(n):
-    """Update queued jobs gauge."""
+def update_jobs_components(n):
+    """Update all jobs-related components."""
     queued_jobs = get_metric_value("github_hetzner_runners_queued_jobs") or 0
-    return str(int(queued_jobs))
+    running_jobs = get_metric_value("github_hetzner_runners_running_jobs") or 0
+    return (
+        jobs.update_graph(n),
+        jobs.create_job_list(),
+        str(int(queued_jobs)),
+        str(int(running_jobs)),
+    )
 
 
 @app.callback(
-    Output("running-jobs-gauge", "children"),
+    [
+        Output("runners-graph", "figure"),
+        Output("total-runners-gauge", "children"),
+        Output("runners-list", "children"),
+    ],
     Input("interval-component", "n_intervals"),
 )
-def update_running_jobs_gauge(n):
-    """Update running jobs gauge."""
-    running_jobs = get_metric_value("github_hetzner_runners_running_jobs") or 0
-    return str(int(running_jobs))
+def update_runners_components(n):
+    """Update all runners-related components."""
+    total_runners = get_metric_value("github_hetzner_runners_runners_total_count") or 0
+    return (
+        runners.update_graph(n),
+        str(int(total_runners)),
+        runners.create_runner_list(),
+    )
 
 
 @app.callback(
-    Output("interval-component-runners", "interval"),
-    Input("interval-dropdown", "value"),
+    [
+        Output("errors-graph", "figure"),
+        Output("errors-list", "children"),
+    ],
+    Input("interval-component", "n_intervals"),
 )
-def update_runners_interval(value):
-    """Update the interval time for runners panel based on dropdown selection"""
-    return value * 1000  # Convert seconds to milliseconds
+def update_errors_components(n):
+    """Update all errors-related components."""
+    return (
+        scaleup_errors.update_graph(n),
+        scaleup_errors.create_error_list(),
+    )
 
 
 @app.callback(
-    Output("runners-graph", "figure"),
-    Input("interval-component-runners", "n_intervals"),
+    Output("scale-up-errors-gauge", "children"),
+    Input("interval-component", "n_intervals"),
 )
-def update_runners_graph(n):
-    """Update runners graph."""
-    return runners.update_graph(n)
-
-
-@app.callback(
-    Output("runners-list", "children"),
-    Input("interval-component-runners", "n_intervals"),
-)
-def update_runners_list(n):
-    """Update runners list."""
-    return runners.create_runner_list()
+def update_scale_up_errors_gauge(n):
+    """Update scale-up errors gauge."""
+    error_count = (
+        get_metric_value("github_hetzner_runners_scale_up_failures_total_count_total")
+        or 0
+    )
+    return str(int(error_count))
 
 
 @app.callback(

@@ -66,25 +66,18 @@ def get_metric_info(metric_name, job_id=None):
                         if sample_job_id != job_id:
                             continue
 
-                    # For Info metrics, store all labels
-                    if metric_name.endswith("_info"):
-                        key = f"{sample.labels.get('job_id', '')},{sample.labels.get('run_id', '')}"
-                        # Store all labels except internal ones
-                        labels = {
-                            k: v
-                            for k, v in sample.labels.items()
-                            if k not in ("__name__", "instance", "job")
-                        }
-                        if key not in metrics:
-                            metrics[key] = labels
-                        else:
-                            metrics[key].update(labels)
+                    # Use all labels as the key
+                    key = ",".join(f"{k}={v}" for k, v in sorted(sample.labels.items()))
+                    # Store all labels except internal ones
+                    labels = {
+                        k: v
+                        for k, v in sample.labels.items()
+                        if k not in ("__name__", "instance", "job")
+                    }
+                    if key not in metrics:
+                        metrics[key] = labels
                     else:
-                        # Use all labels as the key
-                        key = ",".join(
-                            f"{k}={v}" for k, v in sorted(sample.labels.items())
-                        )
-                        metrics[key] = sample.value
+                        metrics[key].update(labels)
 
         return metrics
     except Exception as e:

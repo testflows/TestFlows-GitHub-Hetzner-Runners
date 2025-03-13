@@ -16,5 +16,6 @@
 from . import servers
 from . import jobs
 from . import runners
+from . import scaleup_errors
 
-__all__ = ["servers", "jobs", "runners"]
+__all__ = ["servers", "jobs", "runners", "scaleup_errors"]
