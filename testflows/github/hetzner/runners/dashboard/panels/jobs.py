@@ -25,15 +25,19 @@ from ..metrics import get_metric_value, metric_history, get_metric_info
 def create_job_list():
     """Create a list of jobs with their descriptions."""
     queued_jobs_info = get_metric_info("github_hetzner_runners_queued_job")
+    running_jobs_info = get_metric_info("github_hetzner_runners_running_job")
     queued_count = get_metric_value("github_hetzner_runners_queued_jobs") or 0
+    running_count = get_metric_value("github_hetzner_runners_running_jobs") or 0
 
     print(f"\nCreating job list:")
     print(f"Queued count: {queued_count}")
+    print(f"Running count: {running_count}")
     print(f"Queued jobs info: {queued_jobs_info}")
+    print(f"Running jobs info: {running_jobs_info}")
 
-    if queued_count == 0:
+    if queued_count == 0 and running_count == 0:
         return html.Div(
-            "No queued jobs",
+            "No jobs",
             style={
                 "color": COLORS["text"],
                 "padding": "10px",
@@ -42,10 +46,21 @@ def create_job_list():
         )
 
     job_items = []
-    if queued_jobs_info:
-        for labels, info in queued_jobs_info.items():
+    # Process both queued and running jobs
+    for jobs_info, is_running in [(queued_jobs_info, False), (running_jobs_info, True)]:
+        if not jobs_info:
+            continue
+
+        for key, _ in jobs_info.items():
             try:
-                print(f"\nProcessing job info: {info}")
+                print(f"\nProcessing job info from key: {key}")
+                # Parse the key string into a dictionary
+                info = {}
+                for item in key.split(","):
+                    if "=" in item:
+                        k, v = item.split("=", 1)
+                        info[k] = v
+
                 job_id = info.get("job_id")
                 run_id = info.get("run_id")
                 if not job_id or not run_id:
@@ -53,16 +68,24 @@ def create_job_list():
                     continue
 
                 # Get wait time for this job
-                wait_time = get_metric_value(
-                    "github_hetzner_runners_queued_job_wait_time_seconds",
+                metric_name = (
+                    "github_hetzner_runners_running_job_time_seconds"
+                    if is_running
+                    else "github_hetzner_runners_queued_job_wait_time_seconds"
+                )
+                time_value = get_metric_value(
+                    metric_name,
                     {"job_id": job_id, "run_id": run_id},
                 )
-                print(f"Wait time: {wait_time}")
-                wait_time_str = f"{int(wait_time)} seconds" if wait_time else "unknown"
+                print(f"Time value: {time_value}")
+                time_str = f"{int(time_value)} seconds" if time_value else "unknown"
+                time_label = "Run time: " if is_running else "Wait time: "
 
                 # Get labels for this job
                 job_labels_info = get_metric_info(
                     "github_hetzner_runners_queued_job_labels"
+                    if not is_running
+                    else "github_hetzner_runners_running_job_labels"
                 )
                 print(f"Job labels info: {job_labels_info}")
                 job_labels_list = []
@@ -82,23 +105,83 @@ def create_job_list():
                             job_labels_list.append(label_dict["label"])
                 print(f"Final job labels list: {job_labels_list}")
 
+                status_color = COLORS["success"] if is_running else COLORS["warning"]
+                status_text = "Running" if is_running else "Queued"
+
                 job_items.append(
                     html.Div(
                         className="job-item",
                         style={
-                            "borderLeft": f"4px solid {COLORS['warning']}",
+                            "borderLeft": f"4px solid {status_color}",
                             "padding": "10px",
                             "marginBottom": "10px",
                             "backgroundColor": COLORS["paper"],
                         },
                         children=[
                             html.Div(
-                                f"Job: {info.get('name', 'Unknown')}",
-                                style={
-                                    "color": COLORS["accent"],
-                                    "fontWeight": "bold",
-                                    "marginBottom": "5px",
-                                },
+                                [
+                                    html.Span(
+                                        f"Job: {info.get('name', 'Unknown')}",
+                                        style={
+                                            "color": COLORS["accent"],
+                                            "fontWeight": "bold",
+                                        },
+                                    ),
+                                    html.Span(
+                                        f" ({status_text})",
+                                        style={
+                                            "color": status_color,
+                                            "marginLeft": "10px",
+                                        },
+                                    ),
+                                ],
+                                style={"marginBottom": "5px"},
+                            ),
+                            html.Div(
+                                [
+                                    html.Span(
+                                        "Job ID: ",
+                                        style={"color": COLORS["text"]},
+                                    ),
+                                    html.Span(
+                                        f"{info.get('job_id', 'Unknown')} (attempt {info.get('run_attempt', '1')})",
+                                        style={"color": COLORS["warning"]},
+                                    ),
+                                    html.A(
+                                        " (View on GitHub)",
+                                        href=f"https://github.com/{info.get('repository', '')}/actions/runs/{info.get('run_id', '')}/job/{info.get('job_id', '')}",
+                                        target="_blank",
+                                        style={
+                                            "color": COLORS["accent"],
+                                            "marginLeft": "10px",
+                                            "textDecoration": "none",
+                                        },
+                                    ),
+                                ],
+                                style={"marginBottom": "2px"},
+                            ),
+                            html.Div(
+                                [
+                                    html.Span(
+                                        "Run ID: ",
+                                        style={"color": COLORS["text"]},
+                                    ),
+                                    html.Span(
+                                        info.get("run_id", "Unknown"),
+                                        style={"color": COLORS["warning"]},
+                                    ),
+                                    html.A(
+                                        " (View on GitHub)",
+                                        href=f"https://github.com/{info.get('repository', '')}/actions/runs/{info.get('run_id', '')}",
+                                        target="_blank",
+                                        style={
+                                            "color": COLORS["accent"],
+                                            "marginLeft": "10px",
+                                            "textDecoration": "none",
+                                        },
+                                    ),
+                                ],
+                                style={"marginBottom": "2px"},
                             ),
                             html.Div(
                                 [
@@ -142,12 +225,12 @@ def create_job_list():
                             html.Div(
                                 [
                                     html.Span(
-                                        "Wait time: ",
+                                        time_label,
                                         style={"color": COLORS["text"]},
                                     ),
                                     html.Span(
-                                        wait_time_str,
-                                        style={"color": COLORS["warning"]},
+                                        time_str,
+                                        style={"color": status_color},
                                     ),
                                 ],
                                 style={"marginBottom": "2px"},
@@ -190,6 +273,10 @@ def create_job_list():
             "maxHeight": "400px",
             "overflowY": "auto",
             "marginTop": "20px",
+            "paddingRight": "4px",
+            "backgroundColor": COLORS["background"],
+            "border": f"1px solid {COLORS['grid']}",
+            "borderRadius": "4px",
         },
     )
 
@@ -289,10 +376,11 @@ def update_graph(n):
                 "type": "scatter",
                 "x": timestamps,
                 "y": values,
-                "name": f"{status} ({metric['value']})",
+                "name": f"{status} ({int(metric['value'])})",
                 "mode": "lines",
                 "line": {"width": 2, "shape": "hv", "color": metric["color"]},
-                "hovertemplate": "%{y:.0f} %{fullData.name}<extra></extra>",
+                "text": status,
+                "hoverinfo": "y+text",
             }
         )
 

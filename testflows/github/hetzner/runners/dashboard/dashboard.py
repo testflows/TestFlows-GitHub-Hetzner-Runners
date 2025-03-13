@@ -32,6 +32,8 @@ app = dash.Dash(
     assets_url_path="/css",
 )
 
+app.title = "GitHub Hetzner Runners Dashboard"
+
 
 # Set up routes for serving static files
 @app.server.route("/css/<path:path>")
@@ -85,11 +87,12 @@ app.layout = html.Div(
                                     },
                                 ),
                                 html.H2(
-                                    "GitHub Hetzner runners",
+                                    "GitHub Hetzner Runners Dashboard",
                                     className="title-text",
                                     style={
                                         "margin": 0,
                                         "padding": 0,
+                                        "color": COLORS["warning"],
                                     },
                                 ),
                             ],
@@ -139,12 +142,12 @@ app.layout = html.Div(
                 "margin": "0 auto",
             },
             children=[
+                # Jobs Panel
+                jobs.create_panel(),
                 # Total Servers Count Panel
                 servers_total_count.create_panel(),
                 # Servers Total Panel
                 servers_total.create_panel(),
-                # Jobs Panel
-                jobs.create_panel(),
             ],
         ),
     ],

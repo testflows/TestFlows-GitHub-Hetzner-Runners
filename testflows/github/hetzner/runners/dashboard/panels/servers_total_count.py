@@ -77,14 +77,16 @@ def update_graph(n):
 
     return {
         "data": [
-            go.Scatter(
-                x=metric_history[key]["timestamps"],
-                y=metric_history[key]["values"],
-                name=f"total ({total_count})",
-                mode="lines",
-                line={"width": 2, "shape": "hv", "color": COLORS["accent"]},
-                hovertemplate="%{y:.0f} servers<extra></extra>",
-            )
+            {
+                "type": "scatter",
+                "x": metric_history[key]["timestamps"],
+                "y": metric_history[key]["values"],
+                "name": f"total ({total_count})",
+                "mode": "lines",
+                "line": {"width": 2, "shape": "hv", "color": COLORS["accent"]},
+                "text": "total",
+                "hoverinfo": "y+text",
+            }
         ],
         "layout": {
             "title": {

@@ -79,14 +79,16 @@ def update_graph(n):
             metric_history[key]["values"].pop(0)
 
         traces.append(
-            go.Scatter(
-                x=metric_history[key]["timestamps"],
-                y=metric_history[key]["values"],
-                name=f"{status} ({current_values[status]})",
-                mode="lines",
-                line={"width": 2, "shape": "hv", "color": STATE_COLORS[status]},
-                hovertemplate="%{y:.0f} %{fullData.name}<extra></extra>",
-            )
+            {
+                "type": "scatter",
+                "x": metric_history[key]["timestamps"],
+                "y": metric_history[key]["values"],
+                "name": f"{status} ({int(current_values[status])})",
+                "mode": "lines",
+                "line": {"width": 2, "shape": "hv", "color": STATE_COLORS[status]},
+                "text": status,
+                "hoverinfo": "y+text",
+            }
         )
 
     common_style = {

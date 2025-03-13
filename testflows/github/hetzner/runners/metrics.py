@@ -537,6 +537,11 @@ def update_jobs(workflow_runs):
     running_count = 0
     current_time = time.time()
 
+    # Clear all existing job metrics
+    QUEUED_JOB_INFO._metrics.clear()
+    QUEUED_JOB_LABELS._metrics.clear()
+    QUEUED_JOB_WAIT_TIME._metrics.clear()
+
     for run in workflow_runs:
         for job in run.jobs():
             # Normalize job status
