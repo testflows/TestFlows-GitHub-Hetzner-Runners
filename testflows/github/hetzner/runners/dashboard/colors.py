@@ -13,23 +13,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Dark theme colors
+# Base colors
 COLORS = {
-    "background": "#000000",  # Pure black
-    "text": "#7FDBFF",  # Cyan blue
-    "grid": "#333333",  # Dark gray
-    "paper": "#111111",  # Very dark gray
-    "nav": "#000000",  # Pure black
-    "accent": "#008080",  # Teal
-    "border": "#008080",  # Teal
-    "title": "#008080",  # Teal
+    "background": "#000000",  # Black background
+    "paper": "#111111",  # Slightly lighter black for containers
+    "text": "#CCCCCC",  # Light gray text
+    "accent": "#008080",  # Teal accent color
+    "grid": "#333333",  # Dark gray grid lines
+    "nav": "#111111",  # Navigation bar background
+    "warning": "#FFA500",  # Orange for warnings/queued jobs
+    "success": "#00FF00",  # Green for success/running jobs
 }
 
-# State colors
+# Server state colors
 STATE_COLORS = {
-    "off": "#FF69B4",  # Hot pink
-    "running": "#008080",  # Teal
-    "initializing": "#FFD700",  # Gold
-    "ready": "#20B2AA",  # Light Sea Green
-    "busy": "#FF4500",  # Orange red
+    "running": "#00FF00",  # Green
+    "off": "#FF0000",  # Red
+    "initializing": "#FFA500",  # Orange
+    "ready": "#00FFFF",  # Cyan
+    "busy": "#FF00FF",  # Magenta
+    "unknown": "#808080",  # Gray
 }

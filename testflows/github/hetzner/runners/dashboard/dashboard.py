@@ -20,7 +20,7 @@ from dash.dependencies import Input, Output
 from flask import send_from_directory
 
 from .colors import COLORS
-from .panels import servers_total, servers_total_count
+from .panels import servers_total, servers_total_count, jobs
 
 # Get the directory containing this file
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -120,7 +120,7 @@ app.layout = html.Div(
                                         {"label": "1 minute", "value": 60},
                                         {"label": "5 minutes", "value": 300},
                                     ],
-                                    value=30,
+                                    value=5,
                                     style={
                                         "width": "150px",
                                     },
@@ -143,6 +143,8 @@ app.layout = html.Div(
                 servers_total_count.create_panel(),
                 # Servers Total Panel
                 servers_total.create_panel(),
+                # Jobs Panel
+                jobs.create_panel(),
             ],
         ),
     ],
@@ -181,6 +183,33 @@ def update_servers_total_graph(n):
 def update_servers_total_count_graph(n):
     """Update servers total count graph."""
     return servers_total_count.update_graph(n)
+
+
+@app.callback(
+    Output("interval-component-jobs", "interval"),
+    Input("interval-dropdown", "value"),
+)
+def update_jobs_interval(value):
+    """Update the interval time for jobs panel based on dropdown selection"""
+    return value * 1000  # Convert seconds to milliseconds
+
+
+@app.callback(
+    Output("jobs-graph", "figure"),
+    Input("interval-component-jobs", "n_intervals"),
+)
+def update_jobs_graph(n):
+    """Update jobs graph."""
+    return jobs.update_graph(n)
+
+
+@app.callback(
+    Output("jobs-list", "children"),
+    Input("interval-component-jobs", "n_intervals"),
+)
+def update_jobs_list(n):
+    """Update jobs list."""
+    return jobs.create_job_list()
 
 
 def start_http_server(

@@ -21,43 +21,99 @@ metric_history = defaultdict(lambda: {"timestamps": [], "values": []})
 
 
 def get_metric_value(metric_name, labels=None):
-    """
-    Get metric value directly from Prometheus registry
+    """Get the current value of a metric from Prometheus.
+
     Args:
-        metric_name: Name of the metric to fetch
-        labels: Dictionary of label names and values
+        metric_name: Name of the metric
+        labels: Optional dictionary of label names and values
+
     Returns:
-        int: The metric value as an integer, guaranteed to be non-negative
+        float or None: The current value of the metric, or None if not found
     """
-    if labels is None:
-        labels = {}
-
     try:
-        for metric in REGISTRY.collect():
+        if labels:
+            return REGISTRY.get_sample_value(metric_name, labels)
+        return REGISTRY.get_sample_value(metric_name)
+    except Exception as e:
+        print(f"Error getting metric {metric_name}: {str(e)}")
+        return None
+
+
+def get_metric_info(metric_name, job_id=None):
+    """Get the current info for a metric from Prometheus.
+
+    Args:
+        metric_name: Name of the metric
+        job_id: Optional job ID to filter by
+
+    Returns:
+        dict: Dictionary of metric info, or empty dict if not found
+    """
+    try:
+        metrics = {}
+        print(f"\nGetting metric info for {metric_name}")
+
+        # First, let's see what metrics we have in the registry
+        all_metrics = list(REGISTRY.collect())
+        print(f"Total metrics in registry: {len(all_metrics)}")
+        print("Available metrics:")
+        for m in all_metrics:
+            print(f"  - {m.name}")
+
+        for metric in all_metrics:
             if metric.name == metric_name:
-                # Print all samples for debugging
-                print(f"\nAll samples for {metric_name}:")
-                for sample in metric.samples:
-                    print(f"  Labels: {sample.labels}, Value: {sample.value}")
+                print(f"\nFound metric {metric_name}")
+                print(f"Metric type: {metric.type}")
+                print(f"Metric documentation: {metric.documentation}")
 
-                # Get the exact matching sample
-                matching_samples = [
-                    sample
-                    for sample in metric.samples
-                    if all(sample.labels.get(k) == v for k, v in labels.items())
-                ]
+                samples = list(metric.samples)
+                print(f"Number of samples: {len(samples)}")
 
-                if matching_samples:
-                    if len(matching_samples) > 1:
-                        print(
-                            f"Warning: Multiple matches found for {metric_name} with labels {labels}"
+                for i, sample in enumerate(samples):
+                    print(f"\nSample {i + 1}:")
+                    print(f"  Name: {sample.name}")
+                    print(f"  Labels: {sample.labels}")
+                    print(f"  Value: {sample.value}")
+
+                    # If job_id is provided, only return metrics for that job
+                    if job_id:
+                        sample_job_id = f"{sample.labels.get('job_id', '')},{sample.labels.get('run_id', '')}"
+                        if sample_job_id != job_id:
+                            print(f"  Skipping - job_id mismatch")
+                            continue
+
+                    # For Info metrics, store all labels
+                    if metric_name.endswith("_info"):
+                        key = f"{sample.labels.get('job_id', '')},{sample.labels.get('run_id', '')}"
+                        print(f"  Info metric - using key: {key}")
+                        # Store all labels except internal ones
+                        labels = {
+                            k: v
+                            for k, v in sample.labels.items()
+                            if k not in ("__name__", "instance", "job")
+                        }
+                        if key not in metrics:
+                            metrics[key] = labels
+                        else:
+                            metrics[key].update(labels)
+                        print(f"  Stored labels: {metrics[key]}")
+                    else:
+                        # Use all labels as the key
+                        key = ",".join(
+                            f"{k}={v}" for k, v in sorted(sample.labels.items())
                         )
-                    # Take the first match
-                    return int(float(matching_samples[0].value))
-    except (ValueError, TypeError) as e:
-        print(f"Error getting metric value: {e}")
+                        print(f"  Regular metric - using key: {key}")
+                        metrics[key] = sample.value
+                        print(f"  Stored value: {metrics[key]}")
 
-    return 0  # Default to 0 if not found
+        print(f"\nFinal metrics dictionary: {metrics}")
+        return metrics
+    except Exception as e:
+        print(f"Error getting metric info {metric_name}: {str(e)}")
+        import traceback
+
+        print(f"Traceback: {traceback.format_exc()}")
+        return {}
 
 
 def update_metric_history(metric_name, labels, value, timestamp):
