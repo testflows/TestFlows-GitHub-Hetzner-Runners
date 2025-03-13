@@ -175,120 +175,81 @@ def update_interval(value):
 
 @app.callback(
     [
+        # Servers components
         Output("servers-graph", "figure"),
         Output("total-servers-gauge", "children"),
         Output("servers-list", "children"),
-    ],
-    Input("interval-component", "n_intervals"),
-)
-def update_servers_components(n):
-    """Update all servers-related components."""
-    total_servers = get_metric_value("github_hetzner_runners_servers_total_count") or 0
-    return (
-        servers.update_graph(n),
-        str(int(total_servers)),
-        servers.create_server_list(),
-    )
-
-
-@app.callback(
-    [
+        # Jobs components
         Output("jobs-graph", "figure"),
         Output("jobs-list", "children"),
         Output("queued-jobs-gauge", "children"),
         Output("running-jobs-gauge", "children"),
-    ],
-    Input("interval-component", "n_intervals"),
-)
-def update_jobs_components(n):
-    """Update all jobs-related components."""
-    queued_jobs = get_metric_value("github_hetzner_runners_queued_jobs") or 0
-    running_jobs = get_metric_value("github_hetzner_runners_running_jobs") or 0
-    return (
-        jobs.update_graph(n),
-        jobs.create_job_list(),
-        str(int(queued_jobs)),
-        str(int(running_jobs)),
-    )
-
-
-@app.callback(
-    [
+        # Runners components
         Output("runners-graph", "figure"),
         Output("total-runners-gauge", "children"),
         Output("runners-list", "children"),
-    ],
-    Input("interval-component", "n_intervals"),
-)
-def update_runners_components(n):
-    """Update all runners-related components."""
-    total_runners = get_metric_value("github_hetzner_runners_runners_total_count") or 0
-    return (
-        runners.update_graph(n),
-        str(int(total_runners)),
-        runners.create_runner_list(),
-    )
-
-
-@app.callback(
-    [
+        # Errors components
         Output("errors-graph", "figure"),
         Output("errors-list", "children"),
+        Output("scale-up-errors-gauge", "children"),
+        # Heartbeat components
+        Output("heartbeat-gauge", "children"),
+        Output("heartbeat-gauge", "style"),
     ],
     Input("interval-component", "n_intervals"),
 )
-def update_errors_components(n):
-    """Update all errors-related components."""
-    return (
-        scaleup_errors.update_graph(n),
-        scaleup_errors.create_error_list(),
-    )
-
-
-@app.callback(
-    Output("scale-up-errors-gauge", "children"),
-    Input("interval-component", "n_intervals"),
-)
-def update_scale_up_errors_gauge(n):
-    """Update scale-up errors gauge."""
+def update_all_components(n):
+    """Update all dashboard components in a single callback."""
+    # Get all metric values at once
+    total_servers = get_metric_value("github_hetzner_runners_servers_total_count") or 0
+    queued_jobs = get_metric_value("github_hetzner_runners_queued_jobs") or 0
+    running_jobs = get_metric_value("github_hetzner_runners_running_jobs") or 0
+    total_runners = get_metric_value("github_hetzner_runners_runners_total_count") or 0
     error_count = (
         get_metric_value("github_hetzner_runners_scale_up_failures_total_count_total")
         or 0
     )
-    return str(int(error_count))
-
-
-@app.callback(
-    [Output("heartbeat-gauge", "children"), Output("heartbeat-gauge", "style")],
-    Input("interval-component", "n_intervals"),
-)
-def update_heartbeat_gauge(n, old_value=[0]):
-    """Update heartbeat gauge."""
     heartbeat = get_metric_value("github_hetzner_runners_heartbeat_timestamp") or 0
-    heartbeat_icon = "◉"
 
+    # Heartbeat styling
+    heartbeat_icon = "◉"
     if heartbeat == 0:
-        old_value[0] = 0
-        return heartbeat_icon, {
+        heartbeat_style = {
             "fontSize": "2em",
             "fontWeight": "bold",
             "color": COLORS["warning"],
         }
+    else:
+        heartbeat_style = {
+            "fontSize": "2em",
+            "fontWeight": "bold",
+            "color": COLORS["success"],
+            "opacity": "1",
+            "transition": "opacity 0.5s ease-in-out",
+        }
 
-    # Check if we got a new heartbeat value
-    is_new_heartbeat = heartbeat > old_value[0]
-    old_value[0] = heartbeat
-
-    style = {
-        "fontSize": "2em",
-        "fontWeight": "bold",
-        "color": COLORS["success"],
-        # Only reduce opacity if it's not a new value
-        "opacity": "0.5" if not is_new_heartbeat else "1",
-        "transition": "opacity 0.5s ease-in-out",
-    }
-
-    return heartbeat_icon, style
+    return (
+        # Servers components
+        servers.update_graph(n),
+        str(int(total_servers)),
+        servers.create_server_list(),
+        # Jobs components
+        jobs.update_graph(n),
+        jobs.create_job_list(),
+        str(int(queued_jobs)),
+        str(int(running_jobs)),
+        # Runners components
+        runners.update_graph(n),
+        str(int(total_runners)),
+        runners.create_runner_list(),
+        # Errors components
+        scaleup_errors.update_graph(n),
+        scaleup_errors.create_error_list(),
+        str(int(error_count)),
+        # Heartbeat components
+        heartbeat_icon,
+        heartbeat_style,
+    )
 
 
 def start_http_server(
