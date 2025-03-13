@@ -173,6 +173,74 @@ def update_interval(value):
     return value * 1000  # Convert seconds to milliseconds
 
 
+def get_heartbeat_status():
+    """Get and format heartbeat status and styling."""
+    heartbeat = get_metric_value("github_hetzner_runners_heartbeat_timestamp") or 0
+    heartbeat_icon = "◉"
+
+    if heartbeat == 0:
+        heartbeat_style = {
+            "fontSize": "2em",
+            "fontWeight": "bold",
+            "color": COLORS["warning"],
+        }
+    else:
+        heartbeat_style = {
+            "fontSize": "2em",
+            "fontWeight": "bold",
+            "color": COLORS["success"],
+            "opacity": "1",
+            "transition": "opacity 0.5s ease-in-out",
+        }
+
+    return heartbeat_icon, heartbeat_style
+
+
+def get_servers_components(n):
+    """Get all servers-related components."""
+    total_servers = get_metric_value("github_hetzner_runners_servers_total_count") or 0
+    return (
+        servers.update_graph(n),
+        str(int(total_servers)),
+        servers.create_server_list(),
+    )
+
+
+def get_jobs_components(n):
+    """Get all jobs-related components."""
+    queued_jobs = get_metric_value("github_hetzner_runners_queued_jobs") or 0
+    running_jobs = get_metric_value("github_hetzner_runners_running_jobs") or 0
+    return (
+        jobs.update_graph(n),
+        jobs.create_job_list(),
+        str(int(queued_jobs)),
+        str(int(running_jobs)),
+    )
+
+
+def get_runners_components(n):
+    """Get all runners-related components."""
+    total_runners = get_metric_value("github_hetzner_runners_runners_total_count") or 0
+    return (
+        runners.update_graph(n),
+        str(int(total_runners)),
+        runners.create_runner_list(),
+    )
+
+
+def get_errors_components(n):
+    """Get all errors-related components."""
+    error_count = (
+        get_metric_value("github_hetzner_runners_scale_up_failures_total_count_total")
+        or 0
+    )
+    return (
+        scaleup_errors.update_graph(n),
+        scaleup_errors.create_error_list(),
+        str(int(error_count)),
+    )
+
+
 @app.callback(
     [
         # Servers components
@@ -200,55 +268,20 @@ def update_interval(value):
 )
 def update_all_components(n):
     """Update all dashboard components in a single callback."""
-    # Get all metric values at once
-    total_servers = get_metric_value("github_hetzner_runners_servers_total_count") or 0
-    queued_jobs = get_metric_value("github_hetzner_runners_queued_jobs") or 0
-    running_jobs = get_metric_value("github_hetzner_runners_running_jobs") or 0
-    total_runners = get_metric_value("github_hetzner_runners_runners_total_count") or 0
-    error_count = (
-        get_metric_value("github_hetzner_runners_scale_up_failures_total_count_total")
-        or 0
-    )
-    heartbeat = get_metric_value("github_hetzner_runners_heartbeat_timestamp") or 0
+    # Get components from each module
+    servers_components = get_servers_components(n)
+    jobs_components = get_jobs_components(n)
+    runners_components = get_runners_components(n)
+    errors_components = get_errors_components(n)
+    heartbeat_components = get_heartbeat_status()
 
-    # Heartbeat styling
-    heartbeat_icon = "◉"
-    if heartbeat == 0:
-        heartbeat_style = {
-            "fontSize": "2em",
-            "fontWeight": "bold",
-            "color": COLORS["warning"],
-        }
-    else:
-        heartbeat_style = {
-            "fontSize": "2em",
-            "fontWeight": "bold",
-            "color": COLORS["success"],
-            "opacity": "1",
-            "transition": "opacity 0.5s ease-in-out",
-        }
-
+    # Combine all components
     return (
-        # Servers components
-        servers.update_graph(n),
-        str(int(total_servers)),
-        servers.create_server_list(),
-        # Jobs components
-        jobs.update_graph(n),
-        jobs.create_job_list(),
-        str(int(queued_jobs)),
-        str(int(running_jobs)),
-        # Runners components
-        runners.update_graph(n),
-        str(int(total_runners)),
-        runners.create_runner_list(),
-        # Errors components
-        scaleup_errors.update_graph(n),
-        scaleup_errors.create_error_list(),
-        str(int(error_count)),
-        # Heartbeat components
-        heartbeat_icon,
-        heartbeat_style,
+        *servers_components,
+        *jobs_components,
+        *runners_components,
+        *errors_components,
+        *heartbeat_components,
     )
 
 
