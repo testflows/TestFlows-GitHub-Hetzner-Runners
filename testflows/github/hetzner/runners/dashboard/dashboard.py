@@ -15,8 +15,6 @@
 import os
 import dash
 import threading
-from datetime import datetime, timedelta
-import logging
 
 from dash import html, dcc
 from dash.dependencies import Input, Output
