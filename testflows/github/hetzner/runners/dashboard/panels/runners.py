@@ -13,68 +13,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from datetime import datetime, timedelta
-from dash import html, dcc
 import logging
-import ast
 
 from ..colors import COLORS, STATE_COLORS
 from ..metrics import get_metric_value, metric_history, get_metric_info
-
-
-def create_panel():
-    """Create runners panel."""
-    return html.Div(
-        className="tui-container",
-        children=[
-            html.H3(
-                "Runners",
-                style={
-                    "color": COLORS["accent"],
-                    "marginBottom": "20px",
-                    "borderBottom": f"1px solid {COLORS['accent']}",
-                    "paddingBottom": "10px",
-                },
-            ),
-            dcc.Graph(id="runners-graph"),
-            # Runner list
-            html.Div(
-                id="runners-list",
-                style={
-                    "marginTop": "20px",
-                    "borderTop": f"1px solid {COLORS['accent']}",
-                    "paddingTop": "20px",
-                },
-            ),
-        ],
-    )
+from . import panel
 
 
 def create_runner_list():
     """Create a list of runners with their descriptions."""
     runners_info = get_metric_info("github_hetzner_runners_runner")
-
-    # Get total number of runners from metrics
     total_runners = get_metric_value("github_hetzner_runners_runners_total_count") or 0
 
     if not runners_info:
         if total_runners > 0:
-            # We have runners but no details
-            return html.Div(
-                f"Total runners: {int(total_runners)} (details not available)",
-                style={
-                    "color": COLORS["warning"],
-                    "padding": "10px",
-                    "fontFamily": "JetBrains Mono, Fira Code, Consolas, monospace",
-                },
-            )
-        return html.Div(
-            "No runners",
-            style={
-                "color": COLORS["text"],
-                "padding": "10px",
-                "fontFamily": "JetBrains Mono, Fira Code, Consolas, monospace",
-            },
-        )
+            return panel.create_list("runners", total_runners, [], "Total runners")
+        return panel.create_list("runners", 0, [], "No runners")
 
     runner_items = []
     for info in runners_info:
@@ -99,103 +53,37 @@ def create_runner_list():
             busy = info.get("busy", "false").lower() == "true"
             status_color = STATE_COLORS.get(status, STATE_COLORS["unknown"])
 
-            runner_items.append(
-                html.Div(
-                    className="runner-item",
-                    style={
-                        "borderLeft": f"4px solid {status_color}",
-                        "padding": "10px",
-                        "marginBottom": "10px",
-                        "backgroundColor": COLORS["paper"],
-                    },
-                    children=[
-                        html.Div(
-                            [
-                                html.Span(
-                                    f"Runner: {runner_name}",
-                                    style={
-                                        "color": COLORS["accent"],
-                                        "fontWeight": "bold",
-                                    },
-                                ),
-                                html.Span(
-                                    f" ({status})",
-                                    style={
-                                        "color": status_color,
-                                        "marginLeft": "10px",
-                                    },
-                                ),
-                                html.Span(
-                                    " [busy]" if busy else " [idle]",
-                                    style={
-                                        "color": (
-                                            COLORS["warning"]
-                                            if busy
-                                            else COLORS["success"]
-                                        ),
-                                        "marginLeft": "10px",
-                                    },
-                                ),
-                            ],
-                            style={"marginBottom": "5px"},
-                        ),
-                        html.Div(
-                            [
-                                html.Span(
-                                    "OS: ",
-                                    style={"color": COLORS["text"]},
-                                ),
-                                html.Span(
-                                    info.get("os", "Unknown"),
-                                    style={"color": COLORS["warning"]},
-                                ),
-                            ],
-                            style={"marginBottom": "2px"},
-                        ),
-                        html.Div(
-                            [
-                                html.Span(
-                                    "Repository: ",
-                                    style={"color": COLORS["text"]},
-                                ),
-                                html.Span(
-                                    info.get("repository", "Unknown"),
-                                    style={"color": COLORS["warning"]},
-                                ),
-                            ],
-                            style={"marginBottom": "2px"},
-                        ),
-                        html.Div(
-                            [
-                                html.Span(
-                                    "Labels: ",
-                                    style={"color": COLORS["text"]},
-                                ),
-                                html.Span(
-                                    ", ".join(runner_labels_list) or "None",
-                                    style={"color": COLORS["warning"]},
-                                ),
-                            ],
-                        ),
-                    ],
-                )
+            # Create header with status and busy state
+            header = panel.create_item_header(
+                f"Runner: {runner_name}",
+                status,
+                status_color,
+                extra_span={
+                    "text": " [busy]" if busy else " [idle]",
+                    "color": COLORS["warning"] if busy else COLORS["success"],
+                },
             )
+
+            # Create values
+            values = [
+                panel.create_item_value("OS", info.get("os", "Unknown")),
+                panel.create_item_value(
+                    "Repository", info.get("repository", "Unknown")
+                ),
+                panel.create_item_value(
+                    "Labels", ", ".join(runner_labels_list) or "None"
+                ),
+            ]
+
+            runner_items.append(
+                panel.create_list_item("runner", status_color, header, values)
+            )
+
         except (ValueError, KeyError, AttributeError) as e:
             logging.exception(f"Error processing runner info key: {info}")
             continue
 
-    return html.Div(
-        children=runner_items,
-        style={
-            "maxHeight": "400px",
-            "overflowY": "auto",
-            "marginTop": "20px",
-            "paddingRight": "4px",
-            "backgroundColor": COLORS["background"],
-            "border": f"1px solid {COLORS['grid']}",
-            "borderRadius": "4px",
-        },
-    )
+    return panel.create_list("runners", total_runners, runner_items, "Total runners")
 
 
 def update_graph(n):
@@ -234,16 +122,13 @@ def update_graph(n):
             metric_history[key]["values"].pop(0)
 
         traces.append(
-            {
-                "type": "scatter",
-                "x": metric_history[key]["timestamps"],
-                "y": metric_history[key]["values"],
-                "name": f"{status} ({int(current_values[status] or 0)})",
-                "mode": "lines",
-                "line": {"width": 2, "shape": "hv", "color": runner_colors[status]},
-                "text": status,
-                "hoverinfo": "y+text",
-            }
+            panel.create_trace(
+                metric_history[key]["timestamps"],
+                metric_history[key]["values"],
+                f"{status} ({int(current_values[status] or 0)})",
+                status,
+                runner_colors[status],
+            )
         )
 
     # Add busy runners trace
@@ -263,83 +148,45 @@ def update_graph(n):
         metric_history[key]["values"].pop(0)
 
     traces.append(
-        {
-            "type": "scatter",
-            "x": metric_history[key]["timestamps"],
-            "y": metric_history[key]["values"],
-            "name": f"busy ({int(busy_runners)})",
-            "mode": "lines",
-            "line": {"width": 2, "shape": "hv", "color": COLORS["warning"]},
-            "text": "busy",
-            "hoverinfo": "y+text",
-        }
+        panel.create_trace(
+            metric_history[key]["timestamps"],
+            metric_history[key]["values"],
+            f"busy ({int(busy_runners)})",
+            "busy",
+            COLORS["warning"],
+        )
     )
 
-    common_style = {
-        "font": {
-            "family": "JetBrains Mono, Fira Code, Consolas, monospace",
-            "color": COLORS["text"],
-        },
-        "gridcolor": COLORS["grid"],
-        "showgrid": True,
-        "fixedrange": True,
+    xaxis = {
+        "title": "Time",
+        "range": [current_time - timedelta(minutes=15), current_time],
+        "tickformat": "%H:%M",
     }
 
-    return {
-        "data": traces,
-        "layout": {
-            "title": {
-                "text": "Runners",
-                "font": {"size": 16, "weight": "bold", **common_style["font"]},
-                "x": 0.5,
-                "y": 0.95,
-            },
-            "height": 300,  # Match jobs panel height
-            "plot_bgcolor": COLORS["background"],
-            "paper_bgcolor": COLORS["paper"],
-            "font": common_style["font"],
-            "xaxis": {
-                "title": "Time",
-                "range": [current_time - timedelta(minutes=15), current_time],
-                "tickformat": "%H:%M",
-                **common_style,
-            },
-            "yaxis": {
-                "title": "Number of Runners",
-                "range": [
-                    0,
+    yaxis = {
+        "title": "Number of Runners",
+        "range": [
+            0,
+            max(
+                2,
+                max(
                     max(
-                        2,
-                        max(
-                            max(
-                                metric_history[
-                                    f"github_hetzner_runners_runners_total_status={status}"
-                                ]["values"]
-                            )
-                            for status in states
-                        )
-                        + 1,
-                    ),
-                ],
-                "tickformat": "d",
-                "dtick": 1,
-                **common_style,
-            },
-            "margin": {"t": 60, "b": 50, "l": 50, "r": 50},
-            "showlegend": True,
-            "legend": {
-                "x": 0,
-                "y": 1,
-                "xanchor": "left",
-                "yanchor": "top",
-                "bgcolor": COLORS["paper"],
-                "font": {"size": 10},
-            },
-            "dragmode": False,
-        },
-        "config": {
-            "displayModeBar": False,
-            "staticPlot": True,
-            "displaylogo": False,
-        },
+                        metric_history[
+                            f"github_hetzner_runners_runners_total_status={status}"
+                        ]["values"]
+                    )
+                    for status in states
+                )
+                + 1,
+            ),
+        ],
+        "tickformat": "d",
+        "dtick": 1,
     }
+
+    return panel.create_graph(traces, "Runners", xaxis, yaxis, height=300)
+
+
+def create_panel():
+    """Create runners panel."""
+    return panel.create_panel("Runners")

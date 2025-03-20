@@ -15,6 +15,7 @@
 import os
 import dash
 import threading
+import logging
 
 from dash import html, dcc
 from dash.dependencies import Input, Output
@@ -24,6 +25,11 @@ from .colors import COLORS
 from .panels import servers, jobs, runners, scaleup_errors, gauges
 from .metrics import get_metric_value
 
+# Suppress Flask banner
+import flask.cli
+
+flask.cli.show_server_banner = lambda *args, **kwargs: None
+
 # Get the directory containing this file
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -32,7 +38,12 @@ app = dash.Dash(
     __name__,
     assets_folder=os.path.join(current_dir, "css"),
     assets_url_path="/css",
+    suppress_callback_exceptions=True,
 )
+
+# Suppress Flask startup messages
+app.server.logger.setLevel(logging.WARNING)
+app.server.logger.disabled = True
 
 app.title = "GitHub Hetzner Runners Dashboard"
 
@@ -229,8 +240,7 @@ def get_runners_components(n):
 def get_errors_components(n):
     """Get all errors-related components."""
     error_count = (
-        get_metric_value("github_hetzner_runners_scale_up_failures_total_count_total")
-        or 0
+        get_metric_value("github_hetzner_runners_scale_up_failures_last_hour") or 0
     )
     return (
         scaleup_errors.update_graph(n),
@@ -255,8 +265,8 @@ def get_errors_components(n):
         Output("total-runners-gauge", "children"),
         Output("runners-list", "children"),
         # Errors components
-        Output("errors-graph", "figure"),
-        Output("errors-list", "children"),
+        Output("scale-up-errors-(last-hour)-graph", "figure"),
+        Output("scale-up-errors-(last-hour)-list", "children"),
         Output("scale-up-errors-gauge", "children"),
         # Heartbeat components
         Output("heartbeat-gauge", "children"),
@@ -296,6 +306,10 @@ def start_http_server(
     Returns:
         threading.Thread: The thread running the dashboard server
     """
+    # Set Flask environment to production to suppress development server messages
+    os.environ["FLASK_ENV"] = "production"
+    os.environ["FLASK_DEBUG"] = "0"
+
     thread = threading.Thread(
         target=lambda: app.run_server(host=host, port=port, debug=debug), daemon=True
     )

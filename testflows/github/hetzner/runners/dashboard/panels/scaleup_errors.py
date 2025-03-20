@@ -1,168 +1,134 @@
+# Copyright 2025 Katteli Inc.
+# TestFlows.com Open-Source Software Testing Framework (http://testflows.com)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 from datetime import datetime, timedelta
-from dash import html, dcc
 import logging
+import dateutil.parser
 
 from ..colors import COLORS
-from ..metrics import get_metric_value
+from ..metrics import get_metric_value, get_metric_info
+from . import panel
 
 
 def create_panel():
     """Create errors panel."""
-    return html.Div(
-        className="tui-container",
-        children=[
-            html.H3(
-                "Scale-up Errors (Last 60 Minutes)",
-                style={
-                    "color": COLORS["accent"],
-                    "marginBottom": "20px",
-                    "borderBottom": f"1px solid {COLORS['accent']}",
-                    "paddingBottom": "10px",
-                },
-            ),
-            # Error count graph
-            dcc.Graph(
-                id="errors-graph",
-                style={"height": "300px"},
-            ),
-            # Error list
-            html.Div(
-                id="errors-list",
-                style={
-                    "marginTop": "20px",
-                    "borderTop": f"1px solid {COLORS['accent']}",
-                    "paddingTop": "20px",
-                },
-            ),
-        ],
-    )
+    return panel.create_panel("Scale-up Errors (Last Hour)")
 
 
 def create_error_list():
-    """Create a list of scale-up errors with their descriptions."""
-    error_count = (
-        get_metric_value("github_hetzner_runners_scale_up_failures_total_count_total")
-        or 0
+    """Create a list of errors with their descriptions."""
+    errors_info = get_metric_info("github_hetzner_runners_scale_up_failure_last_hour")
+    # Get total number of errors from metrics
+    total_errors = (
+        get_metric_value("github_hetzner_runners_scale_up_failures_last_hour") or 0
     )
 
-    if error_count == 0:
-        return html.Div(
-            "No scale-up errors",
-            style={
-                "color": COLORS["text"],
-                "padding": "10px",
-                "fontFamily": "JetBrains Mono, Fira Code, Consolas, monospace",
-            },
-        )
+    if not errors_info:
+        if total_errors > 0:
+            # We have errors but no details
+            return panel.create_list("errors", total_errors, [], "Total errors")
+        return panel.create_list("errors", 0, [], "No scale-up errors in the last hour")
 
-    return html.Div(
-        f"Total scale-up errors: {error_count}",
-        style={
-            "color": COLORS["error"],
-            "padding": "10px",
-            "fontFamily": "JetBrains Mono, Fira Code, Consolas, monospace",
-        },
+    # Sort errors_info by timestamp in descending order
+    errors_info.sort(
+        key=lambda x: dateutil.parser.parse(
+            x.get("timestamp_iso", "1970-01-01T00:00:00Z")
+        ),
+        reverse=True,
     )
 
+    error_items = []
+    for info in errors_info:
+        try:
+            error_type = info.get("error_type", "Unknown")
+            server_name = info.get("server_name", "Unknown")
+            error_message = info.get("error", "Unknown error")
+            server_type = info.get("server_type", "Unknown")
+            location = info.get("location", "Unknown") or "Unspecified"
+            labels = info.get("labels", "").split(",")
+            time_str = (
+                dateutil.parser.parse(info.get("timestamp_iso", "")).strftime(
+                    "%Y-%m-%d %H:%M:%S UTC"
+                )
+                if info.get("timestamp_iso")
+                else "Unknown time"
+            )
 
-def update_graph(n):
+            # Map error types to colors
+            error_colors = {
+                "max_servers_reached": COLORS["error"],
+                "resource_limit_exceeded": COLORS["error"],
+                "api_exception": COLORS["error"],
+                "error": COLORS["error"],
+            }
+            error_color = error_colors.get(error_type, COLORS["warning"])
+
+            # Create header
+            header = panel.create_item_header(
+                f"Error Type: {error_type}",
+                server_name,
+                error_color,
+            )
+
+            # Create values
+            values = [
+                panel.create_item_value("Time", time_str),
+                panel.create_item_value("Server Type", server_type),
+                panel.create_item_value("Location", location),
+                panel.create_item_value("Labels", ", ".join(labels) or "None"),
+                panel.create_item_value("Error Message", error_message),
+            ]
+
+            error_items.append(
+                panel.create_list_item("error", error_color, header, values)
+            )
+
+        except (ValueError, KeyError, AttributeError) as e:
+            logging.exception(f"Error processing error info: {info}")
+            continue
+
+    return panel.create_list("errors", total_errors, error_items, "Total errors")
+
+
+def update_graph(n, cache=[]):
     """Update errors graph."""
     current_time = datetime.now()
     one_hour_ago = current_time - timedelta(hours=1)
-    common_style = {
-        "gridcolor": COLORS["grid"],
-        "zerolinecolor": COLORS["grid"],
-        "color": COLORS["text"],
-        "font": {"family": "JetBrains Mono, Fira Code, Consolas, monospace"},
-    }
 
-    # Get error count
+    # Get current error count
     error_count = (
-        get_metric_value("github_hetzner_runners_scale_up_failures_total_count_total")
-        or 0
+        get_metric_value("github_hetzner_runners_scale_up_failures_last_hour") or 0
     )
 
-    # Create time points every 2 minutes for the last hour
+    # Add current state to cache
+    cache.append((current_time.timestamp(), error_count))
+
+    # Clean up old entries and sort by timestamp
+    cache[:] = [(ts, count) for ts, count in cache if ts >= one_hour_ago.timestamp()]
+    cache.sort()
+
+    # Create points for plotting
     time_points = []
     error_counts = []
 
-    # Start from one hour ago and move forward to now in 2-minute intervals
-    for i in range(31):  # 30 intervals of 2 minutes = 60 minutes
-        time_point = one_hour_ago + timedelta(minutes=i * 2)
-        time_points.append(time_point)
-        error_counts.append(0)
-
-    # Empty graph layout
-    layout = {
-        "title": {
-            "text": "Scale-up Errors Over Time (Last Hour)",
-            "font": {"size": 16, "weight": "bold", **common_style["font"]},
-            "x": 0.5,
-            "y": 0.95,
-        },
-        "height": 300,
-        "plot_bgcolor": COLORS["background"],
-        "paper_bgcolor": COLORS["paper"],
-        "font": common_style,
-        "xaxis": {
-            "title": "Time",
-            "tickformat": "%H:%M",
-            "dtick": 480000,  # 8 minutes in milliseconds for grid lines
-            "tickmode": "linear",
-            "gridcolor": COLORS["grid"],
-            "autorange": False,
-            "range": [one_hour_ago, current_time],
-            "type": "date",
-            "showgrid": True,  # Ensure grid is visible
-            **common_style,
-        },
-        "yaxis": {
-            "title": "Number of Errors",
-            "range": [0, 2],  # Start with range [0,2] for empty graph
-            "tickformat": "d",  # 'd' format ensures integers only
-            "automargin": True,
-            "showgrid": True,  # Ensure grid is visible
-            "dtick": 1,  # Force integer ticks
-            **common_style,
-        },
-        "margin": {"t": 60, "b": 50, "l": 50, "r": 50},
-        "showlegend": True,
-        "legend": {
-            "x": 0,
-            "y": 1,
-            "xanchor": "left",
-            "yanchor": "top",
-            "bgcolor": COLORS["paper"],
-            "font": {"size": 10},
-        },
-        "dragmode": False,
-    }
-
-    if error_count == 0:
-        return {
-            "data": [],
-            "layout": {
-                **layout,
-                "title": {
-                    "text": "No errors in the last hour",
-                    "font": {"size": 16, "weight": "bold", **common_style["font"]},
-                    "x": 0.5,
-                    "y": 0.95,
-                },
-                "showlegend": False,
-            },
-            "config": {
-                "displayModeBar": False,
-                "staticPlot": True,
-                "displaylogo": False,
-            },
-        }
-
-    # Put all errors in the last time slot
-    error_counts[-1] = error_count
+    # Add all points as they come in
+    for ts, count in cache:
+        time_points.append(datetime.fromtimestamp(ts))
+        error_counts.append(count)
 
     # Calculate optimal y-axis range and tick spacing
-    max_value = max(2, error_count + 1)
+    max_value = max(2, max(error_counts) + 1)
 
     # Define tick spacing based on the maximum value
     if max_value <= 5:
@@ -177,30 +143,35 @@ def update_graph(n):
         dtick = 20
 
     # Create trace for error count
-    trace = {
-        "x": time_points,
-        "y": error_counts,
-        "type": "scatter",
-        "mode": "lines+markers",
-        "name": "Scale-up Errors",
-        "line": {"color": COLORS["error"]},
-        "marker": {"color": COLORS["error"]},
+    traces = [
+        panel.create_trace(
+            time_points,
+            error_counts,
+            f"errors ({int(error_count)})",
+            "errors",
+            COLORS["error"],
+        )
+    ]
+
+    xaxis = {
+        "title": "Time",
+        "tickformat": "%H:%M",
+        "dtick": 300000,  # 5 minutes in milliseconds for grid lines
+        "tickmode": "linear",
+        "gridcolor": COLORS["grid"],
+        "autorange": False,
+        "range": [one_hour_ago, current_time],
+        "type": "date",
+        "showgrid": True,
     }
 
-    return {
-        "data": [trace],
-        "layout": {
-            **layout,
-            "yaxis": {
-                **layout["yaxis"],
-                "range": [0, max_value],
-                "dtick": dtick,
-                "tickformat": "d",  # Ensure integer display
-            },
-        },
-        "config": {
-            "displayModeBar": False,
-            "staticPlot": True,
-            "displaylogo": False,
-        },
+    yaxis = {
+        "title": "Number of Errors",
+        "range": [0, max_value],
+        "tickformat": "d",
+        "automargin": True,
+        "showgrid": True,
+        "dtick": dtick,
     }
+
+    return panel.create_graph(traces, "Scale-up Errors", xaxis, yaxis, height=300)

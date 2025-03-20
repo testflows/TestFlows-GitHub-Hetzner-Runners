@@ -838,7 +838,7 @@ def scale_up(
                 level=logging.DEBUG,
                 ignore_fail=True,
                 interval=interval,
-            ):
+            ) as scale_up_cycle:
                 # Update service heartbeat
                 metrics.update_heartbeat()
 
@@ -1117,6 +1117,7 @@ def scale_up(
                                         else ""
                                     ),
                                     "labels": ",".join(future.server_labels),
+                                    "timestamp": time.time(),
                                 }
 
                                 if isinstance(exc, MaxNumberOfServersReached):
@@ -1157,6 +1158,20 @@ def scale_up(
                                         )
                             finally:
                                 raise
+
+            if scale_up_cycle.exc_value is None:
+                with Action(
+                    "Recording successful scale up cycle",
+                    ignore_fail=True,
+                    level=logging.DEBUG,
+                ):
+                    metrics.record_scale_up_failure(
+                        error_type="success",
+                        server_name=None,
+                        server_type=None,
+                        location=None,
+                        error_details=None,
+                    )
 
             with Action(
                 f"Sleeping until next interval {interval_period}s",

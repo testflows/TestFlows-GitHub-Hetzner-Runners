@@ -140,7 +140,7 @@ def configure(config, level=logging.INFO, service_mode=False):
 
     default_config = {
         "version": 1,
-        "disable_existing_loggers": False,
+        "disable_existing_loggers": True,  # Disable existing loggers
         "formatters": {
             "stdout": {
                 "format": "%(asctime)s %(message)s",
@@ -178,7 +178,22 @@ def configure(config, level=logging.INFO, service_mode=False):
             "testflows.github.hetzner.runners": {
                 "level": str(level),
                 "handlers": ["stdout", "rotating_service_logfile"],
-            }
+                "propagate": False,
+            },
+            "werkzeug": {
+                "level": "ERROR",
+                "handlers": [],
+                "propagate": False,
+            },
+            "flask": {
+                "level": "ERROR",
+                "handlers": [],
+                "propagate": False,
+            },
+        },
+        "root": {  # Configure root logger
+            "level": "WARNING",
+            "handlers": [],
         },
     }
 

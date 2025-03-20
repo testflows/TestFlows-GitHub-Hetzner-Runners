@@ -15,6 +15,7 @@
 import time
 import dateutil.parser
 import logging
+from datetime import datetime
 
 from prometheus_client import Counter, Gauge, Histogram, Info
 from .estimate import get_server_price
@@ -237,28 +238,6 @@ RUNNER_POOL_AVAILABLE = Gauge(
     ["pool_type", "server_type", "location"],  # pool_type: standby, regular
 )
 
-# Scale up failure metrics
-SCALE_UP_FAILURES = Counter(
-    "github_hetzner_runners_scale_up_failures_total",
-    "Total number of scale up failures",
-    [
-        "error_type",
-        "server_type",
-        "location",
-    ],  # error_type: max_servers_reached, resource_limit_exceeded, api_error, setup_error
-)
-
-SCALE_UP_FAILURES_TOTAL = Counter(
-    "github_hetzner_runners_scale_up_failures_total_count",
-    "Total number of scale up failures across all error types",
-)
-
-SCALE_UP_FAILURE_DETAILS = Info(
-    "github_hetzner_runners_scale_up_failure",
-    "Details about scale up failures",
-    ["error_type", "server_name"],
-)
-
 # Scale down metrics
 SCALE_DOWN_OPERATIONS = Counter(
     "github_hetzner_runners_scale_down_operations_total",
@@ -297,6 +276,26 @@ COST_ESTIMATE = Gauge(
 HEARTBEAT = Gauge(
     "github_hetzner_runners_heartbeat_timestamp",
     "Unix timestamp of the last service heartbeat",
+)
+
+# Scale up failure metrics
+SCALE_UP_FAILURES_LAST_HOUR = Gauge(
+    "github_hetzner_runners_scale_up_failures_last_hour",
+    "Total number of scale up failures in the last hour",
+)
+
+SCALE_UP_FAILURE_DETAILS_LAST_HOUR = Gauge(
+    "github_hetzner_runners_scale_up_failure_last_hour",
+    "Details about scale up failures in the last hour",
+    [
+        "error_type",
+        "server_name",
+        "server_type",
+        "location",
+        "labels",
+        "timestamp_iso",
+        "error",
+    ],
 )
 
 
@@ -778,16 +777,64 @@ def update_pools(servers, standby_runners, count_available_fn=None):
 
 
 def record_scale_up_failure(
-    error_type, server_name, server_type, location, error_details
+    error_type, server_name, server_type, location, error_details, cache=[]
 ):
-    """Record a scale up failure."""
-    SCALE_UP_FAILURES.labels(
-        error_type=error_type, server_type=server_type, location=location
-    ).inc()
-    SCALE_UP_FAILURES_TOTAL.inc()
-    SCALE_UP_FAILURE_DETAILS.labels(
-        error_type=error_type, server_name=server_name
-    ).info(error_details)
+    """Record a scale up failure or success.
+
+    Args:
+        error_type: Type of the error or "success" for successful scale up
+        server_name: Name of the server
+        server_type: Type of the server
+        location: Location of the server
+        error_details: Details about the error or success details
+        cache: List to store error messages (optional)
+    """
+    current_time = time.time()
+
+    # Only track failures in the cache
+    if error_type != "success":
+        # Add new error to cache with timestamp
+        cache.append(
+            {
+                "timestamp": current_time,
+                "error_type": error_type,
+                "server_name": server_name,
+                "server_type": server_type,
+                "location": location,
+                "error_details": error_details,
+            }
+        )
+
+    # Clean up timestamps older than 1 hour
+    while cache and cache[0]["timestamp"] < current_time - 3600:  # 1 hour in seconds
+        cache.pop(0)
+
+    SCALE_UP_FAILURES_LAST_HOUR.set(len(cache))
+
+    # Clear all existing failure details metrics
+    SCALE_UP_FAILURE_DETAILS_LAST_HOUR._metrics.clear()
+
+    # Only create new metrics if there are failures
+    if cache:
+        # Update metrics from cache
+        for error in cache:
+            # Convert timestamps
+            timestamp_iso = (
+                datetime.fromtimestamp(error["timestamp"])
+                .replace(tzinfo=dateutil.tz.UTC)
+                .isoformat()
+            )
+
+            # Set gauge to 1 for each error
+            SCALE_UP_FAILURE_DETAILS_LAST_HOUR.labels(
+                error_type=error["error_type"],
+                server_name=error["server_name"],
+                server_type=error["server_type"],
+                location=error["location"] or "",
+                timestamp_iso=timestamp_iso,
+                labels=str(error["error_details"]["labels"]),
+                error=str(error["error_details"]["error"]),
+            ).set(1)
 
 
 def update_github_api(current_calls: int, total_calls: int, reset_time: float):

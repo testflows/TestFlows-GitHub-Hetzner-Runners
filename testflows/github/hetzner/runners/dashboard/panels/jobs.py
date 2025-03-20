@@ -15,10 +15,10 @@
 import logging
 
 from datetime import datetime, timedelta
-from dash import html, dcc
 
 from ..colors import COLORS
 from ..metrics import get_metric_value, metric_history, get_metric_info
+from . import panel
 
 
 def create_job_list():
@@ -27,16 +27,6 @@ def create_job_list():
     running_jobs_info = get_metric_info("github_hetzner_runners_running_job")
     queued_count = get_metric_value("github_hetzner_runners_queued_jobs") or 0
     running_count = get_metric_value("github_hetzner_runners_running_jobs") or 0
-
-    if queued_count == 0 and running_count == 0:
-        return html.Div(
-            "No jobs",
-            style={
-                "color": COLORS["text"],
-                "padding": "10px",
-                "fontFamily": "JetBrains Mono, Fira Code, Consolas, monospace",
-            },
-        )
 
     job_items = []
     # Process both queued and running jobs
@@ -85,209 +75,66 @@ def create_job_list():
                 status_color = COLORS["success"] if is_running else COLORS["warning"]
                 status_text = "Running" if is_running else "Queued"
 
-                job_items.append(
-                    html.Div(
-                        className="job-item",
-                        style={
-                            "borderLeft": f"4px solid {status_color}",
-                            "padding": "10px",
-                            "marginBottom": "10px",
-                            "backgroundColor": COLORS["paper"],
-                        },
-                        children=[
-                            html.Div(
-                                [
-                                    html.Span(
-                                        f"Job: {info.get('name', 'Unknown')}",
-                                        style={
-                                            "color": COLORS["accent"],
-                                            "fontWeight": "bold",
-                                        },
-                                    ),
-                                    html.Span(
-                                        f" ({status_text})",
-                                        style={
-                                            "color": status_color,
-                                            "marginLeft": "10px",
-                                        },
-                                    ),
-                                ],
-                                style={"marginBottom": "5px"},
-                            ),
-                            html.Div(
-                                [
-                                    html.Span(
-                                        "Job ID: ",
-                                        style={"color": COLORS["text"]},
-                                    ),
-                                    html.Span(
-                                        f"{info.get('job_id', 'Unknown')} (attempt {info.get('run_attempt', '1')})",
-                                        style={"color": COLORS["warning"]},
-                                    ),
-                                    html.A(
-                                        " (View on GitHub)",
-                                        href=f"https://github.com/{info.get('repository', '')}/actions/runs/{info.get('run_id', '')}/job/{info.get('job_id', '')}",
-                                        target="_blank",
-                                        style={
-                                            "color": COLORS["accent"],
-                                            "marginLeft": "10px",
-                                            "textDecoration": "none",
-                                        },
-                                    ),
-                                ],
-                                style={"marginBottom": "2px"},
-                            ),
-                            html.Div(
-                                [
-                                    html.Span(
-                                        "Run ID: ",
-                                        style={"color": COLORS["text"]},
-                                    ),
-                                    html.Span(
-                                        info.get("run_id", "Unknown"),
-                                        style={"color": COLORS["warning"]},
-                                    ),
-                                    html.A(
-                                        " (View on GitHub)",
-                                        href=f"https://github.com/{info.get('repository', '')}/actions/runs/{info.get('run_id', '')}",
-                                        target="_blank",
-                                        style={
-                                            "color": COLORS["accent"],
-                                            "marginLeft": "10px",
-                                            "textDecoration": "none",
-                                        },
-                                    ),
-                                ],
-                                style={"marginBottom": "2px"},
-                            ),
-                            html.Div(
-                                [
-                                    html.Span(
-                                        "Workflow: ",
-                                        style={"color": COLORS["text"]},
-                                    ),
-                                    html.Span(
-                                        info.get("workflow_name", "Unknown"),
-                                        style={"color": COLORS["warning"]},
-                                    ),
-                                ],
-                                style={"marginBottom": "2px"},
-                            ),
-                            html.Div(
-                                [
-                                    html.Span(
-                                        "Repository: ",
-                                        style={"color": COLORS["text"]},
-                                    ),
-                                    html.Span(
-                                        info.get("repository", "Unknown"),
-                                        style={"color": COLORS["warning"]},
-                                    ),
-                                ],
-                                style={"marginBottom": "2px"},
-                            ),
-                            html.Div(
-                                [
-                                    html.Span(
-                                        "Branch: ",
-                                        style={"color": COLORS["text"]},
-                                    ),
-                                    html.Span(
-                                        info.get("head_branch", "Unknown"),
-                                        style={"color": COLORS["warning"]},
-                                    ),
-                                ],
-                                style={"marginBottom": "2px"},
-                            ),
-                            html.Div(
-                                [
-                                    html.Span(
-                                        time_label,
-                                        style={"color": COLORS["text"]},
-                                    ),
-                                    html.Span(
-                                        time_str,
-                                        style={"color": status_color},
-                                    ),
-                                ],
-                                style={"marginBottom": "2px"},
-                            ),
-                            html.Div(
-                                [
-                                    html.Span(
-                                        "Labels: ",
-                                        style={"color": COLORS["text"]},
-                                    ),
-                                    html.Span(
-                                        ", ".join(job_labels_list) or "None",
-                                        style={"color": COLORS["warning"]},
-                                    ),
-                                ],
-                            ),
-                        ],
-                    )
+                # Create job item header
+                header = panel.create_item_header(
+                    f"Job: {info.get('name', 'Unknown')}",
+                    status_text,
+                    status_color,
                 )
+
+                # Create job item values
+                values = [
+                    panel.create_item_value(
+                        "Job ID",
+                        f"{info.get('job_id', 'Unknown')} (attempt {info.get('run_attempt', '1')})",
+                        link={
+                            "text": "View on GitHub",
+                            "href": f"https://github.com/{info.get('repository', '')}/actions/runs/{info.get('run_id', '')}/job/{info.get('job_id', '')}",
+                        },
+                    ),
+                    panel.create_item_value(
+                        "Run ID",
+                        info.get("run_id", "Unknown"),
+                        link={
+                            "text": "View on GitHub",
+                            "href": f"https://github.com/{info.get('repository', '')}/actions/runs/{info.get('run_id', '')}",
+                        },
+                    ),
+                    panel.create_item_value(
+                        "Workflow", info.get("workflow_name", "Unknown")
+                    ),
+                    panel.create_item_value(
+                        "Repository", info.get("repository", "Unknown")
+                    ),
+                    panel.create_item_value(
+                        "Branch", info.get("head_branch", "Unknown")
+                    ),
+                    panel.create_item_value(time_label, time_str, status_color),
+                    panel.create_item_value(
+                        "Labels", ", ".join(job_labels_list) or "None"
+                    ),
+                ]
+
+                # Create job item
+                job_items.append(
+                    panel.create_list_item("job", status_color, header, values)
+                )
+
             except (ValueError, KeyError, AttributeError) as e:
                 logging.exception(f"Error processing job info {info}")
                 continue
 
-    # If we have queued jobs but no details, show a simple message
-    if queued_count > 0 and not job_items:
-        job_items.append(
-            html.Div(
-                f"Queued jobs: {int(queued_count)} (details not available)",
-                style={
-                    "color": COLORS["warning"],
-                    "padding": "10px",
-                    "fontFamily": "JetBrains Mono, Fira Code, Consolas, monospace",
-                },
-            )
-        )
-
-    return html.Div(
-        children=job_items,
-        style={
-            "maxHeight": "400px",
-            "overflowY": "auto",
-            "marginTop": "20px",
-            "paddingRight": "4px",
-            "backgroundColor": COLORS["background"],
-            "border": f"1px solid {COLORS['grid']}",
-            "borderRadius": "4px",
-        },
+    return panel.create_list(
+        "jobs",
+        queued_count + running_count,
+        job_items,
+        f"Queued jobs: {int(queued_count)}",
     )
 
 
 def create_panel():
     """Create jobs panel."""
-    return html.Div(
-        className="tui-container",
-        children=[
-            html.H3(
-                "jobs",
-                style={
-                    "color": COLORS["accent"],
-                    "marginBottom": "20px",
-                    "borderBottom": f"1px solid {COLORS['accent']}",
-                    "paddingBottom": "10px",
-                },
-            ),
-            # Time graph
-            dcc.Graph(
-                id="jobs-graph",
-                style={"height": "300px"},
-            ),
-            # Job list
-            html.Div(
-                id="jobs-list",
-                style={
-                    "marginTop": "20px",
-                    "borderTop": f"1px solid {COLORS['accent']}",
-                    "paddingTop": "20px",
-                },
-            ),
-        ],
-    )
+    return panel.create_panel("jobs")
 
 
 def update_graph(n):
@@ -316,14 +163,6 @@ def update_graph(n):
         if key not in metric_history:
             metric_history[key] = {"timestamps": [], "values": []}
 
-        # Convert timestamps to strings to avoid NumPy dependency
-        timestamps = [
-            ts.strftime("%Y-%m-%d %H:%M:%S") for ts in metric_history[key]["timestamps"]
-        ]
-        timestamps.append(current_time.strftime("%Y-%m-%d %H:%M:%S"))
-        values = list(metric_history[key]["values"])
-        values.append(metric["value"])
-
         # Update history
         metric_history[key]["timestamps"].append(current_time)
         metric_history[key]["values"].append(metric["value"])
@@ -338,92 +177,38 @@ def update_graph(n):
             metric_history[key]["values"].pop(0)
 
         traces.append(
-            {
-                "type": "scatter",
-                "x": timestamps,
-                "y": values,
-                "name": f"{status} ({int(metric['value'])})",
-                "mode": "lines",
-                "line": {"width": 2, "shape": "hv", "color": metric["color"]},
-                "text": status,
-                "hoverinfo": "y+text",
-            }
+            panel.create_trace(
+                metric_history[key]["timestamps"],
+                metric_history[key]["values"],
+                f"{status} ({int(metric['value'])})",
+                status,
+                metric["color"],
+            )
         )
 
-    common_style = {
-        "font": {
-            "family": "JetBrains Mono, Fira Code, Consolas, monospace",
-            "color": COLORS["text"],
-        },
-        "gridcolor": COLORS["grid"],
-        "showgrid": True,
-        "fixedrange": True,
+    xaxis = {
+        "title": "Time",
+        "range": [current_time - timedelta(minutes=15), current_time],
+        "tickformat": "%H:%M",
     }
 
-    return {
-        "data": traces,
-        "layout": {
-            "title": {
-                "text": "Jobs",
-                "font": {"size": 16, "weight": "bold", **common_style["font"]},
-                "x": 0.5,
-                "y": 0.95,
-            },
-            "height": 300,
-            "plot_bgcolor": COLORS["background"],
-            "paper_bgcolor": COLORS["paper"],
-            "font": common_style["font"],
-            "xaxis": {
-                "title": "Time",
-                "range": [
-                    (current_time - timedelta(minutes=15)).strftime(
-                        "%Y-%m-%d %H:%M:%S"
-                    ),
-                    current_time.strftime("%Y-%m-%d %H:%M:%S"),
-                ],
-                "tickformat": "%H:%M",
-                **common_style,
-            },
-            "yaxis": {
-                "title": "Number of Jobs",
-                "range": [
-                    0,
+    yaxis = {
+        "title": "Number of Jobs",
+        "range": [
+            0,
+            max(
+                2,
+                max(
+                    max(metric_history["github_hetzner_runners_queued_jobs"]["values"]),
                     max(
-                        2,
-                        max(
-                            max(
-                                metric_history["github_hetzner_runners_queued_jobs"][
-                                    "values"
-                                ]
-                            ),
-                            max(
-                                metric_history["github_hetzner_runners_running_jobs"][
-                                    "values"
-                                ]
-                            ),
-                        )
-                        + 1,
+                        metric_history["github_hetzner_runners_running_jobs"]["values"]
                     ),
-                ],
-                "tickformat": "d",
-                "dtick": 1,
-                **common_style,
-            },
-            "margin": {"t": 60, "b": 50, "l": 50, "r": 50},
-            "showlegend": True,
-            "legend": {
-                "x": 0,
-                "y": 1,
-                "xanchor": "left",
-                "yanchor": "top",
-                "bgcolor": COLORS["paper"],
-                "font": {"size": 10},
-            },
-            "dragmode": False,
-        },
-        "config": {
-            "displayModeBar": False,
-            "staticPlot": True,
-            "displaylogo": False,
-        },
+                )
+                + 1,
+            ),
+        ],
+        "tickformat": "d",
+        "dtick": 1,
     }
+
+    return panel.create_graph(traces, "Jobs", xaxis, yaxis)

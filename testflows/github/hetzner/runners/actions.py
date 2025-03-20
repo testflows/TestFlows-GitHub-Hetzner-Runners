@@ -35,6 +35,7 @@ class Action:
     ):
         self.name = name
         self.ignore_fail = ignore_fail
+        self.exc_value = None
         self.level = level
         self.stacklevel = stacklevel
         self.extra = {
@@ -63,6 +64,8 @@ class Action:
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         if exc_value is not None:
+            self.exc_value = exc_value
+
             msg = f"❌ {self.name}: {exc_type.__name__ or 'Error'}: {exc_value}"
             if not self.debug:
                 logger.error(
