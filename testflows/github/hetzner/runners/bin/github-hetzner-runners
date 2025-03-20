@@ -21,6 +21,7 @@ import tempfile
 import logging
 import threading
 import logging.config
+import webbrowser
 
 from contextlib import contextmanager
 from concurrent.futures import ThreadPoolExecutor, Future
@@ -407,6 +408,30 @@ def argparser():
     )
 
     cloud_commands.required = True
+
+    dashboard_cloud_parser = cloud_commands.add_parser(
+        "dashboard",
+        help="open cloud service dashboard",
+        description="Open the dashboard through SSH tunnel to cloud service.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    dashboard_cloud_parser.add_argument(
+        "--local-port",
+        metavar="port",
+        type=args.count_type,
+        help="local port for SSH tunnel, default: 7090",
+        default=7090,
+    )
+
+    dashboard_cloud_parser.add_argument(
+        "--remote-port",
+        metavar="port",
+        type=args.count_type,
+        help="remote dashboard port, default: --dashboard-port",
+    )
+
+    dashboard_cloud_parser.set_defaults(func=cloud.cloud_dashboard)
 
     deploy_cloud_parser = cloud_commands.add_parser(
         "deploy",
@@ -1132,6 +1157,15 @@ def argparser():
 
     create_snapshot_parser.set_defaults(func=images.create_snapshot)
 
+    dashboard_parser = commands.add_parser(
+        "dashboard",
+        help="open dashboard",
+        description="Open the dashboard in a web browser.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    dashboard_parser.set_defaults(func=dashboard)
+
     return parser
 
 
@@ -1276,6 +1310,13 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
         else:
             logger.error(msg)
         sys.exit(1)
+
+
+def dashboard(args, config):
+    """Open the dashboard in a web browser."""
+    with Action("Opening dashboard in web browser"):
+        url = f"http://{config.dashboard_host}:{config.dashboard_port}?app=1"
+        webbrowser.open(url)
 
 
 if __name__ == "__main__":

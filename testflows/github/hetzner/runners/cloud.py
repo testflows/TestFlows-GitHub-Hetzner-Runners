@@ -14,6 +14,7 @@
 # limitations under the License.
 import os
 import tempfile
+import webbrowser
 
 from hcloud.ssh_keys.domain import SSHKey
 from hcloud.servers.client import BoundServer
@@ -425,3 +426,35 @@ def ssh_client_command(args, config: Config):
     server_name = config.cloud.server_name
 
     server_ssh_client_command(args=args, config=config, server_name=server_name)
+
+
+def cloud_dashboard(args, config: Config):
+    """Open dashboard through SSH tunnel to cloud service."""
+    config.check("hetzner_token")
+
+    server_name = config.cloud.server_name
+    local_port = args.local_port
+    remote_port = args.remote_port if args.remote_port else config.dashboard_port
+
+    with Action("Logging in to Hetzner Cloud"):
+        client = Client(token=config.hetzner_token)
+
+    with Action(f"Getting server {server_name}"):
+        server = client.servers.get_by_name(server_name)
+        if not server:
+            raise ValueError(f"server {server_name} not found")
+
+    with Action(f"Creating SSH tunnel on port {local_port}"):
+        # Create SSH tunnel using project's ssh function
+        # -f: go to background
+        # -N: do not execute remote command
+        # -L: local port forwarding
+        ssh(
+            server,
+            f"-f -N -L {local_port}:localhost:{remote_port}",
+            use_logger=False,
+            stacklevel=4,
+        )
+
+    with Action("Opening dashboard in browser"):
+        webbrowser.open(f"http://localhost:{local_port}")
