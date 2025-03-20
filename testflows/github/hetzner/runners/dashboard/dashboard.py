@@ -43,7 +43,7 @@ app = dash.Dash(
 
 # Suppress Flask startup messages
 app.server.logger.setLevel(logging.WARNING)
-app.server.logger.disabled = True
+app.server.logger.disabled = False
 
 app.title = "GitHub Hetzner Runners Dashboard"
 

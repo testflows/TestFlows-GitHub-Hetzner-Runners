@@ -14,19 +14,19 @@
 # limitations under the License.
 import logging
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from ..colors import COLORS
-from ..metrics import get_metric_value, metric_history, get_metric_info
+from .. import metrics
 from . import panel
 
 
 def create_job_list():
     """Create a list of jobs with their descriptions."""
-    queued_jobs_info = get_metric_info("github_hetzner_runners_queued_job")
-    running_jobs_info = get_metric_info("github_hetzner_runners_running_job")
-    queued_count = get_metric_value("github_hetzner_runners_queued_jobs") or 0
-    running_count = get_metric_value("github_hetzner_runners_running_jobs") or 0
+    queued_jobs_info = metrics.get_metric_info("github_hetzner_runners_queued_job")
+    running_jobs_info = metrics.get_metric_info("github_hetzner_runners_running_job")
+    queued_count = metrics.get_metric_value("github_hetzner_runners_queued_jobs") or 0
+    running_count = metrics.get_metric_value("github_hetzner_runners_running_jobs") or 0
 
     job_items = []
     # Process both queued and running jobs
@@ -47,7 +47,7 @@ def create_job_list():
                     if is_running
                     else "github_hetzner_runners_queued_job_wait_time_seconds"
                 )
-                time_value = get_metric_value(
+                time_value = metrics.get_metric_value(
                     metric_name,
                     {"job_id": job_id, "run_id": run_id},
                 )
@@ -55,7 +55,7 @@ def create_job_list():
                 time_label = "Run time: " if is_running else "Wait time: "
 
                 # Get labels for this job
-                job_labels_info = get_metric_info(
+                job_labels_info = metrics.get_metric_info(
                     "github_hetzner_runners_queued_job_labels"
                     if not is_running
                     else "github_hetzner_runners_running_job_labels"
@@ -140,55 +140,30 @@ def create_panel():
 def update_graph(n):
     """Update jobs graph."""
     current_time = datetime.now()
-    queued_jobs = get_metric_value("github_hetzner_runners_queued_jobs") or 0
-    running_jobs = get_metric_value("github_hetzner_runners_running_jobs") or 0
+    queued_jobs = metrics.get_metric_value("github_hetzner_runners_queued_jobs") or 0
+    running_jobs = metrics.get_metric_value("github_hetzner_runners_running_jobs") or 0
 
-    # Update history for both metrics
-    metrics = {
-        "queued": {
-            "name": "github_hetzner_runners_queued_jobs",
-            "value": queued_jobs,
-            "color": COLORS["warning"],
-        },
-        "running": {
-            "name": "github_hetzner_runners_running_jobs",
-            "value": running_jobs,
-            "color": COLORS["success"],
-        },
-    }
-
-    traces = []
-    for status, metric in metrics.items():
-        key = metric["name"]
-        if key not in metric_history:
-            metric_history[key] = {"timestamps": [], "values": []}
-
-        # Update history
-        metric_history[key]["timestamps"].append(current_time)
-        metric_history[key]["values"].append(metric["value"])
-
-        # Remove old data points
-        cutoff_time = current_time - timedelta(minutes=15)
-        while (
-            metric_history[key]["timestamps"]
-            and metric_history[key]["timestamps"][0] < cutoff_time
-        ):
-            metric_history[key]["timestamps"].pop(0)
-            metric_history[key]["values"].pop(0)
-
-        traces.append(
-            panel.create_trace(
-                metric_history[key]["timestamps"],
-                metric_history[key]["values"],
-                f"{status} ({int(metric['value'])})",
-                status,
-                metric["color"],
-            )
-        )
+    # Create traces using the helper function
+    traces = [
+        panel.create_metric_trace(
+            "github_hetzner_runners_queued_jobs",
+            queued_jobs,
+            current_time,
+            COLORS["warning"],
+            "queued",
+        ),
+        panel.create_metric_trace(
+            "github_hetzner_runners_running_jobs",
+            running_jobs,
+            current_time,
+            COLORS["success"],
+            "running",
+        ),
+    ]
 
     xaxis = {
         "title": "Time",
-        "range": [current_time - timedelta(minutes=15), current_time],
+        "range": panel.get_time_range(current_time),
         "tickformat": "%H:%M",
     }
 
@@ -199,9 +174,15 @@ def update_graph(n):
             max(
                 2,
                 max(
-                    max(metric_history["github_hetzner_runners_queued_jobs"]["values"]),
                     max(
-                        metric_history["github_hetzner_runners_running_jobs"]["values"]
+                        metrics.metric_history["github_hetzner_runners_queued_jobs"][
+                            "values"
+                        ]
+                    ),
+                    max(
+                        metrics.metric_history["github_hetzner_runners_running_jobs"][
+                            "values"
+                        ]
                     ),
                 )
                 + 1,

@@ -138,6 +138,8 @@ default_format = {
 def configure(config, level=logging.INFO, service_mode=False):
     """Apply logging configuration."""
 
+    level = logging.getLevelName(level)
+
     default_config = {
         "version": 1,
         "disable_existing_loggers": True,  # Disable existing loggers
@@ -158,13 +160,13 @@ def configure(config, level=logging.INFO, service_mode=False):
         },
         "handlers": {
             "stdout": {
-                "level": str(level),
+                "level": level,
                 "formatter": "stdout",
                 "class": "testflows.github.hetzner.runners.logger.StdoutHandler",
                 "stream": "ext://sys.stdout",
             },
             "rotating_service_logfile": {
-                "level": str(level),
+                "level": level,
                 "formatter": "rotating_file",
                 "class": "testflows.github.hetzner.runners.logger.RotatingFileHandler",
                 "filename": os.path.join(
@@ -176,28 +178,23 @@ def configure(config, level=logging.INFO, service_mode=False):
         },
         "loggers": {
             "testflows.github.hetzner.runners": {
-                "level": str(level),
-                "handlers": ["stdout", "rotating_service_logfile"],
-                "propagate": False,
+                "level": level,
+                "propagate": True,
             },
             "werkzeug": {
                 "level": "ERROR",
-                "handlers": [],
-                "propagate": False,
+                "propagate": True,
             },
             "flask": {
                 "level": "ERROR",
-                "handlers": [],
-                "propagate": False,
+                "propagate": True,
             },
         },
         "root": {  # Configure root logger
-            "level": "WARNING",
-            "handlers": [],
+            "handlers": ["stdout", "rotating_service_logfile"],
+            "level": "CRITICAL",  # Prevent root from handling messages
         },
     }
-
-    level = logging.getLevelName(level)
 
     if config.logger_config is None:
         config.logger_config = default_config
@@ -205,27 +202,18 @@ def configure(config, level=logging.INFO, service_mode=False):
     logger_config = config.logger_config
 
     if not service_mode:
-        handlers = set(
-            logger_config["loggers"]["testflows.github.hetzner.runners"]["handlers"]
-        )
-        handlers.discard("rotating_service_logfile")
-        logger_config["loggers"]["testflows.github.hetzner.runners"]["handlers"] = list(
-            handlers
-        )
+        handlers = set(logger_config["root"]["handlers"])
+        if "rotating_service_logfile" in handlers:
+            handlers.discard("rotating_service_logfile")
+        logger_config["root"]["handlers"] = list(handlers)
     else:
-        if (
-            "rotating_service_logfile"
-            not in logger_config["loggers"]["testflows.github.hetzner.runners"][
-                "handlers"
-            ]
-        ):
-            logger_config["loggers"]["testflows.github.hetzner.runners"][
-                "handlers"
-            ].append("rotating_service_logfile")
+        if "rotating_service_logfile" not in logger_config["root"]["handlers"]:
+            logger_config["root"]["handlers"].append("rotating_service_logfile")
 
     for handler in logger_config["handlers"].values():
         handler["level"] = level
 
+    # Don't override root logger level - keep it CRITICAL to prevent handling
     logger_config["loggers"]["testflows.github.hetzner.runners"]["level"] = level
 
     logging.config.dictConfig(logger_config)

@@ -80,16 +80,31 @@ def get_metric_info(metric_name, job_id=None):
         return []
 
 
-def update_metric_history(metric_name, labels, value, timestamp):
-    """Update metric history with new value"""
-    key = f"{metric_name}_{','.join(f'{k}={v}' for k, v in sorted(labels.items()))}"
+def update_metric_history(metric_name, labels, value, timestamp, cutoff_minutes=15):
+    """Update metric history with new value.
+
+    Args:
+        metric_name: Name of the metric
+        labels: Dictionary of labels
+        value: Current value
+        timestamp: Current timestamp
+        cutoff_minutes: Number of minutes to keep in history. Defaults to 15 minutes.
+
+    Returns:
+        str: The key used for the metric history
+    """
+    # Only add labels to key if there are any
+    if labels:
+        key = f"{metric_name}_{','.join(f'{k}={v}' for k, v in sorted(labels.items()))}"
+    else:
+        key = metric_name
 
     # Initialize if not exists
     if key not in metric_history:
         metric_history[key] = {"timestamps": [], "values": []}
 
-    # Keep only last 15 minutes of data
-    cutoff_time = timestamp - timedelta(minutes=15)
+    # Calculate cutoff time
+    cutoff_time = timestamp - timedelta(minutes=cutoff_minutes)
 
     # Remove old data points
     while (
@@ -102,3 +117,5 @@ def update_metric_history(metric_name, labels, value, timestamp):
     # Simply append the new value
     metric_history[key]["timestamps"].append(timestamp)
     metric_history[key]["values"].append(value)
+
+    return key

@@ -17,7 +17,7 @@ import logging
 import dateutil.parser
 
 from ..colors import COLORS
-from ..metrics import get_metric_value, get_metric_info
+from .. import metrics
 from . import panel
 
 
@@ -28,10 +28,13 @@ def create_panel():
 
 def create_error_list():
     """Create a list of errors with their descriptions."""
-    errors_info = get_metric_info("github_hetzner_runners_scale_up_failure_last_hour")
+    errors_info = metrics.get_metric_info(
+        "github_hetzner_runners_scale_up_failure_last_hour"
+    )
     # Get total number of errors from metrics
     total_errors = (
-        get_metric_value("github_hetzner_runners_scale_up_failures_last_hour") or 0
+        metrics.get_metric_value("github_hetzner_runners_scale_up_failures_last_hour")
+        or 0
     )
 
     if not errors_info:
@@ -108,7 +111,8 @@ def update_graph(n, cache=[]):
 
     # Get current error count
     error_count = (
-        get_metric_value("github_hetzner_runners_scale_up_failures_last_hour") or 0
+        metrics.get_metric_value("github_hetzner_runners_scale_up_failures_last_hour")
+        or 0
     )
 
     # Add current state to cache

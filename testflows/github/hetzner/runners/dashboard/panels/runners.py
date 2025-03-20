@@ -12,18 +12,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
 
 from ..colors import COLORS, STATE_COLORS
-from ..metrics import get_metric_value, metric_history, get_metric_info
+from .. import metrics
 from . import panel
 
 
 def create_runner_list():
     """Create a list of runners with their descriptions."""
-    runners_info = get_metric_info("github_hetzner_runners_runner")
-    total_runners = get_metric_value("github_hetzner_runners_runners_total_count") or 0
+    runners_info = metrics.get_metric_info("github_hetzner_runners_runner")
+    total_runners = (
+        metrics.get_metric_value("github_hetzner_runners_runners_total_count") or 0
+    )
 
     if not runners_info:
         if total_runners > 0:
@@ -39,7 +41,9 @@ def create_runner_list():
                 continue
 
             # Get runner labels
-            runner_labels_info = get_metric_info("github_hetzner_runners_runner_labels")
+            runner_labels_info = metrics.get_metric_info(
+                "github_hetzner_runners_runner_labels"
+            )
             runner_labels_list = []
             for label_dict in runner_labels_info:
                 if (
@@ -98,68 +102,43 @@ def update_graph(n):
         "offline": STATE_COLORS["off"],  # Red for offline runners
     }
 
-    for status in states:
-        value = get_metric_value(
-            "github_hetzner_runners_runners_total", {"status": status}
-        )
-        current_values[status] = value if value is not None else 0
-
+    # Create traces for each state
     traces = []
     for status in states:
-        key = f"github_hetzner_runners_runners_total_status={status}"
-        if key not in metric_history:
-            metric_history[key] = {"timestamps": [], "values": []}
-
-        metric_history[key]["timestamps"].append(current_time)
-        metric_history[key]["values"].append(current_values[status])
-
-        cutoff_time = current_time - timedelta(minutes=15)
-        while (
-            metric_history[key]["timestamps"]
-            and metric_history[key]["timestamps"][0] < cutoff_time
-        ):
-            metric_history[key]["timestamps"].pop(0)
-            metric_history[key]["values"].pop(0)
+        value = (
+            metrics.get_metric_value(
+                "github_hetzner_runners_runners_total", {"status": status}
+            )
+            or 0
+        )
+        current_values[status] = value
 
         traces.append(
-            panel.create_trace(
-                metric_history[key]["timestamps"],
-                metric_history[key]["values"],
-                f"{status} ({int(current_values[status] or 0)})",
-                status,
+            panel.create_metric_trace(
+                "github_hetzner_runners_runners_total",
+                value,
+                current_time,
                 runner_colors[status],
+                status,
+                {"status": status},
             )
         )
 
     # Add busy runners trace
-    busy_runners = get_metric_value("github_hetzner_runners_runners_busy") or 0
-    key = "github_hetzner_runners_runners_busy"
-    if key not in metric_history:
-        metric_history[key] = {"timestamps": [], "values": []}
-
-    metric_history[key]["timestamps"].append(current_time)
-    metric_history[key]["values"].append(busy_runners)
-
-    while (
-        metric_history[key]["timestamps"]
-        and metric_history[key]["timestamps"][0] < cutoff_time
-    ):
-        metric_history[key]["timestamps"].pop(0)
-        metric_history[key]["values"].pop(0)
-
+    busy_runners = metrics.get_metric_value("github_hetzner_runners_runners_busy") or 0
     traces.append(
-        panel.create_trace(
-            metric_history[key]["timestamps"],
-            metric_history[key]["values"],
-            f"busy ({int(busy_runners)})",
-            "busy",
+        panel.create_metric_trace(
+            "github_hetzner_runners_runners_busy",
+            busy_runners,
+            current_time,
             COLORS["warning"],
+            "busy",
         )
     )
 
     xaxis = {
         "title": "Time",
-        "range": [current_time - timedelta(minutes=15), current_time],
+        "range": panel.get_time_range(current_time),
         "tickformat": "%H:%M",
     }
 
@@ -171,7 +150,7 @@ def update_graph(n):
                 2,
                 max(
                     max(
-                        metric_history[
+                        metrics.metric_history[
                             f"github_hetzner_runners_runners_total_status={status}"
                         ]["values"]
                     )

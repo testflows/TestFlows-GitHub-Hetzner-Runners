@@ -13,8 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from dash import html, dcc
+from datetime import datetime, timedelta
 
 from ..colors import COLORS
+from ..metrics import update_metric_history, metric_history
 
 
 def create_list(name, count, items, no_details):
@@ -266,3 +268,51 @@ def create_graph(traces, title, xaxis, yaxis, height=400):
             "displaylogo": False,
         },
     }
+
+
+def create_metric_trace(
+    metric_name, value, current_time, color, status=None, labels=None, cutoff_minutes=15
+):
+    """Helper function to create metric history and create a trace.
+
+    Args:
+        metric_name: Name of the metric
+        value: Current value of the metric
+        current_time: Current timestamp
+        color: Color for the trace
+        status: Optional status text for the trace name
+        labels: Optional dictionary of labels for the metric
+        cutoff_minutes: Optional number of minutes to keep in history. Defaults to 15 minutes.
+
+    Returns:
+        dict: A trace dictionary ready to be used in a graph
+    """
+    # Update metric history and get the key
+    key = update_metric_history(
+        metric_name, labels or {}, value, current_time, cutoff_minutes
+    )
+
+    # Create trace name
+    name = f"{status} ({int(value)})" if status else f"{metric_name} ({int(value)})"
+
+    return create_trace(
+        metric_history[key]["timestamps"],
+        metric_history[key]["values"],
+        name,
+        status or metric_name,
+        color,
+    )
+
+
+def get_time_range(current_time, cutoff_minutes=15):
+    """Get the time range for graphs based on history cutoff.
+
+    Args:
+        current_time: Current timestamp
+        cutoff_minutes: Optional number of minutes to keep in history
+
+    Returns:
+        list: List containing [start_time, end_time]
+    """
+
+    return [current_time - timedelta(minutes=cutoff_minutes), current_time]

@@ -15,8 +15,8 @@
 from datetime import datetime, timedelta
 import logging
 
-from ..colors import COLORS, STATE_COLORS
-from ..metrics import get_metric_value, metric_history, get_metric_info
+from ..colors import STATE_COLORS
+from .. import metrics
 from . import panel
 
 
@@ -27,10 +27,12 @@ def create_panel():
 
 def create_server_list():
     """Create a list of servers with their descriptions."""
-    servers_info = get_metric_info("github_hetzner_runners_server")
+    servers_info = metrics.get_metric_info("github_hetzner_runners_server")
 
     # Get total number of servers from metrics
-    total_servers = get_metric_value("github_hetzner_runners_servers_total_count") or 0
+    total_servers = (
+        metrics.get_metric_value("github_hetzner_runners_servers_total_count") or 0
+    )
 
     if not servers_info:
         if total_servers > 0:
@@ -47,7 +49,9 @@ def create_server_list():
                 continue
 
             # Get server labels
-            server_labels_info = get_metric_info("github_hetzner_runners_server_labels")
+            server_labels_info = metrics.get_metric_info(
+                "github_hetzner_runners_server_labels"
+            )
             server_labels_list = []
             for label_dict in server_labels_info:
                 if (
@@ -117,42 +121,31 @@ def update_graph(n):
         "busy": STATE_COLORS["busy"],  # Magenta for busy
     }
 
-    for status in states:
-        value = get_metric_value(
-            "github_hetzner_runners_servers_total", {"status": status}
-        )
-        current_values[status] = value if value is not None else 0
-
+    # Create traces for each state
     traces = []
     for status in states:
-        key = f"github_hetzner_runners_servers_total_status={status}"
-        if key not in metric_history:
-            metric_history[key] = {"timestamps": [], "values": []}
-
-        metric_history[key]["timestamps"].append(current_time)
-        metric_history[key]["values"].append(current_values[status])
-
-        cutoff_time = current_time - timedelta(minutes=15)
-        while (
-            metric_history[key]["timestamps"]
-            and metric_history[key]["timestamps"][0] < cutoff_time
-        ):
-            metric_history[key]["timestamps"].pop(0)
-            metric_history[key]["values"].pop(0)
+        value = (
+            metrics.get_metric_value(
+                "github_hetzner_runners_servers_total", {"status": status}
+            )
+            or 0
+        )
+        current_values[status] = value
 
         traces.append(
-            panel.create_trace(
-                metric_history[key]["timestamps"],
-                metric_history[key]["values"],
-                f"{status} ({int(current_values[status] or 0)})",
-                status,
+            panel.create_metric_trace(
+                "github_hetzner_runners_servers_total",
+                value,
+                current_time,
                 server_colors[status],
+                status,
+                {"status": status},
             )
         )
 
     xaxis = {
         "title": "Time",
-        "range": [current_time - timedelta(minutes=15), current_time],
+        "range": panel.get_time_range(current_time),
         "tickformat": "%H:%M",
     }
 
@@ -164,7 +157,7 @@ def update_graph(n):
                 2,
                 max(
                     max(
-                        metric_history[
+                        metrics.metric_history[
                             f"github_hetzner_runners_servers_total_status={status}"
                         ]["values"]
                     )
