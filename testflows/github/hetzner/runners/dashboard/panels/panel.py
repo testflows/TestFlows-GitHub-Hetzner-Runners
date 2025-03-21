@@ -166,6 +166,7 @@ def create_item_value(label, value, value_color=COLORS["warning"], link=None):
 def create_panel(title):
     """Create panel that contains a graph and a list of items."""
     return html.Div(
+        id=title.lower().replace(" ", "-"),
         className="tui-container",
         children=[
             html.H3(

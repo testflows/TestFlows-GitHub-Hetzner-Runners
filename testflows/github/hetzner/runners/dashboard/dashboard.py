@@ -67,6 +67,8 @@ app.layout = html.Div(
         "padding": 0,
     },
     children=[
+        # Location component for scrolling
+        dcc.Location(id="url", refresh=False),
         # Single interval component for all updates
         dcc.Interval(
             id="interval-component",
@@ -271,17 +273,28 @@ def get_errors_components(n):
         # Heartbeat components
         Output("heartbeat-gauge", "children"),
         Output("heartbeat-gauge", "style"),
+        # URL for scrolling
+        Output("url", "hash"),
     ],
-    Input("interval-component", "n_intervals"),
+    [
+        Input("interval-component", "n_intervals"),
+        Input("total-servers-gauge-container", "n_clicks"),
+    ],
 )
-def update_all_components(n):
+def update_all_components(n, n_clicks):
     """Update all dashboard components in a single callback."""
+    ctx = dash.callback_context
+    triggered_id = ctx.triggered[0]["prop_id"].split(".")[0] if ctx.triggered else None
+
     # Get components from each module
     servers_components = get_servers_components(n)
     jobs_components = get_jobs_components(n)
     runners_components = get_runners_components(n)
     errors_components = get_errors_components(n)
     heartbeat_components = get_heartbeat_status()
+
+    # Handle scroll behavior
+    scroll_hash = "#servers" if n_clicks else None
 
     # Combine all components
     return (
@@ -290,7 +303,27 @@ def update_all_components(n):
         *runners_components,
         *errors_components,
         *heartbeat_components,
+        scroll_hash,
     )
+
+
+# Add this after the update_all_components callback
+app.clientside_callback(
+    """
+    function(hash) {
+        if (hash) {
+            const element = document.getElementById(hash.substring(1));
+            if (element) {
+                element.scrollIntoView({behavior: 'smooth', block: 'start'});
+            }
+        }
+        return window.location.hash;
+    }
+    """,
+    Output("url", "hash", allow_duplicate=True),
+    Input("url", "hash"),
+    prevent_initial_call=True,
+)
 
 
 def start_http_server(
