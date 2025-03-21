@@ -80,7 +80,7 @@ def wait_ssh(server: BoundServer, timeout: float):
 def ssh_command(server: BoundServer, options: str = ""):
     """Return ssh command."""
     ip = ip_address(server=server)
-    return f'ssh -q -o "StrictHostKeyChecking no" {options}{" " if options else ""}root@{ip}'
+    return f'ssh -q -o "StrictHostKeyChecking no" -o "UserKnownHostsFile=/dev/null" {options}{" " if options else ""}root@{ip}'
 
 
 def ssh(server: BoundServer, cmd: str, *args, stacklevel=3, **kwargs):
@@ -96,7 +96,7 @@ def ssh(server: BoundServer, cmd: str, *args, stacklevel=3, **kwargs):
 
 def scp(source: str, destination: str, *args, **kwargs):
     """Execute copy over SSH."""
-    scp_command = f'scp -q -o "StrictHostKeyChecking no" {source} {destination}'
+    scp_command = f'scp -q -o "StrictHostKeyChecking no" -o "UserKnownHostsFile=/dev/null" {source} {destination}'
     return shell(f"{scp_command}", *args, **kwargs)
 
 
@@ -144,14 +144,12 @@ class ssh_tunnel:
         # SSH tunnel options:
         # -N: don't execute remote command
         # -L: local port forwarding
-        # -q: quiet mode
-        # -o StrictHostKeyChecking=no: don't check host key
         options = f"-N -L {self.local_port}:localhost:{self.remote_port}"
         full_cmd = f"{ssh_command(server=self.server, options=options)}"
 
         if self.action:
             self.action.note(
-                f"Establishing SSH tunnel from remote port {self.remote_port} to local port {self.local_port}",
+                f"Establishing SSH tunnel: {full_cmd}",
                 stacklevel=4,
             )
 
