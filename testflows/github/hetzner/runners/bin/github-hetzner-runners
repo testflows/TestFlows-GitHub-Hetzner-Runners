@@ -431,6 +431,14 @@ def argparser():
         help="remote dashboard port, default: --dashboard-port",
     )
 
+    dashboard_cloud_parser.add_argument(
+        "--timeout",
+        metavar="seconds",
+        type=args.count_type,
+        help="timeout for establishing SSH tunnel, default: 30 seconds",
+        default=30,
+    )
+
     dashboard_cloud_parser.set_defaults(func=cloud.cloud_dashboard)
 
     deploy_cloud_parser = cloud_commands.add_parser(

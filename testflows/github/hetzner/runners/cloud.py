@@ -15,6 +15,7 @@
 import os
 import tempfile
 import webbrowser
+import time
 
 from hcloud.ssh_keys.domain import SSHKey
 from hcloud.servers.client import BoundServer
@@ -31,7 +32,7 @@ from .config import (
 )
 from . import __version__
 
-from .server import wait_ready, wait_ssh, ssh, scp, ip_address, ssh_command
+from .server import wait_ready, wait_ssh, ssh, scp, ip_address, ssh_tunnel
 from .servers import ssh_client as server_ssh_client
 from .servers import ssh_client_command as server_ssh_client_command
 from .service import command_options
@@ -435,6 +436,7 @@ def cloud_dashboard(args, config: Config):
     server_name = config.cloud.server_name
     local_port = args.local_port
     remote_port = args.remote_port if args.remote_port else config.dashboard_port
+    timeout = args.timeout if args.timeout else 30.0
 
     with Action("Logging in to Hetzner Cloud"):
         client = Client(token=config.hetzner_token)
@@ -444,17 +446,27 @@ def cloud_dashboard(args, config: Config):
         if not server:
             raise ValueError(f"server {server_name} not found")
 
-    with Action(f"Creating SSH tunnel on port {local_port}"):
-        # Create SSH tunnel using project's ssh function
-        # -f: go to background
-        # -N: do not execute remote command
-        # -L: local port forwarding
-        ssh(
-            server,
-            f"-f -N -L {local_port}:localhost:{remote_port}",
-            use_logger=False,
-            stacklevel=4,
-        )
+    with Action(f"Creating SSH tunnel on port {local_port}") as action:
+        with ssh_tunnel(
+            server=server,
+            local_port=local_port,
+            remote_port=remote_port,
+            action=action,
+        ) as tunnel:
+            # Wait for the tunnel to be ready
+            if not tunnel.wait_ready(timeout=timeout):
+                raise TimeoutError(
+                    f"Failed to establish SSH tunnel from {server.name}:{remote_port} to local port {local_port}"
+                )
 
-    with Action("Opening dashboard in browser"):
-        webbrowser.open(f"http://localhost:{local_port}")
+            with Action("Opening dashboard in browser"):
+                # Delay to ensure the tunnel is established
+                time.sleep(1)
+                webbrowser.open(f"http://localhost:{local_port}", 1)
+                action.note("Press Ctrl+C to exit and close the tunnel")
+                # Keep the tunnel open until no active connections or user interrupts
+                try:
+                    while True:
+                        time.sleep(10)
+                except KeyboardInterrupt:
+                    pass
