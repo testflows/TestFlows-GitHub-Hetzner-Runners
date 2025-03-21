@@ -215,6 +215,12 @@ app.layout = html.Div(
                 ),
             ],
         ),
+        # Scroll to top button
+        html.Div(
+            id="scroll-to-top",
+            children="▲",
+            n_clicks=0,
+        ),
     ],
 )
 
@@ -391,6 +397,24 @@ app.clientside_callback(
     """,
     Output("url", "hash", allow_duplicate=True),
     Input("url", "hash"),
+    prevent_initial_call=True,
+)
+
+# Add scroll to top callback
+app.clientside_callback(
+    """
+    function(n_clicks) {
+        if (n_clicks) {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+        return 0;
+    }
+    """,
+    Output("scroll-to-top", "n_clicks"),
+    Input("scroll-to-top", "n_clicks"),
     prevent_initial_call=True,
 )
 

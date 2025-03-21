@@ -180,4 +180,31 @@ h2, h3 {
 [id$="-gauge-container"][style*="cursor: pointer"]:hover {
     background-color: #004040 !important;
     transition: background-color 0.2s ease;
+}
+
+/* Scroll to top button */
+#scroll-to-top {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #111111;
+    color: #00FF00;
+    width: 40px;
+    height: 40px;
+    border: 1px solid #008080;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 24px;
+    font-family: monospace;
+    box-shadow: 0 0 10px rgba(0,255,0,0.3);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+#scroll-to-top:hover {
+    background-color: #00FF00;
+    color: #000000;
+    box-shadow: 0 0 15px rgba(0,255,0,0.5);
 } 
