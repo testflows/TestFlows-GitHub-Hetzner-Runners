@@ -19,7 +19,7 @@ import time
 
 from hcloud.ssh_keys.domain import SSHKey
 from hcloud.servers.client import BoundServer
-
+from hcloud.servers.domain import Server
 from .actions import Action
 from .config import (
     Config,
@@ -32,7 +32,7 @@ from .config import (
 )
 from . import __version__
 
-from .server import wait_ready, wait_ssh, ssh, scp, ip_address, ssh_tunnel
+from .server import wait_ready, wait_ssh, ssh, scp, ip_address, ssh_tunnel, MockServer
 from .servers import ssh_client as server_ssh_client
 from .servers import ssh_client_command as server_ssh_client_command
 from .service import command_options
@@ -41,6 +41,38 @@ from .hclient import HClient as Client
 current_dir = os.path.dirname(__file__)
 deploy_scripts_folder = "/home/ubuntu/.github-hetzner-runners/scripts/"
 deploy_configs_folder = "/home/ubuntu/.github-hetzner-runners/"
+
+
+def get_server(config: Config) -> Server:
+    """Get server instance either from direct host or Hetzner Cloud API.
+
+    Args:
+        config: Configuration object
+        server_name: Name of the server to get
+
+    Returns:
+        Server instance (either MockServer or BoundServer)
+
+    Raises:
+        ValueError: If server not found when using Hetzner Cloud API
+    """
+    server_name = config.cloud.server_name
+    server_host = config.cloud.host
+
+    if server_host:
+        # If host is specified, create a mock server object with the host
+        return MockServer(name=server_name, public_net={"ipv4": {"ip": server_host}})
+    else:
+        # Otherwise use Hetzner Cloud API
+        config.check("hetzner_token")
+        with Action("Logging in to Hetzner Cloud"):
+            client = Client(token=config.hetzner_token)
+
+        with Action(f"Getting server {server_name}"):
+            server = client.servers.get_by_name(server_name)
+            if not server:
+                raise ValueError(f"server {server_name} not found")
+            return server
 
 
 def deploy(args, config: Config, redeploy=False):
@@ -431,20 +463,11 @@ def ssh_client_command(args, config: Config):
 
 def cloud_dashboard(args, config: Config):
     """Open dashboard through SSH tunnel to cloud service."""
-    config.check("hetzner_token")
-
-    server_name = config.cloud.server_name
     local_port = args.local_port
     remote_port = args.remote_port if args.remote_port else config.dashboard_port
     timeout = args.timeout if args.timeout else 30.0
 
-    with Action("Logging in to Hetzner Cloud"):
-        client = Client(token=config.hetzner_token)
-
-    with Action(f"Getting server {server_name}"):
-        server = client.servers.get_by_name(server_name)
-        if not server:
-            raise ValueError(f"server {server_name} not found")
+    server = get_server(config)
 
     with Action(f"Creating SSH tunnel on port {local_port}") as action:
         with ssh_tunnel(

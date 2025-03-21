@@ -151,23 +151,13 @@ def update_graph(n):
 
     yaxis = {
         "title": "Number of Servers",
-        "range": [
-            0,
-            max(
-                2,
-                max(
-                    max(
-                        metrics.metric_history[
-                            f"github_hetzner_runners_servers_total_status={status}"
-                        ]["values"]
-                    )
-                    for status in states
-                )
-                + 1,
-            ),
-        ],
-        "tickformat": "d",
-        "dtick": 1,
+        "autorange": True,
+        "rangemode": "nonnegative",  # Ensure range doesn't go below zero
+        "tickmode": "linear",  # Use linear tick spacing
+        "nticks": 10,  # Suggest around 10 ticks - Plotly will adjust to nice numbers
+        "tickformat": "d",  # Display as integers
+        "automargin": True,
+        "showgrid": True,
     }
 
-    return panel.create_graph(traces, "Servers", xaxis, yaxis, height=300)
+    return panel.create_graph(traces, "Servers", xaxis, yaxis)

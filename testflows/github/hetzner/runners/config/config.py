@@ -96,6 +96,7 @@ class deploy_:
 @dataclass
 class cloud:
     server_name: str = "github-hetzner-runners"
+    host: str = None
     deploy: deploy_ = dataclasses.field(default_factory=deploy_)
 
 
@@ -179,6 +180,9 @@ class Config:
 
         if getattr(args, "cloud_server_name", None) is not None:
             self.cloud.server_name = args.cloud_server_name
+
+        if getattr(args, "cloud_host", None) is not None:
+            self.cloud.host = args.cloud_host
 
         if getattr(args, "cloud_deploy_location", None) is not None:
             self.cloud.deploy.location = args.cloud_deploy_location
@@ -556,6 +560,7 @@ def parse_config(filename: str):
         if doc["cloud"].get("server_name"):
             doc["cloud"] = cloud(
                 doc["cloud"]["server_name"],
+                host=doc["cloud"].get("host"),
                 deploy=deploy_(**doc["cloud"].get("deploy", {})),
             )
         else:

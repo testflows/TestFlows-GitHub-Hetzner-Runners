@@ -403,6 +403,15 @@ def argparser():
         help="deployment server name, default: github-hetzner-runners",
     )
 
+    cloud_parser.add_argument(
+        "--host",
+        metavar="host",
+        dest="cloud_host",
+        type=str,
+        help=("host (IP or hostname) of the cloud service server to connect to directly via SSH,\n"
+              "bypassing IP lookup by name using the Hetzner API"),
+    )
+
     cloud_commands = cloud_parser.add_subparsers(
         title="commands", metavar="command", description=None, help=None
     )

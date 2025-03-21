@@ -131,21 +131,6 @@ def update_graph(n, cache=[]):
         time_points.append(datetime.fromtimestamp(ts))
         error_counts.append(count)
 
-    # Calculate optimal y-axis range and tick spacing
-    max_value = max(2, max(error_counts) + 1)
-
-    # Define tick spacing based on the maximum value
-    if max_value <= 5:
-        dtick = 1
-    elif max_value <= 10:
-        dtick = 2
-    elif max_value <= 20:
-        dtick = 5
-    elif max_value <= 50:
-        dtick = 10
-    else:
-        dtick = 20
-
     # Create trace for error count
     traces = [
         panel.create_trace(
@@ -159,23 +144,21 @@ def update_graph(n, cache=[]):
 
     xaxis = {
         "title": "Time",
+        "range": panel.get_time_range(
+            current_time, cutoff_minutes=60
+        ),  # Use 60 minutes for scale-up errors
         "tickformat": "%H:%M",
-        "dtick": 300000,  # 5 minutes in milliseconds for grid lines
-        "tickmode": "linear",
-        "gridcolor": COLORS["grid"],
-        "autorange": False,
-        "range": [one_hour_ago, current_time],
-        "type": "date",
-        "showgrid": True,
     }
 
     yaxis = {
         "title": "Number of Errors",
-        "range": [0, max_value],
-        "tickformat": "d",
+        "autorange": True,
+        "rangemode": "nonnegative",  # Ensure range doesn't go below zero
+        "tickmode": "linear",  # Use linear tick spacing
+        "nticks": 10,  # Suggest around 10 ticks - Plotly will adjust to nice numbers
+        "tickformat": "d",  # Display as integers
         "automargin": True,
         "showgrid": True,
-        "dtick": dtick,
     }
 
-    return panel.create_graph(traces, "Scale-up Errors", xaxis, yaxis, height=300)
+    return panel.create_graph(traces, "Scale-up Errors", xaxis, yaxis)
