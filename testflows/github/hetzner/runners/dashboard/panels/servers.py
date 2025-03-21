@@ -152,10 +152,10 @@ def update_graph(n):
     yaxis = {
         "title": "Number of Servers",
         "autorange": True,
-        "rangemode": "nonnegative",  # Ensure range doesn't go below zero
-        "tickmode": "linear",  # Use linear tick spacing
-        "nticks": 10,  # Suggest around 10 ticks - Plotly will adjust to nice numbers
-        "tickformat": "d",  # Display as integers
+        "rangemode": "nonnegative",
+        "tickmode": "linear" if max(current_values.values()) < 5 else "auto",
+        "nticks": 5,
+        "tickformat": "d",
         "automargin": True,
         "showgrid": True,
     }

@@ -153,9 +153,9 @@ def update_graph(n, cache=[]):
     yaxis = {
         "title": "Number of Errors",
         "autorange": True,
-        "rangemode": "nonnegative",  # Ensure range doesn't go below zero
-        "tickmode": "linear",  # Use linear tick spacing
-        "nticks": 10,  # Suggest around 10 ticks - Plotly will adjust to nice numbers
+        "rangemode": "nonnegative",
+        "tickmode": "linear" if error_count < 5 else "auto",
+        "nticks": 5,
         "tickformat": "d",  # Display as integers
         "automargin": True,
         "showgrid": True,
