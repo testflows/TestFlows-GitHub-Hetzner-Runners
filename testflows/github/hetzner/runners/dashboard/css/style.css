@@ -35,7 +35,6 @@ h2, h3 {
 
 .title-text {
     color: #008080;
-    white-space: nowrap;
 }
 
 /* TUI-style container borders */
@@ -175,4 +174,10 @@ h2, h3 {
 .js-plotly-plot .plotly .xtitle,
 .js-plotly-plot .plotly .ytitle {
     text-transform: capitalize;
+}
+
+/* Gauge hover effects */
+[id$="-gauge-container"][style*="cursor: pointer"]:hover {
+    background-color: #004040 !important;
+    transition: background-color 0.2s ease;
 } 

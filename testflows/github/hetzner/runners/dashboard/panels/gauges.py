@@ -23,6 +23,7 @@ def create_gauge(title, gauge_id, color=COLORS["warning"], clickable=False):
             "minWidth": "150px",
             "flex": "0 1 auto",
             "cursor": "pointer" if clickable else "default",
+            "transition": "background-color 0.2s ease",
         },
         id=f"{gauge_id}-container",
         children=[
@@ -59,9 +60,9 @@ def create_panel():
         children=[
             create_gauge("Heartbeat", "heartbeat-gauge"),
             create_gauge("Servers", "total-servers-gauge", clickable=True),
-            create_gauge("Runners", "total-runners-gauge"),
-            create_gauge("Queued Jobs", "queued-jobs-gauge"),
-            create_gauge("Running Jobs", "running-jobs-gauge"),
-            create_gauge("Scale Up Errors", "scale-up-errors-gauge"),
+            create_gauge("Runners", "total-runners-gauge", clickable=True),
+            create_gauge("Queued Jobs", "queued-jobs-gauge", clickable=True),
+            create_gauge("Running Jobs", "running-jobs-gauge", clickable=True),
+            create_gauge("Scale Up Errors", "scale-up-errors-gauge", clickable=True),
         ],
     )

@@ -16,6 +16,7 @@ import os
 import dash
 import threading
 import logging
+from datetime import datetime
 
 from dash import html, dcc
 from dash.dependencies import Input, Output
@@ -24,6 +25,14 @@ from flask import send_from_directory
 from .colors import COLORS
 from .panels import servers, jobs, runners, scaleup_errors, gauges
 from .metrics import get_metric_value
+from .. import __version__
+
+# Common styles
+FOOTER_TEXT_STYLE = {
+    "fontSize": "0.9em",
+    "whiteSpace": "normal",
+    "wordBreak": "break-word",
+}
 
 # Suppress Flask banner
 import flask.cli
@@ -98,14 +107,20 @@ app.layout = html.Div(
                         html.Div(
                             className="title-container",
                             children=[
-                                html.Img(
-                                    src="https://raw.githubusercontent.com/testflows/TestFlows-ArtWork/refs/heads/master/images/logo_white.svg",
-                                    className="title-logo",
-                                    style={
-                                        "height": "32px",
-                                        "width": "auto",
-                                        "filter": "brightness(1)",
-                                    },
+                                html.A(
+                                    href="https://testflows.com",
+                                    target="_blank",
+                                    children=[
+                                        html.Img(
+                                            src="https://raw.githubusercontent.com/testflows/TestFlows-ArtWork/refs/heads/master/images/logo_white.svg",
+                                            className="title-logo",
+                                            style={
+                                                "height": "32px",
+                                                "width": "auto",
+                                                "filter": "brightness(1)",
+                                            },
+                                        ),
+                                    ],
                                 ),
                                 html.H2(
                                     "GitHub Hetzner Runners Dashboard",
@@ -170,6 +185,34 @@ app.layout = html.Div(
                 jobs.create_panel(),
                 runners.create_panel(),
                 scaleup_errors.create_panel(),
+            ],
+        ),
+        # Footer
+        html.Footer(
+            style={
+                "backgroundColor": COLORS["nav"],
+                "color": COLORS["accent"],
+                "padding": "20px",
+                "marginTop": "auto",
+                "textAlign": "center",
+            },
+            children=[
+                html.Div(
+                    style={
+                        "maxWidth": "1200px",
+                        "margin": "0 auto",
+                    },
+                    children=[
+                        html.Div(
+                            f"© 2023-{datetime.now().year} Katteli Inc. All rights reserved.",
+                            style=FOOTER_TEXT_STYLE,
+                        ),
+                        html.Div(
+                            f"TestFlows GitHub Hetzner Runners v{__version__}",
+                            style=FOOTER_TEXT_STYLE,
+                        ),
+                    ],
+                ),
             ],
         ),
     ],
@@ -275,17 +318,31 @@ def get_errors_components(n):
         Output("heartbeat-gauge", "style"),
         # URL for scrolling
         Output("url", "hash"),
+        # Reset click values
+        Output("total-servers-gauge-container", "n_clicks"),
+        Output("total-runners-gauge-container", "n_clicks"),
+        Output("queued-jobs-gauge-container", "n_clicks"),
+        Output("running-jobs-gauge-container", "n_clicks"),
+        Output("scale-up-errors-gauge-container", "n_clicks"),
     ],
     [
         Input("interval-component", "n_intervals"),
         Input("total-servers-gauge-container", "n_clicks"),
+        Input("total-runners-gauge-container", "n_clicks"),
+        Input("queued-jobs-gauge-container", "n_clicks"),
+        Input("running-jobs-gauge-container", "n_clicks"),
+        Input("scale-up-errors-gauge-container", "n_clicks"),
     ],
 )
-def update_all_components(n, n_clicks):
+def update_all_components(
+    n,
+    servers_clicks,
+    runners_clicks,
+    queued_jobs_clicks,
+    running_jobs_clicks,
+    errors_clicks,
+):
     """Update all dashboard components in a single callback."""
-    ctx = dash.callback_context
-    triggered_id = ctx.triggered[0]["prop_id"].split(".")[0] if ctx.triggered else None
-
     # Get components from each module
     servers_components = get_servers_components(n)
     jobs_components = get_jobs_components(n)
@@ -294,7 +351,18 @@ def update_all_components(n, n_clicks):
     heartbeat_components = get_heartbeat_status()
 
     # Handle scroll behavior
-    scroll_hash = "#servers" if n_clicks else None
+    scroll_hash = dash.no_update
+    if servers_clicks:
+        scroll_hash = "#servers"
+    elif runners_clicks:
+        scroll_hash = "#runners"
+    elif queued_jobs_clicks or running_jobs_clicks:
+        scroll_hash = "#jobs"
+    elif errors_clicks:
+        scroll_hash = "#scale-up-errors-(last-hour)"
+
+    # Reset click values
+    reset_clicks = [0, 0, 0, 0, 0]  # Reset all click values to 0
 
     # Combine all components
     return (
@@ -304,6 +372,7 @@ def update_all_components(n, n_clicks):
         *errors_components,
         *heartbeat_components,
         scroll_hash,
+        *reset_clicks,
     )
 
 
