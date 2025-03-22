@@ -42,6 +42,16 @@ def encode_message(msg):
 class RotatingFileFormatter(logging.Formatter):
     def format(self, record):
         """Format record and convert multi-line message to text which includes exception or stacktrace if present."""
+        # Add default values for required fields if they don't exist
+        if not hasattr(record, "interval"):
+            record.interval = "-"
+        if not hasattr(record, "run_id"):
+            record.run_id = "-"
+        if not hasattr(record, "job_id"):
+            record.job_id = "-"
+        if not hasattr(record, "server_name"):
+            record.server_name = "-"
+
         message = record.getMessage()
 
         if record.exc_info:
@@ -134,6 +144,24 @@ default_format = {
 }
 
 
+class StdoutFormatter(logging.Formatter):
+    def format(self, record):
+        """Format record for stdout output."""
+        # Add default values for required fields if they don't exist
+        if not hasattr(record, "interval"):
+            record.interval = "-"
+        if not hasattr(record, "run_id"):
+            record.run_id = "-"
+        if not hasattr(record, "job_id"):
+            record.job_id = "-"
+        if not hasattr(record, "server_name"):
+            record.server_name = "-"
+
+        if self.usesTime():
+            record.asctime = self.formatTime(record, self.datefmt)
+        return self.formatMessage(record)
+
+
 def configure(config, level=logging.INFO, service_mode=False):
     """Apply logging configuration."""
 
@@ -144,6 +172,7 @@ def configure(config, level=logging.INFO, service_mode=False):
         "disable_existing_loggers": True,  # Disable existing loggers
         "formatters": {
             "stdout": {
+                "class": "testflows.github.hetzner.runners.logger.StdoutFormatter",
                 "format": "%(asctime)s %(message)s",
                 "datefmt": "%H:%M:%S",
             },
