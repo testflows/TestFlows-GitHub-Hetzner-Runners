@@ -23,7 +23,7 @@ from dash.dependencies import Input, Output
 from flask import send_from_directory
 
 from .colors import COLORS
-from .panels import servers, jobs, runners, scaleup_errors, gauges
+from .panels import servers, jobs, runners, scaleup_errors, gauges, log
 from .metrics import get_metric_value
 from .. import __version__
 
@@ -185,6 +185,7 @@ app.layout = html.Div(
                 jobs.create_panel(),
                 runners.create_panel(),
                 scaleup_errors.create_panel(),
+                log.create_panel(),
             ],
         ),
         # Footer
@@ -300,6 +301,11 @@ def get_errors_components(n):
     )
 
 
+def get_log_components(n):
+    """Get all log-related components."""
+    return log.update_log_messages(n, app.github_hetzner_runners_config)
+
+
 @app.callback(
     [
         # Servers components
@@ -322,6 +328,8 @@ def get_errors_components(n):
         # Heartbeat components
         Output("heartbeat-gauge", "children"),
         Output("heartbeat-gauge", "style"),
+        # Log messages
+        Output("log-messages", "children"),
         # URL for scrolling
         Output("url", "hash"),
         # Reset click values
@@ -355,6 +363,7 @@ def update_all_components(
     runners_components = get_runners_components(n)
     errors_components = get_errors_components(n)
     heartbeat_components = get_heartbeat_status()
+    log_components = get_log_components(n)
 
     # Handle scroll behavior
     scroll_hash = dash.no_update
@@ -377,6 +386,7 @@ def update_all_components(
         *runners_components,
         *errors_components,
         *heartbeat_components,
+        log_components,
         scroll_hash,
         *reset_clicks,
     )
@@ -420,7 +430,7 @@ app.clientside_callback(
 
 
 def start_http_server(
-    port: int = 8090, host: str = "0.0.0.0", debug: bool = False
+    port: int = 8090, host: str = "0.0.0.0", debug: bool = False, config=None
 ) -> threading.Thread:
     """Start the dashboard HTTP server in a daemon thread.
 
@@ -428,6 +438,7 @@ def start_http_server(
         port: The port to listen on, default: 8050
         host: The host to bind to, default: '0.0.0.0'
         debug: Whether to run in debug mode, default: False
+        config: Configuration object containing logger format settings
 
     Returns:
         threading.Thread: The thread running the dashboard server
@@ -435,6 +446,9 @@ def start_http_server(
     # Set Flask environment to production to suppress development server messages
     os.environ["FLASK_ENV"] = "production"
     os.environ["FLASK_DEBUG"] = "0"
+
+    # Store config
+    app.github_hetzner_runners_config = config
 
     thread = threading.Thread(
         target=lambda: app.run_server(host=host, port=port, debug=debug), daemon=True

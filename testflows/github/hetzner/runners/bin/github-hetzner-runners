@@ -1227,7 +1227,7 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
             start_prometheus_server(port=config.metrics_port, addr=config.metrics_host)
 
         with Action(f"Starting dashboard server on port {config.dashboard_port}"):
-            start_dashboard_server(port=config.dashboard_port, host=config.dashboard_host)
+            start_dashboard_server(port=config.dashboard_port, host=config.dashboard_host, config=config)
 
         with Action("Logging in to GitHub"):
             github = Github(login_or_token=config.github_token, per_page=100)
