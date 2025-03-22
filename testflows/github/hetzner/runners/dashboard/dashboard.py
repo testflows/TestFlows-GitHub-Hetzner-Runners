@@ -64,6 +64,15 @@ def serve_static(path):
     return send_from_directory(os.path.join(current_dir, "css"), path)
 
 
+# Add download log route
+@app.server.route("/download-log")
+def download_log():
+    """Download the full log file."""
+    from .panels.log import download_log
+
+    return download_log(app.github_hetzner_runners_config)
+
+
 # Set the app's template
 with open(os.path.join(current_dir, "html", "template.html"), "r") as f:
     app.index_string = f.read()
@@ -329,7 +338,7 @@ def get_log_components(n):
         Output("heartbeat-gauge", "children"),
         Output("heartbeat-gauge", "style"),
         # Log messages
-        Output("log-messages-list", "children"),
+        Output("log-messages-(last-100-lines)-list", "children"),
         # URL for scrolling
         Output("url", "hash"),
         # Reset click values

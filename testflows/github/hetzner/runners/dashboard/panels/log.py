@@ -12,8 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
 from dash import html
+from flask import send_file
 
 from ..colors import COLORS
 from ...logger import decode_message
@@ -22,7 +22,7 @@ from . import panel
 
 def create_panel():
     """Create the log panel."""
-    return panel.create_panel("Log Messages", with_graph=False)
+    return panel.create_panel("Log Messages (Last 100 lines)", with_graph=False)
 
 
 def format_log(lines, columns, delimiter):
@@ -156,9 +156,37 @@ def create_log_list(formatted_lines):
             )
         )
 
-    return panel.create_list(
+    # Create the scrolling list
+    list_div = panel.create_list(
         "log-messages", len(formatted_lines), messages, "No log messages"
     )
+
+    # Create the download button div
+    download_div = html.Div(
+        style={
+            "textAlign": "center",
+            "padding-top": "20px",
+        },
+        children=[
+            html.A(
+                "Download Full Log",
+                id="log-messages-download",
+                href="/download-log",
+                download="github_hetzner_runners.log",
+                style={
+                    "color": COLORS["accent"],
+                    "textDecoration": "none",
+                    "padding": "8px 16px 8px 16px",
+                    "border": f"1px solid {COLORS['accent']}",
+                    "borderRadius": "4px",
+                    "fontFamily": "JetBrains Mono, Fira Code, Consolas, monospace",
+                },
+            ),
+        ],
+    )
+
+    # Return both divs wrapped in a container
+    return html.Div([list_div, download_div])
 
 
 def update_log_messages(n, github_hetzner_runners_config):
@@ -191,3 +219,26 @@ def update_log_messages(n, github_hetzner_runners_config):
         return create_log_list(formatted_lines)
     except Exception as e:
         return [html.Div(f"Error reading log file: {str(e)}", style={"color": "red"})]
+
+
+def download_log(github_hetzner_runners_config):
+    """Download the full log file.
+
+    Args:
+        github_hetzner_runners_config: Configuration object containing logger settings
+
+    Returns:
+        flask.Response: Response object containing the log file
+    """
+    try:
+        rotating_logfile = github_hetzner_runners_config.logger_config["handlers"][
+            "rotating_logfile"
+        ]["filename"]
+        return send_file(
+            rotating_logfile,
+            as_attachment=True,
+            download_name="github-hetzner-runners.log",
+            mimetype="text/plain",
+        )
+    except Exception as e:
+        return str(e), 500

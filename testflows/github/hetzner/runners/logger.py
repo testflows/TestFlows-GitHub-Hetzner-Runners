@@ -157,9 +157,7 @@ class StdoutFormatter(logging.Formatter):
         if not hasattr(record, "server_name"):
             record.server_name = "-"
 
-        if self.usesTime():
-            record.asctime = self.formatTime(record, self.datefmt)
-        return self.formatMessage(record)
+        return super().format(record)
 
 
 def configure(config, level=logging.INFO, service_mode=False):

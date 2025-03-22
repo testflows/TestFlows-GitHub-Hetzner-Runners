@@ -20,8 +20,14 @@ from ..metrics import update_metric_history, metric_history
 
 
 def create_list(name, count, items, no_details):
-    """Create a list of items with their descriptions."""
+    """Create a list of items with their descriptions.
 
+    Args:
+        name: Name of the list
+        count: Number of items
+        items: List of items to display
+        no_details: Message to show when details are not available
+    """
     if count == 0:
         return html.Div(
             f"No {name}",
