@@ -14,7 +14,6 @@
 # limitations under the License.
 import os
 import json
-import copy
 import logging
 import logging.handlers
 import tempfile
@@ -165,7 +164,7 @@ def configure(config, level=logging.INFO, service_mode=False):
                 "class": "testflows.github.hetzner.runners.logger.StdoutHandler",
                 "stream": "ext://sys.stdout",
             },
-            "rotating_service_logfile": {
+            "rotating_logfile": {
                 "level": level,
                 "formatter": "rotating_file",
                 "class": "testflows.github.hetzner.runners.logger.RotatingFileHandler",
@@ -191,7 +190,7 @@ def configure(config, level=logging.INFO, service_mode=False):
             },
         },
         "root": {  # Configure root logger
-            "handlers": ["stdout", "rotating_service_logfile"],
+            "handlers": ["stdout", "rotating_logfile"],
             "level": "CRITICAL",  # Prevent root from handling messages
         },
     }
@@ -200,15 +199,6 @@ def configure(config, level=logging.INFO, service_mode=False):
         config.logger_config = default_config
 
     logger_config = config.logger_config
-
-    if not service_mode:
-        handlers = set(logger_config["root"]["handlers"])
-        if "rotating_service_logfile" in handlers:
-            handlers.discard("rotating_service_logfile")
-        logger_config["root"]["handlers"] = list(handlers)
-    else:
-        if "rotating_service_logfile" not in logger_config["root"]["handlers"]:
-            logger_config["root"]["handlers"].append("rotating_service_logfile")
 
     for handler in logger_config["handlers"].values():
         handler["level"] = level

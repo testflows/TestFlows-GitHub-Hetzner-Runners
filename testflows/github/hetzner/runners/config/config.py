@@ -449,12 +449,12 @@ def parse_config(filename: str):
         ), 'config.logger_config.loggers."testflows.github.hetzner.runners".handlers missing stdout'
 
         assert (
-            doc["logger_config"]["handlers"].get("rotating_service_logfile") is not None
-        ), "config.logger_config.handlers.rotating_service_logfile is not defined"
+            doc["logger_config"]["handlers"].get("rotating_logfile") is not None
+        ), "config.logger_config.handlers.rotating_logfile is not defined"
         assert (
-            doc["logger_config"]["handlers"]["rotating_service_logfile"].get("filename")
+            doc["logger_config"]["handlers"]["rotating_logfile"].get("filename")
             is not None
-        ), "config.logger_config.handlers.rotating_service_logfile.filename is not defined"
+        ), "config.logger_config.handlers.rotating_logfile.filename is not defined"
 
         try:
             logging.config.dictConfig(doc["logger_config"])

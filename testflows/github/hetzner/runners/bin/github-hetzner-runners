@@ -1214,8 +1214,12 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
     ssh_keys: list[SSHKey] = []
     terminate = threading.Event()
     mailbox = queue.Queue(maxsize=0)
+    rotating_logfile = config.logger_config['handlers']['rotating_logfile']['filename']
 
     try:
+        with Action(f"Writing log messages to {rotating_logfile}"):
+            pass
+
         with Action("Logging in to Hetzner Cloud"):
             client = Client(token=config.hetzner_token)
 

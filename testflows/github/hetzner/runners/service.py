@@ -94,7 +94,7 @@ def install(args, config):
 
     with Action(f"Deleting old rotating log files"):
         os.system(
-            f"rm -rf {config.logger_config['handlers']['rotating_service_logfile']['filename']}*"
+            f"rm -rf {config.logger_config['handlers']['rotating_logfile']['filename']}*"
         )
 
     with Action(f"Installing {SERVICE}"):
@@ -173,19 +173,15 @@ def log(args, config=None):
             format += f" {','.join(columns)}"
         format += " format -"
 
-    rotating_service_logfile = config.logger_config["handlers"][
-        "rotating_service_logfile"
-    ]["filename"]
+    rotating_logfile = config.logger_config["handlers"]["rotating_logfile"]["filename"]
 
     if args.follow:
         lines = "10" if not args.lines else args.lines
-        os.system(
-            f'bash -c "tail -n {lines} -f {rotating_service_logfile} | tee{format}"'
-        )
+        os.system(f'bash -c "tail -n {lines} -f {rotating_logfile} | tee{format}"')
     else:
         lines = "+0" if not args.lines else args.lines
         os.system(
-            f'bash -c "ls -tr {rotating_service_logfile}* | xargs tail -n {lines}{format}"'
+            f'bash -c "ls -tr {rotating_logfile}* | xargs tail -n {lines}{format}"'
         )
 
 
@@ -193,7 +189,7 @@ def delete_log(args, config=None):
     """Delete log."""
     with Action(f"Deleting log files"):
         os.system(
-            f"rm -rf {config.logger_config['handlers']['rotating_service_logfile']['filename']}*"
+            f"rm -rf {config.logger_config['handlers']['rotating_logfile']['filename']}*"
         )
 
 
