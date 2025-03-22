@@ -23,7 +23,7 @@ from dash.dependencies import Input, Output
 from flask import send_from_directory
 
 from .colors import COLORS
-from .panels import servers, jobs, runners, scaleup_errors, gauges, log
+from .panels import servers, jobs, runners, scaleup_errors, gauges, log, info
 from .metrics import get_metric_value
 from .. import __version__
 
@@ -187,6 +187,8 @@ app.layout = html.Div(
             children=[
                 # Top Gauges Section
                 gauges.create_panel(),
+                # Info Panel
+                info.create_panel(),
                 # Rest of the panels
                 servers.create_panel(),
                 jobs.create_panel(),
@@ -313,8 +315,15 @@ def get_log_components(n):
     return log.update_log_messages(n, app.github_hetzner_runners_config)
 
 
+def get_info_components(n):
+    """Get all info-related components."""
+    return info.update_info_list(app.github_hetzner_runners_config)
+
+
 @app.callback(
     [
+        # Info components
+        Output("system-information-list", "children"),
         # Servers components
         Output("servers-graph", "figure"),
         Output("total-servers-gauge", "children"),
@@ -365,6 +374,7 @@ def update_all_components(
 ):
     """Update all dashboard components in a single callback."""
     # Get components from each module
+    info_components = get_info_components(n)
     servers_components = get_servers_components(n)
     jobs_components = get_jobs_components(n)
     runners_components = get_runners_components(n)
@@ -388,6 +398,7 @@ def update_all_components(
 
     # Combine all components
     return (
+        info_components,
         *servers_components,
         *jobs_components,
         *runners_components,

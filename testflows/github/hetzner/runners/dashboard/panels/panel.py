@@ -71,6 +71,12 @@ def create_list(name, count, items, no_details):
 
 def create_list_item(name, color, header, values):
     """Create a list item with its name, header and values."""
+    children = []
+
+    if header:
+        children.append(header)
+    if values:
+        children.extend(values)
 
     return html.Div(
         className=f"{name}-item",
@@ -79,8 +85,9 @@ def create_list_item(name, color, header, values):
             "padding": "10px",
             "marginBottom": "10px",
             "backgroundColor": COLORS["paper"],
+            "wordWrap": "break-word",
         },
-        children=[header, *values],
+        children=children,
     )
 
 
@@ -172,32 +179,45 @@ def create_item_value(label, value, value_color=COLORS["warning"], link=None):
 def create_panel(title, with_header=True, with_graph=True, with_list=True):
     """Create panel that contains a graph and a list of items."""
     children = []
+    panel_id = title.lower().replace(" ", "-")
 
-    header = html.H3(
-        title,
-        style={
-            "color": COLORS["accent"],
-            "marginBottom": "20px",
-            "borderBottom": f"1px solid {COLORS['accent']}",
-            "paddingBottom": "10px",
-        },
+    header = (
+        html.H3(
+            title,
+            style={
+                "color": COLORS["accent"],
+                "marginBottom": "20px",
+                "borderBottom": f"1px solid {COLORS['accent']}",
+                "paddingBottom": "10px",
+            },
+        )
+        if with_header
+        else None
     )
 
-    graph = dcc.Graph(
-        id=f"{title.lower().replace(' ', '-')}-graph",
+    graph = (
+        dcc.Graph(
+            id=f"{panel_id}-graph",
+        )
+        if with_graph
+        else None
     )
 
-    list = html.Div(
-        id=f"{title.lower().replace(' ', '-')}-list",
-        style=(
-            {
-                "marginTop": "20px",
-                "borderTop": f"1px solid {COLORS['accent']}",
-                "paddingTop": "20px",
-            }
-            if with_graph
-            else None
-        ),
+    list = (
+        html.Div(
+            id=f"{panel_id}-list",
+            style=(
+                {
+                    "marginTop": "20px",
+                    "borderTop": f"1px solid {COLORS['accent']}",
+                    "paddingTop": "20px",
+                }
+                if with_graph
+                else None
+            ),
+        )
+        if with_list
+        else None
     )
 
     if with_header:
@@ -210,7 +230,7 @@ def create_panel(title, with_header=True, with_graph=True, with_list=True):
         children.append(list)
 
     return html.Div(
-        id=title.lower().replace(" ", "-"),
+        id=panel_id,
         className="tui-container",
         children=children,
     )
