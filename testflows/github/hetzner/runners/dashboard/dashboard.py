@@ -68,9 +68,7 @@ def serve_static(path):
 @app.server.route("/download-log")
 def download_log():
     """Download the full log file."""
-    from .panels.log import download_log
-
-    return download_log(app.github_hetzner_runners_config)
+    return log.download_log(app.github_hetzner_runners_config)
 
 
 # Set the app's template
