@@ -22,7 +22,7 @@ from . import panel
 
 def create_panel():
     """Create the log panel."""
-    return panel.create_panel("Log Messages")
+    return panel.create_panel("Log Messages", with_graph=False)
 
 
 def format_log(lines, columns, delimiter):
@@ -59,14 +59,14 @@ def format_log(lines, columns, delimiter):
     return formatted_lines
 
 
-def create_log_messages(formatted_lines):
-    """Create HTML elements for formatted log lines.
+def create_log_list(formatted_lines):
+    """Create a list of log messages.
 
     Args:
         formatted_lines: List of dictionaries containing formatted log entries
 
     Returns:
-        List of HTML divs for displaying log messages
+        HTML div containing the log messages list
     """
     messages = []
 
@@ -156,8 +156,9 @@ def create_log_messages(formatted_lines):
             )
         )
 
-    # Use panel.create_list to wrap messages with consistent styling
-    return panel.create_list("log", len(formatted_lines), messages, "No log messages")
+    return panel.create_list(
+        "log-messages", len(formatted_lines), messages, "No log messages"
+    )
 
 
 def update_log_messages(n, github_hetzner_runners_config):
@@ -187,6 +188,6 @@ def update_log_messages(n, github_hetzner_runners_config):
         formatted_lines = format_log(lines, columns, delimiter)
 
         # Create HTML elements for log messages
-        return create_log_messages(formatted_lines)
+        return create_log_list(formatted_lines)
     except Exception as e:
         return [html.Div(f"Error reading log file: {str(e)}", style={"color": "red"})]

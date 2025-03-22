@@ -163,35 +163,50 @@ def create_item_value(label, value, value_color=COLORS["warning"], link=None):
     )
 
 
-def create_panel(title):
+def create_panel(title, with_header=True, with_graph=True, with_list=True):
     """Create panel that contains a graph and a list of items."""
+    children = []
+
+    header = html.H3(
+        title,
+        style={
+            "color": COLORS["accent"],
+            "marginBottom": "20px",
+            "borderBottom": f"1px solid {COLORS['accent']}",
+            "paddingBottom": "10px",
+        },
+    )
+
+    graph = dcc.Graph(
+        id=f"{title.lower().replace(' ', '-')}-graph",
+    )
+
+    list = html.Div(
+        id=f"{title.lower().replace(' ', '-')}-list",
+        style=(
+            {
+                "marginTop": "20px",
+                "borderTop": f"1px solid {COLORS['accent']}",
+                "paddingTop": "20px",
+            }
+            if with_graph
+            else None
+        ),
+    )
+
+    if with_header:
+        children.append(header)
+
+    if with_graph:
+        children.append(graph)
+
+    if with_list:
+        children.append(list)
+
     return html.Div(
         id=title.lower().replace(" ", "-"),
         className="tui-container",
-        children=[
-            html.H3(
-                title,
-                style={
-                    "color": COLORS["accent"],
-                    "marginBottom": "20px",
-                    "borderBottom": f"1px solid {COLORS['accent']}",
-                    "paddingBottom": "10px",
-                },
-            ),
-            # Time graph
-            dcc.Graph(
-                id=f"{title.lower().replace(' ', '-')}-graph",
-            ),
-            # Job list
-            html.Div(
-                id=f"{title.lower().replace(' ', '-')}-list",
-                style={
-                    "marginTop": "20px",
-                    "borderTop": f"1px solid {COLORS['accent']}",
-                    "paddingTop": "20px",
-                },
-            ),
-        ],
+        children=children,
     )
 
 

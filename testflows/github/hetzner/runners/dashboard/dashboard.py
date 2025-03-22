@@ -329,7 +329,7 @@ def get_log_components(n):
         Output("heartbeat-gauge", "children"),
         Output("heartbeat-gauge", "style"),
         # Log messages
-        Output("log-messages", "children"),
+        Output("log-messages-list", "children"),
         # URL for scrolling
         Output("url", "hash"),
         # Reset click values
