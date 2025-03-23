@@ -23,8 +23,8 @@ from dash.dependencies import Input, Output
 from flask import send_from_directory
 
 from .colors import COLORS
-from .panels import servers, jobs, runners, scaleup_errors, gauges, log, info
-from .metrics import get_metric_value
+from .panels import servers, jobs, runners, scaleup_errors, gauges, log, info, cost
+from .metrics import get_metric_value, get_metric_info
 from .. import __version__
 
 # Common styles
@@ -189,6 +189,8 @@ app.layout = html.Div(
                 gauges.create_panel(),
                 # Info Panel
                 info.create_panel(),
+                # Cost Panel
+                cost.create_panel(),
                 # Rest of the panels
                 servers.create_panel(),
                 jobs.create_panel(),
@@ -320,10 +322,35 @@ def get_info_components(n):
     return info.update_info_list(app.github_hetzner_runners_config)
 
 
+def get_cost_components(n):
+    """Get all cost-related components."""
+    current_value = 0
+
+    # Get all server info metrics
+    servers_info = get_metric_info("github_hetzner_runners_server")
+
+    if servers_info:
+        for info in servers_info:
+            try:
+                # Get cost per hour from server info
+                cost_hourly = float(info.get("cost_hourly", 0))
+                current_value += cost_hourly
+            except (ValueError, TypeError):
+                continue
+
+    return (
+        cost.update_graph(n),
+        f"{current_value:.3f}",
+    )
+
+
 @app.callback(
     [
         # Info components
         Output("system-information-list", "children"),
+        # Cost components
+        Output("cost-graph", "figure"),
+        Output("cost-gauge", "children"),
         # Servers components
         Output("servers-graph", "figure"),
         Output("total-servers-gauge", "children"),
@@ -349,6 +376,7 @@ def get_info_components(n):
         # URL for scrolling
         Output("url", "hash"),
         # Reset click values
+        Output("cost-gauge-container", "n_clicks"),
         Output("total-servers-gauge-container", "n_clicks"),
         Output("total-runners-gauge-container", "n_clicks"),
         Output("queued-jobs-gauge-container", "n_clicks"),
@@ -357,6 +385,7 @@ def get_info_components(n):
     ],
     [
         Input("interval-component", "n_intervals"),
+        Input("cost-gauge-container", "n_clicks"),
         Input("total-servers-gauge-container", "n_clicks"),
         Input("total-runners-gauge-container", "n_clicks"),
         Input("queued-jobs-gauge-container", "n_clicks"),
@@ -366,6 +395,7 @@ def get_info_components(n):
 )
 def update_all_components(
     n,
+    cost_clicks,
     servers_clicks,
     runners_clicks,
     queued_jobs_clicks,
@@ -375,6 +405,7 @@ def update_all_components(
     """Update all dashboard components in a single callback."""
     # Get components from each module
     info_components = get_info_components(n)
+    cost_components = get_cost_components(n)
     servers_components = get_servers_components(n)
     jobs_components = get_jobs_components(n)
     runners_components = get_runners_components(n)
@@ -384,7 +415,9 @@ def update_all_components(
 
     # Handle scroll behavior
     scroll_hash = dash.no_update
-    if servers_clicks:
+    if cost_clicks:
+        scroll_hash = "#cost"
+    elif servers_clicks:
         scroll_hash = "#servers"
     elif runners_clicks:
         scroll_hash = "#runners"
@@ -394,11 +427,12 @@ def update_all_components(
         scroll_hash = "#scale-up-errors-(last-hour)"
 
     # Reset click values
-    reset_clicks = [0, 0, 0, 0, 0]  # Reset all click values to 0
+    reset_clicks = [0, 0, 0, 0, 0, 0]  # Reset all click values to 0
 
     # Combine all components
     return (
         info_components,
+        *cost_components,
         *servers_components,
         *jobs_components,
         *runners_components,

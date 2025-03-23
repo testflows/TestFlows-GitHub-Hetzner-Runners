@@ -334,8 +334,18 @@ def create_metric_trace(
         metric_name, labels or {}, value, current_time, cutoff_minutes
     )
 
+    # Format value based on metric type
+    if "cost" in metric_name.lower():
+        formatted_value = f"{value:.3f}"
+    else:
+        formatted_value = f"{int(value)}"
+
     # Create trace name
-    name = f"{status} ({int(value)})" if status else f"{metric_name} ({int(value)})"
+    name = (
+        f"{status} ({formatted_value})"
+        if status
+        else f"{metric_name} ({formatted_value})"
+    )
 
     return create_trace(
         metric_history[key]["timestamps"],
