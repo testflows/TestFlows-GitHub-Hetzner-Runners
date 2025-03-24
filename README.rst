@@ -458,7 +458,18 @@ As you can see, our job was executed and completed using our own self-hosted run
 📡 Embedded Monitoring Dashboard
 ================================
 
-Below is a live demonstration of the `embedded monitoring dashboard <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Embedded-Monitoring-Dashboard>`_ used to monitor runners for the `altinity/clickhouse-regression <https://github.com/altinity/clickhouse-regression>`_ project.
+The service supports an embedded monitoring dashboard that provides real-time visibility into your GitHub Actions runners. The dashboard includes:
+
+* System information and configuration details
+* Cost tracking and estimation
+* Server status monitoring (running, off, initializing, ready, busy)
+* Job status tracking (queued and running jobs)
+* Runner status monitoring (online/offline and busy/idle states)
+* Scale-up error tracking
+* Heartbeat monitoring
+* Log message viewing
+
+Below is a live demonstration of the `embedded monitoring dashboard <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Embedded-Monitoring-Dashboard>`_ in action, monitoring runners for the `altinity/clickhouse-regression <https://github.com/altinity/clickhouse-regression>`_ project:
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Hetzner-Runners/master/docs/images/embedded-monitoring-dashboard.gif
    :align: center
