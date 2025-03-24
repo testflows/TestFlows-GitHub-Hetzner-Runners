@@ -454,6 +454,19 @@ As you can see, our job was executed and completed using our own self-hosted run
 
       github-hetzner-runners cloud log -f
 
+=====================
+📡 Embedded Dashboard
+=====================
+
+Below is a live demonstration of the `embedded monitoring dashboard <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Embedded-Monitoring-Dashboard>`_ used to monitor runners for the `altinity/clickhouse-regression <https://github.com/altinity/clickhouse-regression>`_ project.
+
+.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Hetzner-Runners/master/docs/images/embedded-monitoring-dashboard.gif
+   :align: center
+   :width: 790px
+   :alt: Embedded Monitoring Dashboard
+
+See `Embedded Monitoring Dashboard <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Embedded-Monitoring-Dashboard>`_ for more details.
+
 ----
 
 🔍 See `Wiki <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki>`_ for full documentation.

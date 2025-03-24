@@ -304,7 +304,7 @@ def argparser():
         "--dashboard-port",
         metavar="port",
         type=args.count_type,
-        help="port for the dashboard server, default: 8050",
+        help="port for the dashboard server, default: 8090",
     )
 
     parser.add_argument(
