@@ -83,7 +83,7 @@ The following projects are using **github-hetzner-runners** to enable self-hoste
 * cost-efficient on-demand runners using `Hetzner Cloud <https://www.hetzner.com/cloud>`_
 * supports server recycling to minimize costs
 * simple configuration, no Webhooks, no need for AWS lambdas, and no need to setup any GitHub application
-* supports specifying custom runner server types, images, and locations using job labels
+* supports specifying custom runner server types, images, and locations using job labels with fallback options for server types and locations
 * self-contained program that you can use to deploy, redeploy, and manage the service on a cloud instance
 * supports x64 (x86) and ARM64 (arm) runners
 * supports IPv6 only runners
@@ -95,6 +95,7 @@ The following projects are using **github-hetzner-runners** to enable self-hoste
 * supports efficient GitHub API usage using HTTP caching and conditional requests
 * supports meta labels to keep your job label list short
 * supports estimating the cost of a job, a run, or a set of runs 
+* supports prometheus metrics endpoint and embedded dashboard for monitoring
 
 ====================
 📝 Table of Contents
@@ -136,6 +137,8 @@ The following projects are using **github-hetzner-runners** to enable self-hoste
 * `Listing Images <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Listing-Images>`_
 * `Deleting Images <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Deleting-Images>`_
 * `Creating Custom Images <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Creating-Custom-Images>`_
+* `Embedded Monitoring Dashboard <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Embedded-Monitoring-Dashboard>`_
+* `Prometheus Metrics <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Prometheus-Metrics>`_
 * `Program Options <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Program-Options>`_
 
 ==============
