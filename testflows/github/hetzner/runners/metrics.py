@@ -17,7 +17,8 @@ import dateutil.parser
 import logging
 from datetime import datetime
 
-from github.WorkflowRun import WorkflowRun, WorkflowRunJob
+from github.WorkflowRun import WorkflowRun
+from github.WorkflowJob import WorkflowJob
 from prometheus_client import Counter, Gauge, Histogram, Info
 from .estimate import get_server_price
 from .constants import standby_server_name_prefix, recycle_server_name_prefix
@@ -657,7 +658,7 @@ def update_runners(
         ).set(count)
 
 
-def update_jobs(run_jobs: list[(WorkflowRun, WorkflowRunJob)]):
+def update_jobs(run_jobs: list[(WorkflowRun, WorkflowJob)]):
     """Update all job-related metrics."""
     queued_count = 0
     running_count = 0

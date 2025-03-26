@@ -370,7 +370,7 @@ def job_matches_labels(job_labels, with_label):
     return True
 
 
-def filtered_run_jobs(workflow_runs, with_label):
+def filtered_run_jobs(workflow_runs: list[WorkflowRun], with_label: list[str]):
     """Filter jobs to select only queued or in progress and match with_label criteria."""
     run_jobs = []
     for run in workflow_runs:
