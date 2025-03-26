@@ -353,6 +353,38 @@ def raise_exception(exc):
     raise exc
 
 
+def get_job_labels(job):
+    """Get job labels."""
+    return set([label.lower() for label in job.raw_data["labels"]])
+
+
+def job_matches_labels(job_labels, with_label):
+    """Check if job matches with_label criteria."""
+    if with_label is None:
+        return True
+
+    for label in with_label:
+        if not label.lower() in job_labels:
+            return (False, label)
+
+    return True
+
+
+def filtered_run_jobs(workflow_runs, with_label):
+    """Filter jobs to select only queued or in progress and match with_label criteria."""
+    run_jobs = []
+    for run in workflow_runs:
+        for job in run.jobs():
+            if job.status == "completed":
+                continue
+            if not (job.status == "in_progress" or job.status == "queued"):
+                continue
+            labels = get_job_labels(job)
+            if job_matches_labels(labels, with_label) is True:
+                run_jobs.append((run, job))
+    return run_jobs
+
+
 def create_server(
     hetzner_token: str,
     setup_worker_pool: ThreadPoolExecutor,
@@ -854,8 +886,10 @@ def scale_up(
                     in_progress_runs = list(
                         repo.get_workflow_runs(status="in_progress")
                     )
-                    # Update job metrics with all runs
-                    metrics.update_jobs(queued_runs + in_progress_runs)
+                    # Update job metrics using only queued or in progress runs that match with_label criteria
+                    metrics.update_jobs(
+                        filtered_run_jobs(queued_runs + in_progress_runs, with_label)
+                    )
                     # For job processing, we'll use only queued runs
                     workflow_runs = queued_runs
 
@@ -952,10 +986,7 @@ def scale_up(
                                 ):
                                     pass
 
-                                labels = set(
-                                    [label.lower() for label in job.raw_data["labels"]]
-                                )
-
+                                labels = get_job_labels(job)
                                 server_name = (
                                     f"{server_name_prefix}{job.run_id}-{job.id}"
                                 )
@@ -1008,18 +1039,14 @@ def scale_up(
                                         ):
                                             break
 
-                                    if with_label is not None:
-                                        found_all_with_labels = True
-                                        for label in with_label:
-                                            if not label.lower() in labels:
-                                                found_all_with_labels = False
-                                                with Action(
-                                                    f"Skipping {job} with {labels} as it is missing label '{label}'",
-                                                    server_name=server_name,
-                                                    interval=interval,
-                                                ):
-                                                    break
-                                        if not found_all_with_labels:
+                                    result = job_matches_labels(labels, with_label)
+                                    if result is not True:
+                                        _, missing_label = result
+                                        with Action(
+                                            f"Skipping {job} with {labels} as it is missing label '{missing_label}'",
+                                            server_name=server_name,
+                                            interval=interval,
+                                        ):
                                             continue
 
                                     with Action(
