@@ -733,6 +733,7 @@ def update_jobs(run_jobs: list[(WorkflowRun, WorkflowJob)]):
                     run_time
                 )
 
+    # Set total counts
     QUEUED_JOBS.set(queued_count)
     RUNNING_JOBS.set(running_count)
 

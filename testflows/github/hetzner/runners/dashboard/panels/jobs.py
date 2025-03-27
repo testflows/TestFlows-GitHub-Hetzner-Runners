@@ -128,7 +128,7 @@ def create_job_list():
         "jobs",
         queued_count + running_count,
         job_items,
-        f"Queued jobs: {int(queued_count)}",
+        f"Jobs: {int(queued_count + running_count)}",
     )
 
 
