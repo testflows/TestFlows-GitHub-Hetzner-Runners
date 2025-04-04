@@ -44,7 +44,7 @@ from testflows.github.hetzner.runners.logger import (
     logger,
     configure as configure_logger,
 )
-from testflows.github.hetzner.runners.config import Config, check_image
+from testflows.github.hetzner.runners.config import Config, check_image, default_user_config
 from testflows.github.hetzner.runners.config import (
     check_ssh_key,
     check_location,
@@ -60,11 +60,12 @@ import testflows.github.hetzner.runners.delete as delete
 import testflows.github.hetzner.runners.servers as servers
 import testflows.github.hetzner.runners.estimate as estimate
 import testflows.github.hetzner.runners.images as images
+import testflows.github.hetzner.runners.projects as projects
 
 from requests_cache import DO_NOT_CACHE, EXPIRE_IMMEDIATELY, install_cache
 from requests_cache.backends.filesystem import FileCache
 
-description = """Auto-scaling GitHub Actions runners service using Hetzner Cloud.
+description = f"""Auto-scaling GitHub Actions runners service using Hetzner Cloud.
 
     Service that starts and monitors queued up GitHub Actions workflows.
     When a new job is queued up, it creates new Hetzner Cloud server instance
@@ -72,9 +73,13 @@ description = """Auto-scaling GitHub Actions runners service using Hetzner Cloud
     powered off when job completes and then powered off servers are
     automatically deleted.
 
-    By default, uses `$GITHUB_TOKEN`, `$GITHUB_REPOSITORY`, and `$HETZNER_TOKEN`
-    environment variables or you can specify these values `--github-token`,
-    `--github-repository`, and `--hetzner-token` options.
+    Configuration can be specified through:
+
+    * Command line arguments (highest precedence)
+    * Project configuration (if --project is specified or project is set)
+    * Environment variables ($GITHUB_TOKEN, $GITHUB_REPOSITORY, $HETZNER_TOKEN, $GITHUB_HETZNER_RUNNERS_CONFIG)
+    * Configuration file (specified via --config or the default user config '{default_user_config}')
+    * Default values (lowest precedence)
 """
 
 
@@ -97,34 +102,42 @@ def argparser():
     )
 
     parser.add_argument(
+        "-p",
+        "--project",
+        metavar="name",
+        type=str,
+        help="project name to use for configuration (values from project config have lower precedence than command line arguments)",
+    )
+
+    parser.add_argument(
         "-c",
         "--config",
         metavar="yaml",
         dest="config_file",
         type=args.config_type,
-        help="program yaml configuration file",
-        default="__default_user_config__",
+        help=f"program yaml configuration file, default: project config or $GITHUB_HETZNER_RUNNERS_CONFIG env var or {default_user_config}",
+        default=os.environ.get("GITHUB_HETZNER_RUNNERS_CONFIG", "__default_user_config__"),
     )
 
     parser.add_argument(
         "--github-token",
         metavar="token",
         type=str,
-        help="GitHub token, default: $GITHUB_TOKEN environment variable",
+        help="GitHub token, default: project config or $GITHUB_TOKEN environment variable",
     )
 
     parser.add_argument(
         "--github-repository",
         metavar="name",
         type=str,
-        help="GitHub repository, default: $GITHUB_REPOSITORY environment variable",
+        help="GitHub repository, default: project config or $GITHUB_REPOSITORY environment variable",
     )
 
     parser.add_argument(
         "--hetzner-token",
         metavar="token",
         type=str,
-        help="Hetzner Cloud token, default: $HETZNER_TOKEN environment variable",
+        help="Hetzner Cloud token, default: project config or $HETZNER_TOKEN environment variable",
     )
 
     parser.add_argument(
@@ -1183,6 +1196,86 @@ def argparser():
 
     dashboard_parser.set_defaults(func=dashboard)
 
+    # Projects subcommand
+    projects_parser = commands.add_parser(
+        "projects",
+        help="project management commands",
+        description="Manage project configurations.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    projects_subparsers = projects_parser.add_subparsers(
+        title="commands", metavar="command", description=None, help=None
+    )
+
+    projects_subparsers.required = True
+
+    # Projects list subcommand
+    projects_list_parser = projects_subparsers.add_parser(
+        "list",
+        help="list all projects",
+        description="List all available projects and their configurations.",
+        formatter_class=RawTextHelpFormatter,
+    )
+    projects_list_parser.set_defaults(func=projects.list)
+
+    # Projects add subcommand
+    projects_add_parser = projects_subparsers.add_parser(
+        "add",
+        help="add a new project",
+        description="Add a new project with specified configuration.",
+        formatter_class=RawTextHelpFormatter,
+    )
+    projects_add_parser.add_argument("name", type=str, help="project name")
+    projects_add_parser.add_argument("--hetzner-token", type=str, help="Hetzner Cloud token")
+    projects_add_parser.add_argument("--github-token", type=str, help="GitHub token")
+    projects_add_parser.add_argument("--github-repository", type=str, help="GitHub repository")
+    projects_add_parser.add_argument("--config", type=str, help="configuration file")
+    projects_add_parser.set_defaults(func=projects.add)
+
+    # Projects update subcommand
+    projects_update_parser = projects_subparsers.add_parser(
+        "update",
+        help="update a project",
+        description="Update an existing project's configuration.",
+        formatter_class=RawTextHelpFormatter,
+    )
+    projects_update_parser.add_argument("name", type=str, help="project name")
+    projects_update_parser.add_argument("--hetzner-token", type=str, help="Hetzner Cloud token")
+    projects_update_parser.add_argument("--github-token", type=str, help="GitHub token")
+    projects_update_parser.add_argument("--github-repository", type=str, help="GitHub repository")
+    projects_update_parser.add_argument("--config", type=str, help="configuration file")
+    projects_update_parser.set_defaults(func=projects.update)
+
+    # Projects delete subcommand
+    projects_delete_parser = projects_subparsers.add_parser(
+        "delete",
+        help="delete a project",
+        description="Delete an existing project and its configuration.",
+        formatter_class=RawTextHelpFormatter,
+    )
+    projects_delete_parser.add_argument("name", type=str, help="project name")
+    projects_delete_parser.set_defaults(func=projects.delete)
+
+    # Projects set subcommand
+    projects_set_parser = projects_subparsers.add_parser(
+        "set",
+        help="set current project",
+        description="Set the current project to use for configuration.",
+        formatter_class=RawTextHelpFormatter,
+    )
+    projects_set_parser.add_argument("name", type=str, help="project name")
+    projects_set_parser.set_defaults(func=projects.set_current)
+
+    # Projects unset subcommand
+    projects_unset_parser = projects_subparsers.add_parser(
+        "unset",
+        help="unset current project",
+        description="Remove the current project setting.",
+        formatter_class=RawTextHelpFormatter,
+    )
+    projects_unset_parser.set_defaults(func=projects.unset_current)
+
     return parser
 
 
@@ -1357,6 +1450,25 @@ if __name__ == "__main__":
         except ArgumentTypeError as e:
             parser.error(str(e))
 
+    # Get project configuration if specified
+    project_name = arguments.project
+    if project_name is None:
+        project_name = projects.get_current_project()
+    
+    project_config = projects.get_project_config(project_name) if project_name else {}
+
+    # Update config with project values first (lower precedence)
+    if project_config:
+        if "github_token" in project_config:
+            config.github_token = project_config["github_token"]
+        if "hetzner_token" in project_config:
+            config.hetzner_token = project_config["hetzner_token"]
+        if "github_repository" in project_config:
+            config.github_repository = project_config["github_repository"]
+        if "config_file" in project_config:
+            config.config_file = project_config["config_file"]
+
+    # Update with command line arguments (higher precedence)
     config.update(arguments)
 
     if config.debug:
