@@ -141,6 +141,15 @@ def set_current_project(name):
         os.remove(current_file)
 
 
+def mask_token(token, show_full=False):
+    """Mask a token, showing only first 3 and last 5 characters unless show_full is True."""
+    if not token or show_full:
+        return token
+    if len(token) <= 8:
+        return "*" * len(token)
+    return f"{token[:3]}...{token[-5:]}"
+
+
 def list(args, config):
     """List all configured projects."""
     projects_dir = get_projects_dir()
@@ -172,6 +181,8 @@ def list(args, config):
             print("  No configuration set")
         else:
             for key, value in sorted(project_config.items()):
+                if key in ["github_token", "hetzner_token"]:
+                    value = mask_token(value, args.show_tokens)
                 print(f"  {key}: {value}")
 
 

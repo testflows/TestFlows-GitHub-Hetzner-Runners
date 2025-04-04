@@ -1217,6 +1217,11 @@ def argparser():
         description="List all available projects and their configurations.",
         formatter_class=RawTextHelpFormatter,
     )
+    projects_list_parser.add_argument(
+        "--show-tokens",
+        action="store_true",
+        help="show full tokens instead of masking them",
+    )
     projects_list_parser.set_defaults(func=projects.list)
 
     # Projects add subcommand
