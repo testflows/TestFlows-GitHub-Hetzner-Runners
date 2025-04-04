@@ -2,6 +2,11 @@ import os
 import stat
 import yaml
 import glob
+import time
+
+
+PROJECTS_BASE_DIR = os.path.expanduser("~/.github-hetzner-runners")
+CURRENT_PROJECT_FILE_PREFIX = ".current-project-"
 
 
 def ensure_secure_permissions(path):
@@ -10,9 +15,9 @@ def ensure_secure_permissions(path):
         os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
 
 
-def get_project_dir():
+def get_projects_dir():
     """Get the path to the projects directory."""
-    project_dir = os.path.expanduser("~/.github-hetzner-runners/projects")
+    project_dir = os.path.join(PROJECTS_BASE_DIR, "projects")
     os.makedirs(project_dir, exist_ok=True)
     os.chmod(project_dir, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
     return project_dir
@@ -20,8 +25,8 @@ def get_project_dir():
 
 def get_project_file(name):
     """Get the path to a project's YAML file."""
-    project_dir = get_project_dir()
-    return os.path.join(project_dir, f"{name}.yaml")
+    projects_dir = get_projects_dir()
+    return os.path.join(projects_dir, f"{name}.yaml")
 
 
 def read_project_file(project_file):
@@ -53,7 +58,9 @@ def get_current_project_file():
     """Get the path to the current project file for this shell."""
     shell_pid = get_shell_pid()
     if shell_pid:
-        return os.path.expanduser(f"~/.github-hetzner-runners/.current-{shell_pid}")
+        return os.path.join(
+            PROJECTS_BASE_DIR, f"{CURRENT_PROJECT_FILE_PREFIX}{shell_pid}"
+        )
     return None
 
 
@@ -67,24 +74,46 @@ def process_exists(pid):
         return False
 
 
+def get_current_files_dir():
+    """Get the directory for current project files."""
+    os.makedirs(PROJECTS_BASE_DIR, exist_ok=True)
+    ensure_secure_permissions(PROJECTS_BASE_DIR)
+    return PROJECTS_BASE_DIR
+
+
 def cleanup_stale_current_files():
-    """Clean up stale current project files for shells that no longer exist."""
-    current_dir = os.path.expanduser("~/.github-hetzner-runners")
-    os.makedirs(current_dir, exist_ok=True)
+    """Clean up stale current project files by removing files older
+    than 1 second from processes that no longer exist, processing
+    at most 5 files at a time with secure permissions.
+    """
+    try:
+        current_files = glob.glob(
+            os.path.join(get_current_files_dir(), f"{CURRENT_PROJECT_FILE_PREFIX}*")
+        )
 
-    # Find all current project files
-    for current_file in glob.glob(os.path.join(current_dir, ".current-*")):
-        try:
-            # Extract PID from filename
-            pid = int(os.path.basename(current_file).split("-")[1])
+        for current_file in current_files[:5]:
+            try:
+                ensure_secure_permissions(current_file)
+                pid = int(os.path.basename(current_file).split("-")[1])
 
-            # Check if process exists
-            if not process_exists(pid):
-                # Process doesn't exist, remove the file
-                os.remove(current_file)
-        except (ValueError, IndexError, OSError):
-            # If there's any error, just skip this file
-            pass
+                file_age = time.time() - os.path.getmtime(current_file)
+                if file_age < 1:
+                    continue
+
+                if not process_exists(pid):
+                    try:
+                        os.unlink(current_file)
+                    except FileNotFoundError:
+                        pass
+                    except PermissionError:
+                        continue
+            except (ValueError, OSError) as e:
+                if isinstance(e, ValueError):
+                    continue
+                elif isinstance(e, OSError):
+                    continue
+    except Exception as e:
+        pass
 
 
 def get_current_project():
@@ -114,16 +143,16 @@ def set_current_project(name):
 
 def list(args, config):
     """List all configured projects."""
-    project_dir = get_project_dir()
-    if not os.path.exists(project_dir):
+    projects_dir = get_projects_dir()
+    if not os.path.exists(projects_dir):
         print("No projects configured")
         return
 
     projects = []
-    for project_file in os.listdir(project_dir):
+    for project_file in os.listdir(projects_dir):
         if project_file.endswith(".yaml"):
             project_name = project_file[:-5]  # Remove .yaml extension
-            project_path = os.path.join(project_dir, project_file)
+            project_path = os.path.join(projects_dir, project_file)
             project_config = read_project_file(project_path)
             projects.append((project_name, project_config))
 
