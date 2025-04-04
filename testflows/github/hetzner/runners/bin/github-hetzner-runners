@@ -106,13 +106,15 @@ def argparser():
         "--project",
         metavar="name",
         type=str,
-        help="project name to use for configuration (values from project config have lower precedence than command line arguments)",
+        help=("project name to use for configuration (values from project config have "
+              "lower precedence than command line arguments),\n"
+              "default: currently set project or None"),
     )
 
     parser.add_argument(
         "-c",
         "--config",
-        metavar="yaml",
+        metavar="file",
         dest="config_file",
         type=args.config_type,
         help=f"program yaml configuration file, default: project config or $GITHUB_HETZNER_RUNNERS_CONFIG env var or {default_user_config}",
@@ -1232,10 +1234,10 @@ def argparser():
         formatter_class=RawTextHelpFormatter,
     )
     projects_add_parser.add_argument("name", type=str, help="project name")
-    projects_add_parser.add_argument("--hetzner-token", type=str, help="Hetzner Cloud token")
-    projects_add_parser.add_argument("--github-token", type=str, help="GitHub token")
-    projects_add_parser.add_argument("--github-repository", type=str, help="GitHub repository")
-    projects_add_parser.add_argument("--config", type=str, help="configuration file")
+    projects_add_parser.add_argument("--hetzner-token", metavar="token", type=str, help="Hetzner Cloud token")
+    projects_add_parser.add_argument("--github-token", metavar="token", type=str, help="GitHub token")
+    projects_add_parser.add_argument("--github-repository", metavar="repository", type=str, help="GitHub repository")
+    projects_add_parser.add_argument("--config", metavar="file", type=args.path_type, help="configuration file")
     projects_add_parser.set_defaults(func=projects.add)
 
     # Projects update subcommand
@@ -1246,10 +1248,10 @@ def argparser():
         formatter_class=RawTextHelpFormatter,
     )
     projects_update_parser.add_argument("name", type=str, help="project name")
-    projects_update_parser.add_argument("--hetzner-token", type=str, help="Hetzner Cloud token")
-    projects_update_parser.add_argument("--github-token", type=str, help="GitHub token")
-    projects_update_parser.add_argument("--github-repository", type=str, help="GitHub repository")
-    projects_update_parser.add_argument("--config", type=str, help="configuration file")
+    projects_update_parser.add_argument("--hetzner-token", metavar="token", type=str, help="Hetzner Cloud token")
+    projects_update_parser.add_argument("--github-token", metavar="token", type=str, help="GitHub token")
+    projects_update_parser.add_argument("--github-repository", metavar="repository", type=str, help="GitHub repository")
+    projects_update_parser.add_argument("--config", metavar="file", type=args.path_type, help="configuration file")
     projects_update_parser.set_defaults(func=projects.update)
 
     # Projects delete subcommand
