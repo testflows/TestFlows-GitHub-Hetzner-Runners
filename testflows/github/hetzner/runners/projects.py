@@ -7,19 +7,25 @@ import time
 
 PROJECTS_BASE_DIR = os.path.expanduser("~/.github-hetzner-runners")
 CURRENT_PROJECT_FILE_PREFIX = ".current-project-"
+SECURE_PERMISSIONS = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
 
 
 def ensure_secure_permissions(path):
     """Ensure file has secure permissions (readable only by owner)."""
     if os.path.exists(path):
-        os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+        os.chmod(path, SECURE_PERMISSIONS)
 
 
 def get_projects_dir():
     """Get the path to the projects directory."""
+    # Ensure base directory exists with correct permissions
+    os.makedirs(PROJECTS_BASE_DIR, exist_ok=True)
+    os.chmod(PROJECTS_BASE_DIR, SECURE_PERMISSIONS)
+
+    # Create and set permissions for projects directory
     project_dir = os.path.join(PROJECTS_BASE_DIR, "projects")
     os.makedirs(project_dir, exist_ok=True)
-    os.chmod(project_dir, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+    os.chmod(project_dir, SECURE_PERMISSIONS)
     return project_dir
 
 
@@ -94,7 +100,7 @@ def cleanup_stale_current_files():
         for current_file in current_files[:5]:
             try:
                 ensure_secure_permissions(current_file)
-                pid = int(os.path.basename(current_file).split("-")[1])
+                pid = int(os.path.basename(current_file).rsplit("-", 1)[1])
 
                 file_age = time.time() - os.path.getmtime(current_file)
                 if file_age < 1:
