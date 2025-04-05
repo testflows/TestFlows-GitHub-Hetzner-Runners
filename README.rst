@@ -126,7 +126,7 @@ The following projects are using **github-hetzner-runners** to enable self-hoste
 * `Opening The SSH Client To The Server <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Opening-The-SSH-Client-To-The-Server>`_
 * `Deleting All Runners and Their Servers <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Deleting-All-Runners-and-Their-Servers>`_
 * `Using a Configuration File <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Using-a-Configuration-File>`_
-* `Using Project Configuration Files <ttps://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Using-Project-Configuration-Files>`_
+* `Using Project Configuration Files <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Using-Project-Configuration-Files>`_
 * `Specifying SSH Key <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-SSH-Key>`_
 * `Specifying Additional SSH Keys <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-Additional-SSH-Keys>`_
 * `Running as a Service <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Running-as-a-Service>`_
