@@ -392,13 +392,16 @@ def filtered_run_jobs(workflow_runs: list[WorkflowRun], with_label: list[str]):
     return run_jobs
 
 
-def check_max_servers_for_label_reached(max_servers_for_label, job_labels, servers):
+def check_max_servers_for_label_reached(
+    max_servers_for_label, job_labels, servers, futures=None
+):
     """Check if we've reached any label-specific limits for the given job labels.
 
     Args:
         max_servers_for_label: List of tuples containing (label_set, max_count)
         job_labels: The labels of the job (already lowercase from get_job_labels)
         servers: List of existing servers (labels are already lowercase in RunnerServer objects)
+        futures: List of futures for servers being created (optional)
 
     Returns:
         tuple: (bool, tuple) - (False if limit reached, (label_set, count, max_count) if limit reached)
@@ -410,8 +413,8 @@ def check_max_servers_for_label_reached(max_servers_for_label, job_labels, serve
     for label_set, max_count in max_servers_for_label:
         # Check if job has all labels in this set
         if label_set.issubset(job_labels):
-            # Count existing servers with these labels
-            count = sum(1 for server in servers if label_set.issubset(server.labels))
+            # Count servers with these labels (including those being created)
+            count = get_server_count_with_labels(servers, label_set, futures)
 
             # If we've reached the limit, don't scale up
             if count >= max_count:
@@ -621,6 +624,7 @@ def max_servers_in_workflow_run_reached(
     servers: list[BoundServer],
     max_servers_in_workflow_run: int,
     server_name: str = None,
+    futures: list[Future] = None,
 ):
     """Return True if maximum number of servers in workflow run has been reached."""
     with Action(
@@ -636,7 +640,19 @@ def max_servers_in_workflow_run_reached(
             for server in servers
             if server.name.startswith(run_server_name_prefix)
         ]
-        if len(servers_in_run) >= max_servers_in_workflow_run:
+
+        # Count servers being created for this workflow run
+        if futures:
+            servers_in_run_count = len(servers_in_run) + sum(
+                1
+                for future in futures
+                if hasattr(future, "server_name")
+                and future.server_name.startswith(run_server_name_prefix)
+            )
+        else:
+            servers_in_run_count = len(servers_in_run)
+
+        if servers_in_run_count >= max_servers_in_workflow_run:
             with Action(
                 f"Maximum number of servers {max_servers_in_workflow_run} for {run_id} has been reached",
                 stacklevel=3,
@@ -691,6 +707,46 @@ def set_future_attributes(future, name, server_type, server_location, labels):
     future.server_type = server_type
     future.server_location = server_location
     future.server_labels = labels
+
+
+def get_total_server_count(servers, futures=None):
+    """Get the total count of servers including those being created.
+
+    Args:
+        servers: List of existing servers
+        futures: List of futures for servers being created (optional)
+
+    Returns:
+        int: Total count of servers
+    """
+    count = len(servers)
+    if futures:
+        count += len(futures)
+    return count
+
+
+def get_server_count_with_labels(servers, label_set, futures=None):
+    """Get the count of servers with specific labels, including those being created.
+
+    Args:
+        servers: List of existing servers
+        label_set: Set of labels to check for
+        futures: List of futures for servers being created (optional)
+
+    Returns:
+        int: Count of servers with the specified labels
+    """
+    count = sum(1 for server in servers if label_set.issubset(server.labels))
+
+    if futures:
+        count += sum(
+            1
+            for future in futures
+            if hasattr(future, "server_labels")
+            and label_set.issubset(future.server_labels)
+        )
+
+    return count
 
 
 def scale_up(
@@ -855,7 +911,8 @@ def scale_up(
                     pass
 
                 if max_servers is not None:
-                    if len(servers) >= max_servers:
+                    total_servers_count = get_total_server_count(servers, futures)
+                    if total_servers_count >= max_servers:
                         with Action(
                             f"Maximum number of servers {max_servers} has been reached",
                             stacklevel=3,
@@ -864,7 +921,7 @@ def scale_up(
                             future = worker_pool.submit(
                                 raise_exception,
                                 exc=MaxNumberOfServersReached(
-                                    f"maximum number of servers reached {len(servers)}/{max_servers}"
+                                    f"maximum number of servers reached {total_servers_count}/{max_servers}"
                                 ),
                             )
                             set_future_attributes(
@@ -876,7 +933,7 @@ def scale_up(
                 # Check label-specific limits
                 if max_servers_for_label:
                     limit_reached, limit_info = check_max_servers_for_label_reached(
-                        max_servers_for_label, labels, servers
+                        max_servers_for_label, labels, servers, futures
                     )
                     if limit_reached:
                         label_set, count, max_count = limit_info
@@ -1045,6 +1102,7 @@ def scale_up(
                                     run_id=run.id,
                                     servers=servers,
                                     max_servers_in_workflow_run=max_servers_in_workflow_run,
+                                    futures=futures,
                                 ):
                                     continue
 
@@ -1111,6 +1169,7 @@ def scale_up(
                                             servers=servers,
                                             max_servers_in_workflow_run=max_servers_in_workflow_run,
                                             server_name=server_name,
+                                            futures=futures,
                                         ):
                                             break
 
