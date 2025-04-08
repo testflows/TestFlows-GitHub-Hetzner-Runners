@@ -80,6 +80,39 @@
                     "type": "integer",
                     "examples": [10]
                 },
+                "max_runners_for_label": {
+                    "description": "Maximum number of runners for specific label combinations.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "labels": {
+                                "description": "List of labels that must be present on the runner.",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "max": {
+                                "description": "Maximum number of runners with these labels.",
+                                "type": "integer",
+                                "minimum": 1
+                            }
+                        },
+                        "required": ["labels", "max"],
+                        "additionalProperties": false
+                    },
+                    "examples": [
+                        {
+                            "labels": ["windows", "gpu"],
+                            "max": 3
+                        },
+                        {
+                            "labels": ["linux"],
+                            "max": 5
+                        }
+                    ]
+                },
                 "max_runners_in_workflow_run": {
                     "description": "Maximum number of runners allowed to be created for a single workflow run, default: not set.",
                     "type": "integer",

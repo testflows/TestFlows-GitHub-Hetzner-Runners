@@ -116,6 +116,7 @@ class Config:
     end_of_life: int = 50
     delete_random: bool = False
     max_runners: int = 10
+    max_runners_for_label: list[tuple[set[str], int]] = None
     max_runners_in_workflow_run: int = None
     default_image: Image = image("x86:system:ubuntu-22.04")
     default_server_type: ServerType = server_type("cx22")
@@ -155,6 +156,9 @@ class Config:
 
         if self.meta_label is None:
             self.meta_label = {}
+
+        if self.max_runners_for_label is None:
+            self.max_runners_for_label = []
 
         if self.logger_format is None:
             self.logger_format = logger_format
@@ -322,6 +326,39 @@ def parse_config(filename: str):
     if doc.get("max_runners") is not None:
         v = doc["max_runners"]
         assert isinstance(v, int) and v > 0, "config.max_runners: is not an integer > 0"
+
+    if doc.get("max_runners_for_label") is not None:
+        assert isinstance(
+            doc["max_runners_for_label"], list
+        ), "config.max_runners_for_label: is not a list"
+        for i, item in enumerate(doc["max_runners_for_label"]):
+            assert isinstance(
+                item, dict
+            ), f"config.max_runners_for_label[{i}]: is not an object"
+            assert (
+                "labels" in item
+            ), f"config.max_runners_for_label[{i}]: missing 'labels' field"
+            assert (
+                "max" in item
+            ), f"config.max_runners_for_label[{i}]: missing 'max' field"
+            assert isinstance(
+                item["labels"], list
+            ), f"config.max_runners_for_label[{i}].labels: is not a list"
+            assert (
+                isinstance(item["max"], int) and item["max"] > 0
+            ), f"config.max_runners_for_label[{i}].max: is not an integer > 0"
+            for j, label in enumerate(item["labels"]):
+                assert isinstance(
+                    label, str
+                ), f"config.max_runners_for_label[{i}].labels[{j}]: is not a string"
+                assert (
+                    label.strip()
+                ), f"config.max_runners_for_label[{i}].labels[{j}]: cannot be empty"
+            # Convert to our internal format (set of labels, count)
+            doc["max_runners_for_label"][i] = (
+                set(label.strip().lower() for label in item["labels"]),
+                item["max"],
+            )
 
     if doc.get("max_runners_in_workflow_run") is not None:
         v = doc["max_runners_in_workflow_run"]

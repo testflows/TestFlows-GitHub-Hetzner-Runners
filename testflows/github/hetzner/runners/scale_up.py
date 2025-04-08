@@ -74,6 +74,13 @@ class MaxNumberOfServersReached(Exception):
     pass
 
 
+class MaxNumberOfServersForLabelReached(Exception):
+    """Exception to indicate that server can't be created
+    because label-specific limit has been reached."""
+
+    pass
+
+
 class CanceledServerCreation(Exception):
     """Exception to indicate that server creation was canceled."""
 
@@ -385,6 +392,34 @@ def filtered_run_jobs(workflow_runs: list[WorkflowRun], with_label: list[str]):
     return run_jobs
 
 
+def check_max_servers_for_label_reached(max_servers_for_label, job_labels, servers):
+    """Check if we've reached any label-specific limits for the given job labels.
+
+    Args:
+        max_servers_for_label: List of tuples containing (label_set, max_count)
+        job_labels: The labels of the job (already lowercase from get_job_labels)
+        servers: List of existing servers (labels are already lowercase in RunnerServer objects)
+
+    Returns:
+        tuple: (bool, tuple) - (False if limit reached, (label_set, count, max_count) if limit reached)
+    """
+    if not max_servers_for_label:
+        return False, None  # No label-specific limits configured
+
+    # Check each configured label set
+    for label_set, max_count in max_servers_for_label:
+        # Check if job has all labels in this set
+        if label_set.issubset(job_labels):
+            # Count existing servers with these labels
+            count = sum(1 for server in servers if label_set.issubset(server.labels))
+
+            # If we've reached the limit, don't scale up
+            if count >= max_count:
+                return True, (label_set, count, max_count)
+
+    return False, None  # No limits reached
+
+
 def create_server(
     hetzner_token: str,
     setup_worker_pool: ThreadPoolExecutor,
@@ -642,6 +677,22 @@ def recyclable_server_match(
     return ssh_key.name == server.server.labels.get(server_ssh_key_label)
 
 
+def set_future_attributes(future, name, server_type, server_location, labels):
+    """Set common attributes on a future object.
+
+    Args:
+        future: The future object to set attributes on
+        name: The server name
+        server_type: The server type
+        server_location: The server location
+        labels: The server labels
+    """
+    future.server_name = name
+    future.server_type = server_type
+    future.server_location = server_location
+    future.server_labels = labels
+
+
 def scale_up(
     terminate: threading.Event,
     mailbox: queue.Queue,
@@ -767,10 +818,9 @@ def scale_up(
                                     ssh_key=ssh_keys[0],
                                     timeout=max_server_ready_time,
                                 )
-                                future.server_name = name
-                                future.server_type = server_type
-                                future.server_location = server_location
-                                future.server_labels = labels
+                                set_future_attributes(
+                                    future, name, server_type, server_location, labels
+                                )
                                 futures.append(future)
                                 servers.pop(servers.index(server))
                                 return
@@ -816,12 +866,37 @@ def scale_up(
                                     f"maximum number of servers reached {len(servers)}/{max_servers}"
                                 ),
                             )
-                            future.server_name = name
-                            future.server_type = server_type
-                            future.server_location = server_location
-                            future.server_labels = labels
+                            set_future_attributes(
+                                future, name, server_type, server_location, labels
+                            )
                             futures.append(future)
                             raise StopIteration("maximum number of servers reached")
+
+                # Check label-specific limits
+                if config.max_servers_for_label:
+                    limit_reached, limit_info = check_max_servers_for_label_reached(
+                        config.max_servers_for_label, labels, servers
+                    )
+                    if limit_reached:
+                        label_set, count, max_count = limit_info
+                        with Action(
+                            f"Maximum number of servers {max_count} for labels {label_set} reached",
+                            stacklevel=3,
+                            server_name=name,
+                        ):
+                            future = worker_pool.submit(
+                                raise_exception,
+                                exc=MaxNumberOfServersForLabelReached(
+                                    f"Maximum number of servers for labels {label_set} reached {count}/{max_count}"
+                                ),
+                            )
+                            set_future_attributes(
+                                future, name, server_type, server_location, labels
+                            )
+                            futures.append(future)
+                            raise StopIteration(
+                                f"maximum number of servers for labels reached"
+                            )
 
                 future = worker_pool.submit(
                     create_server,
@@ -844,10 +919,9 @@ def scale_up(
                     active_attempt=create_server_active_attempt,
                     attempt=create_server_attempt,
                 )
-                future.server_name = name
-                future.server_type = server_type
-                future.server_location = server_location
-                future.server_labels = labels
+                set_future_attributes(
+                    future, name, server_type, server_location, labels
+                )
                 futures.append(future)
 
     with Action("Logging in to GitHub"):
@@ -1057,7 +1131,9 @@ def scale_up(
                                         )
                                         if available > 0:
                                             with Action(
-                                                f"Found at least one potentially available runner for {job}"
+                                                f"Found at least one potentially available runner for {job}",
+                                                server_name=server_name,
+                                                interval=interval,
                                             ):
                                                 continue
 

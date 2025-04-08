@@ -159,3 +159,26 @@ def config_type(v):
         raise ArgumentTypeError(str(e))
 
     return config
+
+
+def max_runners_for_label_type(value: str) -> tuple[set[str], int]:
+    """Parse max runners for label specification.
+
+    Format: label1,label2:count
+    Example: windows,gpu:3
+
+    Returns:
+        tuple[set[str], int]: Tuple of (set of labels, count)
+    """
+    try:
+        labels_str, count_str = value.rsplit(":", 1)
+        labels = [label.strip().lower() for label in labels_str.split(",")]
+        count = int(count_str)
+        if not labels or not count > 0:
+            raise ValueError
+        return (set(labels), count)
+    except (ValueError, TypeError):
+        raise ArgumentTypeError(
+            f"invalid max runners for label specification: {value}, "
+            "expected format: label1,label2:count"
+        )

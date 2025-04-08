@@ -158,6 +158,17 @@ def argparser():
     )
 
     parser.add_argument(
+        "--max-runners-for-label",
+        metavar="label1,label2:count",
+        type=args.max_runners_for_label_type,
+        action="append",
+        help=(
+            "maximum number of runners for specific label combination,\n"
+            "can be specified multiple times, example: windows,gpu:3"
+        ),
+    )
+
+    parser.add_argument(
         "-r",
         "--recycle",
         metavar="on|off",
