@@ -709,6 +709,7 @@ def scale_up(
     default_image: Image = config.default_image
     interval_period: int = config.scale_up_interval
     max_servers: int = config.max_runners
+    max_servers_for_label: list[tuple[set[str], int]] = config.max_runners_for_label
     max_servers_in_workflow_run: int = config.max_runners_in_workflow_run
     max_server_ready_time: int = config.max_server_ready_time
     debug: bool = config.debug
@@ -873,9 +874,9 @@ def scale_up(
                             raise StopIteration("maximum number of servers reached")
 
                 # Check label-specific limits
-                if config.max_servers_for_label:
+                if max_servers_for_label:
                     limit_reached, limit_info = check_max_servers_for_label_reached(
-                        config.max_servers_for_label, labels, servers
+                        max_servers_for_label, labels, servers
                     )
                     if limit_reached:
                         label_set, count, max_count = limit_info
