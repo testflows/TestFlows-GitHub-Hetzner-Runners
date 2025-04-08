@@ -51,6 +51,17 @@ def update_info_list(config: Config):
         ),
         panel.create_item_value("Max Runners (--max-runners)", config.max_runners),
         panel.create_item_value(
+            "Max Runners for Label (--max-runners-for-label)",
+            (
+                ", ".join(
+                    f"{', '.join(sorted(labels))}:{max_count}"
+                    for labels, max_count in config.max_runners_for_label
+                )
+                if config.max_runners_for_label
+                else "[no label limits]"
+            ),
+        ),
+        panel.create_item_value(
             "Max Runners in Workflow Run (--max-runners-in-workflow-run)",
             config.max_runners_in_workflow_run or "[no limit]",
         ),
