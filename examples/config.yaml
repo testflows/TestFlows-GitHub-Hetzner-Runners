@@ -7,6 +7,9 @@ config:
     # - additional_key
     # - ...
     max_runners: 10
+    #max_runners_for_label:
+    #  - labels: ["self-hosted"]
+    #    max: 10
     #max_runners_in_workflow_run:
     recycle: true
     end_of_life: 50
