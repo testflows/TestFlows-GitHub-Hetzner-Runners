@@ -447,17 +447,17 @@ def create_server(
     start_time = time.time()
 
     while True:
-        if canceled is not None and canceled.is_set():
-            with Action(
-                f"Server creation for {name} of {server_type} in {server_location} canceled",
-                level=logging.DEBUG,
-                stacklevel=3,
-                server_name=name,
-            ):
-                raise CanceledServerCreation("Server creation canceled")
-
         if semaphore is None or semaphore.acquire(timeout=1.0):
             try:
+                if canceled is not None and canceled.is_set():
+                    with Action(
+                        f"Server creation for {name} with labels {labels} of {server_type} in {server_location} canceled",
+                        level=logging.DEBUG,
+                        stacklevel=3,
+                        server_name=name,
+                    ):
+                        raise CanceledServerCreation("Server creation canceled")
+
                 if active_attempt is not None:
                     # only proceed if this is our turn
                     if active_attempt[0] != attempt:
@@ -473,7 +473,10 @@ def create_server(
                 }
                 server_labels[server_ssh_key_label] = ssh_keys[0].name
 
-                with Action(f"Validating server {name} labels", server_name=name):
+                with Action(
+                    f"Validating server {name} labels {labels} of {server_type} in {server_location}",
+                    server_name=name,
+                ):
                     valid, error_msg = LabelValidator.validate_verbose(
                         labels=server_labels
                     )
@@ -483,7 +486,8 @@ def create_server(
                         )
 
                 with Action(
-                    f"Creating server {name} with labels {labels}", server_name=name
+                    f"Creating server {name} with labels {labels} of {server_type} in {server_location}",
+                    server_name=name,
                 ):
                     response = client.servers.create(
                         name=name,
@@ -503,7 +507,7 @@ def create_server(
                     )
 
                 with Action(
-                    f"Successfully created server {name} of {server_type} in {server_location}, canceling other attempts",
+                    f"Successfully created server {name} with labels {labels} of {server_type} in {server_location}, canceling other attempts",
                     level=logging.DEBUG,
                     stacklevel=3,
                     server_name=name,
