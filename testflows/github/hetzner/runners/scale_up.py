@@ -952,9 +952,7 @@ def scale_up(
                                 future, name, server_type, server_location, labels
                             )
                             futures.append(future)
-                            raise StopIteration(
-                                f"maximum number of servers for labels reached"
-                            )
+                            return
 
                 future = worker_pool.submit(
                     create_server,
