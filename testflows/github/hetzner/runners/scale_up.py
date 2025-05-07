@@ -44,7 +44,7 @@ from hcloud import APIException
 from hcloud.ssh_keys.domain import SSHKey
 from hcloud.server_types.domain import ServerType
 from hcloud.locations.domain import Location
-from hcloud.servers.client import BoundServer
+from hcloud.servers.client import BoundServer, BoundVolume
 from hcloud.servers.domain import Server, ServerCreatePublicNetwork
 from hcloud.images.domain import Image
 from hcloud.helpers.labels import LabelValidator
@@ -55,6 +55,9 @@ from github.WorkflowRun import WorkflowRun
 from github.SelfHostedActionsRunner import SelfHostedActionsRunner
 
 from concurrent.futures import ThreadPoolExecutor, Future
+
+# Lock to access the volumes list
+volumes_lock = threading.Lock()
 
 
 @dataclass
@@ -88,14 +91,27 @@ class CanceledServerCreation(Exception):
 
 
 @dataclass
+class Volume:
+    """Volume configuration."""
+
+    name: str
+    size: int  # size in GB
+
+
+@dataclass
 class RunnerServer:
     name: str
     labels: set[str]
     server_type: ServerType
     server_location: Location
+    server_volumes: list[Volume] = None
     server_status: str = Server.STATUS_STARTING
     status: str = "initializing"  # busy, ready
     server: BoundServer = None
+
+    def __post_init__(self):
+        if self.volumes is None:
+            self.volumes = []
 
 
 def uid():
@@ -237,6 +253,64 @@ def get_server_image(
         server_image = default
 
     return server_image
+
+
+def parse_volume_size(size_str: str, default: int):
+    """Convert size string to GB integer.
+
+    Args:
+        size_str: Size string (e.g. "20", "20GB")
+        default: Default size in GB if parsing fails
+
+    Returns:
+        int: Size in GB
+    """
+    size = default
+    size_str = size_str.lower()
+
+    try:
+        if size_str.endswith("gb"):
+            size = int(size_str[:-2])  # assume GB by default
+        else:
+            size = int(size_str)
+    except ValueError:
+        pass
+
+    return abs(size)
+
+
+def get_server_volumes(labels: set[str], default: int = 10, label_prefix: str = ""):
+    """Get volumes for the specified job.
+
+    Args:
+        labels: Set of job labels
+        default: Default volume size in GB if not specified in label
+        label_prefix: Optional prefix for volume labels
+
+    Returns:
+        list[Volume]: List of volumes with their names and sizes
+
+    Example labels:
+        volume-my_volume
+        volume-my_volume-20
+        volume-my_volume-20GB
+    """
+    volumes: dict[str, Volume] = {}
+
+    if label_prefix and not label_prefix.endswith("-"):
+        label_prefix += "-"
+    label_prefix += "volume-"
+    label_prefix = label_prefix.lower()
+
+    for label in labels:
+        label = label.lower()
+        if label.startswith(label_prefix):
+            # Extract volume name and optional size
+            name, *size_parts = label.split(label_prefix, 1)[-1].split("-", 2)
+            size = parse_volume_size(size_parts[0] if size_parts else "", default)
+            volumes[name] = Volume(name=name, size=size)
+
+    return list(volumes.values())
 
 
 def get_server_arch(server_type: ServerType):
@@ -423,6 +497,75 @@ def check_max_servers_for_label_reached(
     return False, None  # No limits reached
 
 
+def get_server_bound_volumes(
+    action: Action,
+    client: Client,
+    server_location: Location,
+    server_volumes: list[Volume],
+    volumes: list[BoundVolume],
+):
+    """Get a list of bound volumes to be attached to the server."""
+    server_bound_volumes: list[BoundVolume] = []
+
+    with volumes_lock:
+        for server_volume in server_volumes:
+            for volume in volumes:
+                if volume.server is not None:
+                    # already attached to a server
+                    continue
+                if volume.status != "available":
+                    # volume is not available
+                    continue
+                if server_location.name != volume.location.name:
+                    # volume is not in the same location
+                    continue
+                if volume.name.rsplit("-", 1)[0] != server_volume.name:
+                    # volume name has name-<uid> format
+                    # and the name does not match
+                    continue
+
+                # resize volume to the requested size if needed
+                if volume.size < server_volume.size:
+                    action.note(
+                        f"Resizing volume {volume.name} in {volume.location.name} from {volume.size}GB to {server_volume.size}GB"
+                    )
+                    volume.resize(server_volume.size).wait_until_finished()
+                    volume.reload()
+
+                action.note(
+                    f"Adding existing volume {volume.name} that matches {server_volume.name}"
+                )
+                server_bound_volumes.append(volume)
+                break
+
+            action.note(
+                f"Creating new volume {server_volume.name} in {server_location.name} with size {server_volume.size}GB"
+            )
+
+            new_bound_volume = client.volumes.create(
+                name=f"{server_volume.name}-{uid()}",
+                size=server_volume.size,
+                location=server_volume.location,
+                labels={"github-hetzner-runner-volume": "true"},
+                format="ext4",
+            ).volume
+            new_bound_volume.action.wait_until_finished()
+            new_bound_volume.reload()
+
+            assert (
+                new_bound_volume.status == "available"
+            ), f"Newly created volume {new_bound_volume.name} in {server_location.name} is not available ({new_bound_volume.status})"
+
+            volumes.append(new_bound_volume)
+
+            action.note(
+                f"Adding newly created volume {new_bound_volume.name} that matches {server_volume.name}"
+            )
+            server_bound_volumes.append(new_bound_volume)
+
+    return server_bound_volumes
+
+
 def create_server(
     hetzner_token: str,
     setup_worker_pool: ThreadPoolExecutor,
@@ -430,6 +573,7 @@ def create_server(
     name: str,
     server_type: ServerType,
     server_location: Location,
+    server_volumes: list[Volume],
     server_image: Image,
     server_net_config: ServerCreatePublicNetwork,
     startup_script: str,
@@ -437,6 +581,7 @@ def create_server(
     github_token: str,
     github_repository: str,
     ssh_keys: list[SSHKey],
+    volumes: list[BoundVolume],
     timeout: float = 60,
     canceled: threading.Event = None,
     semaphore: threading.Semaphore = None,
@@ -445,6 +590,7 @@ def create_server(
 ):
     """Create specified number of server instances."""
     start_time = time.time()
+    server_bound_volumes: list[BoundVolume] = []
 
     while True:
         if semaphore is None or semaphore.acquire(timeout=1.0):
@@ -485,26 +631,46 @@ def create_server(
                             f"invalid server labels {server_labels}: {error_msg}"
                         )
 
-                with Action(
-                    f"Creating server {name} with labels {labels} of {server_type} in {server_location}",
-                    server_name=name,
-                ):
-                    response = client.servers.create(
-                        name=name,
-                        server_type=server_type,
-                        location=server_location,
-                        image=server_image,
-                        ssh_keys=ssh_keys,
-                        labels=server_labels,
-                        public_net=server_net_config,
-                    )
-                    server: BoundServer = response.server
+                with volumes_lock:
+                    try:
+                        with Action(
+                            "Preparing volumes for server {name} with labels {labels} of {server_type} in {server_location}",
+                            server_name=name,
+                        ) as action:
+                            server_bound_volumes = get_server_bound_volumes(
+                                action, client, server_location, server_volumes, volumes
+                            )
 
-                    metrics.record_server_creation(
-                        server_type=server_type.name,
-                        location=server_location.name if server_location else None,
-                        creation_time=time.time() - start_time,
-                    )
+                        with Action(
+                            f"Creating server {name} with labels {labels} of {server_type} in {server_location}",
+                            server_name=name,
+                        ):
+                            response = client.servers.create(
+                                name=name,
+                                server_type=server_type,
+                                location=server_location,
+                                volumes=server_bound_volumes,
+                                image=server_image,
+                                ssh_keys=ssh_keys,
+                                labels=server_labels,
+                                public_net=server_net_config,
+                            )
+                            server: BoundServer = response.server
+
+                            for volume in server_bound_volumes:
+                                volume.server = server
+
+                    except Exception as e:
+                        for volume in server_bound_volumes:
+                            # mark server bound volume as not attached to any server
+                            volume.server = None
+                        raise
+
+                metrics.record_server_creation(
+                    server_type=server_type.name,
+                    location=server_location.name if server_location else None,
+                    creation_time=time.time() - start_time,
+                )
 
                 with Action(
                     f"Successfully created server {name} with labels {labels} of {server_type} in {server_location}, canceling other attempts",
@@ -671,6 +837,7 @@ def recyclable_server_match(
     server: RunnerServer,
     server_type: ServerType,
     server_location: Location,
+    server_volumes: list[Volume],
     server_net_config: ServerCreatePublicNetwork,
     ssh_key: SSHKey,
 ):
@@ -681,6 +848,12 @@ def recyclable_server_match(
 
     if server_location and server.server_location.name != server_location.name:
         return False
+
+    if server_volumes:
+        if set([v.name for v in server_volumes]) != set(
+            [v.name for v in server.server_volumes]
+        ):
+            return False
 
     if server_net_config.enable_ipv4 and server.server.public_net.ipv4 is None:
         return False
@@ -697,7 +870,9 @@ def recyclable_server_match(
     return ssh_key.name == server.server.labels.get(server_ssh_key_label)
 
 
-def set_future_attributes(future, name, server_type, server_location, labels):
+def set_future_attributes(
+    future, name, server_type, server_location, server_volumes, labels
+):
     """Set common attributes on a future object.
 
     Args:
@@ -710,6 +885,7 @@ def set_future_attributes(future, name, server_type, server_location, labels):
     future.server_name = name
     future.server_type = server_type
     future.server_location = server_location
+    future.server_volumes = server_volumes
     future.server_labels = labels
 
 
@@ -765,6 +941,7 @@ def scale_up(
     github_repository: str = config.github_repository
     hetzner_token: str = config.hetzner_token
     default_server_type: ServerType = config.default_server_type
+    default_volume_size: int = 10  # FIXME: config.default_volume_size
     default_location: Location = config.default_location
     default_image: Image = config.default_image
     interval_period: int = config.scale_up_interval
@@ -791,6 +968,7 @@ def scale_up(
         setup_worker_pool: ThreadPoolExecutor,
         futures: list[Future],
         servers: list[RunnerServer],
+        volumes: list[BoundVolume],
     ):
         """Create new server that would provide a runner with given labels."""
         recyclable_servers: list[BoundServer] = []
@@ -811,6 +989,9 @@ def scale_up(
         )
         server_locations = get_server_locations(
             labels=labels, default=default_location, label_prefix=label_prefix
+        )
+        server_volumes = get_server_volumes(
+            labels=labels, default=default_volume_size, label_prefix=label_prefix
         )
         server_image = get_server_image(
             client=client,
@@ -861,6 +1042,7 @@ def scale_up(
                                 server=server,
                                 server_type=server_type,
                                 server_location=server_location,
+                                server_volumes=server_volumes,
                                 server_net_config=server_net_config,
                                 ssh_key=ssh_keys[0],
                             ):
@@ -880,7 +1062,12 @@ def scale_up(
                                     timeout=max_server_ready_time,
                                 )
                                 set_future_attributes(
-                                    future, name, server_type, server_location, labels
+                                    future,
+                                    name,
+                                    server_type,
+                                    server_location,
+                                    server_volumes,
+                                    labels,
                                 )
                                 futures.append(future)
                                 servers.pop(servers.index(server))
@@ -929,7 +1116,12 @@ def scale_up(
                                 ),
                             )
                             set_future_attributes(
-                                future, name, server_type, server_location, labels
+                                future,
+                                name,
+                                server_type,
+                                server_location,
+                                server_volumes,
+                                labels,
                             )
                             futures.append(future)
                             raise StopIteration("maximum number of servers reached")
@@ -953,7 +1145,12 @@ def scale_up(
                                 ),
                             )
                             set_future_attributes(
-                                future, name, server_type, server_location, labels
+                                future,
+                                name,
+                                server_type,
+                                server_location,
+                                server_volumes,
+                                labels,
                             )
                             futures.append(future)
                             return
@@ -966,6 +1163,7 @@ def scale_up(
                     name=name,
                     server_type=server_type,
                     server_location=server_location,
+                    server_volumes=server_volumes,
                     server_image=server_image,
                     server_net_config=server_net_config,
                     setup_script=setup_script,
@@ -973,6 +1171,7 @@ def scale_up(
                     github_token=github_token,
                     github_repository=github_repository,
                     ssh_keys=ssh_keys,
+                    volumes=volumes,
                     timeout=max_server_ready_time,
                     canceled=create_server_canceled,
                     semaphore=create_server_semaphore,
@@ -980,7 +1179,7 @@ def scale_up(
                     attempt=create_server_attempt,
                 )
                 set_future_attributes(
-                    future, name, server_type, server_location, labels
+                    future, name, server_type, server_location, server_volumes, labels
                 )
                 futures.append(future)
 
@@ -1043,11 +1242,27 @@ def scale_up(
                             ),
                             server_type=server.server_type,
                             server_location=server.datacenter.location,
+                            server_volumes=[
+                                Volume(
+                                    name=volume.name.rsplit("-", 1)[0], size=volume.size
+                                )
+                                for volume in server.volumes
+                            ],
                             server=server,
                         )
                         for server in client.servers.get_all()
                         if server.name.startswith(server_name_prefix)
                     ]
+
+                with Action(
+                    "Getting list of available volumes",
+                    level=logging.DEBUG,
+                    interval=interval,
+                ):
+                    volumes = client.volumes.get_all(
+                        label_selector="github-hetzner-runner-volume",
+                        status=["available"],
+                    )
 
                 with Action(
                     "Getting list of self-hosted runners",
@@ -1210,6 +1425,7 @@ def scale_up(
                                             setup_worker_pool=setup_worker_pool,
                                             futures=futures,
                                             servers=servers,
+                                            volumes=volumes,
                                         )
                     except StopIteration:
                         pass
@@ -1243,6 +1459,7 @@ def scale_up(
                                                 setup_worker_pool=setup_worker_pool,
                                                 futures=futures,
                                                 servers=servers,
+                                                volumes=volumes,
                                             )
                                     except StopIteration:
                                         break
@@ -1261,6 +1478,8 @@ def scale_up(
                                     name=future.server_name,
                                     server_type=future.server_type,
                                     server_location=future.server_location,
+                                    server_volumes=future.server_volumes,
+                                    server_status=future.server_volumes,
                                     labels=future.server_labels,
                                 )
                             )
