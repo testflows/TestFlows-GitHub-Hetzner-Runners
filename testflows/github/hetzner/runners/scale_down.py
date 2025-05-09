@@ -89,6 +89,11 @@ class UnusedRunner:
     observed_interval: float
 
 
+def delete_server(server: BoundServer):
+    """Delete server."""
+    server.delete()
+
+
 def delete_recyclable_server(
     server_name,
     recyclable_servers: list[BoundServer],
@@ -138,7 +143,7 @@ def delete_recyclable_server(
         ignore_fail=True,
         server_name=server_name,
     ):
-        recyclable_server.delete()
+        delete_server(recyclable_server)
 
     return recyclable_server.name
 
@@ -157,7 +162,7 @@ def recycle_server(reason: str, server: BoundServer, ssh_key: SSHKey, end_of_lif
             server_name=server.name,
         ):
             try:
-                server.delete()
+                delete_server(server)
             finally:
                 return
 
@@ -171,7 +176,7 @@ def recycle_server(reason: str, server: BoundServer, ssh_key: SSHKey, end_of_lif
             server_name=server.name,
         ):
             try:
-                server.delete()
+                delete_server(server)
             finally:
                 return
 
@@ -185,7 +190,7 @@ def recycle_server(reason: str, server: BoundServer, ssh_key: SSHKey, end_of_lif
             server_name=server.name,
         ):
             try:
-                server.delete()
+                delete_server(server)
             finally:
                 return
 
@@ -466,7 +471,7 @@ def scale_down(
                                         location=powered_off_server.server.datacenter.location.name,
                                         reason="powered_off",
                                     )
-                                    powered_off_server.server.delete()
+                                    delete_server(powered_off_server.server)
                             powered_off_servers.pop(server_name)
 
             with Action(
@@ -509,7 +514,7 @@ def scale_down(
                                         location=zombie_server.server.datacenter.location.name,
                                         reason="zombie",
                                     )
-                                    zombie_server.server.delete()
+                                    delete_server(zombie_server.server)
                             zombie_servers.pop(server_name)
 
             with Action(
@@ -565,7 +570,7 @@ def scale_down(
                                             location=runner_server.datacenter.location.name,
                                             reason="unused",
                                         )
-                                        runner_server.delete()
+                                        delete_server(runner_server)
                                 runner_server = None
 
                             if runner_server is None:

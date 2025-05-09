@@ -119,6 +119,11 @@ def uid():
     return str(time.time()).replace(".", "")
 
 
+def get_volume_name(name: str):
+    """Get volume name. Expected format: <name>-<uid>."""
+    return name.rsplit("-", 1)[0]
+
+
 def get_runner_server_name(runner_name: str) -> str:
     """Determine runner's server name."""
     return "-".join(runner_name.split("-")[:5])
@@ -163,6 +168,19 @@ def server_setup(
 
     with Action("Executing setup.sh script", server_name=server.name):
         ssh(server, f"bash -s  < {setup_script}", stacklevel=5)
+
+    with Action("Mounting volumes", server_name=server.name):
+        for volume in server.volumes:
+            volume_name = get_volume_name(volume.name)
+            ssh(
+                server,
+                (
+                    f"'sudo mkdir /mnt/{volume_name} "
+                    f"&& sudo mount -o discard,defaults /dev/disk/by-id/scsi-0HC_Volume_{volume.id} /mnt/{volume_name} "
+                    f"&& sudo chown ubuntu:ubuntu /mnt/{volume_name}'"
+                ),
+                stacklevel=5,
+            )
 
     with Action("Executing startup.sh script", server_name=server.name):
         ssh(
@@ -520,7 +538,7 @@ def get_server_bound_volumes(
             if server_location.name != volume.location.name:
                 # volume is not in the same location
                 continue
-            if volume.name.rsplit("-", 1)[0] != server_volume.name:
+            if get_volume_name(volume.name) != server_volume.name:
                 # volume name has name-<uid> format
                 # and the name does not match
                 continue
@@ -528,13 +546,13 @@ def get_server_bound_volumes(
             # resize volume to the requested size if needed
             if volume.size < server_volume.size:
                 action.note(
-                    f"Resizing volume {volume.name} in {volume.location} from {volume.size}GB to {server_volume.size}GB"
+                    f"Resizing volume {volume.name} in {volume.location.name} from {volume.size}GB to {server_volume.size}GB"
                 )
                 volume.resize(server_volume.size).wait_until_finished()
-                volume.reload()
+                volume.size = server_volume.size
 
             action.note(
-                f"Adding existing volume {volume.name} in {volume.location} that matches {server_volume.name}"
+                f"Adding existing volume {volume.name} in {volume.location.name} that matches {server_volume.name}"
             )
             server_bound_volumes.append(volume)
             found_existing_volume = True
@@ -544,7 +562,7 @@ def get_server_bound_volumes(
             continue
 
         action.note(
-            f"Creating new volume {server_volume.name} in {server_location} with size {server_volume.size}GB"
+            f"Creating new volume {server_volume.name} in {server_location.name} with size {server_volume.size}GB"
         )
 
         response = client.volumes.create(
@@ -552,23 +570,22 @@ def get_server_bound_volumes(
             size=server_volume.size,
             location=server_location,
             labels={"github-hetzner-runner-volume": "true"},
-            automount=True,
             format="ext4",
         )
-        new_bound_volume = response.volume
+        new_volume = response.volume
         response.action.wait_until_finished()
-        new_bound_volume.reload()
+        new_volume.reload()
 
         assert (
-            new_bound_volume.status == "available"
-        ), f"Newly created volume {new_bound_volume.name} in {new_bound_volume.location} is not available ({new_bound_volume.status})"
+            new_volume.status == "available"
+        ), f"Newly created volume {new_volume.name} in {new_volume.location.name} is not available ({new_volume.status})"
 
-        volumes.append(new_bound_volume)
+        volumes.append(new_volume)
 
         action.note(
-            f"Adding newly created volume {new_bound_volume.name} in {new_bound_volume.location} that matches {server_volume.name}"
+            f"Adding newly created volume {new_volume.name} in {new_volume.location.name} that matches {server_volume.name}"
         )
-        server_bound_volumes.append(new_bound_volume)
+        server_bound_volumes.append(new_volume)
 
     return server_bound_volumes
 
@@ -597,7 +614,6 @@ def create_server(
 ):
     """Create specified number of server instances."""
     start_time = time.time()
-    server_bound_volumes: list[BoundVolume] = []
 
     if server_volumes:
         # location must be specified for any server with volumes
@@ -634,6 +650,8 @@ def create_server(
 
                 with Action(
                     f"Validating server {name} labels {labels} of {server_type} in {server_location}",
+                    level=logging.DEBUG,
+                    stacklevel=3,
                     server_name=name,
                 ):
                     valid, error_msg = LabelValidator.validate_verbose(
@@ -645,9 +663,12 @@ def create_server(
                         )
 
                 with volumes_lock:
+                    server_bound_volumes: list[BoundVolume] = []
                     try:
                         with Action(
                             f"Preparing volumes for server {name} with labels {labels} of {server_type} in {server_location}",
+                            level=logging.DEBUG,
+                            stacklevel=3,
                             server_name=name,
                         ) as action:
                             server_bound_volumes = get_server_bound_volumes(
@@ -656,6 +677,7 @@ def create_server(
 
                         with Action(
                             f"Creating server {name} with labels {labels} of {server_type} in {server_location}",
+                            stacklevel=3,
                             server_name=name,
                         ):
                             response = client.servers.create(
@@ -667,7 +689,6 @@ def create_server(
                                 ssh_keys=ssh_keys,
                                 labels=server_labels,
                                 public_net=server_net_config,
-                                automount=True,
                             )
                             server: BoundServer = response.server
 
@@ -1258,7 +1279,7 @@ def scale_up(
                             server_location=server.datacenter.location,
                             server_volumes=[
                                 Volume(
-                                    name=volume.name.rsplit("-", 1)[0], size=volume.size
+                                    name=get_volume_name(volume.name), size=volume.size
                                 )
                                 for volume in server.volumes
                             ],
