@@ -130,8 +130,18 @@
                 },
                 "default_location": {
                     "description": "The default runner server location name, by default not specified.",
+                        "type": "string",
+                        "examples": ["ash"]
+                    },
+                "default_volume_size": {
+                    "description": "The default runner server volume size in GB, default: 10.",
+                    "type": "integer",
+                    "examples": [10]
+                },
+                "default_volume_location": {
+                    "description": "The default runner server volume location name, by default 'nbg1' (must be specified).",
                     "type": "string",
-                    "examples": ["ash"]
+                    "examples": ["nbg1"]
                 },
                 "workers": {
                     "description": "Number of concurrent thread workers, default: 10.",

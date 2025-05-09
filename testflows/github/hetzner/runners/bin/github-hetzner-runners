@@ -256,6 +256,20 @@ def argparser():
     )
 
     parser.add_argument(
+        "--default-volume-size",
+        metavar="size",
+        type=args.count_type,
+        help="default runner server volume size in GB, default: 10",
+    )
+
+    parser.add_argument(
+        "--default-volume-location",
+        metavar="name",
+        type=args.location_type,
+        help=("default runner server volume location name, by default 'nbg1' (must be specified)"),
+    )
+
+    parser.add_argument(
         "-w",
         "--workers",
         metavar="count",
@@ -1351,6 +1365,9 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
 
         with Action("Checking if default location exists"):
             config.default_location = check_location(client, config.default_location)
+
+        with Action("Checking if default volume location exists"):
+            config.default_volume_location = check_location(client, config.default_volume_location, required=True)
 
         with Action("Checking if default server type exists"):
             config.default_server_type = check_server_type(

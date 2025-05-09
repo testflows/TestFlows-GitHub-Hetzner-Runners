@@ -120,7 +120,9 @@ class Config:
     max_runners_in_workflow_run: int = None
     default_image: Image = image("x86:system:ubuntu-22.04")
     default_server_type: ServerType = server_type("cx22")
-    default_location: Location = None
+    default_location: Location = location("nbg1")
+    default_volume_location: Location = None
+    default_volume_size: int = 10
     workers: int = 10
     scripts: str = os.path.join(current_dir, "..", "scripts")
     max_powered_off_time: int = 60
@@ -385,6 +387,20 @@ def parse_config(filename: str):
             doc["default_location"] = location(v)
         except Exception as e:
             assert False, f"config.default_location: {e}"
+
+    if doc.get("default_volume_location") is not None:
+        try:
+            v = doc["default_volume_location"]
+            assert isinstance(v, str), "is not a string"
+            doc["default_volume_location"] = location(v)
+        except Exception as e:
+            assert False, f"config.default_volume_location: {e}"
+
+    if doc.get("default_volume_size") is not None:
+        v = doc["default_volume_size"]
+        assert (
+            isinstance(v, int) and v > 0
+        ), "config.default_volume_size: is not an integer > 0"
 
     if doc.get("workers") is not None:
         v = doc["workers"]
@@ -724,9 +740,11 @@ def check_image(client: Client, image: Image):
             )
 
 
-def check_location(client: Client, location: Location):
+def check_location(client: Client, location: Location, required=False):
     """Check if location exists."""
     if location is None:
+        if required:
+            raise LocationError(f"location is not defined")
         return None
     _location = client.locations.get_by_name(location.name)
     if not _location:

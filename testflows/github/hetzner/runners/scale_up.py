@@ -176,7 +176,7 @@ def server_setup(
                 server,
                 (
                     f"'sudo mkdir /mnt/{volume_name} "
-                    f"&& sudo mount -o discard,defaults /dev/disk/by-id/scsi-0HC_Volume_{volume.id} /mnt/{volume_name} "
+                    f"&& sudo mount -o discard,defaults {volume.linux_device} /mnt/{volume_name} "
                     f"&& sudo chown ubuntu:ubuntu /mnt/{volume_name}'"
                 ),
                 stacklevel=5,
@@ -615,12 +615,6 @@ def create_server(
     """Create specified number of server instances."""
     start_time = time.time()
 
-    if server_volumes:
-        # location must be specified for any server with volumes
-        server_location = server_location or Location(
-            name="nbg1"
-        )  # FIXME: this needs to be specified using config
-
     while True:
         if semaphore is None or semaphore.acquire(timeout=1.0):
             try:
@@ -976,7 +970,8 @@ def scale_up(
     github_repository: str = config.github_repository
     hetzner_token: str = config.hetzner_token
     default_server_type: ServerType = config.default_server_type
-    default_volume_size: int = 10  # FIXME: config.default_volume_size
+    default_volume_size: int = config.default_volume_size
+    default_volume_location: Location = config.default_volume_location
     default_location: Location = config.default_location
     default_image: Image = config.default_image
     interval_period: int = config.scale_up_interval
@@ -1028,6 +1023,11 @@ def scale_up(
         server_volumes = get_server_volumes(
             labels=labels, default=default_volume_size, label_prefix=label_prefix
         )
+        if server_volumes:
+            if server_locations == [None]:
+                server_locations = [
+                    default_volume_location,
+                ]
         server_image = get_server_image(
             client=client,
             labels=labels,
