@@ -116,7 +116,7 @@ def delete(args, config: Config):
         if volume.server:
             if not args.delete_volumes_force:
                 print(
-                    f"⚠️  Volume {volume.name} with id {volume.id} in {volume.location.name} is attached to server {volume.server.name}, use --force to delete",
+                    f"❌  Volume {volume.name} with id {volume.id} in {volume.location.name} is attached to server {volume.server.name}, use --force to delete",
                     file=sys.stderr,
                 )
                 continue
@@ -128,5 +128,63 @@ def delete(args, config: Config):
         client.volumes.delete(volume).wait_until_finished()
         print(
             f"✅  Deleted volume {volume.name} with id {volume.id} in {volume.location.name}",
+            file=sys.stdout,
+        )
+
+
+def resize(args, config: Config):
+    """Resize volumes."""
+    config.check("hetzner_token")
+
+    with Action("Logging in to Hetzner Cloud"):
+        client = Client(token=config.hetzner_token)
+
+    with Action("Getting a list of volumes"):
+        volumes: list[BoundVolume] = client.volumes.get_all(
+            label_selector="github-hetzner-runner-volume"
+        )
+        if not volumes:
+            print("No volumes found", file=sys.stdout)
+            return
+
+    resize_volumes = []
+
+    if args.resize_volumes_name:
+        resize_volumes += [
+            v for v in volumes if get_volume_name(v.name) in args.resize_volumes_name
+        ]
+
+    if args.resize_volumes_volume_name:
+        resize_volumes += [
+            v for v in volumes if v.name in args.resize_volumes_volume_name
+        ]
+
+    if args.resize_volumes_id:
+        resize_volumes += [v for v in volumes if v.id in args.resize_volumes_id]
+
+    if args.resize_volumes_all:
+        resize_volumes = volumes[:]
+
+    if not resize_volumes:
+        print("No volumes selected", file=sys.stderr)
+        return
+
+    for volume in resize_volumes:
+        print(
+            f"📏  Resizing volume {volume.name} with id {volume.id} in {volume.location.name}",
+            f"from {volume.size}GB to {args.size}GB",
+            file=sys.stdout,
+        )
+        if volume.size >= args.size:
+            print(
+                f"❌  Skipping volume {volume.name} with id {volume.id} in {volume.location.name} is already at the desired size or larger (downsizing is not supported)",
+                file=sys.stderr,
+            )
+            continue
+
+        volume.resize(args.size).wait_until_finished()
+        print(
+            f"✅  Resized  volume {volume.name} with id {volume.id} in {volume.location.name}",
+            f"from {volume.size}GB to {args.size}GB",
             file=sys.stdout,
         )

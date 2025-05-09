@@ -1385,6 +1385,59 @@ def argparser():
 
     volumes_delete_parser.set_defaults(func=volumes.delete)
 
+    # Volumes resize subcommand
+    volumes_resize_parser = volumes_commands.add_parser(
+        "resize",
+        help="resize volumes",
+        description=(
+            f"Resize volumes"
+        ),
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    volumes_resize_parser.add_argument(
+        "-n", "--name",
+        metavar="name",
+        action="append",
+        dest="resize_volumes_name",
+        help="resize all volumes matching name",
+        type=str,
+    )
+
+    volumes_resize_parser.add_argument(
+        "-v","--volume",
+        metavar="name",
+        action="append",
+        dest="resize_volumes_volume_name",
+        help="resize by volume name",
+        type=str,
+    )
+
+    volumes_resize_parser.add_argument(
+        "--id",
+        metavar="id",
+        action="append",
+        dest="resize_volumes_id",
+        help="resize by volume id",
+        type=int,
+    )
+
+    volumes_resize_parser.add_argument(
+        "--all",
+        dest="resize_volumes_all",
+        action="store_true",
+        help="resize all volumes",
+    )
+
+    volumes_resize_parser.add_argument(
+        "size",
+        metavar="size",
+        help="resize to size in GB",
+        type=int,
+    )
+
+    volumes_resize_parser.set_defaults(func=volumes.resize)
+
     return parser
 
 

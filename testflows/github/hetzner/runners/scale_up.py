@@ -176,6 +176,7 @@ def server_setup(
                 server,
                 (
                     f"'sudo mkdir /mnt/{volume_name} "
+                    f"&& sudo resize2fs {volume.linux_device} "
                     f"&& sudo mount -o discard,defaults {volume.linux_device} /mnt/{volume_name} "
                     f"&& sudo chown ubuntu:ubuntu /mnt/{volume_name}'"
                 ),
