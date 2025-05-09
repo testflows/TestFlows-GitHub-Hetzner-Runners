@@ -120,8 +120,8 @@ class Config:
     max_runners_in_workflow_run: int = None
     default_image: Image = image("x86:system:ubuntu-22.04")
     default_server_type: ServerType = server_type("cx22")
-    default_location: Location = location("nbg1")
-    default_volume_location: Location = None
+    default_location: Location = None
+    default_volume_location: Location = location("nbg1")
     default_volume_size: int = 10
     workers: int = 10
     scripts: str = os.path.join(current_dir, "..", "scripts")

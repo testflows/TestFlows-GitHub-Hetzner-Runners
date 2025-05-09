@@ -16,12 +16,25 @@ import os
 import sys
 
 from hcloud.servers.client import BoundServer
+from hcloud.servers.domain import Server
 
 from .actions import Action
 from .config import Config
 from .server import ssh_command
 from .scale_up import server_name_prefix
 from .hclient import HClient as Client
+
+status_icon = {
+    Server.STATUS_INIT: "⏳",
+    Server.STATUS_DELETING: "🗑️",
+    Server.STATUS_MIGRATING: "📦",
+    Server.STATUS_OFF: "🔴",
+    Server.STATUS_REBUILDING: "🛠️",
+    Server.STATUS_RUNNING: "🟢",
+    Server.STATUS_STARTING: "🚀",
+    Server.STATUS_STOPPING: "🛑",
+    Server.STATUS_UNKNOWN: "❓",
+}
 
 
 def list(args, config: Config):
@@ -32,11 +45,18 @@ def list(args, config: Config):
         client = Client(token=config.hetzner_token)
 
     with Action("Getting a list of servers"):
-        for server in client.servers.get_all():
+        servers = client.servers.get_all()
+        if not servers:
+            print("No servers found", file=sys.stdout)
+            return
+
+        print("  ", f"{'status':10}", "name", file=sys.stdout)
+
+        for server in servers:
             if not server.name.startswith("github-hetzner-runner"):
                 continue
-            status_icon = "✅" if server.status == server.STATUS_RUNNING else "❌"
-            print(status_icon, f"{server.status:10}", server.name, file=sys.stdout)
+            icon = status_icon.get(server.status, "❓")
+            print(icon, f"{server.status:10}", server.name, file=sys.stdout)
 
 
 def ssh_client(args, config: Config, server_name: str = None):

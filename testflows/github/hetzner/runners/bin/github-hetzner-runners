@@ -61,6 +61,7 @@ import testflows.github.hetzner.runners.servers as servers
 import testflows.github.hetzner.runners.estimate as estimate
 import testflows.github.hetzner.runners.images as images
 import testflows.github.hetzner.runners.projects as projects
+import testflows.github.hetzner.runners.volumes as volumes
 
 from requests_cache import DO_NOT_CACHE, EXPIRE_IMMEDIATELY, install_cache
 from requests_cache.backends.filesystem import FileCache
@@ -1226,7 +1227,7 @@ def argparser():
     # Projects subcommand
     projects_parser = commands.add_parser(
         "projects",
-        help="project management commands",
+        help="manage projects",
         description="Manage project configurations.",
         formatter_class=RawTextHelpFormatter,
     )
@@ -1307,6 +1308,82 @@ def argparser():
         formatter_class=RawTextHelpFormatter,
     )
     projects_unset_parser.set_defaults(func=projects.unset_current)
+
+    # Volumes subcommand
+    volumes_parser = commands.add_parser(
+        "volumes",
+        help="manage volumes",
+        description="Manage volumes.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    volumes_commands = volumes_parser.add_subparsers(
+        title="commands", metavar="command", description=None, help=None
+    )
+
+    volumes_commands.required = True
+
+    # Volumes list subcommand
+    volumes_list_parser = volumes_commands.add_parser(
+        "list",
+        help="list all volumes",
+        description="List all volumes.",
+        formatter_class=RawTextHelpFormatter,
+    )
+    volumes_list_parser.set_defaults(func=volumes.list)
+
+    # Volumes delete subcommand
+    volumes_delete_parser = volumes_commands.add_parser(
+        "delete",
+        help="delete volumes",
+        description=(
+            f"Delete volumes"
+        ),
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    volumes_delete_parser.add_argument(
+        "-n", "--name",
+        metavar="name",
+        action="append",
+        dest="delete_volumes_name",
+        help="delete all volumes matching name",
+        type=str,
+    )
+
+    volumes_delete_parser.add_argument(
+        "-v","--volume",
+        metavar="name",
+        action="append",
+        dest="delete_volumes_volume_name",
+        help="delete by volume name",
+        type=str,
+    )
+
+    volumes_delete_parser.add_argument(
+        "--id",
+        metavar="id",
+        action="append",
+        dest="delete_volumes_id",
+        help="delete by volume id",
+        type=int,
+    )
+
+    volumes_delete_parser.add_argument(
+        "--all",
+        dest="delete_volumes_all",
+        action="store_true",
+        help="delete all volumes",
+    )
+
+    volumes_delete_parser.add_argument(
+        "-f", "--force",
+        dest="delete_volumes_force",
+        action="store_true",
+        help="force delete volumes even if they are attached to a server",
+    )
+
+    volumes_delete_parser.set_defaults(func=volumes.delete)
 
     return parser
 

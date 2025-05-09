@@ -659,15 +659,20 @@ def create_server(
                 with volumes_lock:
                     server_bound_volumes: list[BoundVolume] = []
                     try:
-                        with Action(
-                            f"Preparing volumes for server {name} with labels {labels} of {server_type} in {server_location}",
-                            level=logging.DEBUG,
-                            stacklevel=3,
-                            server_name=name,
-                        ) as action:
-                            server_bound_volumes = get_server_bound_volumes(
-                                action, client, server_location, server_volumes, volumes
-                            )
+                        if server_volumes:
+                            with Action(
+                                f"Preparing volumes for server {name} with labels {labels} of {server_type} in {server_location.name}",
+                                level=logging.DEBUG,
+                                stacklevel=3,
+                                server_name=name,
+                            ) as action:
+                                server_bound_volumes = get_server_bound_volumes(
+                                    action,
+                                    client,
+                                    server_location,
+                                    server_volumes,
+                                    volumes,
+                                )
 
                         with Action(
                             f"Creating server {name} with labels {labels} of {server_type} in {server_location}",
