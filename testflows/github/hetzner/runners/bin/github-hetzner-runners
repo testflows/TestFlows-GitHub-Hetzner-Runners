@@ -430,7 +430,7 @@ def argparser():
 
     cloud_parser = commands.add_parser(
         "cloud",
-        help="cloud service commands",
+        help="manage cloud service",
         description="Deploying and running application as a service on a cloud instance.",
         formatter_class=RawTextHelpFormatter,
     )
@@ -752,7 +752,7 @@ def argparser():
 
     service_parser = commands.add_parser(
         "service",
-        help="service commands",
+        help="manage service",
         description="Service commands.",
         formatter_class=RawTextHelpFormatter,
     )
@@ -893,7 +893,7 @@ def argparser():
 
     estimate_parser = commands.add_parser(
         "estimate",
-        help="cost estimator commands",
+        help="cost estimator",
         description="Estimate costs for workflow job, run or runs.",
         formatter_class=RawTextHelpFormatter,
     )
@@ -1030,7 +1030,7 @@ def argparser():
 
     images_parser = commands.add_parser(
         "images",
-        help="images commands",
+        help="manage images",
         description="Images commands.",
         formatter_class=RawTextHelpFormatter,
     )
