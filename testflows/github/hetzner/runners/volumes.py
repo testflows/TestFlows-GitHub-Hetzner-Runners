@@ -45,13 +45,14 @@ def list(args, config: Config):
         print(
             "  ",
             f"{'status':10}",
+            f"{'state,':8}",
             "name,",
             "actual name,",
             f"size in GB,",
             "location,",
             "server,",
             "created,",
-            "format",
+            "format,",
             file=sys.stdout,
         )
         for volume in volumes:
@@ -60,6 +61,7 @@ def list(args, config: Config):
             print(
                 icon,
                 f"{volume.status:10}",
+                f"{volume.labels.get('github-hetzner-runner-volume', 'none') + ',':8}",
                 get_volume_name(volume.name) + ",",
                 volume.name + ",",
                 f"{volume.size}GB,",

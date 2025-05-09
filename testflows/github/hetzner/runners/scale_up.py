@@ -570,7 +570,7 @@ def get_server_bound_volumes(
             name=f"{server_volume.name}-{uid()}",
             size=server_volume.size,
             location=server_location,
-            labels={"github-hetzner-runner-volume": "true"},
+            labels={"github-hetzner-runner-volume": "active"},
             format="ext4",
         )
         new_volume = response.volume
@@ -1301,7 +1301,7 @@ def scale_up(
                     interval=interval,
                 ):
                     volumes = client.volumes.get_all(
-                        label_selector="github-hetzner-runner-volume",
+                        label_selector="github-hetzner-runner-volume=active",
                         status=["available"],
                     )
 
