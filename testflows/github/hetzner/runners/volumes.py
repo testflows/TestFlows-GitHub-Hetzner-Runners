@@ -62,8 +62,27 @@ def list(args, config: Config):
         list_volumes += [
             v for v in volumes if get_volume_name(v.name) in args.list_volumes_name
         ]
-    else:
-        list_volumes = volumes
+
+    if args.lists_volumes_volume_name:
+        list_volumes += [v for v in volumes if v.name in args.list_volumes_volume_name]
+
+    if args.list_volumes_id:
+        list_volumes += [v for v in volumes if v.id in args.list_volumes_id]
+
+    if (
+        not args.list_volumes_name
+        and not args.list_volumes_volume_name
+        and not args.list_volumes_id
+    ):
+        # list all volumes by default
+        args.list_volumes_all = True
+
+    if args.list_volumes_all:
+        list_volumes = volumes[:]
+
+    if not list_volumes:
+        print("No volumes selected", file=sys.stderr)
+        return
 
     for volume in list_volumes:
         icon = status_icon.get(volume.status, "❓")

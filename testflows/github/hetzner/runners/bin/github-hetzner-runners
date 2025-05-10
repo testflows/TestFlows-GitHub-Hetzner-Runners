@@ -1326,8 +1326,8 @@ def argparser():
     # Volumes list subcommand
     volumes_list_parser = volumes_commands.add_parser(
         "list",
-        help="list all volumes",
-        description="List all volumes.",
+        help="list volumes",
+        description="List volumes.",
         formatter_class=RawTextHelpFormatter,
     )
 
@@ -1338,6 +1338,31 @@ def argparser():
         dest="list_volumes_name",
         help="list all volumes matching name",
         type=str,
+    )
+
+    volumes_list_parser.add_argument(
+        "-v","--volume",
+        metavar="name",
+        action="append",
+        dest="list_volumesvolume_name",
+        help="list by volume name",
+        type=str,
+    )
+
+    volumes_list_parser.add_argument(
+        "--id",
+        metavar="id",
+        action="append",
+        dest="list_volumes_id",
+        help="list by volume id",
+        type=int,
+    )
+
+    volumes_list_parser.add_argument(
+        "--all",
+        dest="list_volumes_all",
+        action="store_true",
+        help="list all volumes (default if no other options are provided)",
     )
 
     volumes_list_parser.set_defaults(func=volumes.list)
