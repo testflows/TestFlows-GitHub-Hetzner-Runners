@@ -139,7 +139,7 @@ def delete(args, config: Config):
             volume.detach()
         client.volumes.delete(volume)
         print(
-            f"✅  Deleted volume {volume.name} with id {volume.id} in {volume.location.name}",
+            f"✅ Deleted volume {volume.name} with id {volume.id} in {volume.location.name}",
             file=sys.stdout,
         )
 
