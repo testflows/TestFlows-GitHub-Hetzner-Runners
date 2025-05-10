@@ -1330,6 +1330,16 @@ def argparser():
         description="List all volumes.",
         formatter_class=RawTextHelpFormatter,
     )
+
+    volumes_list_parser.add_argument(
+        "-n", "--name",
+        metavar="name",
+        action="append",
+        dest="list_volumes_name",
+        help="list all volumes matching name",
+        type=str,
+    )
+
     volumes_list_parser.set_defaults(func=volumes.list)
 
     # Volumes delete subcommand

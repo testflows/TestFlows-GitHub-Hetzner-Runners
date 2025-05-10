@@ -42,35 +42,45 @@ def list(args, config: Config):
             print("No volumes found", file=sys.stdout)
             return
 
+    print(
+        "  ",
+        f"{'status':10}",
+        f"{'state,':8}",
+        "name,",
+        "actual name,",
+        f"size in GB,",
+        "location,",
+        "server,",
+        "created,",
+        "format,",
+        file=sys.stdout,
+    )
+
+    list_volumes = []
+
+    if args.list_volumes_name:
+        list_volumes += [
+            v for v in volumes if get_volume_name(v.name) in args.list_volumes_name
+        ]
+    else:
+        list_volumes = volumes
+
+    for volume in list_volumes:
+        icon = status_icon.get(volume.status, "❓")
+        volume_server = volume.server.name if volume.server else "none"
         print(
-            "  ",
-            f"{'status':10}",
-            f"{'state,':8}",
-            "name,",
-            "actual name,",
-            f"size in GB,",
-            "location,",
-            "server,",
-            "created,",
-            "format,",
+            icon,
+            f"{volume.status:10}",
+            f"{volume.labels.get('github-hetzner-runner-volume', 'none') + ',':8}",
+            get_volume_name(volume.name) + ",",
+            volume.name + ",",
+            f"{volume.size}GB,",
+            volume.location.name + ",",
+            volume_server + ",",
+            volume.created.strftime("%Y-%m-%d %H:%M:%S") + ",",
+            volume.format,
             file=sys.stdout,
         )
-        for volume in volumes:
-            icon = status_icon.get(volume.status, "❓")
-            volume_server = volume.server.name if volume.server else "none"
-            print(
-                icon,
-                f"{volume.status:10}",
-                f"{volume.labels.get('github-hetzner-runner-volume', 'none') + ',':8}",
-                get_volume_name(volume.name) + ",",
-                volume.name + ",",
-                f"{volume.size}GB,",
-                volume.location.name + ",",
-                volume_server + ",",
-                volume.created.strftime("%Y-%m-%d %H:%M:%S") + ",",
-                volume.format,
-                file=sys.stdout,
-            )
 
 
 def delete(args, config: Config):
