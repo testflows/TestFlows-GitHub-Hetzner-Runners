@@ -127,7 +127,7 @@ def delete(args, config: Config):
                 file=sys.stdout,
             )
             volume.detach()
-        client.volumes.delete(volume).wait_until_finished()
+        client.volumes.delete(volume)
         print(
             f"✅  Deleted volume {volume.name} with id {volume.id} in {volume.location.name}",
             file=sys.stdout,
