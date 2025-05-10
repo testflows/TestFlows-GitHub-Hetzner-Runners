@@ -200,3 +200,61 @@ def resize(args, config: Config):
             f"from {volume.size}GB to {args.size}GB",
             file=sys.stdout,
         )
+
+
+def activate_deactivate(args, config: Config, action: str):
+    """Deactivate volumes."""
+    config.check("hetzner_token")
+
+    if not action in ["active", "inactive"]:
+        raise ValueError(f"Invalid action: {action}")
+
+    with Action("Logging in to Hetzner Cloud"):
+        client = Client(token=config.hetzner_token)
+
+    with Action("Getting a list of volumes"):
+        volumes: list[BoundVolume] = client.volumes.get_all(
+            label_selector="github-hetzner-runner-volume"
+        )
+        if not volumes:
+            print("No volumes found", file=sys.stdout)
+            return
+
+    selected_volumes = []
+
+    if args.volumes_name:
+        selected_volumes += [
+            v for v in volumes if get_volume_name(v.name) in args.volumes_name
+        ]
+
+    if args.volumes_volume_name:
+        selected_volumes += [v for v in volumes if v.name in args.volumes_volume_name]
+
+    if args.volumes_id:
+        selected_volumes += [v for v in volumes if v.id in args.volumes_id]
+
+    if args.volumes_all:
+        selected_volumes = volumes[:]
+
+    if not selected_volumes:
+        print("No volumes selected", file=sys.stderr)
+        return
+
+    icon = "🟢" if action == "active" else "🔴"
+
+    for volume in selected_volumes:
+        print(
+            f"{icon}  {'Activating' if action == 'active' else 'Deactivating'} volume {volume.name} with id {volume.id} in {volume.location.name}",
+            file=sys.stdout,
+        )
+        volume.update(labels={"github-hetzner-runner-volume": action})
+
+
+def activate(args, config: Config):
+    """Activate volumes."""
+    activate_deactivate(args, config, action="active")
+
+
+def deactivate(args, config: Config):
+    """Deactivate volumes."""
+    activate_deactivate(args, config, action="inactive")

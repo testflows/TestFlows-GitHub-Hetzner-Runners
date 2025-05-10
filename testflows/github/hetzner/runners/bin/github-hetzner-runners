@@ -1347,7 +1347,7 @@ def argparser():
         "delete",
         help="delete volumes",
         description=(
-            f"Delete volumes"
+            f"Delete volumes."
         ),
         formatter_class=RawTextHelpFormatter,
     )
@@ -1400,7 +1400,7 @@ def argparser():
         "resize",
         help="resize volumes",
         description=(
-            f"Resize volumes"
+            f"Resize volumes."
         ),
         formatter_class=RawTextHelpFormatter,
     )
@@ -1447,6 +1447,100 @@ def argparser():
     )
 
     volumes_resize_parser.set_defaults(func=volumes.resize)
+
+    # Volumes deactivate subcommand
+    volumes_deactivate_parser = volumes_commands.add_parser(
+        "deactivate",
+        help="deactivate volumes",
+        description=(
+            f"Deactivate volumes. "
+            "This will prevent the volume to be attached to a new server."
+        ),
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    volumes_deactivate_parser.add_argument(
+        "-n", "--name",
+        metavar="name",
+        action="append",
+        dest="volumes_name",
+        help="deactivate all volumes matching name",
+        type=str,
+    )
+
+    volumes_deactivate_parser.add_argument(
+        "-v","--volume",
+        metavar="name",
+        action="append",
+        dest="volumes_volume_name",
+        help="deactivate by volume name",
+        type=str,
+    )
+
+    volumes_deactivate_parser.add_argument(
+        "--id",
+        metavar="id",
+        action="append",
+        dest="volumes_id",
+        help="deactivate by volume id",
+        type=int,
+    )
+
+    volumes_deactivate_parser.add_argument(
+        "--all",
+        dest="volumes_all",
+        action="store_true",
+        help="deactivate all volumes",
+    )
+
+    volumes_deactivate_parser.set_defaults(func=volumes.deactivate)
+
+    # Volumes activate subcommand
+    volumes_activate_parser = volumes_commands.add_parser(
+        "activate",
+        help="activate volumes",
+        description=(
+            f"Activate volumes."
+            "This will allow the volume to be attached to a new server."
+        ),
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    volumes_activate_parser.add_argument(
+        "-n", "--name",
+        metavar="name",
+        action="append",
+        dest="volumes_name",
+        help="activate all volumes matching name",
+        type=str,
+    )
+
+    volumes_activate_parser.add_argument(
+        "-v","--volume",
+        metavar="name",
+        action="append",
+        dest="volumes_volume_name",
+        help="activate by volume name",
+        type=str,
+    )
+
+    volumes_activate_parser.add_argument(
+        "--id",
+        metavar="id",
+        action="append",
+        dest="volumes_id",
+        help="activate by volume id",
+        type=int,
+    )
+
+    volumes_activate_parser.add_argument(
+        "--all",
+        dest="volumes_all",
+        action="store_true",
+        help="activate all volumes",
+    )
+
+    volumes_activate_parser.set_defaults(func=volumes.activate)
 
     return parser
 
