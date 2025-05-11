@@ -15,14 +15,19 @@
 import os
 import sys
 
+from github import Github
+from github.Repository import Repository
+from github.SelfHostedActionsRunner import SelfHostedActionsRunner
+
 from hcloud.servers.client import BoundServer
 from hcloud.servers.domain import Server
 
 from .actions import Action
 from .config import Config
 from .server import ssh_command
-from .scale_up import server_name_prefix
+from .scale_up import server_name_prefix, runner_name_prefix
 from .hclient import HClient as Client
+from .request import request
 
 status_icon = {
     Server.STATUS_INIT: "⏳",
@@ -46,17 +51,131 @@ def list(args, config: Config):
 
     with Action("Getting a list of servers"):
         servers = client.servers.get_all()
-        if not servers:
-            print("No servers found", file=sys.stdout)
-            return
+        servers = [s for s in servers if s.name.startswith("github-hetzner-runner")]
 
-        print("  ", f"{'status':10}", "name", file=sys.stdout)
+    if not servers:
+        print("No servers found", file=sys.stdout)
+        return
 
-        for server in servers:
-            if not server.name.startswith("github-hetzner-runner"):
-                continue
-            icon = status_icon.get(server.status, "❓")
-            print(icon, f"{server.status:10}", server.name, file=sys.stdout)
+    list_servers = []
+
+    if args.list_name:
+        list_servers += [s for s in servers if any([s.name.startswith(args.list_name)])]
+
+    if args.list_server_name:
+        list_servers += [s for s in servers if s.name in args.list_server_name]
+
+    if args.list_id:
+        list_servers += [s for s in servers if s.id in args.list_id]
+
+    if not args.list_name and not args.list_server_name and not args.list_id:
+        # list all servers by default
+        args.list_all = True
+
+    if args.list_all:
+        list_servers = servers[:]
+
+    if not list_servers:
+        print("No servers selected", file=sys.stderr)
+        return
+
+    print("  ", f"{'status':10}", "name", file=sys.stdout)
+
+    for server in list_servers:
+        if not server.name.startswith("github-hetzner-runner"):
+            continue
+        icon = status_icon.get(server.status, "❓")
+        print(icon, f"{server.status:10}", server.name, file=sys.stdout)
+
+
+def delete(args, config: Config):
+    """Delete runners and servers."""
+    config.check("hetzner_token")
+
+    with Action("Logging in to Hetzner Cloud"):
+        client = Client(token=config.hetzner_token)
+
+    with Action("Logging in to GitHub"):
+        github = Github(login_or_token=config.github_token)
+
+    with Action(f"Getting repository {config.github_repository}"):
+        repo: Repository = github.get_repo(config.github_repository)
+
+    with Action("Getting list of self-hosted runners"):
+        runners: list[SelfHostedActionsRunner] = repo.get_self_hosted_runners()
+        runners = [
+            runner for runner in runners if runner.name.startswith(runner_name_prefix)
+        ]
+
+    with Action("Getting list of servers"):
+        servers: list[BoundServer] = client.servers.get_all()
+        servers = [
+            server for server in servers if server.name.startswith(server_name_prefix)
+        ]
+
+    if not runners and not servers:
+        print("No servers found", file=sys.stdout)
+        return
+
+    delete_runners = []
+    delete_servers = []
+
+    if args.delete_name:
+        delete_runners += [
+            r for r in runners if any([r.name.startswith(args.delete_name)])
+        ]
+        delete_servers += [
+            s for s in servers if any([s.name.startswith(args.delete_name)])
+        ]
+
+    if args.list_server_name:
+        delete_servers_by_name = [
+            s for s in servers if s.name in args.delete_server_name
+        ]
+        delete_runners += [
+            r for r in runners if r.name in [s.name for s in delete_servers_by_name]
+        ]
+        delete_servers += delete_servers_by_name
+
+    if args.list_id:
+        # we can only delete servers by id
+        delete_servers_by_id = [s for s in servers if s.id in args.list_id]
+        delete_runners += [
+            r for r in runners if r.name in [s.name for s in delete_servers_by_id]
+        ]
+        delete_servers += delete_servers_by_id
+
+    if not args.list_name and not args.list_server_name and not args.list_id:
+        # list all servers by default
+        args.list_all = True
+
+    if args.list_all:
+        delete_servers = servers[:]
+        delete_runners = runners[:]
+
+    if not delete_runners and not delete_servers:
+        print("No servers selected", file=sys.stderr)
+        return
+
+    for runner in delete_runners:
+        with Action(f"🗑️  Deleting runner {runner.name}") as action:
+            _, resp = request(
+                f"https://api.github.com/repos/{config.github_repository}/actions/runners/{runner.id}",
+                headers={
+                    "Accept": "application/vnd.github+json",
+                    "Authorization": f"Bearer {config.github_token}",
+                    "X-GitHub-Api-Version": "2022-11-28",
+                },
+                method="DELETE",
+                data={},
+            )
+            action.note(f"   {resp.status}")
+
+    for server in delete_servers:
+        with Action(
+            f"🗑️  Deleting server {server.name} with id {server.id} in {server.location.name}"
+        ):
+            server.delete()
 
 
 def ssh_client(args, config: Config, server_name: str = None):

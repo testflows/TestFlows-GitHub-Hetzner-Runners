@@ -56,7 +56,6 @@ from testflows.github.hetzner.runners.dashboard import start_http_server as star
 import testflows.github.hetzner.runners.args as args
 import testflows.github.hetzner.runners.cloud as cloud
 import testflows.github.hetzner.runners.service as service
-import testflows.github.hetzner.runners.delete as delete
 import testflows.github.hetzner.runners.servers as servers
 import testflows.github.hetzner.runners.estimate as estimate
 import testflows.github.hetzner.runners.images as images
@@ -380,22 +379,90 @@ def argparser():
 
     delete_parser = commands.add_parser(
         "delete",
-        help="delete all servers",
+        help="delete servers",
         description=(
-            f"Delete all servers that provide runners and including any standby runners.\n\n"
+            f"Delete servers and their runners.\n\n"
             "Note that the cloud service server will not be deleted. If you do have one, use\n"
             "the 'cloud delete' command to delete it."
         ),
         formatter_class=RawTextHelpFormatter,
     )
 
-    delete_parser.set_defaults(func=delete.all)
+    delete_parser.add_argument(
+        "-n", "--name",
+        metavar="name",
+        action="append",
+        dest="delete_name",
+        help="delete all servers starting with the name",
+        type=str,
+    )
+
+    delete_parser.add_argument(
+        "-s","--server",
+        metavar="name",
+        action="append",
+        dest="delete_server_name",
+        help="delete by server name",
+        type=str,
+    )
+
+    delete_parser.add_argument(
+        "--id",
+        metavar="id",
+        action="append",
+        dest="delete_id",
+        help="delete by server id",
+        type=int,
+    )
+
+    delete_parser.add_argument(
+        "--all",
+        dest="delete_all",
+        action="store_true",
+        help="delete all servers",
+    )
+
+    delete_parser.set_defaults(func=servers.delete)
 
     list_parser = commands.add_parser(
         "list",
-        help="list all servers",
-        description="List runner servers.",
+        help="list servers",
+        description="List servers.",
         formatter_class=RawTextHelpFormatter,
+    )
+
+    list_parser.add_argument(
+        "-n", "--name",
+        metavar="name",
+        action="append",
+        dest="list_name",
+        help="list all servers starting with the name",
+        type=str,
+    )
+
+    list_parser.add_argument(
+        "-s","--server",
+        metavar="name",
+        action="append",
+        dest="list_server_name",
+        help="list by server name",
+        type=str,
+    )
+
+    list_parser.add_argument(
+        "--id",
+        metavar="id",
+        action="append",
+        dest="list_id",
+        help="list by server id",
+        type=int,
+    )
+
+    list_parser.add_argument(
+        "--all",
+        dest="list_all",
+        action="store_true",
+        help="list all servers (default if no other option is specified)",
     )
 
     list_parser.set_defaults(func=servers.list)

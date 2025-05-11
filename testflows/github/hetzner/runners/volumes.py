@@ -63,7 +63,7 @@ def list(args, config: Config):
             v for v in volumes if get_volume_name(v.name) in args.list_volumes_name
         ]
 
-    if args.lists_volumes_volume_name:
+    if args.list_volumes_volume_name:
         list_volumes += [v for v in volumes if v.name in args.list_volumes_volume_name]
 
     if args.list_volumes_id:
