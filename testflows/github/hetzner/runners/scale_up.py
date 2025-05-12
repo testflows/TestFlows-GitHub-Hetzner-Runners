@@ -810,24 +810,6 @@ def recycle_server(
         server.name = name
         server.labels = server_labels
 
-    if server.volumes:
-        attached_volumes: list[BoundVolume] = []
-        req_volumes = set([v.name for v in server_volumes])
-        for volume in server.volumes:
-            if get_volume_name(volume.name) not in req_volumes:
-                with Action(
-                    f"Detaching volume {volume.name} from {server.name} as it is not needed",
-                    server_name=name,
-                ):
-                    volume.detach()
-            else:
-                attached_volumes.append(volume)
-        server.volumes = attached_volumes
-
-    assert [get_volume_name(v.name) for v in server.volumes] == [
-        v.name for v in server_volumes
-    ], f"Recycled server {server.name} has volumes {server.volumes} which do not match the required volumes {server_volumes}"
-
     with Action(f"Rebuilding recycled server {server.name} image", server_name=name):
         server.rebuild(image=server_image).action.wait_until_finished(
             max_retries=timeout
@@ -958,10 +940,9 @@ def recyclable_server_match(
     if not server_net_config.enable_ipv6 and server.server.public_net.ipv6 is not None:
         return False
 
-    req_volumes = set([v.name for v in server_volumes])
-    has_volumes = set([v.name for v in server.server_volumes])
-
-    if not req_volumes.issubset(has_volumes):
+    if set([v.name for v in server_volumes]) != set(
+        [v.name for v in server.server_volumes]
+    ):
         return False
 
     return ssh_key.name == server.server.labels.get(server_ssh_key_label)

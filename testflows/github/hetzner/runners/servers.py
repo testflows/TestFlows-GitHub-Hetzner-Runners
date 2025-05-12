@@ -83,7 +83,7 @@ def list(args, config: Config):
 
     print(
         "  ",
-        f"{'status':10}",
+        f"{'status':11}",
         "name,",
         "id,",
         "type,",
@@ -96,7 +96,7 @@ def list(args, config: Config):
         icon = status_icon.get(server.status, "❓")
         print(
             icon,
-            f"{server.status:10}",
+            f"{server.status:11}",
             server.name,
             server.id,
             server.server_type.name,
