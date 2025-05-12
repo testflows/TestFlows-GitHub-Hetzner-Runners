@@ -775,6 +775,7 @@ def create_server(
 
 def recycle_server(
     server_name: str,
+    server_volumes: list[Volume],
     hetzner_token: str,
     setup_worker_pool: ThreadPoolExecutor,
     labels: set[str],
@@ -806,6 +807,24 @@ def recycle_server(
 
     with Action(f"Recycling server {server_name} to make {name}", server_name=name):
         server = server.update(name=name, labels=server_labels)
+
+    if server.volumes:
+        attached_volumes: list[BoundVolume] = []
+        req_volumes = set([v.name for v in server_volumes])
+        for volume in server.volumes:
+            if get_volume_name(volume.name) not in req_volumes:
+                with Action(
+                    f"Detaching volume {volume.name} from {server.name} as it is not needed",
+                    server_name=name,
+                ):
+                    volume.detach()
+            else:
+                attached_volumes.append(volume)
+        server.volumes = attached_volumes
+
+    assert [get_volume_name(v.name) for v in server.volumes] == [
+        v.name for v in server_volumes
+    ], f"Recycled server {server.name} has volumes {server.volumes} which do not match the required volumes {server_volumes}"
 
     with Action(f"Rebuilding recycled server {server.name} image", server_name=name):
         server.rebuild(image=server_image).action.wait_until_finished(
@@ -925,12 +944,6 @@ def recyclable_server_match(
     if server_location and server.server_location.name != server_location.name:
         return False
 
-    if server_volumes:
-        if set([v.name for v in server_volumes]) != set(
-            [v.name for v in server.server_volumes]
-        ):
-            return False
-
     if server_net_config.enable_ipv4 and server.server.public_net.ipv4 is None:
         return False
 
@@ -941,6 +954,12 @@ def recyclable_server_match(
         return False
 
     if not server_net_config.enable_ipv6 and server.server.public_net.ipv6 is not None:
+        return False
+
+    req_volumes = set([v.name for v in server_volumes])
+    has_volumes = set([v.name for v in server.server_volumes])
+
+    if not req_volumes.issubset(has_volumes):
         return False
 
     return ssh_key.name == server.server.labels.get(server_ssh_key_label)
@@ -1131,6 +1150,7 @@ def scale_up(
                                 future = worker_pool.submit(
                                     recycle_server,
                                     server_name=server.name,
+                                    server_volumes=server.server_volumes,
                                     hetzner_token=hetzner_token,
                                     setup_worker_pool=setup_worker_pool,
                                     labels=labels,
