@@ -172,7 +172,7 @@ def delete(args, config: Config):
 
     for server in delete_servers:
         with Action(
-            f"🗑️  Deleting server {server.name} with id {server.id} in {server.location.name}"
+            f"🗑️  Deleting server {server.name} with id {server.id} in {server.datacenter.location.name}"
         ):
             server.delete()
 
