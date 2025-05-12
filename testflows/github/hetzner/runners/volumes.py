@@ -42,20 +42,6 @@ def list(args, config: Config):
             print("No volumes found", file=sys.stdout)
             return
 
-    print(
-        "  ",
-        f"{'status':10}",
-        f"{'state,':8}",
-        "name,",
-        "actual name,",
-        f"size in GB,",
-        "location,",
-        "server,",
-        "created,",
-        "format,",
-        file=sys.stdout,
-    )
-
     list_volumes = []
 
     if args.list_volumes_name:
@@ -83,6 +69,20 @@ def list(args, config: Config):
     if not list_volumes:
         print("No volumes selected", file=sys.stderr)
         return
+
+    print(
+        "  ",
+        f"{'status':10}",
+        f"{'state,':8}",
+        "name,",
+        "actual name,",
+        f"size in GB,",
+        "location,",
+        "server,",
+        "created,",
+        "format,",
+        file=sys.stdout,
+    )
 
     for volume in list_volumes:
         icon = status_icon.get(volume.status, "❓")

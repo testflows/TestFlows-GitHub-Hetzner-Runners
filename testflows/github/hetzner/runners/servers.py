@@ -60,7 +60,9 @@ def list(args, config: Config):
     list_servers = []
 
     if args.list_name:
-        list_servers += [s for s in servers if any([s.name.startswith(args.list_name)])]
+        list_servers += [
+            s for s in servers if any([s.name.startswith(n) for n in args.list_name])
+        ]
 
     if args.list_server_name:
         list_servers += [s for s in servers if s.name in args.list_server_name]
@@ -79,13 +81,29 @@ def list(args, config: Config):
         print("No servers selected", file=sys.stderr)
         return
 
-    print("  ", f"{'status':10}", "name", file=sys.stdout)
+    print(
+        "  ",
+        f"{'status':10}",
+        "name,",
+        "id,",
+        "type,",
+        "location,",
+        "image",
+        file=sys.stdout,
+    )
 
     for server in list_servers:
-        if not server.name.startswith("github-hetzner-runner"):
-            continue
         icon = status_icon.get(server.status, "❓")
-        print(icon, f"{server.status:10}", server.name, file=sys.stdout)
+        print(
+            icon,
+            f"{server.status:10}",
+            server.name,
+            server.id,
+            server.server_type.name,
+            server.datacenter.location.name,
+            server.image.name,
+            file=sys.stdout,
+        )
 
 
 def delete(args, config: Config):
@@ -121,10 +139,10 @@ def delete(args, config: Config):
 
     if args.delete_name:
         delete_runners += [
-            r for r in runners if any([r.name.startswith(args.delete_name)])
+            r for r in runners if any([r.name.startswith(n) for n in args.delete_name])
         ]
         delete_servers += [
-            s for s in servers if any([s.name.startswith(args.delete_name)])
+            s for s in servers if any([s.name.startswith(n) for n in args.delete_name])
         ]
 
     if args.delete_server_name:
