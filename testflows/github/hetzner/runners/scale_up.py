@@ -194,6 +194,22 @@ def server_setup(
                         stacklevel=5,
                     )
 
+                with Action(
+                    "Clear apt-lists cache if apt-get update fails",
+                    server_name=server.name,
+                ):
+                    ssh(
+                        server,
+                        (
+                            f"'if ! apt-get update -qq; then "
+                            f'echo "APT update failed — clearing apt-lists cache" '
+                            f"sudo rm -rf /var/lib/apt/lists/* "
+                            f"sudo apt-get update; "
+                            f"fi'"
+                        ),
+                        stacklevel=5,
+                    )
+
     with Action("Executing setup.sh script", server_name=server.name):
         ssh(server, f"bash -s  < {setup_script}", stacklevel=5)
 

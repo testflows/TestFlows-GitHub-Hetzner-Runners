@@ -127,7 +127,7 @@ def delete(args, config: Config):
             s for s in servers if any([s.name.startswith(args.delete_name)])
         ]
 
-    if args.list_server_name:
+    if args.delete_server_name:
         delete_servers_by_name = [
             s for s in servers if s.name in args.delete_server_name
         ]
@@ -136,19 +136,19 @@ def delete(args, config: Config):
         ]
         delete_servers += delete_servers_by_name
 
-    if args.list_id:
+    if args.delete_id:
         # we can only delete servers by id
-        delete_servers_by_id = [s for s in servers if s.id in args.list_id]
+        delete_servers_by_id = [s for s in servers if s.id in args.delete_id]
         delete_runners += [
             r for r in runners if r.name in [s.name for s in delete_servers_by_id]
         ]
         delete_servers += delete_servers_by_id
 
-    if not args.list_name and not args.list_server_name and not args.list_id:
-        # list all servers by default
-        args.list_all = True
+    if not args.delete_name and not args.delete_server_name and not args.delete_id:
+        # delete all servers by default
+        args.delete_all = True
 
-    if args.list_all:
+    if args.delete_all:
         delete_servers = servers[:]
         delete_runners = runners[:]
 
