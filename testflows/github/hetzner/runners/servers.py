@@ -104,6 +104,14 @@ def list(args, config: Config):
             server.image.name,
             file=sys.stdout,
         )
+        # Print labels on a new line with truncation
+        indent = " " * 17
+        print(f"{indent}labels:", file=sys.stdout)
+        for k, v in server.labels.items():
+            value = str(v)
+            if len(value) > 64:
+                value = value[:64] + "..."
+            print(f"{indent}  {k}={value}", file=sys.stdout)
 
 
 def delete(args, config: Config):
