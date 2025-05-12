@@ -116,8 +116,8 @@ class RunnerServer:
 
 
 def uid():
-    """Return unique id - just a timestamp."""
-    return str(time.time()).replace(".", "")
+    """Return unique id - just a timestamp with fixed width up to microseconds."""
+    return f"{time.time():.6f}".replace(".", "")
 
 
 def get_volume_name(name: str):
