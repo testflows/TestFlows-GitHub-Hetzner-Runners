@@ -44,14 +44,20 @@ from testflows.github.hetzner.runners.logger import (
     logger,
     configure as configure_logger,
 )
-from testflows.github.hetzner.runners.config import Config, check_image, default_user_config
+from testflows.github.hetzner.runners.config import (
+    Config,
+    check_image,
+    default_user_config,
+)
 from testflows.github.hetzner.runners.config import (
     check_ssh_key,
     check_location,
     check_server_type,
     check_prices,
 )
-from testflows.github.hetzner.runners.dashboard import start_http_server as start_dashboard_server
+from testflows.github.hetzner.runners.dashboard import (
+    start_http_server as start_dashboard_server,
+)
 
 import testflows.github.hetzner.runners.args as args
 import testflows.github.hetzner.runners.cloud as cloud
@@ -106,9 +112,11 @@ def argparser():
         "--project",
         metavar="name",
         type=str,
-        help=("project name to use for configuration (values from project config have "
-              "lower precedence than command line arguments),\n"
-              "default: currently set project or None"),
+        help=(
+            "project name to use for configuration (values from project config have "
+            "lower precedence than command line arguments),\n"
+            "default: currently set project or None"
+        ),
     )
 
     parser.add_argument(
@@ -118,7 +126,9 @@ def argparser():
         dest="config_file",
         type=args.config_type,
         help=f"program yaml configuration file, default: project config or $GITHUB_HETZNER_RUNNERS_CONFIG env var or {default_user_config}",
-        default=os.environ.get("GITHUB_HETZNER_RUNNERS_CONFIG", "__default_user_config__"),
+        default=os.environ.get(
+            "GITHUB_HETZNER_RUNNERS_CONFIG", "__default_user_config__"
+        ),
     )
 
     parser.add_argument(
@@ -266,7 +276,9 @@ def argparser():
         "--default-volume-location",
         metavar="name",
         type=args.location_type,
-        help=("default runner server volume location name, by default 'nbg1' (must be specified)"),
+        help=(
+            "default runner server volume location name, by default 'nbg1' (must be specified)"
+        ),
     )
 
     parser.add_argument(
@@ -389,7 +401,8 @@ def argparser():
     )
 
     delete_parser.add_argument(
-        "-n", "--name",
+        "-n",
+        "--name",
         metavar="name",
         action="append",
         dest="delete_name",
@@ -398,7 +411,8 @@ def argparser():
     )
 
     delete_parser.add_argument(
-        "-s","--server",
+        "-s",
+        "--server",
         metavar="name",
         action="append",
         dest="delete_server_name",
@@ -432,7 +446,8 @@ def argparser():
     )
 
     list_parser.add_argument(
-        "-n", "--name",
+        "-n",
+        "--name",
         metavar="name",
         action="append",
         dest="list_name",
@@ -441,7 +456,8 @@ def argparser():
     )
 
     list_parser.add_argument(
-        "-s","--server",
+        "-s",
+        "--server",
         metavar="name",
         action="append",
         dest="list_server_name",
@@ -516,8 +532,10 @@ def argparser():
         metavar="host",
         dest="cloud_host",
         type=str,
-        help=("host (IP or hostname) of the cloud service server to connect to directly via SSH,\n"
-              "bypassing IP lookup by name using the Hetzner API"),
+        help=(
+            "host (IP or hostname) of the cloud service server to connect to directly via SSH,\n"
+            "bypassing IP lookup by name using the Hetzner API"
+        ),
     )
 
     cloud_commands = cloud_parser.add_subparsers(
@@ -1170,7 +1188,17 @@ def argparser():
         metavar="sort",
         dest="list_images_sort",
         action="append",
-        choices=["id", "id:asc", "id:desc", "name", "name:asc", "name:desc", "created", "created:asc", "created:desc"], 
+        choices=[
+            "id",
+            "id:asc",
+            "id:desc",
+            "name",
+            "name:asc",
+            "name:desc",
+            "created",
+            "created:asc",
+            "created:desc",
+        ],
         help=(
             "sort by 'id', 'name', 'created',\n"
             "you can add one of ':asc', ':desc' to modify sort order, ':asc' is default (optional)"
@@ -1327,10 +1355,18 @@ def argparser():
         formatter_class=RawTextHelpFormatter,
     )
     projects_add_parser.add_argument("name", type=str, help="project name")
-    projects_add_parser.add_argument("--hetzner-token", metavar="token", type=str, help="Hetzner Cloud token")
-    projects_add_parser.add_argument("--github-token", metavar="token", type=str, help="GitHub token")
-    projects_add_parser.add_argument("--github-repository", metavar="repository", type=str, help="GitHub repository")
-    projects_add_parser.add_argument("--config", metavar="file", type=args.path_type, help="configuration file")
+    projects_add_parser.add_argument(
+        "--hetzner-token", metavar="token", type=str, help="Hetzner Cloud token"
+    )
+    projects_add_parser.add_argument(
+        "--github-token", metavar="token", type=str, help="GitHub token"
+    )
+    projects_add_parser.add_argument(
+        "--github-repository", metavar="repository", type=str, help="GitHub repository"
+    )
+    projects_add_parser.add_argument(
+        "--config", metavar="file", type=args.path_type, help="configuration file"
+    )
     projects_add_parser.set_defaults(func=projects.add)
 
     # Projects update subcommand
@@ -1341,10 +1377,18 @@ def argparser():
         formatter_class=RawTextHelpFormatter,
     )
     projects_update_parser.add_argument("name", type=str, help="project name")
-    projects_update_parser.add_argument("--hetzner-token", metavar="token", type=str, help="Hetzner Cloud token")
-    projects_update_parser.add_argument("--github-token", metavar="token", type=str, help="GitHub token")
-    projects_update_parser.add_argument("--github-repository", metavar="repository", type=str, help="GitHub repository")
-    projects_update_parser.add_argument("--config", metavar="file", type=args.path_type, help="configuration file")
+    projects_update_parser.add_argument(
+        "--hetzner-token", metavar="token", type=str, help="Hetzner Cloud token"
+    )
+    projects_update_parser.add_argument(
+        "--github-token", metavar="token", type=str, help="GitHub token"
+    )
+    projects_update_parser.add_argument(
+        "--github-repository", metavar="repository", type=str, help="GitHub repository"
+    )
+    projects_update_parser.add_argument(
+        "--config", metavar="file", type=args.path_type, help="configuration file"
+    )
     projects_update_parser.set_defaults(func=projects.update)
 
     # Projects delete subcommand
@@ -1399,7 +1443,8 @@ def argparser():
     )
 
     volumes_list_parser.add_argument(
-        "-n", "--name",
+        "-n",
+        "--name",
         metavar="name",
         action="append",
         dest="list_volumes_name",
@@ -1408,10 +1453,11 @@ def argparser():
     )
 
     volumes_list_parser.add_argument(
-        "-v","--volume",
+        "-v",
+        "--volume",
         metavar="name",
         action="append",
-        dest="list_volumesvolume_name",
+        dest="list_volumes_volume_name",
         help="list by volume name",
         type=str,
     )
@@ -1438,14 +1484,13 @@ def argparser():
     volumes_delete_parser = volumes_commands.add_parser(
         "delete",
         help="delete volumes",
-        description=(
-            f"Delete volumes."
-        ),
+        description=(f"Delete volumes."),
         formatter_class=RawTextHelpFormatter,
     )
 
     volumes_delete_parser.add_argument(
-        "-n", "--name",
+        "-n",
+        "--name",
         metavar="name",
         action="append",
         dest="delete_volumes_name",
@@ -1454,7 +1499,8 @@ def argparser():
     )
 
     volumes_delete_parser.add_argument(
-        "-v","--volume",
+        "-v",
+        "--volume",
         metavar="name",
         action="append",
         dest="delete_volumes_volume_name",
@@ -1479,7 +1525,8 @@ def argparser():
     )
 
     volumes_delete_parser.add_argument(
-        "-f", "--force",
+        "-f",
+        "--force",
         dest="delete_volumes_force",
         action="store_true",
         help="force delete volumes even if they are attached to a server",
@@ -1491,14 +1538,13 @@ def argparser():
     volumes_resize_parser = volumes_commands.add_parser(
         "resize",
         help="resize volumes",
-        description=(
-            f"Resize volumes."
-        ),
+        description=(f"Resize volumes."),
         formatter_class=RawTextHelpFormatter,
     )
 
     volumes_resize_parser.add_argument(
-        "-n", "--name",
+        "-n",
+        "--name",
         metavar="name",
         action="append",
         dest="resize_volumes_name",
@@ -1507,7 +1553,8 @@ def argparser():
     )
 
     volumes_resize_parser.add_argument(
-        "-v","--volume",
+        "-v",
+        "--volume",
         metavar="name",
         action="append",
         dest="resize_volumes_volume_name",
@@ -1552,7 +1599,8 @@ def argparser():
     )
 
     volumes_deactivate_parser.add_argument(
-        "-n", "--name",
+        "-n",
+        "--name",
         metavar="name",
         action="append",
         dest="volumes_name",
@@ -1561,7 +1609,8 @@ def argparser():
     )
 
     volumes_deactivate_parser.add_argument(
-        "-v","--volume",
+        "-v",
+        "--volume",
         metavar="name",
         action="append",
         dest="volumes_volume_name",
@@ -1599,7 +1648,8 @@ def argparser():
     )
 
     volumes_activate_parser.add_argument(
-        "-n", "--name",
+        "-n",
+        "--name",
         metavar="name",
         action="append",
         dest="volumes_name",
@@ -1608,7 +1658,8 @@ def argparser():
     )
 
     volumes_activate_parser.add_argument(
-        "-v","--volume",
+        "-v",
+        "--volume",
         metavar="name",
         action="append",
         dest="volumes_volume_name",
@@ -1665,7 +1716,7 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
     ssh_keys: list[SSHKey] = []
     terminate = threading.Event()
     mailbox = queue.Queue(maxsize=0)
-    rotating_logfile = config.logger_config['handlers']['rotating_logfile']['filename']
+    rotating_logfile = config.logger_config["handlers"]["rotating_logfile"]["filename"]
 
     try:
         with Action(f"Writing log messages to {rotating_logfile}"):
@@ -1674,11 +1725,15 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
         with Action("Logging in to Hetzner Cloud"):
             client = Client(token=config.hetzner_token)
 
-        with Action(f"Starting prometheus metrics server on port {config.metrics_port}"):
+        with Action(
+            f"Starting prometheus metrics server on port {config.metrics_port}"
+        ):
             start_prometheus_server(port=config.metrics_port, addr=config.metrics_host)
 
         with Action(f"Starting dashboard server on port {config.dashboard_port}"):
-            start_dashboard_server(port=config.dashboard_port, host=config.dashboard_host, config=config)
+            start_dashboard_server(
+                port=config.dashboard_port, host=config.dashboard_host, config=config
+            )
 
         with Action("Logging in to GitHub"):
             github = Github(login_or_token=config.github_token, per_page=100)
@@ -1693,7 +1748,9 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
             config.default_location = check_location(client, config.default_location)
 
         with Action("Checking if default volume location exists"):
-            config.default_volume_location = check_location(client, config.default_volume_location, required=True)
+            config.default_volume_location = check_location(
+                client, config.default_volume_location, required=True
+            )
 
         with Action("Checking if default server type exists"):
             config.default_server_type = check_server_type(
@@ -1815,7 +1872,7 @@ if __name__ == "__main__":
     project_name = arguments.project
     if project_name is None:
         project_name = projects.get_current_project()
-    
+
     project_config = projects.get_project_config(project_name) if project_name else {}
 
     # Update config with project values first (lower precedence)
