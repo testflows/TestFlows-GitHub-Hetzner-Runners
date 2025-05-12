@@ -176,7 +176,7 @@ def server_setup(
                     f"'sudo mkdir /mnt/{volume_name} "
                     f"&& sudo e2fsck -f -y {volume.linux_device} "
                     f"&& sudo resize2fs {volume.linux_device} "
-                    f"&& sudo mount -o discard,defaults {volume.linux_device} /mnt/{volume_name}"
+                    f"&& sudo mount -o discard,defaults {volume.linux_device} /mnt/{volume_name}'"
                 ),
                 stacklevel=5,
             )
