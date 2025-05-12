@@ -30,7 +30,13 @@ from .hclient import HClient as Client
 from .request import request
 from .constants import github_runner_label
 
-status_icon = {
+runner_status_icon = {
+    "online": "🟢",
+    "offline": "🔴",
+    "unknown": "❓",
+}
+
+server_status_icon = {
     Server.STATUS_INIT: "⏳",
     Server.STATUS_DELETING: "🗑️",
     Server.STATUS_MIGRATING: "📦",
@@ -45,30 +51,55 @@ status_icon = {
 
 def list(args, config: Config):
     """List all current runner servers."""
-    config.check("hetzner_token")
+    config.check()
 
     with Action("Logging in to Hetzner Cloud"):
         client = Client(token=config.hetzner_token)
 
+    with Action("Logging in to GitHub"):
+        github = Github(login_or_token=config.github_token)
+
+    with Action(f"Getting repository {config.github_repository}"):
+        repo: Repository = github.get_repo(config.github_repository)
+
+    with Action("Getting list of self-hosted runners"):
+        runners: list[SelfHostedActionsRunner] = repo.get_self_hosted_runners()
+        runners = [
+            runner for runner in runners if runner.name.startswith(runner_name_prefix)
+        ]
+
     with Action("Getting a list of servers"):
         servers = client.servers.get_all(label_selector=f"{github_runner_label}=active")
 
-    if not servers:
-        print("No servers found", file=sys.stdout)
+    if not runners and not servers:
+        print("No runners or servers found", file=sys.stderr)
         return
 
+    list_runners = []
     list_servers = []
 
     if args.list_name:
+        list_runners += [
+            r for r in runners if any([r.name.startswith(n) for n in args.list_name])
+        ]
         list_servers += [
             s for s in servers if any([s.name.startswith(n) for n in args.list_name])
         ]
 
     if args.list_server_name:
-        list_servers += [s for s in servers if s.name in args.list_server_name]
+        list_servers_by_name = [s for s in servers if s.name in args.list_server_name]
+        list_runners += [
+            r for r in runners if r.name in [s.name for s in list_servers_by_name]
+        ]
+        list_servers += list_servers_by_name
 
     if args.list_id:
-        list_servers += [s for s in servers if s.id in args.list_id]
+        # we can only delete servers by id
+        list_servers_by_id = [s for s in servers if s.id in args.list_id]
+        list_runners += [
+            r for r in runners if r.name in [s.name for s in list_servers_by_id]
+        ]
+        list_servers += list_servers_by_id
 
     if not args.list_name and not args.list_server_name and not args.list_id:
         # list all servers by default
@@ -76,47 +107,77 @@ def list(args, config: Config):
 
     if args.list_all:
         list_servers = servers[:]
+        list_runners = runners[:]
 
-    if not list_servers:
-        print("No servers selected", file=sys.stderr)
+    if not list_runners and not list_servers:
+        print("No runners or servers selected", file=sys.stderr)
         return
 
-    print(
-        "  ",
-        f"{'status':11}",
-        "name,",
-        "id,",
-        "type,",
-        "location,",
-        "image",
-        file=sys.stdout,
-    )
+    print("Runners:" if list_runners else "No runners", file=sys.stdout)
 
-    for server in list_servers:
-        icon = status_icon.get(server.status, "❓")
+    if list_runners:
+        print("  ", f"{'status':11}", "name,", "id,", "os,", "busy", file=sys.stdout)
+
+        for runner in list_runners:
+            icon = runner_status_icon.get(runner.status, "❓")
+            print(
+                f"{icon} {runner.status:11}",
+                f"{runner.name},",
+                f"{runner.id},",
+                f"{runner.os},",
+                f"{'busy' if runner.busy else 'free'}",
+                file=sys.stdout,
+            )
+            # Print labels on a new line with truncation
+            indent = " " * 17
+            print(f"{indent}labels:", file=sys.stdout)
+            labels = []
+            for label in runner.labels():
+                value = str(label["name"]).lower()
+                if len(value) > 64:
+                    value = value[:64] + "..."
+                labels.append(value)
+            print(f"{indent}  {', '.join(labels)}", file=sys.stdout)
+
+    print("Servers:" if list_servers else "No servers", file=sys.stdout)
+
+    if list_servers:
         print(
-            icon,
-            f"{server.status:11}",
-            server.name,
-            server.id,
-            server.server_type.name,
-            server.datacenter.location.name,
-            server.image.name,
+            "  ",
+            f"{'status':11}",
+            f"name,",
+            "id,",
+            "type,",
+            "location,",
+            "image",
             file=sys.stdout,
         )
-        # Print labels on a new line with truncation
-        indent = " " * 17
-        print(f"{indent}labels:", file=sys.stdout)
-        for k, v in server.labels.items():
-            value = str(v)
-            if len(value) > 64:
-                value = value[:64] + "..."
-            print(f"{indent}  {k}={value}", file=sys.stdout)
+
+        for server in list_servers:
+            icon = server_status_icon.get(server.status, "❓")
+            print(
+                icon,
+                f"{server.status:11}",
+                f"{server.name},",
+                f"{server.id},",
+                f"{server.server_type.name},",
+                f"{server.datacenter.location.name},",
+                f"{server.image.name}",
+                file=sys.stdout,
+            )
+            # Print labels on a new line with truncation
+            indent = " " * 17
+            print(f"{indent}labels:", file=sys.stdout)
+            for k, v in server.labels.items():
+                value = str(v)
+                if len(value) > 64:
+                    value = value[:64] + "..."
+                print(f"{indent}  {k}={value}", file=sys.stdout)
 
 
 def delete(args, config: Config):
     """Delete runners and servers."""
-    config.check("hetzner_token")
+    config.check()
 
     with Action("Logging in to Hetzner Cloud"):
         client = Client(token=config.hetzner_token)
@@ -139,7 +200,7 @@ def delete(args, config: Config):
         )
 
     if not runners and not servers:
-        print("No servers found", file=sys.stdout)
+        print("No runners or servers found", file=sys.stdout)
         return
 
     delete_runners = []
@@ -175,7 +236,7 @@ def delete(args, config: Config):
         delete_runners = runners[:]
 
     if not delete_runners and not delete_servers:
-        print("No servers selected", file=sys.stderr)
+        print("No runners or servers selected", file=sys.stderr)
         return
 
     for runner in delete_runners:
