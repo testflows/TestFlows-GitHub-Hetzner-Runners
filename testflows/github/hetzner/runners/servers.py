@@ -162,10 +162,6 @@ def delete(args, config: Config):
         ]
         delete_servers += delete_servers_by_id
 
-    if not args.delete_name and not args.delete_server_name and not args.delete_id:
-        # delete all servers by default
-        args.delete_all = True
-
     if args.delete_all:
         delete_servers = servers[:]
         delete_runners = runners[:]
