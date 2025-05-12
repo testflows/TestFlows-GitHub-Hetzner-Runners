@@ -28,6 +28,7 @@ from .server import ssh_command
 from .scale_up import server_name_prefix, runner_name_prefix
 from .hclient import HClient as Client
 from .request import request
+from .constants import github_runner_label
 
 status_icon = {
     Server.STATUS_INIT: "⏳",
@@ -50,8 +51,7 @@ def list(args, config: Config):
         client = Client(token=config.hetzner_token)
 
     with Action("Getting a list of servers"):
-        servers = client.servers.get_all()
-        servers = [s for s in servers if s.name.startswith("github-hetzner-runner")]
+        servers = client.servers.get_all(label_selector=f"{github_runner_label}=active")
 
     if not servers:
         print("No servers found", file=sys.stdout)
@@ -108,10 +108,9 @@ def delete(args, config: Config):
         ]
 
     with Action("Getting list of servers"):
-        servers: list[BoundServer] = client.servers.get_all()
-        servers = [
-            server for server in servers if server.name.startswith(server_name_prefix)
-        ]
+        servers: list[BoundServer] = client.servers.get_all(
+            label_selector=f"{github_runner_label}=active"
+        )
 
     if not runners and not servers:
         print("No servers found", file=sys.stdout)

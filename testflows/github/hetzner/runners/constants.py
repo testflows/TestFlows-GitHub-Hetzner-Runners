@@ -7,3 +7,5 @@ recycle_server_name_prefix = f"{server_name_prefix}recycle-"
 
 # Server SSH key label
 server_ssh_key_label = "github-hetzner-runner-ssh-key"
+# Server runner label
+github_runner_label = "github-hetzner-runner"

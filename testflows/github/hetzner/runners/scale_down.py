@@ -30,6 +30,7 @@ from .constants import (
     standby_runner_name_prefix,
     recycle_server_name_prefix,
     server_ssh_key_label,
+    github_runner_label,
 )
 from .scale_up import (
     uid,
@@ -258,12 +259,9 @@ def scale_down(
             with Action(
                 "Getting list of servers", level=logging.DEBUG, interval=interval
             ):
-                servers: list[BoundServer] = client.servers.get_all()
-                servers = [
-                    server
-                    for server in servers
-                    if server.name.startswith(server_name_prefix)
-                ]
+                servers: list[BoundServer] = client.servers.get_all(
+                    label_selector=f"{github_runner_label}=active"
+                )
 
             with Action(
                 "Getting runner labels for each server",

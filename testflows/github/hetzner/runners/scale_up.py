@@ -36,6 +36,7 @@ from .constants import (
     standby_runner_name_prefix,
     recycle_server_name_prefix,
     server_ssh_key_label,
+    github_runner_label,
 )
 
 from .server import wait_ssh, ssh
@@ -166,10 +167,7 @@ def server_setup(
         )
         GITHUB_RUNNER_TOKEN = content["token"]
 
-    with Action("Executing setup.sh script", server_name=server.name):
-        ssh(server, f"bash -s  < {setup_script}", stacklevel=5)
-
-    with Action("Mounting volumes", server_name=server.name):
+    with Action("Resizing and mounting volumes", server_name=server.name):
         for volume in server.volumes:
             volume_name = get_volume_name(volume.name)
             ssh(
@@ -178,9 +176,33 @@ def server_setup(
                     f"'sudo mkdir /mnt/{volume_name} "
                     f"&& sudo e2fsck -f -y {volume.linux_device} "
                     f"&& sudo resize2fs {volume.linux_device} "
-                    f"&& sudo mount -o discard,defaults {volume.linux_device} /mnt/{volume_name} "
-                    f"&& sudo chown ubuntu:ubuntu /mnt/{volume_name}'"
+                    f"&& sudo mount -o discard,defaults {volume.linux_device} /mnt/{volume_name}"
                 ),
+                stacklevel=5,
+            )
+            if volume_name == "cache":
+                with Action(
+                    "Mounting apt-archives and apt-lists cache", server_name=server.name
+                ):
+                    ssh(
+                        server,
+                        (
+                            f"'sudo mkdir -p /mnt/cache/apt-archives /mnt/cache/apt-lists /var/cache/apt/archives /var/lib/apt/lists "
+                            f"&& sudo mount --bind /mnt/cache/apt-archives /var/cache/apt/archives "
+                            f"&& sudo mount --bind /mnt/cache/apt-lists /var/lib/apt/lists'"
+                        ),
+                        stacklevel=5,
+                    )
+
+    with Action("Executing setup.sh script", server_name=server.name):
+        ssh(server, f"bash -s  < {setup_script}", stacklevel=5)
+
+    with Action("Updating volumes permissions", server_name=server.name):
+        for volume in server.volumes:
+            volume_name = get_volume_name(volume.name)
+            ssh(
+                server,
+                (f"'sudo chown ubuntu:ubuntu /mnt/{volume_name}'"),
                 stacklevel=5,
             )
 
@@ -643,6 +665,7 @@ def create_server(
                     for i, value in enumerate(labels)
                 }
                 server_labels[server_ssh_key_label] = ssh_keys[0].name
+                server_labels[github_runner_label] = "active"
 
                 with Action(
                     f"Validating server {name} labels {labels} of {server_type} in {server_location}",
@@ -755,6 +778,7 @@ def recycle_server(
         f"github-hetzner-runner-label-{i}": value for i, value in enumerate(labels)
     }
     server_labels[server_ssh_key_label] = ssh_key.name
+    server_labels[github_runner_label] = "active"
 
     with Action(f"Validating server {name} labels", server_name=name):
         valid, error_msg = LabelValidator.validate_verbose(labels=server_labels)
@@ -1292,8 +1316,9 @@ def scale_up(
                             ],
                             server=server,
                         )
-                        for server in client.servers.get_all()
-                        if server.name.startswith(server_name_prefix)
+                        for server in client.servers.get_all(
+                            label_selector=f"{github_runner_label}=active"
+                        )
                     ]
 
                 with Action(
