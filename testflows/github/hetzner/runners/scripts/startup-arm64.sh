@@ -5,7 +5,8 @@ cd /home/ubuntu
 ACTIONS_RUNNER_FILE="actions-runner-linux-arm64-2.306.0.tar.gz"
 ACTIONS_RUNNER_SHA256="842a9046af8439aa9bcabfe096aacd998fc3af82b9afe2434ddd77b96f872a83"
 ACTIONS_RUNNER_URL="https://github.com/actions/runner/releases/download/v2.306.0/$ACTIONS_RUNNER_FILE"
-CACHE_DIR="/mnt/cache/github"
+CACHE_DIR="/mnt/cache"
+CACHE_DIR_GITHUB="$CACHE_DIR/github"
 
 download_and_verify() {
     echo "Downloading actions runner package from GitHub..."
@@ -15,22 +16,24 @@ download_and_verify() {
 
 # Try to use cache volume if available
 if [ -d "$CACHE_DIR" ]; then
-    if [ -f "$CACHE_DIR/$ACTIONS_RUNNER_FILE" ]; then
+    if [ -f "$CACHE_DIR_GITHUB/$ACTIONS_RUNNER_FILE" ]; then
         echo "Found runner package in cache, verifying checksum..."
-        if echo "$ACTIONS_RUNNER_SHA256  $CACHE_DIR/$ACTIONS_RUNNER_FILE" | shasum -a 256 -c; then
+        if echo "$ACTIONS_RUNNER_SHA256  $CACHE_DIR_GITHUB/$ACTIONS_RUNNER_FILE" | shasum -a 256 -c; then
             echo "Checksum verified, copying from cache..."
-            cp "$CACHE_DIR/$ACTIONS_RUNNER_FILE" .
+            cp "$CACHE_DIR_GITHUB/$ACTIONS_RUNNER_FILE" .
         else
             echo "Cache file checksum mismatch"
             download_and_verify
             # Save to cache for future use
-            cp "$ACTIONS_RUNNER_FILE" "$CACHE_DIR/"
+            mkdir -p "$CACHE_DIR_GITHUB"
+            cp "$ACTIONS_RUNNER_FILE" "$CACHE_DIR_GITHUB/"
         fi
     else
         echo "Runner package not found in cache"
         download_and_verify
         # Save to cache for future use
-        cp "$ACTIONS_RUNNER_FILE" "$CACHE_DIR/"
+        mkdir -p "$CACHE_DIR_GITHUB"
+        cp "$ACTIONS_RUNNER_FILE" "$CACHE_DIR_GITHUB/"
     fi
 else
     echo "Cache directory not available, downloading directly..."
