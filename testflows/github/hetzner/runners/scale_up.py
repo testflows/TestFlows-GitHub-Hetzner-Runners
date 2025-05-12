@@ -807,6 +807,8 @@ def recycle_server(
 
     with Action(f"Recycling server {server_name} to make {name}", server_name=name):
         server = server.update(name=name, labels=server_labels)
+        server.name = name
+        server.labels = server_labels
 
     if server.volumes:
         attached_volumes: list[BoundVolume] = []
