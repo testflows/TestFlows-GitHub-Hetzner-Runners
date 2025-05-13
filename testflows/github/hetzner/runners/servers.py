@@ -25,7 +25,7 @@ from hcloud.servers.domain import Server
 from .actions import Action
 from .config import Config
 from .server import ssh_command
-from .scale_up import server_name_prefix, runner_name_prefix
+from .scale_up import server_name_prefix, runner_name_prefix, get_volume_name
 from .hclient import HClient as Client
 from .request import request
 from .constants import github_runner_label
@@ -128,16 +128,19 @@ def list(args, config: Config):
                 f"{'busy' if runner.busy else 'free'}",
                 file=sys.stdout,
             )
-            # Print labels on a new line with truncation
-            indent = " " * 17
-            print(f"{indent}labels:", file=sys.stdout)
-            labels = []
-            for label in runner.labels():
-                value = str(label["name"]).lower()
-                if len(value) > 64:
-                    value = value[:64] + "..."
-                labels.append(value)
-            print(f"{indent}  {', '.join(labels)}", file=sys.stdout)
+            if not args.no_labels:
+                indent = " " * 17
+                print(f"{indent}labels:", file=sys.stdout)
+                labels = []
+                for label in runner.labels():
+                    value = str(label["name"]).lower()
+                    if len(value) > 64:
+                        value = value[:64] + "..."
+                    labels.append(value)
+                if not labels:
+                    print(f"{indent}  no labels", file=sys.stdout)
+                else:
+                    print(f"{indent}  {', '.join(labels)}", file=sys.stdout)
 
     print("Servers:" if list_servers else "No servers", file=sys.stdout)
 
@@ -154,6 +157,7 @@ def list(args, config: Config):
         )
 
         for server in list_servers:
+            indent = " " * 17
             icon = server_status_icon.get(server.status, "❓")
             print(
                 icon,
@@ -165,14 +169,26 @@ def list(args, config: Config):
                 f"{server.image.name}",
                 file=sys.stdout,
             )
-            # Print labels on a new line with truncation
-            indent = " " * 17
-            print(f"{indent}labels:", file=sys.stdout)
-            for k, v in server.labels.items():
-                value = str(v)
-                if len(value) > 64:
-                    value = value[:64] + "..."
-                print(f"{indent}  {k}={value}", file=sys.stdout)
+            if not args.no_labels:
+                print(f"{indent}labels:", file=sys.stdout)
+                if not server.labels:
+                    print(f"{indent}  no labels", file=sys.stdout)
+                else:
+                    for k, v in server.labels.items():
+                        value = str(v)
+                        if len(value) > 64:
+                            value = value[:64] + "..."
+                        print(f"{indent}  {k}={value}", file=sys.stdout)
+
+            if not args.no_volumes:
+                print(f"{indent}volumes:", file=sys.stdout)
+                if not server.volumes:
+                    print(f"{indent}  no volumes", file=sys.stdout)
+                for volume in server.volumes:
+                    print(
+                        f"{indent}  {get_volume_name(volume.name)}, {volume.name}, {volume.size}GB, {volume.location.name}",
+                        file=sys.stdout,
+                    )
 
 
 def delete(args, config: Config):

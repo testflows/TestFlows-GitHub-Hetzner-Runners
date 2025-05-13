@@ -121,8 +121,8 @@ def uid():
 
 
 def get_volume_name(name: str):
-    """Get volume name. Expected format: <name>-<uid>."""
-    return name.rsplit("-", 1)[0]
+    """Get volume name. Format: <name>-<architecture>-<os_flavor>-<os_version>-<uid>."""
+    return name.split("-", 1)[0]
 
 
 def get_runner_server_name(runner_name: str) -> str:
@@ -558,6 +558,7 @@ def check_max_servers_for_label_reached(
 def get_server_bound_volumes(
     action: Action,
     client: Client,
+    server_image: Image,
     server_location: Location,
     server_volumes: list[Volume],
     volumes: list[BoundVolume],
@@ -572,17 +573,28 @@ def get_server_bound_volumes(
             if volume.server is not None:
                 # already attached to a server
                 continue
-            if volume.status != "available":
+            if volume.status != volume.STATUS_AVAILABLE:
                 # volume is not available
                 continue
             if server_location.name != volume.location.name:
                 # volume is not in the same location
                 continue
             if get_volume_name(volume.name) != server_volume.name:
-                # volume name has name-<uid> format
-                # and the name does not match
+                # volume name does not match
                 continue
-
+            if server_image.architecture != volume.labels.get(
+                "github-hetzner-runner-arch"
+            ):
+                # volume architecture does not match
+                continue
+            if server_image.os_flavor != volume.labels.get("github-hetzner-runner-os"):
+                # volume os flavor does not match
+                continue
+            if server_image.os_version != volume.labels.get(
+                "github-hetzner-runner-os-version"
+            ):
+                # volume os version does not match
+                continue
             # resize volume to the requested size if needed
             if volume.size < server_volume.size:
                 action.note(
@@ -606,10 +618,15 @@ def get_server_bound_volumes(
         )
 
         response = client.volumes.create(
-            name=f"{server_volume.name}-{uid()}",
+            name=f"{server_volume.name}-{server_image.architecture}-{server_image.os_flavor}-{server_image.os_version}-{uid()}",
             size=server_volume.size,
             location=server_location,
-            labels={"github-hetzner-runner-volume": "active"},
+            labels={
+                "github-hetzner-runner-volume": "active",
+                "github-hetzner-runner-arch": server_image.architecture,
+                "github-hetzner-runner-os": server_image.os_flavor,
+                "github-hetzner-runner-os-version": server_image.os_version,
+            },
             format="ext4",
         )
         new_volume = response.volume
@@ -660,7 +677,7 @@ def create_server(
             try:
                 if canceled is not None and canceled.is_set():
                     with Action(
-                        f"Server creation for {name} with labels {labels} of {server_type} in {server_location} canceled",
+                        f"Server creation for {name} with labels {labels} of {server_type} in {server_location.name} canceled",
                         level=logging.DEBUG,
                         stacklevel=3,
                         server_name=name,
@@ -684,7 +701,7 @@ def create_server(
                 server_labels[github_runner_label] = "active"
 
                 with Action(
-                    f"Validating server {name} labels {labels} of {server_type} in {server_location}",
+                    f"Validating server {name} labels {labels} of {server_type} in {server_location.name}",
                     level=logging.DEBUG,
                     stacklevel=3,
                     server_name=name,
@@ -710,13 +727,14 @@ def create_server(
                                 server_bound_volumes = get_server_bound_volumes(
                                     action,
                                     client,
+                                    server_image,
                                     server_location,
                                     server_volumes,
                                     volumes,
                                 )
 
                         with Action(
-                            f"Creating server {name} with labels {labels} of {server_type} in {server_location}",
+                            f"Creating server {name} with labels {labels} of {server_type} in {server_location.name}",
                             stacklevel=3,
                             server_name=name,
                         ):
@@ -748,7 +766,7 @@ def create_server(
                 )
 
                 with Action(
-                    f"Successfully created server {name} with labels {labels} of {server_type} in {server_location}, canceling other attempts",
+                    f"Successfully created server {name} with labels {labels} of {server_type} in {server_location.name}, canceling other attempts",
                     level=logging.DEBUG,
                     stacklevel=3,
                     server_name=name,
@@ -1103,7 +1121,7 @@ def scale_up(
                     )
 
                     with Action(
-                        f"Trying to create recycled server {name} of {server_type} in {server_location}",
+                        f"Trying to create recycled server {name} of {server_type} in {server_location.name}",
                         stacklevel=3,
                         level=logging.DEBUG,
                         server_name=name,
@@ -1179,7 +1197,7 @@ def scale_up(
                 )
 
                 with Action(
-                    f"Trying to create new server {name} of {server_type} in {server_location}",
+                    f"Trying to create new server {name} of {server_type} in {server_location.name}",
                     stacklevel=3,
                     level=logging.DEBUG,
                     server_name=name,

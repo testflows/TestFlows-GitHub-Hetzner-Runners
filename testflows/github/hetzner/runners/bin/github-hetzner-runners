@@ -481,6 +481,18 @@ def argparser():
         help="list all servers (default if no other option is specified)",
     )
 
+    list_parser.add_argument(
+        "--no-labels",
+        action="store_true",
+        help="do not print labels",
+    )
+
+    list_parser.add_argument(
+        "--no-volumes",
+        action="store_true",
+        help="do not print volumes",
+    )
+    
     list_parser.set_defaults(func=servers.list)
 
     ssh_client_parser = commands.add_parser(
