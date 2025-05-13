@@ -157,10 +157,6 @@ def delete(args, config: Config):
             )
             volume.detach()
         client.volumes.delete(volume)
-        print(
-            f"✅ Deleted volume {volume.name} with id {volume.id} in {volume.location.name}",
-            file=sys.stdout,
-        )
 
 
 def resize(args, config: Config):
@@ -214,11 +210,6 @@ def resize(args, config: Config):
             continue
 
         volume.resize(args.size).wait_until_finished()
-        print(
-            f"✅  Resized  volume {volume.name} with id {volume.id} in {volume.location.name}",
-            f"from {volume.size}GB to {args.size}GB",
-            file=sys.stdout,
-        )
 
 
 def activate_deactivate(args, config: Config, action: str):

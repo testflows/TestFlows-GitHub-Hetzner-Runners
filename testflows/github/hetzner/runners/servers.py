@@ -152,7 +152,10 @@ def list(args, config: Config):
             "id,",
             "type,",
             "location,",
-            "image",
+            "image,",
+            "architecture,",
+            "os,",
+            "os version",
             file=sys.stdout,
         )
 
@@ -166,7 +169,10 @@ def list(args, config: Config):
                 f"{server.id},",
                 f"{server.server_type.name},",
                 f"{server.datacenter.location.name},",
-                f"{server.image.name}",
+                f"{server.image.name},",
+                f"{server.image.architecture},",
+                f"{server.image.os_flavor},",
+                f"{server.image.os_version}",
                 file=sys.stdout,
             )
             if not args.no_labels:
