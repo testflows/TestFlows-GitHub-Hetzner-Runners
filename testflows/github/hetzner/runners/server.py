@@ -166,6 +166,25 @@ def wait_ready(server: BoundServer, timeout: float, action: Action = None):
         server.reload()
 
 
+def is_port_available(port: int) -> bool:
+    """Check if a local port is available.
+
+    Args:
+        port: The port number to check
+
+    Returns:
+        bool: True if port is available, False if it's in use
+    """
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(0.25)  # Short timeout for connection attempt
+        result = sock.connect_ex(("127.0.0.1", port))
+        sock.close()
+        return result != 0  # Port is available if connection fails
+    except Exception:
+        return False
+
+
 class ssh_tunnel:
     """Context manager for establishing SSH tunnels."""
 
@@ -189,6 +208,9 @@ class ssh_tunnel:
         self.remote_port = remote_port
         self.process = None
         self.action = action
+
+        if not is_port_available(self.local_port):
+            raise ValueError(f"Port {self.local_port} is already in use")
 
     def __enter__(self):
         # SSH tunnel options:
@@ -232,15 +254,8 @@ class ssh_tunnel:
         start_time = time.time()
 
         while time.time() - start_time < timeout:
-            try:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.settimeout(0.25)  # Short timeout for connection attempt
-                result = sock.connect_ex(("127.0.0.1", self.local_port))
-                sock.close()
-                if result == 0:
-                    return True
-            except Exception:
-                pass
+            if not is_port_available(self.local_port):
+                return True
             time.sleep(check_interval)
 
         return False
