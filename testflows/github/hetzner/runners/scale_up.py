@@ -677,7 +677,7 @@ def create_server(
             try:
                 if canceled is not None and canceled.is_set():
                     with Action(
-                        f"Server creation for {name} with labels {labels} of {server_type} in {server_location.name} canceled",
+                        f"Server creation for {name} with labels {labels} of {server_type} in {'None' if not server_location else server_location.name} canceled",
                         level=logging.DEBUG,
                         stacklevel=3,
                         server_name=name,
@@ -701,7 +701,7 @@ def create_server(
                 server_labels[github_runner_label] = "active"
 
                 with Action(
-                    f"Validating server {name} labels {labels} of {server_type} in {server_location.name}",
+                    f"Validating server {name} labels {labels} of {server_type} in {'None' if not server_location else server_location.name}",
                     level=logging.DEBUG,
                     stacklevel=3,
                     server_name=name,
@@ -719,7 +719,7 @@ def create_server(
                     try:
                         if server_volumes:
                             with Action(
-                                f"Preparing volumes for server {name} with labels {labels} of {server_type} in {server_location.name}",
+                                f"Preparing volumes for server {name} with labels {labels} of {server_type} in {'None' if not server_location else server_location.name}",
                                 level=logging.DEBUG,
                                 stacklevel=3,
                                 server_name=name,
@@ -734,7 +734,7 @@ def create_server(
                                 )
 
                         with Action(
-                            f"Creating server {name} with labels {labels} of {server_type} in {server_location.name}",
+                            f"Creating server {name} with labels {labels} of {server_type} in {'None' if not server_location else server_location.name}",
                             stacklevel=3,
                             server_name=name,
                         ):
@@ -766,7 +766,7 @@ def create_server(
                 )
 
                 with Action(
-                    f"Successfully created server {name} with labels {labels} of {server_type} in {server_location.name}, canceling other attempts",
+                    f"Successfully created server {name} with labels {labels} of {server_type} in {'None' if not server_location else server_location.name}, canceling other attempts",
                     level=logging.DEBUG,
                     stacklevel=3,
                     server_name=name,
@@ -1121,7 +1121,7 @@ def scale_up(
                     )
 
                     with Action(
-                        f"Trying to create recycled server {name} of {server_type} in {server_location.name}",
+                        f"Trying to create recycled server {name} of {server_type} in {'None' if not server_location else server_location.name}",
                         stacklevel=3,
                         level=logging.DEBUG,
                         server_name=name,
@@ -1197,7 +1197,7 @@ def scale_up(
                 )
 
                 with Action(
-                    f"Trying to create new server {name} of {server_type} in {server_location.name}",
+                    f"Trying to create new server {name} of {server_type} in {'None' if not server_location else server_location.name}",
                     stacklevel=3,
                     level=logging.DEBUG,
                     server_name=name,
