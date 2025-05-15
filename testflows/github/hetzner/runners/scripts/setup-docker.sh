@@ -71,14 +71,6 @@ set -x
     apt-get -y update
     apt-get -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-    if [ -n "$CACHE_DIR" ]; then
-        echo "Setting up Docker data directory binding to cache"
-        systemctl stop docker
-        mkdir -p "$CACHE_DIR/data"
-        mount --bind "$CACHE_DIR/data" /var/lib/docker
-        systemctl start docker
-    fi
-
     echo "Add ubuntu user to docker group"
     usermod -aG docker ubuntu
 }
