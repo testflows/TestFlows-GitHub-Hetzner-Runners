@@ -176,7 +176,9 @@ def server_setup(
                     f"'sudo mkdir /mnt/{volume_name} "
                     f"&& sudo e2fsck -f -y {volume.linux_device} "
                     f"&& sudo resize2fs {volume.linux_device} "
-                    f"&& sudo mount -o discard,defaults {volume.linux_device} /mnt/{volume_name}'"
+                    f"&& sudo mount -o discard,defaults {volume.linux_device} /mnt/{volume_name}' "
+                    f'&& sudo bash -c \'[ ! -f /etc/hetzner-volumes ] && echo "name,id,size,mount,device,used,free" > /etc/hetzner-volumes '
+                    f"&& sudo echo \"{volume.name},{volume.id},{volume.size}GB,/mnt/{volume_name},{volume.linux_device},$(df -h /mnt/{volume_name} | awk 'NR==2 {{print $3}}'),$(df -h /mnt/{volume_name} | awk 'NR==2 {{print $4}}')\" >> /etc/hetzner-volumes'"
                 ),
                 stacklevel=5,
             )

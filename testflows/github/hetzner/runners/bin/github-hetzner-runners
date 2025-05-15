@@ -728,6 +728,24 @@ def argparser():
 
     delete_log_cloud_parser.set_defaults(func=cloud.delete_log)
 
+    download_log_cloud_parser = log_cloud_commands.add_parser(
+        "download",
+        help="download log",
+        description="Download cloud service log.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    download_log_cloud_parser.add_argument(
+        "-o",
+        "--output",
+        metavar="path",
+        type=str,
+        help="output file name, default: github-hetzner-runners.log",
+        default="github-hetzner-runners.log",
+    )
+
+    download_log_cloud_parser.set_defaults(func=cloud.download_log)
+
     status_cloud_parser = cloud_commands.add_parser(
         "status",
         help="get cloud service status",

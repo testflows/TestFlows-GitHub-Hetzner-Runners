@@ -1,4 +1,4 @@
-# Copyright 2023 Katteli Inc.
+# Copyright 2023-2025 Katteli Inc.
 # TestFlows.com Open-Source Software Testing Framework (http://testflows.com)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,10 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 __author__ = "Vitaliy Zakaznikov"
-__version__ = "1.8.__VERSION__"
+__version__ = "1.9.__VERSION__"
 __name__ = "testflows.github.hetzner.runners"
 __license__ = f"""
-Copyright 2023 Katteli Inc.
+Copyright 2023-2025 Katteli Inc.
 TestFlows.com Open-Source Software Testing Framework (http://testflows.com)
 
 Licensed under the Apache License, Version 2.0 (the "License");

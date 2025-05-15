@@ -368,6 +368,26 @@ def log(args, config: Config, server: BoundServer = None):
     ssh(server, command, use_logger=False, stacklevel=4)
 
 
+def download_log(args, config: Config, server: BoundServer = None):
+    """Download cloud server service log."""
+    if server is None:
+        config.check("hetzner_token")
+        server_name = config.cloud.server_name
+
+        client = Client(token=config.hetzner_token)
+        server: BoundServer = client.servers.get_by_name(server_name)
+
+        if not server:
+            raise ValueError(f"server {server_name} not found")
+
+    ip = ip_address(server)
+    with Action(f"Downloading log from {server.name} to {args.output}"):
+        scp(
+            source=f"root@{ip}:{os.path.join(tempfile.gettempdir(), 'github-hetzner-runners.log')}",
+            destination=args.output,
+        )
+
+
 def delete_log(args, config: Config, server: BoundServer = None):
     """Delete cloud server service log."""
     if server is None:
