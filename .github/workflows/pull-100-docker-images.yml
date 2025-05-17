@@ -32,35 +32,123 @@ jobs:
         run: |
           images=(
             # OS & Base Images
-            ubuntu debian alpine centos:centos7 fedora busybox archlinux opensuse amazonlinux oraclelinux
-
+            ubuntu
+            debian
+            alpine
+            centos:centos7
+            fedora
+            busybox
+            archlinux
+            opensuse/leap
+            amazonlinux
+            oraclelinux:8
+          
             # Languages
-            python node golang openjdk ruby php perl dotnet rust elixir
-
+            python
+            node
+            golang
+            openjdk
+            ruby
+            php
+            perl
+            mcr.microsoft.com/dotnet/runtime
+            rust
+            elixir
+          
             # Databases
-            mysql postgres mongo redis mariadb cassandra couchdb influxdb neo4j elasticsearch
-
+            mysql
+            postgres
+            mongo
+            redis
+            mariadb
+            cassandra
+            couchdb
+            influxdb
+            neo4j
+            docker.elastic.co/elasticsearch/elasticsearch:8.11.4
+          
             # Web Servers
-            nginx httpd traefik haproxy caddy varnish tomcat jetty lighttpd openresty
-
+            nginx
+            httpd
+            traefik
+            haproxy
+            caddy
+            varnish
+            tomcat
+            jetty
+            lighttpd
+            openresty/openresty
+          
             # DevOps & CI/CD
-            jenkins gitlab circleci travisci drone teamcity bamboo buildkite concourse gitea
-
+            jenkins/jenkins
+            gitlab/gitlab-ce
+            circleci/picard
+            travisci/ci-garnet
+            drone/drone
+            jetbrains/teamcity-server
+            atlassian/bamboo-server
+            buildkite/agent
+            concourse/concourse
+            gitea/gitea
+          
             # Monitoring & Logging
-            prometheus grafana zabbix telegraf influxdb logstash kibana fluentd graylog elasticmq
-
+            prom/prometheus
+            grafana/grafana
+            zabbix/zabbix-server-mysql
+            telegraf
+            influxdb
+            docker.elastic.co/logstash/logstash:8.11.4
+            docker.elastic.co/kibana/kibana:8.11.4
+            fluent/fluentd
+            graylog/graylog
+            softwaremill/elasticmq
+          
             # ML & Data Science
-            tensorflow/tensorflow pytorch/pytorch jupyter/base-notebook r-base scikit-learn mlflow dvcorg/cml apache/spark h2oai/h2o-3 xgboost/xgboost
-
+            tensorflow/tensorflow:latest-gpu
+            pytorch/pytorch
+            jupyter/base-notebook
+            r-base
+            scikit-learn/scikit-learn
+            mlflow/mlflow
+            dvcorg/cml
+            bitnami/spark
+            h2oai/h2o-3
+            xgboost/xgboost
+          
             # Build Tools
-            maven gradle npm yarn composer pip conda make cmake bazel
-
+            maven
+            gradle
+            node
+            yarnpkg/yarn
+            composer
+            python
+            continuumio/miniconda3
+            gcc
+            cmake
+            bazelbuild/bazel
+          
             # Utilities
-            curlimages/curl wget alpine/git docker ansible/ansible terraform packer vault consul
-
+            curlimages/curl
+            busybox
+            alpine/git
+            docker
+            ansible/ansible
+            hashicorp/terraform
+            hashicorp/packer
+            hashicorp/vault
+            hashicorp/consul
+          
             # Home & Media
-            plexinc/pms-docker linuxserver/sonarr linuxserver/radarr linuxserver/lidarr linuxserver/jackett \
-            linuxserver/sabnzbd linuxserver/tautulli linuxserver/ombi linuxserver/homeassistant linuxserver/nextcloud
+            plexinc/pms-docker
+            linuxserver/sonarr
+            linuxserver/radarr
+            linuxserver/lidarr
+            linuxserver/jackett
+            linuxserver/sabnzbd
+            linuxserver/tautulli
+            linuxserver/ombi
+            ghcr.io/home-assistant/home-assistant
+            linuxserver/nextcloud
           )
 
           for image in "${images[@]}"; do
