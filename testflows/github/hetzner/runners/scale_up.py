@@ -214,10 +214,12 @@ def server_setup(
                     ssh(
                         server,
                         (
-                            '\'if [ -z "$(find /var/lib/apt/lists -maxdepth 1 \\( -name "*_Release" -o -name "*_InRelease" \\) -size +0)" ]; then '
-                            'echo "APT lists are invalid or empty — clearing apt-lists cache"; '
-                            "sudo rm -rf /var/lib/apt/lists/* && sudo apt-get update; "
-                            "fi'"
+                            "if ! sudo apt-get update -qq; then "
+                            "echo \"APT update failed, clearing lists and retrying...\"; "
+                            "sudo rm -rf /var/lib/apt/lists/* && "
+                            "sudo mkdir -p /var/lib/apt/lists && "
+                            "sudo apt-get update; "
+                            "fi"
                         ),
                         stacklevel=5,
                     )
