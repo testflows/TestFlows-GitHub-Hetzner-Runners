@@ -78,7 +78,7 @@ def get_server(config: Config) -> Server:
 def deploy(args, config: Config, redeploy=False):
     """Deploy or redeploy github-hetzner-runners as a service to a
     new Hetzner server instance."""
-    config.check()
+    config.check("hetzner_token")
     version = args.version or __version__
     server_name = config.cloud.server_name
     ssh_keys: list[SSHKey] = []
@@ -244,16 +244,7 @@ def redeploy(args, config: Config):
 def install(args, config: Config, server: BoundServer = None):
     """Install service on a cloud instance."""
     if server is None:
-        config.check()
-        server_name = config.cloud.server_name
-
-        with Action("Logging in to Hetzner Cloud"):
-            client = Client(token=config.hetzner_token)
-
-        with Action(f"Getting server {server_name}"):
-            server: BoundServer = client.servers.get_by_name(server_name)
-            if not server:
-                raise ValueError(f"server {server_name} not found")
+        server = get_server(config)
 
     with Action("Installing service"):
         command = f"\"su - ubuntu -c '"
@@ -269,19 +260,12 @@ def install(args, config: Config, server: BoundServer = None):
         ssh(server, command)
 
 
-def upgrade(args, config: Config):
+def upgrade(args, config: Config, server: BoundServer = None):
     """Upgrade github-hetzner-runners application on a cloud instance."""
-    config.check("hetzner_token")
-    server_name = config.cloud.server_name
+    if server is None:
+        server = get_server(config)
+
     upgrade_version = args.upgrade_version
-
-    with Action("Logging in to Hetzner Cloud"):
-        client = Client(token=config.hetzner_token)
-
-    with Action(f"Getting server {server_name}"):
-        server: BoundServer = client.servers.get_by_name(server_name)
-        if not server:
-            raise ValueError(f"server {server_name} not found")
 
     stop(args, config=config, server=server)
 
@@ -306,56 +290,32 @@ def upgrade(args, config: Config):
 def uninstall(args, config: Config, server: BoundServer = None):
     """Uninstall github-hetzner-runners service from a cloud instance."""
     if server is None:
-        config.check("hetzner_token")
-        server_name = config.cloud.server_name
-
-        with Action("Logging in to Hetzner Cloud"):
-            client = Client(token=config.hetzner_token)
-
-        with Action(f"Getting server {server_name}"):
-            server: BoundServer = client.servers.get_by_name(server_name)
-            if not server:
-                raise ValueError(f"server {server_name} not found")
+        server = get_server(config)
 
     with Action("Uninstalling service"):
         command = f"\"su - ubuntu -c 'github-hetzner-runners service uninstall'\""
         ssh(server, command, stacklevel=4)
 
 
-def delete(args, config: Config):
+def delete(args, config: Config, server: BoundServer = None):
     """Delete github-hetzner-runners service running
     on Hetzner server instance by stopping the service
     and deleting the server."""
-    config.check("hetzner_token")
-    server_name = config.cloud.server_name
-
-    with Action("Logging in to Hetzner Cloud"):
-        client = Client(token=config.hetzner_token)
-
-    with Action(f"Getting server {server_name}"):
-        server: BoundServer = client.servers.get_by_name(server_name)
-        if not server:
-            raise ValueError(f"server {server_name} not found")
+    if server is None:
+        server = get_server(config)
 
     with Action("Uninstalling service", ignore_fail=True):
         command = f"\"su - ubuntu -c 'github-hetzner-runners service uninstall'\""
         ssh(server, command, stacklevel=4)
 
-    with Action(f"Deleting server {server_name}"):
+    with Action(f"Deleting server {server.name}"):
         server.delete()
 
 
 def log(args, config: Config, server: BoundServer = None):
     """Get cloud server service log."""
     if server is None:
-        config.check("hetzner_token")
-        server_name = config.cloud.server_name
-
-        client = Client(token=config.hetzner_token)
-        server: BoundServer = client.servers.get_by_name(server_name)
-
-        if not server:
-            raise ValueError(f"server {server_name} not found")
+        server = get_server(config)
 
     command = (
         f"\"su - ubuntu -c 'github-hetzner-runners service log"
@@ -371,14 +331,7 @@ def log(args, config: Config, server: BoundServer = None):
 def download_log(args, config: Config, server: BoundServer = None):
     """Download cloud server service log."""
     if server is None:
-        config.check("hetzner_token")
-        server_name = config.cloud.server_name
-
-        client = Client(token=config.hetzner_token)
-        server: BoundServer = client.servers.get_by_name(server_name)
-
-        if not server:
-            raise ValueError(f"server {server_name} not found")
+        server = get_server(config)
 
     ip = ip_address(server)
     with Action(f"Downloading log from {server.name} to {args.output}"):
@@ -391,14 +344,7 @@ def download_log(args, config: Config, server: BoundServer = None):
 def delete_log(args, config: Config, server: BoundServer = None):
     """Delete cloud server service log."""
     if server is None:
-        config.check("hetzner_token")
-        server_name = config.cloud.server_name
-
-        client = Client(token=config.hetzner_token)
-        server: BoundServer = client.servers.get_by_name(server_name)
-
-        if not server:
-            raise ValueError(f"server {server_name} not found")
+        server = get_server(config)
 
     command = f"\"su - ubuntu -c 'github-hetzner-runners service log delete'\""
     ssh(server, command, use_logger=False, stacklevel=4)
@@ -407,16 +353,7 @@ def delete_log(args, config: Config, server: BoundServer = None):
 def status(args, config: Config, server: BoundServer = None):
     """Get cloud server service status."""
     if server is None:
-        config.check("hetzner_token")
-        server_name = config.cloud.server_name
-
-        with Action("Logging in to Hetzner Cloud"):
-            client = Client(token=config.hetzner_token)
-
-        with Action(f"Getting server {server_name}"):
-            server = client.servers.get_by_name(server_name)
-            if not server:
-                raise ValueError(f"server {server_name} not found")
+        server = get_server(config)
 
     with Action("Getting status"):
         command = f"\"su - ubuntu -c 'github-hetzner-runners service status'\""
@@ -426,16 +363,7 @@ def status(args, config: Config, server: BoundServer = None):
 def start(args, config: Config, server: BoundServer = None):
     """Start cloud server service."""
     if server is None:
-        config.check("hetzner_token")
-        server_name = config.cloud.server_name
-
-        with Action("Logging in to Hetzner Cloud"):
-            client = Client(token=config.hetzner_token)
-
-        with Action(f"Getting server {server_name}"):
-            server = client.servers.get_by_name(server_name)
-            if not server:
-                raise ValueError(f"server {server_name} not found")
+        server = get_server(config)
 
     with Action("Starting service"):
         command = f"\"su - ubuntu -c 'github-hetzner-runners service start'\""
@@ -445,49 +373,41 @@ def start(args, config: Config, server: BoundServer = None):
 def stop(args, config: Config, server: BoundServer = None):
     """Stop cloud server service."""
     if server is None:
-        config.check("hetzner_token")
-        server_name = config.cloud.server_name
-
-        with Action("Logging in to Hetzner Cloud"):
-            client = Client(token=config.hetzner_token)
-
-        with Action(f"Getting server {server_name}"):
-            server = client.servers.get_by_name(server_name)
-            if not server:
-                raise ValueError(f"server {server_name} not found")
+        server = get_server(config)
 
     with Action("Stopping service"):
         command = f"\"su - ubuntu -c 'github-hetzner-runners service stop'\""
         ssh(server, command, stacklevel=4)
 
 
-def ssh_client(args, config: Config):
+def ssh_client(args, config: Config, server: BoundServer = None):
     """Open ssh client to github-hetzner-runners service running
     on Hetzner server instance.
     """
-    config.check("hetzner_token")
-    server_name = config.cloud.server_name
+    if server is None:
+        server = get_server(config)
 
-    server_ssh_client(args=args, config=config, server_name=server_name)
+    server_ssh_client(args=args, config=config, server_name=server.name)
 
 
-def ssh_client_command(args, config: Config):
+def ssh_client_command(args, config: Config, server: BoundServer = None):
     """Return ssh command to connect to github-hetzner-runners service running
     on Hetzner server instance.
     """
-    config.check("hetzner_token")
-    server_name = config.cloud.server_name
+    if server is None:
+        server = get_server(config)
 
-    server_ssh_client_command(args=args, config=config, server_name=server_name)
+    server_ssh_client_command(args=args, config=config, server_name=server.name)
 
 
-def cloud_dashboard(args, config: Config):
+def cloud_dashboard(args, config: Config, server: BoundServer = None):
     """Open dashboard through SSH tunnel to cloud service."""
     local_port = args.local_port
     remote_port = args.remote_port if args.remote_port else config.dashboard_port
     timeout = args.timeout if args.timeout else 30.0
 
-    server = get_server(config)
+    if server is None:
+        server = get_server(config)
 
     with Action(f"Creating SSH tunnel on port {local_port}") as action:
         with ssh_tunnel(
