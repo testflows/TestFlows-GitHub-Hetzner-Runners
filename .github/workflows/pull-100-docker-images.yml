@@ -13,7 +13,9 @@ jobs:
         run: docker --version
 
       - name: ♻️ Cache setup
-        uses: ./.github/actions/cache-setup ${{ env.CACHE_VOLUME }}
+        uses: ./.github/actions/cache-setup
+        with:
+          cache-volume: ${{ env.CACHE_VOLUME }}
 
       - name: Login to Docker Hub
         env:
@@ -67,4 +69,6 @@ jobs:
         run: docker system df
       
       - name: ♻️ Cache sync
-        uses: ./.github/actions/cache-sync ${{ env.CACHE_VOLUME }}
+        uses: ./.github/actions/cache-sync
+        with:
+          cache-volume: ${{ env.CACHE_VOLUME }}
