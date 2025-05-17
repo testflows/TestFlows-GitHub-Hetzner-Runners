@@ -214,12 +214,12 @@ def server_setup(
                     ssh(
                         server,
                         (
-                            "if ! sudo apt-get update -qq; then "
-                            "echo \"APT update failed, clearing lists and retrying...\"; "
+                            "'if ! sudo apt-get update -qq; then "
+                            'echo "APT update failed, clearing lists and retrying..."; '
                             "sudo rm -rf /var/lib/apt/lists/* && "
                             "sudo mkdir -p /var/lib/apt/lists && "
                             "sudo apt-get update; "
-                            "fi"
+                            "fi'"
                         ),
                         stacklevel=5,
                     )
