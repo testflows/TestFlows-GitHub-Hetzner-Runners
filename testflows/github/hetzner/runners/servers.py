@@ -24,7 +24,7 @@ from hcloud.servers.domain import Server
 
 from .actions import Action
 from .config import Config
-from .server import ssh_command
+from .server import ssh_command, ip_address
 from .scale_up import server_name_prefix, runner_name_prefix, get_volume_name
 from .hclient import HClient as Client
 from .request import request
@@ -150,6 +150,7 @@ def list(args, config: Config):
             f"{'status':11}",
             f"name,",
             "id,",
+            "ip,",
             "type,",
             "location,",
             "image,",
@@ -167,6 +168,7 @@ def list(args, config: Config):
                 f"{server.status:11}",
                 f"{server.name},",
                 f"{server.id},",
+                f"{ip_address(server)},",
                 f"{server.server_type.name},",
                 f"{server.datacenter.location.name},",
                 f"{server.image.name},",
