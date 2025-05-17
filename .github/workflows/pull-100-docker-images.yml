@@ -1,0 +1,63 @@
+name: Pull 100 Popular Docker Images
+
+on:
+  workflow_dispatch:
+
+jobs:
+  pull-images:
+    runs-on: [self-hosted, type-cpx31, setup-docker, volume-cache-200GB]
+    steps:
+      - name: Print Docker version
+        run: docker --version
+
+      - name: Login to Docker Hub
+        if: env.DOCKER_USERNAME != '' && env.DOCKER_PASSWORD != ''
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
+      - name: Pull 100 popular Docker images
+        run: |
+          images=(
+            # OS & Base Images
+            ubuntu debian alpine centos fedora busybox archlinux opensuse amazonlinux oraclelinux
+
+            # Languages
+            python node golang openjdk ruby php perl dotnet rust elixir
+
+            # Databases
+            mysql postgres mongo redis mariadb cassandra couchdb influxdb neo4j elasticsearch
+
+            # Web Servers
+            nginx httpd traefik haproxy caddy varnish tomcat jetty lighttpd openresty
+
+            # DevOps & CI/CD
+            jenkins gitlab circleci travisci drone teamcity bamboo buildkite concourse gitea
+
+            # Monitoring & Logging
+            prometheus grafana zabbix telegraf influxdb logstash kibana fluentd graylog elasticmq
+
+            # ML & Data Science
+            tensorflow/tensorflow pytorch/pytorch jupyter/base-notebook r-base scikit-learn mlflow dvcorg/cml apache/spark h2oai/h2o-3 xgboost/xgboost
+
+            # Build Tools
+            maven gradle npm yarn composer pip conda make cmake bazel
+
+            # Utilities
+            curlimages/curl wget alpine/git docker ansible/ansible terraform packer vault consul
+
+            # Home & Media
+            plexinc/pms-docker linuxserver/sonarr linuxserver/radarr linuxserver/lidarr linuxserver/jackett \
+            linuxserver/sabnzbd linuxserver/tautulli linuxserver/ombi linuxserver/homeassistant linuxserver/nextcloud
+          )
+
+          for image in "${images[@]}"; do
+            echo "::group::Pulling $image"
+            docker pull "$image"
+            echo "::endgroup::"
+          done
+
+      - name: Show Docker disk usage
+        if: always()
+        run: docker system df
