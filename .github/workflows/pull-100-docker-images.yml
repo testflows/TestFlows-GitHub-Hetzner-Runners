@@ -99,11 +99,8 @@ jobs:
             pytorch/pytorch
             jupyter/base-notebook
             r-base
-            mlflow/mlflow
             dvcorg/cml
             bitnami/spark
-            h2oai/h2o-3
-            xgboost/xgboost
           
             # Build Tools
             maven
@@ -113,7 +110,6 @@ jobs:
             python
             continuumio/miniconda3
             gcc
-            bazelbuild/bazel
           
             # Utilities
             curlimages/curl
