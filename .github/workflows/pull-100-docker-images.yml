@@ -9,6 +9,11 @@ jobs:
     env:
       CACHE_VOLUME: cache_pull_100_docker_images
     steps:
+      - name: ⤵️ Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+          
       - name: 🧾 Print Docker version
         run: docker --version
 
