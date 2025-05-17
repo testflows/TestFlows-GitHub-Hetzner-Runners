@@ -155,11 +155,11 @@ jobs:
 
           for image in "${images[@]}"; do
             echo "::group::Pulling $image"
-            #if ! docker image inspect "$image" > /dev/null 2>&1; then
-            .github/retry.sh 5 2 docker pull "$image" || true
-            #else
-            #  echo "Image already present"
-            #fi
+            if ! docker image inspect "$image" > /dev/null 2>&1; then
+              .github/retry.sh 5 2 docker pull "$image" || true
+            else
+              echo "Image already present"
+            fi
             echo "::endgroup::"
           done
 
