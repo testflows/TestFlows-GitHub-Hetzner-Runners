@@ -5,19 +5,30 @@ on:
 
 jobs:
   pull-images:
-    runs-on: [self-hosted, type-cpx31, setup-docker, volume-cache-pull-100-docker-images-200GB]
+    runs-on: [self-hosted, type-cpx31, setup-docker, volume-cache_pull_100_docker_images-200GB]
+    env:
+      CACHE_VOLUME: cache_pull_100_docker_images
     steps:
-      - name: Print Docker version
+      - name: ⤵️ Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+          
+      - name: 🧾 Print Docker version
         run: docker --version
 
+      - name: ♻️ Cache setup
+        uses: ./.github/actions/cache-setup
+        with:
+          cache-volume: ${{ env.CACHE_VOLUME }}
+
       - name: Login to Docker Hub
-        if: env.DOCKER_USERNAME != '' && env.DOCKER_PASSWORD != ''
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
-      - name: Pull 100 popular Docker images
+      - name: 📥 Pull 100 popular Docker images
         run: |
           images=(
             # OS & Base Images
@@ -58,6 +69,11 @@ jobs:
             echo "::endgroup::"
           done
 
-      - name: Show Docker disk usage
+      - name: 📦 Show Docker disk usage
         if: always()
         run: docker system df
+      
+      - name: ♻️ Cache sync
+        uses: ./.github/actions/cache-sync
+        with:
+          cache-volume: ${{ env.CACHE_VOLUME }}
