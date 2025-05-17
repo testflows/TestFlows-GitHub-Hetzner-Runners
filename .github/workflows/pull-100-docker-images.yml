@@ -82,7 +82,6 @@ jobs:
             jenkins/jenkins
             gitlab/gitlab-ce
             circleci/picard
-            travisci/ci-garnet
             drone/drone
             jetbrains/teamcity-server
             atlassian/bamboo-server
@@ -99,7 +98,6 @@ jobs:
             docker.elastic.co/logstash/logstash:8.11.4
             docker.elastic.co/kibana/kibana:8.11.4
             fluent/fluentd
-            graylog/graylog
             softwaremill/elasticmq
           
             # ML & Data Science
