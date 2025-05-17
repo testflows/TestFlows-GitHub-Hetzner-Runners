@@ -126,7 +126,6 @@ jobs:
             busybox
             alpine/git
             docker
-            ansible/ansible
             hashicorp/terraform
             hashicorp/packer
             hashicorp/vault
