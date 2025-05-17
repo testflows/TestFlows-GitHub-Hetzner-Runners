@@ -282,43 +282,49 @@ def delete(args, config: Config):
             server.delete()
 
 
-def ssh_client(args, config: Config, server_name: str = None):
+def ssh_client(
+    args, config: Config, server_name: str = None, server: BoundServer = None
+):
     """Open ssh client to the server."""
-    config.check("hetzner_token")
+    if server is None:
+        config.check("hetzner_token")
 
-    if server_name is None:
-        server_name = args.name
+        if server_name is None:
+            server_name = args.name
 
-    with Action("Logging in to Hetzner Cloud"):
-        client = Client(token=config.hetzner_token)
+        with Action("Logging in to Hetzner Cloud"):
+            client = Client(token=config.hetzner_token)
 
-    with Action(f"Getting server {server_name}"):
-        server: BoundServer = client.servers.get_by_name(server_name)
+        with Action(f"Getting server {server_name}"):
+            server: BoundServer = client.servers.get_by_name(server_name)
 
-        if server is None:
-            raise ValueError(f"server not found")
+            if server is None:
+                raise ValueError(f"server not found")
 
-        if server.status != server.STATUS_RUNNING:
-            raise ValueError(f"server status is {server.status}")
+            if server.status != server.STATUS_RUNNING:
+                raise ValueError(f"server status is {server.status}")
 
     with Action("Opening SSH client"):
         os.system(ssh_command(server=server))
 
 
-def ssh_client_command(args, config: Config, server_name: str = None):
+def ssh_client_command(
+    args, config: Config, server_name: str = None, server: BoundServer = None
+):
     """Return ssh command to connect server."""
-    config.check("hetzner_token")
+    if server is None:
+        config.check("hetzner_token")
 
-    if server_name is None:
-        server_name = args.name
+        if server_name is None:
+            server_name = args.name
 
-    with Action("Logging in to Hetzner Cloud"):
-        client = Client(token=config.hetzner_token)
+        with Action("Logging in to Hetzner Cloud"):
+            client = Client(token=config.hetzner_token)
 
-    with Action(f"Getting server {server_name}"):
-        server: BoundServer = client.servers.get_by_name(server_name)
+        with Action(f"Getting server {server_name}"):
+            server: BoundServer = client.servers.get_by_name(server_name)
 
-        if server is None:
-            raise ValueError(f"server not found")
+            if server is None:
+                raise ValueError(f"server not found")
 
     print(ssh_command(server=server), file=sys.stdout)

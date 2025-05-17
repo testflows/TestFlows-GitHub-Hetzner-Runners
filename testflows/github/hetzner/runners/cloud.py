@@ -387,7 +387,7 @@ def ssh_client(args, config: Config, server: BoundServer = None):
     if server is None:
         server = get_server(config)
 
-    server_ssh_client(args=args, config=config, server_name=server.name)
+    server_ssh_client(args=args, config=config, server_name=server.name, server=server)
 
 
 def ssh_client_command(args, config: Config, server: BoundServer = None):
@@ -397,7 +397,9 @@ def ssh_client_command(args, config: Config, server: BoundServer = None):
     if server is None:
         server = get_server(config)
 
-    server_ssh_client_command(args=args, config=config, server_name=server.name)
+    server_ssh_client_command(
+        args=args, config=config, server_name=server.name, server=server
+    )
 
 
 def cloud_dashboard(args, config: Config, server: BoundServer = None):
