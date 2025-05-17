@@ -1,5 +1,9 @@
 name: 'Cache sync'
 description: 'Cache sync'
+inputs:
+  cache-volume:
+    description: "Cache volume name"
+    required: true
 
 runs:
   using: 'composite'
@@ -7,12 +11,14 @@ runs:
     - name: Sync Docker cache
       shell: bash
       run: |
+        CACHE_DIR="/mnt/${{inputs.cache-volume}}"
         if ! command -v docker >/dev/null; then
             echo "Docker is not installed, skipping cache sync"
             exit 0
         fi
-
-        if [ -d "/mnt/cache" ]; then
+        if [ -d "$CACHE_DIR" ]; then
+            DOCKER_CACHE_DIR="$CACHE_DIR/docker"
+  
             echo "Stopping containers and cleaning up..."
             sudo docker stop $(sudo docker ps -q) || true
             sudo docker rm -fv $(sudo docker ps -a -q) || true
@@ -22,10 +28,10 @@ runs:
             sudo sync
 
             echo "Syncing docker folders to cache"
-            sudo mkdir -p /mnt/cache/docker
+            sudo mkdir -p "$DOCKER_CACHE_DIR"
 
             if sudo test -d "/var/lib/docker/overlay2"; then
-                sudo mkdir -p /mnt/cache/docker/overlay2
+                sudo mkdir -p "$DOCKER_CACHE_DIR/overlay2"
                 targets=$(sudo find "/var/lib/docker/overlay2" -mindepth 1 -maxdepth 1)
                 if [ -z "$targets" ]; then
                     echo "⚠️  No entries found in /var/lib/docker/overlay2 — skipping"
@@ -33,16 +39,16 @@ runs:
                     for target in $targets; do
                         id=$(basename "$target")
                         if [ ! -f /etc/docker-cache-mounts ] || ! grep -Fxq "$target" /etc/docker-cache-mounts; then
-                            sudo rsync -aH --delete "$target/" /mnt/cache/docker/overlay2/$id/
+                            sudo rsync -aH --delete "$target/" "$DOCKER_CACHE_DIR/overlay2/$id/"
                         fi
                     done
                 fi
             fi
 
             for DIR in image buildkit; do
-                sudo rsync -aH --delete /var/lib/docker/$DIR/ /mnt/cache/docker/$DIR/
+                sudo rsync -aH --delete "/var/lib/docker/$DIR/" "$DOCKER_CACHE_DIR/$DIR/"
             done
             sudo sync
         else
-            echo "/mnt/cache not available — skipping Docker cache sync"
+            echo "$CACHE_DIR not available — skipping Docker cache sync"
         fi
