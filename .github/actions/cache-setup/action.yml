@@ -1,5 +1,9 @@
 name: 'Cache setup'
 description: 'Cache setup'
+inputs:
+  cache-volume:
+    description: "Cache volume name"
+    required: true
 
 runs:
   using: 'composite'
@@ -7,13 +11,13 @@ runs:
     - name: Setup Docker cache
       shell: bash
       run: |
+        CACHE_DIR="/mnt/${{ inputs.cache-volume }}"
         if ! systemctl is-active --quiet docker; then
             echo "Docker is not running, skipping Docker cache setup"
             exit 0
         fi
-
-        if [ -d "/mnt/cache" ]; then
-            DOCKER_CACHE_DIR="/mnt/cache/docker"
+        if [ -d "$CACHE_DIR"  ]; then
+            DOCKER_CACHE_DIR="$CACHE_DIR/docker"
             echo "Using docker cache directory: $DOCKER_CACHE_DIR"
 
             echo "Stopping Docker to prepare cache"
