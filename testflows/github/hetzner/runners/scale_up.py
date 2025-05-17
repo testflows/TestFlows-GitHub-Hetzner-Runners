@@ -151,6 +151,8 @@ def server_setup(
     timeout: float = 60,
 ):
     """Setup new server instance."""
+    cache_volume_name = "cache"
+
     with Action("Wait for SSH connection to be ready", server_name=server.name):
         wait_ssh(server=server, timeout=timeout)
 
@@ -193,6 +195,7 @@ def server_setup(
             )
 
             if not cache_volume_found and volume_name.startswith("cache"):
+                cache_volume_name = volume_name
                 cache_volume_found = True
                 with Action(
                     "Mounting apt-archives and apt-lists cache", server_name=server.name
@@ -225,7 +228,11 @@ def server_setup(
                     )
 
     with Action("Executing setup.sh script", server_name=server.name):
-        ssh(server, f"bash -s  < {setup_script}", stacklevel=5)
+        ssh(
+            server,
+            f'CACHE_DIR="/mnt/{cache_volume_name}" bash -s  < {setup_script}',
+            stacklevel=5,
+        )
 
     with Action("Updating volumes permissions", server_name=server.name):
         for volume in server.volumes:
@@ -240,6 +247,7 @@ def server_setup(
         ssh(
             server,
             f"'sudo -u ubuntu "
+            f'CACHE_DIR="/mnt/{cache_volume_name}" '
             f'GITHUB_REPOSITORY="{github_repository}" '
             f'GITHUB_RUNNER_TOKEN="{GITHUB_RUNNER_TOKEN}" '
             f"GITHUB_RUNNER_GROUP=Default "

@@ -5,7 +5,7 @@ cd /home/ubuntu
 ACTIONS_RUNNER_FILE="actions-runner-linux-arm64-2.306.0.tar.gz"
 ACTIONS_RUNNER_SHA256="842a9046af8439aa9bcabfe096aacd998fc3af82b9afe2434ddd77b96f872a83"
 ACTIONS_RUNNER_URL="https://github.com/actions/runner/releases/download/v2.306.0/$ACTIONS_RUNNER_FILE"
-CACHE_DIR="/mnt/cache"
+CACHE_DIR="${CACHE_DIR:-/mnt/cache}"
 CACHE_DIR_GITHUB="$CACHE_DIR/github"
 
 download_and_verify() {
