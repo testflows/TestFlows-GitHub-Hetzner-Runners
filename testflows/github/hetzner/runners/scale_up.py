@@ -174,12 +174,16 @@ def server_setup(
                 "'sudo echo \"name,id,size,mount,device,used,free,usage\" > /etc/hetzner-volumes'",
                 stacklevel=5,
             )
-        for volume in server.volumes:
+
+        cache_volume_found = False
+
+        for volume in sorted(server.volumes, key=lambda v: v.name):
             volume_name = get_volume_name(volume.name)
             ssh(
                 server,
                 (
                     f"'sudo mkdir /mnt/{volume_name} "
+                    f"&& sudo e2fsck -f -y {volume.linux_device} || true "
                     f"&& sudo e2fsck -f -y {volume.linux_device} "
                     f"&& sudo resize2fs {volume.linux_device} "
                     f"&& sudo mount -o discard,defaults {volume.linux_device} /mnt/{volume_name} "
@@ -187,7 +191,9 @@ def server_setup(
                 ),
                 stacklevel=5,
             )
-            if volume_name == "cache":
+
+            if not cache_volume_found and volume_name.startswith("cache"):
+                cache_volume_found = True
                 with Action(
                     "Mounting apt-archives and apt-lists cache", server_name=server.name
                 ):
@@ -202,17 +208,16 @@ def server_setup(
                     )
 
                 with Action(
-                    "Clear apt-lists cache if apt-get update fails",
+                    "Check apt-lists validity and clear if invalid",
                     server_name=server.name,
                 ):
                     ssh(
                         server,
                         (
-                            f"'if ! apt-get update -qq; then "
-                            f'echo "APT update failed — clearing apt-lists cache" '
-                            f"sudo rm -rf /var/lib/apt/lists/* "
-                            f"sudo apt-get update; "
-                            f"fi'"
+                            '\'if [ -z "$(find /var/lib/apt/lists -maxdepth 1 \\( -name "*_Release" -o -name "*_InRelease" \\) -size +0)" ]; then '
+                            'echo "APT lists are invalid or empty — clearing apt-lists cache"; '
+                            "sudo rm -rf /var/lib/apt/lists/* && sudo apt-get update; "
+                            "fi'"
                         ),
                         stacklevel=5,
                     )
