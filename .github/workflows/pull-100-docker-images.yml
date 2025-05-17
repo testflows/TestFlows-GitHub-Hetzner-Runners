@@ -152,7 +152,7 @@ jobs:
 
           for image in "${images[@]}"; do
             echo "::group::Pulling $image"
-            .github/retry.sh 60 2 docker pull "$image"
+            .github/retry.sh 60 2 docker pull "$image" || true
             echo "::endgroup::"
           done
 
