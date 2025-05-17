@@ -32,7 +32,7 @@ jobs:
         run: |
           images=(
             # OS & Base Images
-            ubuntu debian alpine centos fedora busybox archlinux opensuse amazonlinux oraclelinux
+            ubuntu debian alpine centos:centos7 fedora busybox archlinux opensuse amazonlinux oraclelinux
 
             # Languages
             python node golang openjdk ruby php perl dotnet rust elixir
