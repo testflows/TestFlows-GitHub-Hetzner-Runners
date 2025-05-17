@@ -74,6 +74,7 @@ jobs:
         run: docker system df
       
       - name: ♻️ Cache sync
+        if: always()
         uses: ./.github/actions/cache-sync
         with:
           cache-volume: ${{ env.CACHE_VOLUME }}
