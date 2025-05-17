@@ -76,7 +76,6 @@ jobs:
             varnish
             tomcat
             jetty
-            lighttpd
             openresty/openresty
           
             # DevOps & CI/CD
