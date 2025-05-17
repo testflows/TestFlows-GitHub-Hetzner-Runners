@@ -136,6 +136,19 @@ jobs:
             linuxserver/ombi
             ghcr.io/home-assistant/home-assistant
             linuxserver/nextcloud
+
+            # Databases
+            memcached
+            clickhouse
+            redis
+            postgres
+            mongo
+            mysql
+            mariadb
+            influxdb
+            elasticsearch:9.0.1
+            zookeeper
+            cassandra
           )
 
           for image in "${images[@]}"; do
