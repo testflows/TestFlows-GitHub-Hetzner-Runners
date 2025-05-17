@@ -200,9 +200,9 @@ def server_setup(
                     ssh(
                         server,
                         (
-                            f"'sudo mkdir -p /mnt/cache/apt-archives /mnt/cache/apt-lists /var/cache/apt/archives /var/lib/apt/lists "
-                            f"&& sudo mount --bind /mnt/cache/apt-archives /var/cache/apt/archives "
-                            f"&& sudo mount --bind /mnt/cache/apt-lists /var/lib/apt/lists'"
+                            f"'sudo mkdir -p /mnt/{volume_name}/apt-archives /mnt/{volume_name}/apt-lists /var/cache/apt/archives /var/lib/apt/lists "
+                            f"&& sudo mount --bind /mnt/{volume_name}/apt-archives /var/cache/apt/archives "
+                            f"&& sudo mount --bind /mnt/{volume_name}/cache/apt-lists /var/lib/apt/lists'"
                         ),
                         stacklevel=5,
                     )
