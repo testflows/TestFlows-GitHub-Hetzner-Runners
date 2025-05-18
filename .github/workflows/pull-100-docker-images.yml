@@ -13,20 +13,20 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref || github.ref }}
-          
+  
       - name: 🧾 Print Docker version
         run: docker --version
+
+      - name: 🔐 Docker login
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
       - name: ♻️ Cache setup
         uses: ./.github/actions/cache-setup
         with:
           cache-volume: ${{ env.CACHE_VOLUME }}
-
-      - name: Login to Docker Hub
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
       - name: 📥 Pull 100 popular Docker images
         run: |
@@ -42,7 +42,7 @@ jobs:
             opensuse/leap
             amazonlinux
             oraclelinux:8
-          
+
             # Languages
             python
             node
@@ -54,8 +54,12 @@ jobs:
             mcr.microsoft.com/dotnet/runtime
             rust
             elixir
-          
+
             # Databases
+            elasticsearch:9.0.1
+            zookeeper
+            memcached
+            clickhouse
             mysql
             postgres
             mongo
@@ -66,7 +70,7 @@ jobs:
             influxdb
             neo4j
             docker.elastic.co/elasticsearch/elasticsearch:8.11.4
-          
+
             # Web Servers
             nginx
             httpd
@@ -77,7 +81,7 @@ jobs:
             tomcat
             jetty
             openresty/openresty
-          
+
             # DevOps & CI/CD
             jenkins/jenkins
             gitlab/gitlab-ce
@@ -88,7 +92,8 @@ jobs:
             buildkite/agent
             concourse/concourse
             gitea/gitea
-          
+            cimg/android:2025.04.1
+
             # Monitoring & Logging
             prom/prometheus
             grafana/grafana
@@ -99,18 +104,15 @@ jobs:
             docker.elastic.co/kibana/kibana:8.11.4
             fluent/fluentd
             softwaremill/elasticmq
-          
+
             # ML & Data Science
             tensorflow/tensorflow:latest-gpu
             pytorch/pytorch
             jupyter/base-notebook
             r-base
-            mlflow/mlflow
             dvcorg/cml
             bitnami/spark
-            h2oai/h2o-3
-            xgboost/xgboost
-          
+
             # Build Tools
             maven
             gradle
@@ -119,19 +121,17 @@ jobs:
             python
             continuumio/miniconda3
             gcc
-            bazelbuild/bazel
-          
+
             # Utilities
             curlimages/curl
             busybox
             alpine/git
             docker
-            ansible/ansible
             hashicorp/terraform
             hashicorp/packer
             hashicorp/vault
             hashicorp/consul
-          
+
             # Home & Media
             plexinc/pms-docker
             linuxserver/sonarr
@@ -143,11 +143,18 @@ jobs:
             linuxserver/ombi
             ghcr.io/home-assistant/home-assistant
             linuxserver/nextcloud
+
+            # Satellite Interferometry
+            mobigroup/pygmtsar-large
           )
 
           for image in "${images[@]}"; do
             echo "::group::Pulling $image"
-            .github/retry.sh 5 2 docker pull "$image" || true
+            if ! docker image inspect "$image" > /dev/null 2>&1; then
+              .github/retry.sh 5 2 docker pull "$image" || true
+            else
+              echo "Image already present"
+            fi
             echo "::endgroup::"
           done
 
