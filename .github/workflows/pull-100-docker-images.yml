@@ -151,6 +151,9 @@ jobs:
             elasticsearch:9.0.1
             zookeeper
             cassandra
+
+            # Satellite Interferometry
+            mobigroup/pygmtsar-large
           )
 
           for image in "${images[@]}"; do
