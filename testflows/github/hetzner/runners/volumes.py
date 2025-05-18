@@ -76,11 +76,12 @@ def list(args, config: Config):
         f"{'state,':8}",
         "name,",
         "actual name,",
-        f"size in GB,",
+        "id,",
+        f"size,",
         "location,",
         "server,",
         "created,",
-        "format,",
+        "format",
         file=sys.stdout,
     )
 
@@ -93,6 +94,7 @@ def list(args, config: Config):
             f"{volume.labels.get('github-hetzner-runner-volume', 'none') + ',':8}",
             get_volume_name(volume.name) + ",",
             volume.name + ",",
+            f"{volume.id},",
             f"{volume.size}GB,",
             volume.location.name + ",",
             volume_server + ",",
