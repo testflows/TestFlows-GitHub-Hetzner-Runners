@@ -42,7 +42,7 @@ jobs:
             opensuse/leap
             amazonlinux
             oraclelinux:8
-          
+
             # Languages
             python
             node
@@ -54,8 +54,12 @@ jobs:
             mcr.microsoft.com/dotnet/runtime
             rust
             elixir
-          
+
             # Databases
+            elasticsearch:9.0.1
+            zookeeper
+            memcached
+            clickhouse
             mysql
             postgres
             mongo
@@ -66,7 +70,7 @@ jobs:
             influxdb
             neo4j
             docker.elastic.co/elasticsearch/elasticsearch:8.11.4
-          
+
             # Web Servers
             nginx
             httpd
@@ -77,7 +81,7 @@ jobs:
             tomcat
             jetty
             openresty/openresty
-          
+
             # DevOps & CI/CD
             jenkins/jenkins
             gitlab/gitlab-ce
@@ -88,7 +92,8 @@ jobs:
             buildkite/agent
             concourse/concourse
             gitea/gitea
-          
+            cimg/android:2025.04.1
+
             # Monitoring & Logging
             prom/prometheus
             grafana/grafana
@@ -99,7 +104,7 @@ jobs:
             docker.elastic.co/kibana/kibana:8.11.4
             fluent/fluentd
             softwaremill/elasticmq
-          
+
             # ML & Data Science
             tensorflow/tensorflow:latest-gpu
             pytorch/pytorch
@@ -107,7 +112,7 @@ jobs:
             r-base
             dvcorg/cml
             bitnami/spark
-          
+
             # Build Tools
             maven
             gradle
@@ -116,7 +121,7 @@ jobs:
             python
             continuumio/miniconda3
             gcc
-          
+
             # Utilities
             curlimages/curl
             busybox
@@ -126,7 +131,7 @@ jobs:
             hashicorp/packer
             hashicorp/vault
             hashicorp/consul
-          
+
             # Home & Media
             plexinc/pms-docker
             linuxserver/sonarr
@@ -138,19 +143,6 @@ jobs:
             linuxserver/ombi
             ghcr.io/home-assistant/home-assistant
             linuxserver/nextcloud
-
-            # Databases
-            memcached
-            clickhouse
-            redis
-            postgres
-            mongo
-            mysql
-            mariadb
-            influxdb
-            elasticsearch:9.0.1
-            zookeeper
-            cassandra
 
             # Satellite Interferometry
             mobigroup/pygmtsar-large
