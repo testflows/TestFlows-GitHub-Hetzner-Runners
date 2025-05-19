@@ -101,12 +101,16 @@ def count_type(v):
 
 
 def image_type(v, separator=":"):
-    """Image type argument. Example: system:ubuntu-22.04"""
+    """Image type argument. Example: x86:system:ubuntu-22.04"""
     try:
         image_architecture, image_type, image_name = v.split(separator, 2)
         assert image_type in ("system", "snapshot", "backup", "app")
     except:
         raise ArgumentTypeError(f"invalid image {v}")
+
+    if image_architecture in ("aarch64", "arm64"):
+        # support aarch64, arm64 alias for arm
+        image_architecture = "arm"
 
     if image_type in ("system", "app"):
         return Image(type=image_type, architecture=image_architecture, name=image_name)
