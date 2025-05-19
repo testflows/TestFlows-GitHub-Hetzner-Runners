@@ -97,7 +97,7 @@ The following projects are using **github-hetzner-runners** to enable self-hoste
 * ✅ supports estimating the cost of a job, a run, or a set of runs
 * ✅ supports prometheus metrics endpoint and embedded dashboard for monitoring
 * ✅ supports project configuration files to help manage multiple runner projects
-* ✅ **supports upto ten 10TB persistent caching volumes per runner** (🔥 new in >= 1.9)
+* ✅ **supports upto sixteen 10TB persistent caching volumes per runner** (🔥 new in >= 1.9)
 
 ====================
 📝 Table of Contents
