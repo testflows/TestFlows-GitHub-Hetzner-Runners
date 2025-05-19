@@ -79,24 +79,25 @@ The following projects are using **github-hetzner-runners** to enable self-hoste
 🌟 Features
 ===========
 
-* simpler alternative to what GitHub lists in `Recommended Autoscaling Solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_
-* cost-efficient on-demand runners using `Hetzner Cloud <https://www.hetzner.com/cloud>`_
-* supports server recycling to minimize costs
-* simple configuration, no Webhooks, no need for AWS lambdas, and no need to setup any GitHub application
-* supports specifying custom runner server types, images, and locations using job labels with fallback options for server types and locations
-* self-contained program that you can use to deploy, redeploy, and manage the service on a cloud instance
-* supports x64 (x86) and ARM64 (arm) runners
-* supports IPv6 only runners
-* supports using any Hetzner Cloud server types
-* supports runners with pre-installed Docker
-* supports using any standard Hetzner Cloud images and applications
-* supports auto-replenishable fixed standby runner pools for jobs to be picked up immediately
-* supports limiting the maximum number of runners created for each workflow run
-* supports efficient GitHub API usage using HTTP caching and conditional requests
-* supports meta labels to keep your job label list short
-* supports estimating the cost of a job, a run, or a set of runs 
-* supports prometheus metrics endpoint and embedded dashboard for monitoring
-* supports project configuration files to help manage multiple runner projects
+* ✅ simpler alternative to what GitHub lists in `Recommended Autoscaling Solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_
+* ✅ cost-efficient on-demand runners using `Hetzner Cloud <https://www.hetzner.com/cloud>`_
+* ✅ supports server recycling to minimize costs
+* ✅ simple configuration, no Webhooks, no need for AWS lambdas, and no need to setup any GitHub application
+* ✅ supports specifying custom runner server types, images, and locations using job labels with fallback options for server types and locations
+* ✅ self-contained program that you can use to deploy, redeploy, and manage the service on a cloud instance
+* ✅ supports x64 (x86) and ARM64 (arm) runners
+* ✅ supports IPv6 only runners
+* ✅ supports using any Hetzner Cloud server types
+* ✅ supports runners with pre-installed Docker
+* ✅ supports using any standard Hetzner Cloud images and applications
+* ✅ supports auto-replenishable fixed standby runner pools for jobs to be picked up immediately
+* ✅ supports limiting the maximum number of runners created for each workflow run
+* ✅ supports efficient GitHub API usage using HTTP caching and conditional requests
+* ✅ supports meta labels to keep your job label list short
+* ✅ supports estimating the cost of a job, a run, or a set of runs
+* ✅ supports prometheus metrics endpoint and embedded dashboard for monitoring
+* ✅ supports project configuration files to help manage multiple runner projects
+* ✅ **supports upto ten 10TB persistent caching volumes per runner** (🔥 new in >= 1.9)
 
 ====================
 📝 Table of Contents
@@ -121,6 +122,7 @@ The following projects are using **github-hetzner-runners** to enable self-hoste
 * `Specifying The Custom Runner Server Startup Script <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Custom-Runner-Server-Startup-Script>`_
 * `Disabling Setup or Startup Scripts <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Disabling-Setup-Or-Startup-Scripts>`_
 * `Specifying Standby Runners <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-Standby-Runners>`_
+* `Using Caching Volumes <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Using-Caching-Volumes>`_
 * `Specifying Logger Configuration <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-Logger-Configuration>`_
 * `Listing All Current Servers <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Listing-All-Current-Servers>`_
 * `Opening The SSH Client To The Server <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Opening-The-SSH-Client-To-The-Server>`_
