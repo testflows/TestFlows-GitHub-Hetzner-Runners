@@ -272,10 +272,12 @@ def get_server_types(labels: set[str], default: ServerType, label_prefix: str = 
     for label in labels:
         label = label.lower()
         if label.startswith(label_prefix):
-            server_type_names = label.split(label_prefix, 1)[-1].lower().split("-")
-            for server_type_name in server_type_names:
-                server_type = ServerType(name=server_type_name)
-                server_types.append(server_type)
+            server_type_name = label.split(label_prefix, 1)[-1].lower()
+            if "-" in server_type_name:
+                # skip composite label
+                continue
+            server_type = ServerType(name=server_type_name)
+            server_types.append(server_type)
 
     if not server_types:
         server_types = [default]
@@ -301,10 +303,12 @@ def get_server_locations(
     for label in labels:
         label = label.lower()
         if label.startswith(label_prefix):
-            server_location_names = label.split(label_prefix, 1)[-1].lower().split("-")
-            for server_location_name in server_location_names:
-                server_location = Location(name=server_location_name)
-                server_locations.append(server_location)
+            server_location_name = label.split(label_prefix, 1)[-1].lower()
+            if "-" in server_location_name:
+                # skip composite label
+                continue
+            server_location = Location(name=server_location_name)
+            server_locations.append(server_location)
 
     if not server_locations:
         server_locations = [default]
@@ -499,6 +503,10 @@ def expand_meta_label(
     """Expand any meta labels."""
     expanded_labels = []
     label_prefix = label_prefix.lower()
+    composite_labels = ["type-", "in-"]
+
+    if label_prefix and not label_prefix.endswith("-"):
+        label_prefix += "-"
 
     for label in labels:
         label = label.lower()
@@ -507,6 +515,15 @@ def expand_meta_label(
             raw_label = label.split(label_prefix, 1)[-1] if label_prefix else label
             if raw_label in meta_label:
                 expanded_labels += list(meta_label[label])
+            for composite_label in composite_labels:
+                if raw_label.startswith(composite_label):
+                    composite_values = (
+                        raw_label.split(composite_label, 1)[-1].lower().split("-")
+                    )
+                    for composite_value in composite_values:
+                        expanded_labels.append(
+                            f"{label_prefix}{composite_label}{composite_value}"
+                        )
 
     return set(expanded_labels)
 
