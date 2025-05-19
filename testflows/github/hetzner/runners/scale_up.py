@@ -272,9 +272,10 @@ def get_server_types(labels: set[str], default: ServerType, label_prefix: str = 
     for label in labels:
         label = label.lower()
         if label.startswith(label_prefix):
-            server_type_name = label.split(label_prefix, 1)[-1].lower()
-            server_type = ServerType(name=server_type_name)
-            server_types.append(server_type)
+            server_type_names = label.split(label_prefix, 1)[-1].lower().split("-")
+            for server_type_name in server_type_names:
+                server_type = ServerType(name=server_type_name)
+                server_types.append(server_type)
 
     if not server_types:
         server_types = [default]
@@ -300,9 +301,10 @@ def get_server_locations(
     for label in labels:
         label = label.lower()
         if label.startswith(label_prefix):
-            server_location_name = label.split(label_prefix, 1)[-1].lower()
-            server_location = Location(name=server_location_name)
-            server_locations.append(server_location)
+            server_location_names = label.split(label_prefix, 1)[-1].lower().split("-")
+            for server_location_name in server_location_names:
+                server_location = Location(name=server_location_name)
+                server_locations.append(server_location)
 
     if not server_locations:
         server_locations = [default]
