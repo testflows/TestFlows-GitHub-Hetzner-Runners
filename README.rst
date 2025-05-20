@@ -89,7 +89,7 @@ to avoid any cleanup. Server instances are not shared between jobs.
   
   By using Hetzner Cloud VMs (e.g. CX or CPX instances), you can dramatically reduce CI/CD costs while running faster and more parallel jobs.
 
-- 🛑 **No more disappearing AWS spot instances**  
+- 🤕 **No more disappearing AWS spot instances**  
 
   Your jobs won’t randomly vanish due to spot instance preemption — Hetzner provides stable and predictable VM lifecycle control, with amazing prices and simple, predictable billing.
 
