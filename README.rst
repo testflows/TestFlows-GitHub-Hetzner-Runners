@@ -61,6 +61,30 @@ to avoid any cleanup. Server instances are not shared between jobs.
    the minimal cost for any job is the cost of the server for one hour plus the cost of one public IPv4 address. 
    If server recycling is used, the amortized cost could be close to per-minute billing depending on server utilization.
 
+=============================================
+🤔 Why use TestFlows GitHub Hetzner Runners?
+=============================================
+
+- 🖥️ **Full root control of real VMs**:  
+  
+  Each runner is a dedicated Hetzner Cloud VM with full ``sudo`` access and no container sandboxing.
+
+- 🐳 **Native Docker and docker-compose support**:
+  
+  Run ``docker build``, ``docker-compose up``, or any Docker workflow without needing DinD hacks or Kubernetes workarounds.
+
+- 🔧 **No hacks, no fake Docker**:  
+  
+  Unlike Kubernetes-based runners, there's no need to expose host Docker sockets or run privileged sidecars.
+
+- 🧪 **Just real CI runners on real Ubuntu**
+
+  Get predictable, isolated, and secure environments for your workflows with support for caching, artifacts, and custom setup.
+
+- 📦 **Self-contained deployment and management**
+
+  Everything is managed by a single CLI program — no need for Kubernetes, CRDs, controllers, or third-party services.
+
 ==================
 🧑 Who's using it?
 ==================
