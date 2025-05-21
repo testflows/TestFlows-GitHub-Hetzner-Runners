@@ -61,9 +61,9 @@ to avoid any cleanup. Server instances are not shared between jobs.
    the minimal cost for any job is the cost of the server for one hour plus the cost of one public IPv4 address. 
    If server recycling is used, the amortized cost could be close to per-minute billing depending on server utilization.
 
-=============================================
-🤔 Why use TestFlows GitHub Hetzner Runners?
-=============================================
+=========
+🤔 Why?
+=========
 
 - 🖥️ **Full root control of real VMs**:  
   
