@@ -75,7 +75,7 @@ to avoid any cleanup. Server instances are not shared between jobs.
 
 - 📦 **Self-contained deployment**  
   
-  Everything is managed by a single CLI — no Kubernetes, no CRDs, no controllers, no third-party services.
+  Everything is managed by a single command line utility — no Kubernetes, no CRDs, no controllers, no third-party services.
 
 - 💸 **Up to 80× cheaper than GitHub-hosted runners**  
   
