@@ -65,33 +65,21 @@ to avoid any cleanup. Server instances are not shared between jobs.
 🤔 Why?
 =========
 
-- 🖥️ **Full root control of real VMs**:  
-  
-  Each runner is a dedicated Hetzner Cloud VM with full ``sudo`` access and no container sandboxing.
+- 🖥️ **Real VMs with full root access**  
+  Each runner is a dedicated Hetzner Cloud VM running real Ubuntu — no container sandboxing, full `sudo` control, predictable and isolated environments.
 
-- 🐳 **Native Docker and docker-compose support**:
-  
-  Run ``docker build``, ``docker-compose up``, or any Docker workflow without needing DinD hacks or Kubernetes workarounds.
+- 🐳 **Native Docker support, no hacks**  
+  Run `docker build`, `docker-compose up`, or any workflow natively — no DinD hacks, no exposed host sockets, no privileged sidecars.
 
-- 🔧 **No hacks, no fake Docker**:  
-  
-  Unlike Kubernetes-based runners, there's no need to expose host Docker sockets or run privileged sidecars.
+- 📦 **Self-contained deployment**  
+  Everything is managed by a single CLI — no Kubernetes, no CRDs, no controllers, no third-party services.
 
-- 🧪 **Just real CI runners on real Ubuntu**
+- 💸 **Up to 80× cheaper than GitHub-hosted runners**  
+  Hetzner Cloud VMs (like CX or CPX) offer dramatic CI/CD cost savings with better performance and higher parallelism.
 
-  Get predictable, isolated, and secure environments for your workflows with support for caching, artifacts, and custom setup.
+- 🤕 **No spot instance headaches**  
+  Jobs won't vanish mid-run — Hetzner provides stable VM lifecycle control with transparent, low-cost billing.
 
-- 📦 **Self-contained deployment and management**
-
-  Everything is managed by a single CLI program — no need for Kubernetes, CRDs, controllers, or third-party services.
-
-- 💸 **Theoretically up to 80× cheaper than GitHub-hosted runners**  
-  
-  By using Hetzner Cloud VMs (e.g. CX or CPX instances), you can dramatically reduce CI/CD costs while running faster and more parallel jobs.
-
-- 🤕 **No more disappearing AWS spot instances**  
-
-  Your jobs won’t randomly vanish due to spot instance preemption — Hetzner provides stable and predictable VM lifecycle control, with amazing prices and simple, predictable billing.
 
 ==================
 🧑 Who's using it?
