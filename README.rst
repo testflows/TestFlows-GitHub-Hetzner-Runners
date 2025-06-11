@@ -66,18 +66,23 @@ to avoid any cleanup. Server instances are not shared between jobs.
 =========
 
 - 🖥️ **Real VMs with full root access**  
+
   Each runner is a dedicated Hetzner Cloud VM running real Ubuntu — no container sandboxing, full `sudo` control, predictable and isolated environments.
 
 - 🐳 **Native Docker support, no hacks**  
+
   Run `docker build`, `docker-compose up`, or any workflow natively — no DinD hacks, no exposed host sockets, no privileged sidecars.
 
 - 📦 **Self-contained deployment**  
+  
   Everything is managed by a single CLI — no Kubernetes, no CRDs, no controllers, no third-party services.
 
 - 💸 **Up to 80× cheaper than GitHub-hosted runners**  
+  
   Hetzner Cloud VMs (like CX or CPX) offer dramatic CI/CD cost savings with better performance and higher parallelism.
 
 - 🤕 **No spot instance headaches**  
+  
   Jobs won't vanish mid-run — Hetzner provides stable VM lifecycle control with transparent, low-cost billing.
 
 
