@@ -92,6 +92,7 @@ to avoid any cleanup. Server instances are not shared between jobs.
 
 The following projects are using **github-hetzner-runners** to enable self-hosted, on-demand runners for their CI/CD pipelines:
 
+- `Altinity fork of ClickHouse® <https://github.com/Altinity/ClickHouse>`_ 
 - `Altinity Regression Tests for ClickHouse® <https://github.com/Altinity/clickhouse-regression/blob/main/.github/workflows/run-regression.yml>`_
 - `Altinity Grafana Datasource Plugin for ClickHouse® <https://github.com/Altinity/clickhouse-grafana/blob/master/.github/workflows/testflows.yml>`_
 - `Altinity Sink Connector for ClickHouse® <https://github.com/Altinity/clickhouse-sink-connector/blob/develop/.github/workflows/testflows-sink-connector-lightweight.yml>`_
