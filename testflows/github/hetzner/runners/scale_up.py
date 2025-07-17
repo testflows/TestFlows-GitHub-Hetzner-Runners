@@ -1562,7 +1562,6 @@ def scale_up(
                                     with Action(
                                         f"Creating new server for {job}",
                                         server_name=server_name,
-                                        ignore_fail=True,
                                         interval=interval,
                                     ):
                                         create_runner_server(
@@ -1597,7 +1596,6 @@ def scale_up(
                                     try:
                                         with Action(
                                             f"Replenishing{' immediately' if replenish_immediately else ''} standby server with {labels}",
-                                            ignore_fail=True,
                                             interval=interval,
                                         ):
                                             create_runner_server(
