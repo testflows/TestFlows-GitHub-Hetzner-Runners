@@ -1586,7 +1586,9 @@ def scale_up(
                         with Action("Checking standby runner pool", interval=interval):
                             for standby_runner in standby_runners:
                                 labels = set(standby_runner.labels)
-                                replenish_immediately = standby_runner.replenish_immediately
+                                replenish_immediately = (
+                                    standby_runner.replenish_immediately
+                                )
                                 if replenish_immediately:
                                     available = count_available(
                                         servers=servers, labels=labels
