@@ -77,9 +77,16 @@ to avoid any cleanup. Server instances are not shared between jobs.
   
   Everything is managed by a single command line utility — no Kubernetes, no CRDs, no controllers, no third-party services.
 
-- 💸 **Up to 80× cheaper than GitHub-hosted runners**  
+- 💸 **Up to 75× cheaper than GitHub-hosted runners**  
   
   Hetzner Cloud VMs (like CX or CPX) offer dramatic CI/CD cost savings with better performance and higher parallelism.
+  
+:As of March 5, 2025:
+  - Linux 2-core @ $0.008 (https://docs.github.com/en/billing/managing-billing-for-your-products/about-billing-for-github-actions)
+  - CX22 @ 0.006 EUR/hour (https://www.hetzner.com/cloud/)
+  - 1/0.9411 (USD/EUR) x 0.006 EUR/hour x 1 hour/60 min = 0.0001062 USD/min, 0.008 USD/min / 0.0001062 USD/min = 75.28
+  - **This is a theoretical maximum, based on full utilization and Hetzner’s hourly billing (they don’t charge per minute).
+    Best cost-efficiency is achieved when jobs run close to full hours or you keep runners active consistently — great for high-utilization pipelines.**
 
 - 🤕 **No spot instance headaches**  
   
