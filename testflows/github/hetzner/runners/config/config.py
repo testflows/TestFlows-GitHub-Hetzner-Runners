@@ -129,8 +129,8 @@ class Config:
     max_unused_runner_time: int = 180
     max_runner_registration_time: int = 180
     max_server_ready_time: int = 180
-    scale_up_interval: int = 15
-    scale_down_interval: int = 15
+    scale_up_interval: int = 60
+    scale_down_interval: int = 60
     metrics_port: int = 9090
     metrics_host: str = "127.0.0.1"
     dashboard_port: int = 8090
