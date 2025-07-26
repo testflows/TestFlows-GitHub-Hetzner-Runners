@@ -97,7 +97,7 @@ to avoid any cleanup. Server instances are not shared between jobs.
   That’s the upper bound — based on full hourly utilization and exchange rate as of March 5, 2025.
   But even if you only hit 10× cheaper in practice,
   you're still saving *a lot*. Best efficiency is when your jobs are frequent or long-lived
-  (due to hourly billing). GitHub charges for time. Hetzner charges for hardware.
+  (due to hourly billing).
 
 - 🤕 **No spot instance headaches**  
   
