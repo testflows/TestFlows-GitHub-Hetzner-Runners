@@ -30,8 +30,8 @@ config:
     max_unused_runner_time: 120
     max_runner_registration_time: 120
     max_server_ready_time: 120
-    scale_up_interval: 15
-    scale_down_interval: 15
+    scale_up_interval: 60
+    scale_down_interval: 60
     debug: false
     # cloud service deployment configuration
     cloud:
