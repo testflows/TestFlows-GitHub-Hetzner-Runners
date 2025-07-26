@@ -81,12 +81,23 @@ to avoid any cleanup. Server instances are not shared between jobs.
   
   Hetzner Cloud VMs (like CX or CPX) offer dramatic CI/CD cost savings with better performance and higher parallelism.
   
-:As of March 5, 2025:
-  - Linux 2-core @ $0.008 (https://docs.github.com/en/billing/managing-billing-for-your-products/about-billing-for-github-actions)
-  - CX22 @ 0.006 EUR/hour (https://www.hetzner.com/cloud/)
-  - 1/0.9411 (USD/EUR) x 0.006 EUR/hour x 1 hour/60 min = 0.0001062 USD/min, 0.008 USD/min / 0.0001062 USD/min = 75.28
-  - **This is a theoretical maximum, based on full utilization and Hetzner’s hourly billing (they don’t charge per minute).
-    Best cost-efficiency is achieved when jobs run close to full hours or you keep runners active consistently — great for high-utilization pipelines.**
+  +------------------------+-------------------+----------------------------+
+  | Platform               | Specs             | Price                      |
+  +========================+===================+============================+
+  | GitHub-hosted runner   | 2-core Linux      | $0.008 / minute            |
+  +------------------------+-------------------+----------------------------+
+  | Hetzner CX22           | 2-core VM         | €0.006 / hour              |
+  |                        |                   | (~$0.0001062 / minute)     |
+  +------------------------+-------------------+----------------------------+
+
+  :Calculation:
+     1/0.9411 USD/EUR × 0.006 EUR/hour × 1 hour / 60 minute = 0.0001062 USD / minute,
+     $0.008 / $0.0001062 = ~75.32
+   
+  That’s the upper bound — based on full hourly utilization and exchange rate as of March 5, 2025.
+  But even if you only hit 10× cheaper in practice,
+  you're still saving *a lot*. Best efficiency is when your jobs are frequent or long-lived
+  (due to hourly billing). GitHub charges for time. Hetzner charges for hardware.
 
 - 🤕 **No spot instance headaches**  
   
