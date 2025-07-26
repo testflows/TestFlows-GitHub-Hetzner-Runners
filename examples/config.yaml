@@ -81,12 +81,16 @@ config:
                     - rotating_logfile
     # logger format
     logger_format:
-        delimiter: " "
+        delimiter: ","
         default:
             - column: date
             - column: time
-            - column: time_ampm
+            - column: interval
             - column: level
+            - column: run_id
+            - column: job_id
+            - column: server_name
+            - column: threadName
             - column: funcName
             - column: message
         columns:
@@ -96,15 +100,27 @@ config:
             - column: time
               index: 1
               width: 8
-            - column: time_ampm
+            - column: interval
               index: 2
-              width: 2
+              width: 5
             - column: level
               index: 3
               width: 8
-            - column: funcName
+            - column: run_id
               index: 4
-              width: 15
-            - column: message
+              width: 11
+            - column: job_id
               index: 5
-              width: 80
+              width: 11
+            - column: server_name
+              index: 6
+              width: 36
+            - column: threadName
+              index: 7
+              width: 20
+            - column: funcName
+              index: 8
+              width: 14
+            - column: message
+              index: 9
+              width: 90
