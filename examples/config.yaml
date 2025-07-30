@@ -44,6 +44,7 @@ config:
     # standby runners groups configuration
     standby_runners:
         - labels:
+            - self-hosted
             - type-cpx21
           count: 3
           replenish_immediately: true
