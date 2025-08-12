@@ -44,6 +44,7 @@ setup(
         "testflows.github.hetzner.runners.scripts.deploy",
         "testflows.github.hetzner.runners.dashboard",
         "testflows.github.hetzner.runners.dashboard.panels",
+        "testflows.github.hetzner.runners.dashboard2",
     ],
     package_data={
         "testflows.github.hetzner.runners.config": ["*.json"],
@@ -51,6 +52,7 @@ setup(
         "testflows.github.hetzner.runners.scripts.deploy": ["*.sh"],
         "testflows.github.hetzner.runners.bin": ["github-hetzner-runners"],
         "testflows.github.hetzner.runners.dashboard": ["html/*.html", "css/*.css"],
+        "testflows.github.hetzner.runners.dashboard2": ["*.css"],
     },
     scripts=["testflows/github/hetzner/runners/bin/github-hetzner-runners"],
     zip_safe=False,
@@ -62,6 +64,7 @@ setup(
         "prometheus_client==0.19.0",
         "dash==2.14.2",
         "plotly==5.18.0",
+        "streamlit==1.48.0",
     ],
     extras_require={"dev": []},
 )
