@@ -143,7 +143,6 @@ def get_runner_server_type_and_location(runner_name: str):
 
 def server_setup(
     server: BoundServer,
-    server_volumes: list[Volume],
     setup_script: str,
     startup_script: str,
     github_token: str,
@@ -156,8 +155,6 @@ def server_setup(
 
     with Action("Wait for SSH connection to be ready", server_name=server.name):
         wait_ssh(server=server, timeout=timeout)
-        if server_volumes:
-            server.reload()
 
     with Action("Getting registration token for the runner", server_name=server.name):
         content, resp = request(
@@ -796,6 +793,7 @@ def create_server(
                                 public_net=server_net_config,
                             )
                             server: BoundServer = response.server
+                            server.volumes = server_bound_volumes
 
                             for volume in server_bound_volumes:
                                 volume.server = server
@@ -829,7 +827,6 @@ def create_server(
     setup_worker_pool.submit(
         server_setup,
         server=response.server,
-        server_volumes=server_volumes,
         setup_script=setup_script,
         startup_script=startup_script,
         github_token=github_token,
@@ -884,7 +881,6 @@ def recycle_server(
     setup_worker_pool.submit(
         server_setup,
         server=server,
-        server_volumes=server_volumes,
         setup_script=setup_script,
         startup_script=startup_script,
         github_token=github_token,
