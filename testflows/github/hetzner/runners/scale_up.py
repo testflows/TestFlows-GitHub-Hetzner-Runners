@@ -143,6 +143,7 @@ def get_runner_server_type_and_location(runner_name: str):
 
 def server_setup(
     server: BoundServer,
+    server_volumes: list[Volume],
     setup_script: str,
     startup_script: str,
     github_token: str,
@@ -155,6 +156,8 @@ def server_setup(
 
     with Action("Wait for SSH connection to be ready", server_name=server.name):
         wait_ssh(server=server, timeout=timeout)
+        if server_volumes:
+            server.reload()
 
     with Action("Getting registration token for the runner", server_name=server.name):
         content, resp = request(
@@ -185,6 +188,7 @@ def server_setup(
                 server,
                 (
                     f"'sudo mkdir /mnt/{volume_name} "
+                    f"&& sudo umount {volume.linux_device} 2>/dev/null || true"
                     f"&& sudo e2fsck -f -y {volume.linux_device} || true "
                     f"&& sudo e2fsck -f -y {volume.linux_device} "
                     f"&& sudo resize2fs {volume.linux_device} "
@@ -669,6 +673,7 @@ def get_server_bound_volumes(
                 "github-hetzner-runner-os-version": server_image.os_version,
             },
             format="ext4",
+            automount=False,
         )
         new_volume = response.volume
         response.action.wait_until_finished()
@@ -784,6 +789,7 @@ def create_server(
                                 server_type=server_type,
                                 location=server_location,
                                 volumes=server_bound_volumes,
+                                automount=False,
                                 image=server_image,
                                 ssh_keys=ssh_keys,
                                 labels=server_labels,
@@ -823,6 +829,7 @@ def create_server(
     setup_worker_pool.submit(
         server_setup,
         server=response.server,
+        server_volumes=server_volumes,
         setup_script=setup_script,
         startup_script=startup_script,
         github_token=github_token,
@@ -877,6 +884,7 @@ def recycle_server(
     setup_worker_pool.submit(
         server_setup,
         server=server,
+        server_volumes=server_volumes,
         setup_script=setup_script,
         startup_script=startup_script,
         github_token=github_token,
@@ -1162,7 +1170,7 @@ def scale_up(
                     )
 
                     with Action(
-                        f"Trying to create recycled server {name} of {server_type} in {'None' if not server_location else server_location.name}",
+                        f"Trying to create recycled server {name} of {server_type} in {'None' if not server_location else server_location.name} with volumes {server_volumes}",
                         stacklevel=3,
                         level=logging.DEBUG,
                         server_name=name,
@@ -1238,7 +1246,7 @@ def scale_up(
                 )
 
                 with Action(
-                    f"Trying to create new server {name} of {server_type} in {'None' if not server_location else server_location.name}",
+                    f"Trying to create new server {name} of {server_type} in {'None' if not server_location else server_location.name} with volumes {server_volumes}",
                     stacklevel=3,
                     level=logging.DEBUG,
                     server_name=name,
