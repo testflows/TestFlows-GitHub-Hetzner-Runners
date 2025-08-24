@@ -21,6 +21,7 @@ import logging
 
 from .. import metrics
 from ..colors import STATE_COLORS
+from .utils import format_duration
 
 
 def create_panel():
@@ -185,7 +186,7 @@ def render_server_chart():
             window_df = df[df["Time"] >= time_window_start].copy()
 
             if not window_df.empty:
-                # Calculate dynamic y-axis range
+                # Calculate dynamic y-axis range and tick count
                 max_count = window_df["Count"].max()
                 y_max = max(max_count * 1.1, 1)  # At least 1 for visibility
 
@@ -214,6 +215,9 @@ def render_server_chart():
                             "Count:Q",
                             title="Number of Servers",
                             scale=alt.Scale(domain=[0, y_max]),
+                            axis=alt.Axis(
+                                values=list(range(0, int(y_max) + 1)), format="d"
+                            ),
                         ),
                         color=alt.Color(
                             "Status:N",
@@ -293,32 +297,37 @@ def render_server_details():
 
                 # Create expander for each server
                 with st.expander(f"Server: {server_name} ({status})", expanded=False):
-                    # Create columns for server details
-                    col1, col2 = st.columns(2)
+                    # Build all content as a single markdown string to avoid spacing issues
+                    content_lines = []
 
-                    with col1:
-                        st.write(f"**Type:** {info.get('type', 'Unknown')}")
-                        st.write(f"**Location:** {info.get('location', 'Unknown')}")
-                        st.write(f"**IPv4:** {info.get('ipv4', 'Unknown')}")
-                        st.write(f"**Created:** {info.get('created', 'Unknown')}")
+                    # Add server details
+                    content_lines.append(f"**Type:** {info.get('type', 'Unknown')}")
+                    content_lines.append(
+                        f"**Location:** {info.get('location', 'Unknown')}"
+                    )
+                    content_lines.append(f"**IPv4:** {info.get('ipv4', 'Unknown')}")
+                    content_lines.append(
+                        f"**Created:** {info.get('created', 'Unknown')}"
+                    )
+                    content_lines.append(f"**IPv6:** {info.get('ipv6', 'Unknown')}")
+                    content_lines.append(
+                        f"**Runner Status:** {info.get('runner_status', 'Unknown')}"
+                    )
+                    content_lines.append(
+                        f"**Labels:** {', '.join(server_labels_list) or 'None'}"
+                    )
 
-                    with col2:
-                        st.write(f"**IPv6:** {info.get('ipv6', 'Unknown')}")
-                        st.write(
-                            f"**Runner Status:** {info.get('runner_status', 'Unknown')}"
+                    # Add cost information if available
+                    if info.get("cost_hourly"):
+                        cost_text = (
+                            f"{info['cost_hourly']} {info['cost_currency']}/hour"
                         )
-                        st.write(
-                            f"**Labels:** {', '.join(server_labels_list) or 'None'}"
-                        )
+                        if info.get("cost_total"):
+                            cost_text += f" (total: {info['cost_total']} {info['cost_currency']})"
+                        content_lines.append(f"**Cost:** {cost_text}")
 
-                        # Add cost information if available
-                        if info.get("cost_hourly"):
-                            cost_text = (
-                                f"{info['cost_hourly']} {info['cost_currency']}/hour"
-                            )
-                            if info.get("cost_total"):
-                                cost_text += f" (total: {info['cost_total']} {info['cost_currency']})"
-                            st.write(f"**Cost:** {cost_text}")
+                    # Render all content in a single markdown call
+                    st.markdown("  \n".join(content_lines))
 
             except (ValueError, KeyError, AttributeError) as e:
                 logging.exception(f"Error processing server info: {info}")
