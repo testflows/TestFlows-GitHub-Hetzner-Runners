@@ -32,6 +32,7 @@ import testflows.github.hetzner.runners.dashboard2 as dashboard
 import testflows.github.hetzner.runners.dashboard2.panels.header as header
 import testflows.github.hetzner.runners.dashboard2.panels.footer as footer
 import testflows.github.hetzner.runners.dashboard2.panels.gauges as gauges
+import testflows.github.hetzner.runners.dashboard2.panels.info as info
 import testflows.github.hetzner.runners.dashboard2.bootstrap as bootstrap
 
 
@@ -77,10 +78,13 @@ def main():
 
     logger.info("🚀 Streamlit Dashboard Main Function Called")
 
+    config = sys.argv[1]
+
     try:
         configure_page()
         header.render()
         gauges.render()
+        info.render(config)
         footer.render()
         auto_refresh()
 
@@ -90,6 +94,15 @@ def main():
         logger.exception(f"❌ Error in dashboard main: {e}")
         st.error(f"Dashboard Error: {e}")
         raise
+
+
+def save_config(config=None):
+    if config is None:
+        config = st.session_state["config"]
+
+    st.session_state["config"] = config
+
+    return config
 
 
 def start_http_server(
@@ -108,10 +121,6 @@ def start_http_server(
     Returns:
         threading.Thread: The thread running the dashboard server
     """
-    # Store config for potential future use
-    global dashboard_config
-    dashboard_config = config
-
     # Container to store the server instance
     server_container = {"server": None}
 
@@ -141,7 +150,7 @@ def start_http_server(
             server = bootstrap.run_in_thread(
                 main_script_path=script_path,
                 is_hello=False,
-                args=[],
+                args=[config],
                 flag_options=flag_options,
                 thread_ref=thread_ref,
             )
@@ -161,10 +170,6 @@ def start_http_server(
     thread.start()
 
     return thread
-
-
-# Global variable to store config
-dashboard_config = None
 
 
 if __name__ == "__main__":
