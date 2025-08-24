@@ -33,6 +33,7 @@ import testflows.github.hetzner.runners.dashboard2.panels.header as header
 import testflows.github.hetzner.runners.dashboard2.panels.footer as footer
 import testflows.github.hetzner.runners.dashboard2.panels.gauges as gauges
 import testflows.github.hetzner.runners.dashboard2.panels.info as info
+import testflows.github.hetzner.runners.dashboard2.panels.cost as cost
 import testflows.github.hetzner.runners.dashboard2.bootstrap as bootstrap
 
 
@@ -60,14 +61,8 @@ def configure_page():
     )
 
 
-def auto_refresh():
-    """Handle automatic refresh of the dashboard based on selected interval."""
-    # Get the selected update interval (in seconds)
-    update_interval = st.session_state.get("update_interval", 5)
-
-    # Simple auto-refresh: sleep and rerun
-    time.sleep(update_interval)
-    st.rerun()
+# Auto-refresh is now handled by @st.fragment decorators in individual panels
+# This prevents conflicts and flickering between multiple refresh mechanisms
 
 
 def main():
@@ -85,8 +80,8 @@ def main():
         header.render()
         gauges.render()
         info.render(config)
+        cost.render()
         footer.render()
-        auto_refresh()
 
         logger.info("✅ Dashboard rendered successfully")
 
