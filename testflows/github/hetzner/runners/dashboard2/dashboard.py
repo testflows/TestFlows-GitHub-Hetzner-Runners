@@ -34,6 +34,7 @@ import testflows.github.hetzner.runners.dashboard2.panels.footer as footer
 import testflows.github.hetzner.runners.dashboard2.panels.gauges as gauges
 import testflows.github.hetzner.runners.dashboard2.panels.info as info
 import testflows.github.hetzner.runners.dashboard2.panels.cost as cost
+import testflows.github.hetzner.runners.dashboard2.panels.servers as servers
 import testflows.github.hetzner.runners.dashboard2.bootstrap as bootstrap
 
 
@@ -81,6 +82,7 @@ def main():
         gauges.render()
         info.render(config)
         cost.render()
+        servers.render()
         footer.render()
 
         logger.info("✅ Dashboard rendered successfully")

@@ -118,7 +118,7 @@ def get_current_cost_data():
 @st.fragment(run_every=st.session_state.get("update_interval", 5))
 def render_cost_metrics():
     """Render the cost metrics header in an isolated fragment for optimal performance.
-    
+
     This fragment updates independently from the main dashboard using the same
     refresh interval selected by the user in the header dropdown.
     """
@@ -264,7 +264,7 @@ def render():
 
     try:
         with st.container(border=True):
-            st.header("Cost (Last 15 Minutes)")
+            st.header("Cost")
 
             # Render the cost metrics header with stable updates
             render_cost_metrics()
