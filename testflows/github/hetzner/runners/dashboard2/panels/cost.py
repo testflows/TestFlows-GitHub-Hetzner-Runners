@@ -116,6 +116,44 @@ def get_current_cost_data():
 
 
 @st.fragment(run_every=st.session_state.get("update_interval", 5))
+def render_cost_metrics():
+    """Render the cost metrics header in an isolated fragment for optimal performance.
+    
+    This fragment updates independently from the main dashboard using the same
+    refresh interval selected by the user in the header dropdown.
+    """
+    try:
+        # Get current cost summary for display
+        cost_summary = metrics.get_cost_summary()
+
+        # Display current cost metrics in columns
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.metric(
+                label="Current Hourly Cost",
+                value=f"€{cost_summary['hourly']:.3f}/h",
+            )
+
+        with col2:
+            st.metric(
+                label="Daily Cost Estimate",
+                value=f"€{cost_summary['daily']:.2f}/day",
+            )
+
+        with col3:
+            st.metric(
+                label="Monthly Cost Estimate",
+                value=f"€{cost_summary['monthly']:.2f}/month",
+            )
+
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.exception(f"Error rendering cost metrics: {e}")
+        st.error(f"Error rendering cost metrics: {e}")
+
+
+@st.fragment(run_every=st.session_state.get("update_interval", 5))
 def render_cost_chart():
     """Render the cost chart using Streamlit's native line chart to prevent flickering."""
     try:
@@ -160,14 +198,14 @@ def render_cost_chart():
 
             # Calculate dynamic y-axis range
             if len(window_df) > 0:
-                min_cost = min(0, window_df["Total Cost (€/h)"].min())
-                max_cost = max(1, window_df["Total Cost (€/h)"].max())
+                min_cost = window_df["Total Cost (€/h)"].min()
+                max_cost = window_df["Total Cost (€/h)"].max()
                 cost_range = max_cost - min_cost
 
                 # Set y-axis range with padding
                 if cost_range == 0:
                     y_min = 0
-                    y_max = max(max_cost * 1.1, 0.001)  # At least 0.001 for visibility
+                    y_max = max(max_cost * 1.1, 0.01)  # At least 0.001 for visibility
                 else:
                     y_min = max(0, min_cost - cost_range * 0.1)
                     y_max = max_cost + cost_range * 0.1
@@ -228,29 +266,8 @@ def render():
         with st.container(border=True):
             st.header("Cost (Last 15 Minutes)")
 
-            # Get current cost summary for display
-            cost_summary = metrics.get_cost_summary()
-
-            # Display current cost metrics in columns
-            col1, col2, col3 = st.columns(3)
-
-            with col1:
-                st.metric(
-                    label="Current Hourly Cost",
-                    value=f"€{cost_summary['hourly']:.3f}/h",
-                )
-
-            with col2:
-                st.metric(
-                    label="Daily Cost Estimate",
-                    value=f"€{cost_summary['daily']:.2f}/day",
-                )
-
-            with col3:
-                st.metric(
-                    label="Monthly Cost Estimate",
-                    value=f"€{cost_summary['monthly']:.2f}/month",
-                )
+            # Render the cost metrics header with stable updates
+            render_cost_metrics()
 
             # Render the cost chart with stable updates
             render_cost_chart()
