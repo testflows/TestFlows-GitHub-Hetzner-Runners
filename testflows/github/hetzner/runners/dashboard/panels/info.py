@@ -13,8 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import streamlit as st
 import pandas as pd
+
 from ...config import Config
 from ..colors import COLORS
 from ... import __version__
@@ -251,6 +253,39 @@ def render_config_item(label: str, value, link: dict = None):
     return label, formatted_value, link_href
 
 
+def create_download_config_button(config: Config):
+    """Create download button for config file.
+
+    Args:
+        config: Configuration object containing config file path
+    """
+    try:
+        if config.config_file and os.path.exists(config.config_file):
+            with open(config.config_file, "r") as f:
+                config_content = f.read()
+
+            st.download_button(
+                label="📄 Download Config",
+                data=config_content,
+                file_name=os.path.basename(config.config_file),
+                mime="text/yaml",
+                use_container_width=False,
+                help="Download config file",
+                key="download_config_btn",
+            )
+        else:
+            # Show a disabled button when no config file is available
+            st.button(
+                "📄 No Config",
+                disabled=True,
+                help="No config file was specified",
+                key="download_config_disabled_btn",
+            )
+            
+    except Exception as e:
+        st.error(f"Error creating download config button: {str(e)}")
+
+
 def render(config: Config):
     """Render the system information panel with configuration details.
 
@@ -265,6 +300,9 @@ def render(config: Config):
     if config is None:
         st.warning("Configuration not available")
         return
+
+    # Add download config button
+    create_download_config_button(config)
 
     # Get the structured information list (same as original dashboard)
     info_data = update_info_list(config)
