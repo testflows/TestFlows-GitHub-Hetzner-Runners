@@ -36,6 +36,7 @@ import testflows.github.hetzner.runners.dashboard2.panels.info as info
 import testflows.github.hetzner.runners.dashboard2.panels.cost as cost
 import testflows.github.hetzner.runners.dashboard2.panels.servers as servers
 import testflows.github.hetzner.runners.dashboard2.panels.jobs as jobs
+import testflows.github.hetzner.runners.dashboard2.panels.runners as runners
 import testflows.github.hetzner.runners.dashboard2.bootstrap as bootstrap
 
 
@@ -85,6 +86,7 @@ def main():
         cost.render()
         servers.render()
         jobs.render()
+        runners.render()
         footer.render()
 
         logger.info("✅ Dashboard rendered successfully")
