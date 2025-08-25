@@ -1,4 +1,4 @@
-# Copyright 2023 Katteli Inc.
+# Copyright 2025 Katteli Inc.
 # TestFlows.com Open-Source Software Testing Framework (http://testflows.com)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,17 +12,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from dash import html
-from flask import send_file
 
-from ..colors import COLORS
+import streamlit as st
+import os
+from ...config import Config
 from ...logger import decode_message
-from . import panel
-
-
-def create_panel():
-    """Create the log panel."""
-    return panel.create_panel("Log Messages (Last 100 lines)", with_graph=False)
+from ..colors import COLORS
 
 
 def format_log(lines, columns, delimiter):
@@ -59,186 +54,167 @@ def format_log(lines, columns, delimiter):
     return formatted_lines
 
 
-def create_log_list(formatted_lines):
-    """Create a list of log messages.
+def get_level_color(level):
+    """Get color for log level.
+
+    Args:
+        level: Log level string
+
+    Returns:
+        str: Color code for the level
+    """
+    level_colors = {
+        "DEBUG": COLORS["accent"],
+        "INFO": COLORS["success"],
+        "WARNING": COLORS["warning"],
+        "ERROR": COLORS["error"],
+        "CRITICAL": COLORS["error"],
+    }
+    return level_colors.get(level, COLORS["accent"])
+
+
+def create_log_dataframe(formatted_lines):
+    """Create a pandas DataFrame from formatted log lines.
 
     Args:
         formatted_lines: List of dictionaries containing formatted log entries
 
     Returns:
-        HTML div containing the log messages list
+        pandas.DataFrame: DataFrame with log data
     """
-    messages = []
+    import pandas as pd
 
-    for entry in formatted_lines:
-        message_parts = []
+    # Convert to DataFrame
+    df = pd.DataFrame(formatted_lines)
 
-        # Special handling for level column to set color
-        level_color = {
-            "DEBUG": COLORS["accent"],
-            "INFO": COLORS["success"],
-            "WARNING": COLORS["warning"],
-            "ERROR": COLORS["error"],
-            "CRITICAL": COLORS["error"],
-        }.get(entry.get("level", ""), COLORS["accent"])
+    # Combine date and time into one column
+    if "date" in df.columns and "time" in df.columns:
+        df["datetime"] = df["date"] + " " + df["time"]
+        df = df.drop(["date", "time"], axis=1)
 
-        # Process each column in the entry
-        for key, value in entry.items():
-            if key == "level":
-                # Special formatting for level column
-                message_parts.append(
-                    html.Span(
-                        f"[{value}] ",
-                        style={"color": level_color, "fontWeight": "bold"},
-                    )
-                )
-            elif key in ["date", "time"]:
-                # Special formatting for date/time columns
-                message_parts.append(
-                    html.Span(
-                        f"{value} ",
-                        style={"color": COLORS["accent"]},
-                    )
-                )
-            elif key == "message":
-                # Special formatting for message column
-                message_parts.append(
-                    html.Span(
-                        f"{value}",
-                        style={"color": COLORS["text"]},
-                    )
-                )
-            elif key in ["run_id", "job_id"]:
-                # Special formatting for run and job IDs
-                message_parts.append(
-                    html.Span(
-                        f"[{key}: {value}] ",
-                        style={"color": COLORS["success"]},
-                    )
-                )
-            elif key in ["threadName", "funcName"]:
-                # Special formatting for thread and function names
-                message_parts.append(
-                    html.Span(
-                        f"[{key}: {value}] ",
-                        style={"color": COLORS["warning"]},
-                    )
-                )
-            elif key == "server_name":
-                # Special formatting for server name
-                message_parts.append(
-                    html.Span(
-                        f"[{key}: {value}] ",
-                        style={"color": COLORS["accent"], "fontWeight": "bold"},
-                    )
-                )
-            elif key == "interval":
-                # Special formatting for interval
-                message_parts.append(
-                    html.Span(
-                        f"[{key}: {value}] ",
-                        style={"color": COLORS["accent"]},
-                    )
-                )
-            else:
-                # Default formatting for any other columns
-                message_parts.append(
-                    html.Span(
-                        f"[{key}: {value}] ",
-                        style={"color": COLORS["accent"]},
-                    )
-                )
+    # Reorder columns to put important ones first
+    column_order = [
+        "datetime",
+        "level",
+        "message",
+        "run_id",
+        "job_id",
+        "server_name",
+        "threadName",
+        "funcName",
+        "interval",
+    ]
+    existing_columns = [col for col in column_order if col in df.columns]
+    other_columns = [col for col in df.columns if col not in column_order]
 
-        messages.append(
-            html.Div(
-                message_parts,
-                style={"marginBottom": "5px"},
-            )
-        )
+    # Reorder DataFrame
+    df = df[existing_columns + other_columns]
 
-    # Create the scrolling list
-    list_div = panel.create_list(
-        "log-messages", len(formatted_lines), messages, "No log messages"
-    )
-
-    # Create the download button div
-    download_div = html.Div(
-        style={
-            "textAlign": "center",
-            "padding-top": "20px",
-        },
-        children=[
-            html.A(
-                "Download Full Log",
-                id="log-messages-download",
-                href="/download-log",
-                download="github_hetzner_runners.log",
-                style={
-                    "color": COLORS["accent"],
-                    "textDecoration": "none",
-                    "padding": "8px 16px 8px 16px",
-                    "border": f"1px solid {COLORS['accent']}",
-                    "borderRadius": "4px",
-                    "fontFamily": "JetBrains Mono, Fira Code, Consolas, monospace",
-                },
-            ),
-        ],
-    )
-
-    # Return both divs wrapped in a container
-    return html.Div([list_div, download_div])
+    return df
 
 
-def update_log_messages(n, github_hetzner_runners_config):
-    """Update log messages display.
+def create_download_button(config: Config):
+    """Create download button for full log file.
 
     Args:
-        n: Number of intervals
-        flask_config: Flask config object containing logger format settings
-
-    Returns:
-        list: List of HTML elements for log messages
+        config: Configuration object containing logger settings
     """
     try:
-        logger_format = github_hetzner_runners_config.logger_format
-        rotating_logfile = github_hetzner_runners_config.logger_config["handlers"][
-            "rotating_logfile"
-        ]["filename"]
+        rotating_logfile = config.logger_config["handlers"]["rotating_logfile"][
+            "filename"
+        ]
+
+        if os.path.exists(rotating_logfile):
+            with open(rotating_logfile, "r") as f:
+                log_content = f.read()
+
+            st.download_button(
+                label="Download Full Log",
+                data=log_content,
+                file_name="github-hetzner-runners.log",
+                mime="text/plain",
+                use_container_width=False,
+                help="Download the complete log file",
+            )
+        else:
+            st.warning("Log file not found")
+    except Exception as e:
+        st.error(f"Error creating download button: {str(e)}")
+
+
+@st.fragment(run_every=st.session_state.get("update_interval", 5))
+def render(config: Config):
+    """Render the log messages panel.
+
+    Args:
+        config: Configuration object containing logger settings
+    """
+    # Add CSS styling for dataframe
+    st.markdown(
+        """
+    <style>
+    .stDataFrame {
+        font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace !important;
+        font-size: 11px !important;
+    }
+    </style>
+    """,
+        unsafe_allow_html=True,
+    )
+
+    st.header("Log Messages (Last 100 lines)")
+
+    if config is None:
+        st.warning("Configuration not available")
+        return
+
+    try:
+        logger_format = config.logger_format
+        rotating_logfile = config.logger_config["handlers"]["rotating_logfile"][
+            "filename"
+        ]
 
         columns = logger_format["columns"]
         delimiter = logger_format["delimiter"]
 
         # Read last 100 lines from log file
-        with open(rotating_logfile, "r") as f:
-            lines = f.readlines()[-100:]
+        if os.path.exists(rotating_logfile):
+            with open(rotating_logfile, "r") as f:
+                lines = f.readlines()[-100:]
 
-        # Format log lines
-        formatted_lines = format_log(lines, columns, delimiter)
+            # Format log lines
+            formatted_lines = format_log(lines, columns, delimiter)
 
-        # Create HTML elements for log messages
-        return create_log_list(formatted_lines)
+            # Add download button at the top for better visibility
+            create_download_button(config)
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            # Create log dataframe
+            if formatted_lines:
+                df = create_log_dataframe(formatted_lines)
+
+                # Display dataframe with sorting and filtering capabilities
+                st.dataframe(
+                    df,
+                    use_container_width=True,
+                    height=400,
+                    hide_index=True,
+                    column_config={
+                        "message": st.column_config.TextColumn(
+                            "Message", width="large", help="Log message content"
+                        ),
+                        "level": st.column_config.TextColumn(
+                            "Level", width="small", help="Log level"
+                        ),
+                        "datetime": st.column_config.DatetimeColumn(
+                            "DateTime", width="medium", help="Log date and time"
+                        ),
+                    },
+                )
+            else:
+                st.info("No log messages available")
+        else:
+            st.warning("Log file not found")
+
     except Exception as e:
-        return [html.Div(f"Error reading log file: {str(e)}", style={"color": "red"})]
-
-
-def download_log(github_hetzner_runners_config):
-    """Download the full log file.
-
-    Args:
-        github_hetzner_runners_config: Configuration object containing logger settings
-
-    Returns:
-        flask.Response: Response object containing the log file
-    """
-    try:
-        rotating_logfile = github_hetzner_runners_config.logger_config["handlers"][
-            "rotating_logfile"
-        ]["filename"]
-        return send_file(
-            rotating_logfile,
-            as_attachment=True,
-            download_name="github-hetzner-runners.log",
-            mimetype="text/plain",
-        )
-    except Exception as e:
-        return str(e), 500
+        st.error(f"Error reading log file: {str(e)}")

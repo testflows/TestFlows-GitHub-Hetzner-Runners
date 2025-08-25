@@ -58,9 +58,6 @@ from testflows.github.hetzner.runners.config import (
 from testflows.github.hetzner.runners.dashboard import (
     start_http_server as start_dashboard_server,
 )
-from testflows.github.hetzner.runners.dashboard2 import (
-    start_http_server as start_dashboard2_server,
-)
 
 import testflows.github.hetzner.runners.args as args
 import testflows.github.hetzner.runners.cloud as cloud
@@ -1766,11 +1763,6 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
         with Action(f"Starting dashboard server on port {config.dashboard_port}"):
             start_dashboard_server(
                 port=config.dashboard_port, host=config.dashboard_host, config=config
-            )
-
-        with Action(f"Starting dashboard2 server on port {config.dashboard_port + 1 }"):
-            start_dashboard2_server(
-                port=config.dashboard_port + 1, host=config.dashboard_host, config=config
             )
 
         with Action("Logging in to GitHub"):

@@ -16,17 +16,10 @@
 import logging
 from collections import defaultdict
 from datetime import timedelta
-
-# Import from the original dashboard to reuse existing functionality
-from ..dashboard.metrics import (
-    get_metric_value as _get_metric_value,
-    get_metric_info as _get_metric_info,
-    update_metric_history as _update_metric_history,
-    metric_history as _metric_history,
-)
+from prometheus_client import REGISTRY
 
 # Store metric history
-metric_history = _metric_history
+metric_history = defaultdict(lambda: {"timestamps": [], "values": []})
 logger = logging.getLogger(__name__)
 
 
@@ -40,7 +33,13 @@ def get_metric_value(metric_name, labels=None):
     Returns:
         float or None: The current value of the metric, or None if not found
     """
-    return _get_metric_value(metric_name, labels)
+    try:
+        if labels:
+            return REGISTRY.get_sample_value(metric_name, labels)
+        return REGISTRY.get_sample_value(metric_name)
+    except Exception as e:
+        logging.exception(f"Error getting metric {metric_name}")
+        return None
 
 
 def get_metric_info(metric_name, job_id=None):
@@ -53,7 +52,32 @@ def get_metric_info(metric_name, job_id=None):
     Returns:
         list: List of parsed metric info dictionaries, or empty list if not found
     """
-    return _get_metric_info(metric_name, job_id)
+    try:
+        metrics = []
+
+        for metric in REGISTRY.collect():
+            if metric.name == metric_name:
+                samples = list(metric.samples)
+
+                for sample in samples:
+                    # If job_id is provided, only return metrics for that job
+                    if job_id:
+                        sample_job_id = f"{sample.labels.get('job_id', '')},{sample.labels.get('run_id', '')}"
+                        if sample_job_id != job_id:
+                            continue
+
+                    # Store all labels except internal ones
+                    labels = {
+                        k: v
+                        for k, v in sample.labels.items()
+                        if k not in ("__name__", "instance", "job")
+                    }
+                    metrics.append(labels)
+
+        return metrics
+    except Exception as e:
+        logging.exception(f"Error getting metric info {metric_name}")
+        return []
 
 
 def update_metric_history(metric_name, labels, value, timestamp, cutoff_minutes=15):
@@ -69,7 +93,32 @@ def update_metric_history(metric_name, labels, value, timestamp, cutoff_minutes=
     Returns:
         str: The key used for the metric history
     """
-    return _update_metric_history(metric_name, labels, value, timestamp, cutoff_minutes)
+    # Only add labels to key if there are any
+    if labels:
+        key = f"{metric_name}_{','.join(f'{k}={v}' for k, v in sorted(labels.items()))}"
+    else:
+        key = metric_name
+
+    # Initialize if not exists
+    if key not in metric_history:
+        metric_history[key] = {"timestamps": [], "values": []}
+
+    # Calculate cutoff time
+    cutoff_time = timestamp - timedelta(minutes=cutoff_minutes)
+
+    # Remove old data points
+    while (
+        metric_history[key]["timestamps"]
+        and metric_history[key]["timestamps"][0] < cutoff_time
+    ):
+        metric_history[key]["timestamps"].pop(0)
+        metric_history[key]["values"].pop(0)
+
+    # Simply append the new value
+    metric_history[key]["timestamps"].append(timestamp)
+    metric_history[key]["values"].append(value)
+
+    return key
 
 
 def get_metric_history_data(metric_name, labels=None, cutoff_minutes=15):

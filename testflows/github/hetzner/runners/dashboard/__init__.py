@@ -13,4 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Streamlit-based dashboard for GitHub Hetzner Runners.
+
+This module provides a modern, responsive dashboard built with Streamlit
+to replace the existing Plotly Dash implementation.
+"""
+
 from .dashboard import start_http_server
+
+__all__ = ["start_http_server"]

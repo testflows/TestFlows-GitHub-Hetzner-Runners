@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Base colors
+# Base colors for Streamlit dashboard
 COLORS = {
     "background": "#000000",  # Black background
     "paper": "#111111",  # Slightly lighter black for containers
@@ -34,4 +34,14 @@ STATE_COLORS = {
     "ready": "#00FFFF",  # Cyan
     "busy": "#FF00FF",  # Magenta
     "unknown": "#808080",  # Gray
+}
+
+# Streamlit-specific color mappings
+STREAMLIT_COLORS = {
+    "primary": "#FF4B4B",  # Streamlit's primary color
+    "secondary": "#008080",  # Teal accent
+    "success": "#00FF00",  # Green
+    "warning": "#FFA500",  # Orange
+    "error": "#FF0000",  # Red
+    "info": "#00FFFF",  # Cyan
 }
