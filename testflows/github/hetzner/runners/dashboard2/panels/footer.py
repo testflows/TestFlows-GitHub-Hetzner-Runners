@@ -20,6 +20,12 @@ from testflows.github.hetzner.runners import __version__
 
 def render():
     """Render the footer section with copyright and version information."""
-    with st.container():
-        st.caption(f"© 2023-{datetime.now().year} Katteli Inc. All rights reserved.")
-        st.caption(f"TestFlows GitHub Hetzner Runners v{__version__}")
+    st.markdown(
+        f"""
+        <div style="text-align:center">
+            <p style="margin: 0; font-size: 0.8em; color: #666;">© 2023-{datetime.now().year} Katteli Inc. All rights reserved.</p>
+            <p style="margin: 0; font-size: 0.8em; color: #666;">TestFlows GitHub Hetzner Runners v{__version__}</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )

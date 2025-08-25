@@ -275,6 +275,16 @@ def render_runners_details():
         st.error(f"Error rendering runners details: {e}")
 
 
+def estimate_runners_count():
+    """Estimate the number of runners for height calculation."""
+    try:
+        runners_summary = metrics.get_runners_summary()
+        runners_info = runners_summary.get("details", [])
+        return len(runners_info)
+    except Exception:
+        return 0
+
+
 def render():
     """Render the runners panel in Streamlit.
 
@@ -287,6 +297,7 @@ def render():
         chart_func=render_runners_chart,
         details_func=render_runners_details,
         error_message="Error rendering runners panel",
+        item_count_estimator=estimate_runners_count,
     )
 
 

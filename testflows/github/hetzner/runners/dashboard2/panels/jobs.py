@@ -309,6 +309,22 @@ def render_jobs_details():
         st.error(f"Error rendering jobs details: {e}")
 
 
+def estimate_jobs_count():
+    """Estimate the number of jobs for height calculation."""
+    try:
+        queued_jobs_info = metrics.get_metric_info("github_hetzner_runners_queued_job")
+        running_jobs_info = metrics.get_metric_info(
+            "github_hetzner_runners_running_job"
+        )
+
+        queued_count = len(queued_jobs_info) if queued_jobs_info else 0
+        running_count = len(running_jobs_info) if running_jobs_info else 0
+
+        return queued_count + running_count
+    except Exception:
+        return 0
+
+
 def render():
     """Render the jobs panel in Streamlit.
 
@@ -321,6 +337,7 @@ def render():
         chart_func=render_jobs_chart,
         details_func=render_jobs_details,
         error_message="Error rendering jobs panel",
+        item_count_estimator=estimate_jobs_count,
     )
 
 

@@ -26,6 +26,9 @@ def render_panel_with_fragments(
     chart_func: Callable = None,
     details_func: Callable = None,
     error_message: str = "Error rendering panel",
+    base_height: int = 800,
+    max_height: int = 1200,
+    item_count_estimator: Callable = None,
 ):
     """Render a panel with standardized structure and error handling.
 
@@ -35,11 +38,45 @@ def render_panel_with_fragments(
         chart_func: Function to render chart section
         details_func: Function to render details section
         error_message: Base error message for exceptions
+        base_height: Base height for panels without details (default: 800)
+        max_height: Maximum height for panels with details (default: 1200)
+        item_count_estimator: Function that returns estimated number of items in details
     """
     logger = logging.getLogger(__name__)
 
     try:
-        with st.container(border=True):
+        # Calculate dynamic height based on whether details are present
+        if base_height is None:
+            container_height = None
+        else:
+            if details_func:
+                # Estimate number of items if estimator is provided
+                item_count = 0
+                if item_count_estimator:
+                    try:
+                        item_count = item_count_estimator()
+                    except Exception:
+                        # If estimator fails, use default
+                        item_count = 0
+
+                # Calculate height based on item count
+                if item_count == 0:
+                    # No items, use base height
+                    container_height = base_height
+                elif item_count <= 3:
+                    # Few items, add moderate height
+                    container_height = min(base_height + 150, max_height)
+                elif item_count <= 8:
+                    # Medium number of items, add more height
+                    container_height = min(base_height + 300, max_height)
+                else:
+                    # Many items, use maximum height
+                    container_height = max_height
+            else:
+                # For panels without details (like cost), use base height
+                container_height = base_height
+
+        with st.container(height=container_height, border=True):
             st.header(title)
 
             # Render metrics if provided

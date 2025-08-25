@@ -192,6 +192,16 @@ def render_server_details():
         st.error(f"Error rendering server details: {e}")
 
 
+def estimate_servers_count():
+    """Estimate the number of servers for height calculation."""
+    try:
+        servers_summary = metrics.get_servers_summary()
+        servers_info = servers_summary.get("details", [])
+        return len(servers_info)
+    except Exception:
+        return 0
+
+
 def render():
     """Render the servers panel in Streamlit.
 
@@ -204,6 +214,7 @@ def render():
         chart_func=render_server_chart,
         details_func=render_server_details,
         error_message="Error rendering servers panel",
+        item_count_estimator=estimate_servers_count,
     )
 
 
