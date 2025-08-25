@@ -211,19 +211,34 @@ def render_scale_up_errors_panel():
 
     # Display error details
     if error_list_data["items"]:
-        st.subheader("Error Details")
+        # Prepare error data for dataframe
+        formatted_errors = []
+        for error_item in error_list_data["items"]:
+            # Extract values from the error item
+            error_data = {}
+            for value_item in error_item["values"]:
+                error_data[value_item["label"].lower().replace(" ", "_")] = value_item[
+                    "value"
+                ]
 
-        for i, error_item in enumerate(error_list_data["items"]):
-            with st.expander(
-                f"{error_item['name']} - {error_item['server_name']}", expanded=i < 3
-            ):
-                # Display error values in a structured format
-                for value_item in error_item["values"]:
-                    if value_item["label"] == "Error Message":
-                        # Display error message with special formatting
-                        st.error(f"**{value_item['label']}:** {value_item['value']}")
-                    else:
-                        st.text(f"**{value_item['label']}:** {value_item['value']}")
+            # Create formatted error data
+            formatted_error = {
+                "name": error_item["name"],
+                "server_name": error_item["server_name"],
+                "error_message": error_data.get("error_message", ""),
+                "server_type": error_data.get("server_type", ""),
+                "location": error_data.get("location", ""),
+                "labels": error_data.get("labels", ""),
+            }
+
+            formatted_errors.append(formatted_error)
+
+        render_utils.render_details_dataframe(
+            items=formatted_errors,
+            title="Error Details",
+            name_key="name",
+            status_key="server_name",
+        )
     elif total_errors > 0:
         st.warning("Error details are not available, but errors were detected")
 

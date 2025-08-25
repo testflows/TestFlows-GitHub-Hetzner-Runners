@@ -212,7 +212,7 @@ def render_runners_chart():
 
 @st.fragment(run_every=st.session_state.get("update_interval", 5))
 def render_runners_details():
-    """Render the runners details list."""
+    """Render the runners details as a dataframe."""
     try:
         # Get runner information using the same approach as metrics
         runners_summary = metrics.get_runners_summary()
@@ -226,9 +226,11 @@ def render_runners_details():
                 st.info("No runners found")
             return
 
-        def build_runner_content(info):
-            runner_id = info.get("runner_id")
-            runner_name = info.get("name")
+        # Prepare runner data for dataframe with all relevant fields
+        formatted_runners = []
+        for runner in runners_info:
+            runner_id = runner.get("runner_id")
+            runner_name = runner.get("name")
 
             # Get runner labels
             runner_labels_info = metrics.get_metric_info(
@@ -243,46 +245,43 @@ def render_runners_details():
                 ):
                     runner_labels_list.append(label_dict["label"])
 
-            # Build content lines
-            content_lines = []
+            # Create formatted runner data with all fields
+            formatted_runner = {
+                "name": runner.get("name", "Unknown"),
+                "status": runner.get("status", "unknown"),
+                "runner_id": runner.get("runner_id", ""),
+                "os": runner.get("os", ""),
+                "repository": runner.get("repository", ""),
+                "labels": ", ".join(runner_labels_list) if runner_labels_list else "",
+                "busy": (
+                    "Busy" if runner.get("busy", "false").lower() == "true" else "Idle"
+                ),
+                "link": (
+                    f"https://github.com/{runner.get('repository', '')}/settings/actions/runners/{runner.get('runner_id', '')}"
+                    if runner.get("repository") and runner.get("runner_id")
+                    else ""
+                ),
+            }
 
-            # Add basic information
-            content_lines.append(f"**OS:** {info.get('os', 'Unknown')}")
-            content_lines.append(f"**Repository:** {info.get('repository', 'Unknown')}")
-            content_lines.append(
-                f"**Labels:** {', '.join(runner_labels_list) or 'None'}"
-            )
+            # Add any additional fields from the original runner data
+            for key, value in runner.items():
+                if key not in formatted_runner and value:
+                    formatted_runner[key] = str(value)
 
-            # Add busy status
-            busy = info.get("busy", "false").lower() == "true"
-            busy_status = "Busy" if busy else "Idle"
-            busy_color = "🟡" if busy else "🟢"  # Yellow for busy, green for idle
-            content_lines.append(f"**Status:** {busy_color} {busy_status}")
+            formatted_runners.append(formatted_runner)
 
-            st.markdown("  \n".join(content_lines))
-
-        render_utils.render_expandable_details(
-            items=runners_info,
-            title_prefix="Runner",
-            status_key="status",
+        render_utils.render_details_dataframe(
+            items=formatted_runners,
+            title="Runner Details",
             name_key="name",
-            content_builder=build_runner_content,
+            status_key="status",
+            link_key="link",
         )
 
     except Exception as e:
         logger = logging.getLogger(__name__)
         logger.exception(f"Error rendering runners details: {e}")
         st.error(f"Error rendering runners details: {e}")
-
-
-def estimate_runners_count():
-    """Estimate the number of runners for height calculation."""
-    try:
-        runners_summary = metrics.get_runners_summary()
-        runners_info = runners_summary.get("details", [])
-        return len(runners_info)
-    except Exception:
-        return 0
 
 
 def render():
@@ -297,7 +296,6 @@ def render():
         chart_func=render_runners_chart,
         details_func=render_runners_details,
         error_message="Error rendering runners panel",
-        item_count_estimator=estimate_runners_count,
     )
 
 

@@ -189,7 +189,6 @@ def render():
         metrics_func=render_cost_metrics,
         chart_func=render_cost_chart,
         error_message="Error rendering cost panel",
-        base_height=550,  # Cost panel should be smaller since it has no details
     )
 
 

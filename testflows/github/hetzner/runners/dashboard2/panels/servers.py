@@ -144,7 +144,7 @@ def render_server_chart():
 
 @st.fragment(run_every=st.session_state.get("update_interval", 5))
 def render_server_details():
-    """Render the server details list."""
+    """Render the server details as a dataframe."""
     try:
         # Get server information using the same approach as metrics
         servers_summary = metrics.get_servers_summary()
@@ -157,6 +157,112 @@ def render_server_details():
             else:
                 st.info("No servers found")
             return
+
+        # Prepare server data for dataframe with all relevant fields
+        formatted_servers = []
+        for server in servers_info:
+            server_id = server.get("server_id")
+            server_name = server.get("name")
+
+            # Get server labels
+            server_labels_info = metrics.get_metric_info(
+                "github_hetzner_runners_server_labels"
+            )
+            server_labels_list = []
+            for label_dict in server_labels_info:
+                if (
+                    label_dict.get("server_id") == server_id
+                    and label_dict.get("server_name") == server_name
+                    and "label" in label_dict
+                ):
+                    server_labels_list.append(label_dict["label"])
+
+            # Create formatted server data with all fields
+            formatted_server = {
+                "name": server.get("name", "Unknown"),
+                "status": server.get("status", "unknown"),
+                "server_id": server.get("server_id", ""),
+                "server_type": server.get("server_type", ""),
+                "location": server.get("location", ""),
+                "ipv4": server.get("ipv4", ""),
+                "ipv6": server.get("ipv6", ""),
+                "created": server.get("created", ""),
+                "labels": ", ".join(server_labels_list) if server_labels_list else "",
+            }
+
+            # Add any additional fields from the original server data
+            for key, value in server.items():
+                if key not in formatted_server and value:
+                    # Format cost_hourly to 3 decimal points
+                    if key == "cost_hourly":
+                        try:
+                            formatted_value = f"{float(value):.3f}"
+                        except (ValueError, TypeError):
+                            formatted_value = str(value)
+                    else:
+                        formatted_value = str(value)
+                    formatted_server[key] = formatted_value
+
+            formatted_servers.append(formatted_server)
+
+        render_utils.render_details_dataframe(
+            items=formatted_servers,
+            title="Server Details",
+            name_key="name",
+            status_key="status",
+        )
+
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.exception(f"Error rendering server details: {e}")
+        st.error(f"Error rendering server details: {e}")
+
+
+def render():
+    """Render the servers panel in Streamlit.
+
+    This function creates a Streamlit-compatible version of the servers panel
+    that maintains all the functionality of the original dashboard panel.
+    """
+    render_utils.render_panel_with_fragments(
+        title="Servers",
+        metrics_func=render_server_metrics,
+        chart_func=render_server_chart,
+        details_func=render_server_details,
+        error_message="Error rendering servers panel",
+    )
+
+
+def render_graph_only():
+    """Render only the servers graph without header and metrics.
+
+    This is useful for embedding the servers graph in other panels or layouts.
+    """
+    render_server_chart()
+
+
+def render_server_panel_optimized():
+    """Render the servers panel with optimized layout and performance."""
+    try:
+        # Get server information
+        servers_summary = metrics.get_servers_summary()
+        servers_info = servers_summary["details"]
+        total_servers = servers_summary["total"]
+
+        # Create metrics data
+        metrics_data = [
+            {"label": "Total Servers", "value": total_servers, "delta": None},
+            {
+                "label": "Running",
+                "value": sum(1 for s in servers_info if s.get("status") == "running"),
+                "delta": None,
+            },
+            {
+                "label": "Stopped",
+                "value": sum(1 for s in servers_info if s.get("status") == "stopped"),
+                "delta": None,
+            },
+        ]
 
         def build_server_content(info):
             server_id = info.get("server_id")
@@ -178,49 +284,26 @@ def render_server_details():
             content_lines = data.format_server_content(info, server_labels_list)
             st.markdown("  \n".join(content_lines))
 
-        render_utils.render_expandable_details(
-            items=servers_info,
-            title_prefix="Server",
-            status_key="status",
-            name_key="name",
-            content_builder=build_server_content,
+        # Use the new optimized metrics with details function
+        render_utils.render_metrics_with_details(
+            metrics_data=metrics_data,
+            details_data=servers_info if servers_info else None,
+            details_title="Server Details",
+            details_builder=build_server_content,
+        )
+
+        # Add chart in a collapsible section
+        def chart_content():
+            render_server_chart()
+
+        render_utils.render_collapsible_section(
+            title="Server Chart",
+            content_func=chart_content,
+            default_expanded=True,
+            icon="📊",
         )
 
     except Exception as e:
         logger = logging.getLogger(__name__)
-        logger.exception(f"Error rendering server details: {e}")
-        st.error(f"Error rendering server details: {e}")
-
-
-def estimate_servers_count():
-    """Estimate the number of servers for height calculation."""
-    try:
-        servers_summary = metrics.get_servers_summary()
-        servers_info = servers_summary.get("details", [])
-        return len(servers_info)
-    except Exception:
-        return 0
-
-
-def render():
-    """Render the servers panel in Streamlit.
-
-    This function creates a Streamlit-compatible version of the servers panel
-    that maintains all the functionality of the original dashboard panel.
-    """
-    render_utils.render_panel_with_fragments(
-        title="Servers",
-        metrics_func=render_server_metrics,
-        chart_func=render_server_chart,
-        details_func=render_server_details,
-        error_message="Error rendering servers panel",
-        item_count_estimator=estimate_servers_count,
-    )
-
-
-def render_graph_only():
-    """Render only the servers graph without header and metrics.
-
-    This is useful for embedding the servers graph in other panels or layouts.
-    """
-    render_server_chart()
+        logger.exception(f"Error rendering optimized servers panel: {e}")
+        st.error(f"Error rendering optimized servers panel: {e}")

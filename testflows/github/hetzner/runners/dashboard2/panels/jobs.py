@@ -166,7 +166,7 @@ def render_jobs_chart():
 
 @st.fragment(run_every=st.session_state.get("update_interval", 5))
 def render_jobs_details():
-    """Render the jobs details list."""
+    """Render the jobs details as a dataframe."""
     try:
         # Get job information
         queued_jobs_info = metrics.get_metric_info("github_hetzner_runners_queued_job")
@@ -184,8 +184,8 @@ def render_jobs_details():
                 st.info("No jobs found")
             return
 
-        # Display job details
-        st.subheader("Job Details")
+        # Prepare job data for dataframe
+        formatted_jobs = []
 
         # Process both queued and running jobs
         for jobs_info, is_running in [
@@ -220,7 +220,7 @@ def render_jobs_details():
                         )
                     except (ValueError, TypeError):
                         time_str = "unknown"
-                    time_label = "Run time:" if is_running else "Wait time:"
+                    time_label = "Run time" if is_running else "Wait time"
 
                     # Get labels for this job
                     job_labels_info = metrics.get_metric_info(
@@ -239,90 +239,56 @@ def render_jobs_details():
                             job_labels_list.append(label_dict["label"])
 
                     status_text = "Running" if is_running else "Queued"
-                    status_color = (
-                        STREAMLIT_COLORS["success"]
-                        if is_running
-                        else STREAMLIT_COLORS["warning"]
-                    )
 
-                    # Create expander for each job
-                    with st.expander(
-                        f"Job: {info.get('name', 'Unknown')} ({status_text})",
-                        expanded=False,
-                    ):
-                        # Use single column layout to avoid auto-sizing issues
-                        # Job ID with inline GitHub link
-                        job_id_text = f"{info.get('job_id', 'Unknown')} (attempt {info.get('run_attempt', '1')})"
-                        job_url = None
-                        if info.get("repository"):
-                            job_url = f"https://github.com/{info.get('repository', '')}/actions/runs/{info.get('run_id', '')}/job/{info.get('job_id', '')}"
+                    # Create job links
+                    job_url = ""
+                    run_url = ""
+                    repo_url = ""
 
-                        # Run ID with inline GitHub link
-                        run_id_text = info.get("run_id", "Unknown")
-                        run_url = None
-                        if info.get("repository"):
-                            run_url = f"https://github.com/{info.get('repository', '')}/actions/runs/{info.get('run_id', '')}"
-                        # Build all content as a single markdown string to avoid spacing issues
-                        content_lines = []
+                    if info.get("repository"):
+                        job_url = f"https://github.com/{info.get('repository', '')}/actions/runs/{info.get('run_id', '')}/job/{info.get('job_id', '')}"
+                        run_url = f"https://github.com/{info.get('repository', '')}/actions/runs/{info.get('run_id', '')}"
+                        repo_url = f"https://github.com/{info.get('repository', '')}"
 
-                        # Add fields with links
-                        job_line = f"**Job ID:** {job_id_text}"
-                        if job_url:
-                            job_line += f" <a href='{job_url}' target='_blank'>(View on GitHub)</a>"
-                        content_lines.append(job_line)
+                    # Create formatted job data
+                    formatted_job = {
+                        "name": info.get("name", "Unknown"),
+                        "status": status_text,
+                        "job_id": f"{info.get('job_id', 'Unknown')} (attempt {info.get('run_attempt', '1')})",
+                        "run_id": info.get("run_id", ""),
+                        "workflow": info.get("workflow_name", "").strip(),
+                        "repository": info.get("repository", "").strip(),
+                        "branch": info.get("head_branch", ""),
+                        "labels": ", ".join(job_labels_list) if job_labels_list else "",
+                        time_label.lower().replace(" ", "_"): time_str,
+                        "job_link": job_url,
+                        "run_link": run_url,
+                        "repo_link": repo_url,
+                    }
 
-                        run_line = f"**Run ID:** {run_id_text}"
-                        if run_url:
-                            run_line += f" <a href='{run_url}' target='_blank'>(View on GitHub)</a>"
-                        content_lines.append(run_line)
+                    # Add any additional fields from the original job data
+                    for key, value in info.items():
+                        if key not in formatted_job and value:
+                            formatted_job[key] = str(value)
 
-                        # Add regular fields
-                        content_lines.append(
-                            f"**Workflow:** {info.get('workflow_name', 'Unknown').strip()}"
-                        )
-                        content_lines.append(f"**{time_label}** {time_str}")
-                        content_lines.append(
-                            f"**Branch:** {info.get('head_branch', 'Unknown')}"
-                        )
-                        content_lines.append(
-                            f"**Labels:** {', '.join(job_labels_list) or 'None'}"
-                        )
-
-                        # Add repository with link
-                        repository_text = info.get("repository", "Unknown").strip()
-                        repo_line = f"**Repository:** {repository_text}"
-                        if repository_text != "Unknown":
-                            repo_url = f"https://github.com/{repository_text}"
-                            repo_line += f" <a href='{repo_url}' target='_blank'>(View on GitHub)</a>"
-                        content_lines.append(repo_line)
-
-                        # Render all content in a single markdown call
-                        st.markdown("  \n".join(content_lines), unsafe_allow_html=True)
+                    formatted_jobs.append(formatted_job)
 
                 except (ValueError, KeyError, AttributeError) as e:
                     logging.exception(f"Error processing job info: {info}")
                     continue
 
+        render_utils.render_details_dataframe(
+            items=formatted_jobs,
+            title="Job Details",
+            name_key="name",
+            status_key="status",
+            link_key="job_link",
+        )
+
     except Exception as e:
         logger = logging.getLogger(__name__)
         logger.exception(f"Error rendering jobs details: {e}")
         st.error(f"Error rendering jobs details: {e}")
-
-
-def estimate_jobs_count():
-    """Estimate the number of jobs for height calculation."""
-    try:
-        queued_jobs_info = metrics.get_metric_info("github_hetzner_runners_queued_job")
-        running_jobs_info = metrics.get_metric_info(
-            "github_hetzner_runners_running_job"
-        )
-
-        queued_count = len(queued_jobs_info) if queued_jobs_info else 0
-        running_count = len(running_jobs_info) if running_jobs_info else 0
-
-        return queued_count + running_count
-    except Exception:
-        return 0
 
 
 def render():
@@ -337,7 +303,6 @@ def render():
         chart_func=render_jobs_chart,
         details_func=render_jobs_details,
         error_message="Error rendering jobs panel",
-        item_count_estimator=estimate_jobs_count,
     )
 
 
