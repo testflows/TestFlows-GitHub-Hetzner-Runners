@@ -28,17 +28,6 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # Now try absolute imports
-import testflows.github.hetzner.runners.dashboard as dashboard
-import testflows.github.hetzner.runners.dashboard.panels.header as header
-import testflows.github.hetzner.runners.dashboard.panels.footer as footer
-import testflows.github.hetzner.runners.dashboard.panels.gauges as gauges
-import testflows.github.hetzner.runners.dashboard.panels.info as info
-import testflows.github.hetzner.runners.dashboard.panels.cost as cost
-import testflows.github.hetzner.runners.dashboard.panels.servers as servers
-import testflows.github.hetzner.runners.dashboard.panels.jobs as jobs
-import testflows.github.hetzner.runners.dashboard.panels.runners as runners
-import testflows.github.hetzner.runners.dashboard.panels.scale_up_errors as scale_up_errors
-import testflows.github.hetzner.runners.dashboard.panels.log as log
 import testflows.github.hetzner.runners.dashboard.bootstrap as bootstrap
 
 
@@ -79,6 +68,18 @@ def main():
     logger.info("🚀 Streamlit Dashboard Main Function Called")
 
     config = sys.argv[1]
+
+    # Import panels here to avoid Streamlit warnings
+    import testflows.github.hetzner.runners.dashboard.panels.header as header
+    import testflows.github.hetzner.runners.dashboard.panels.footer as footer
+    import testflows.github.hetzner.runners.dashboard.panels.gauges as gauges
+    import testflows.github.hetzner.runners.dashboard.panels.info as info
+    import testflows.github.hetzner.runners.dashboard.panels.cost as cost
+    import testflows.github.hetzner.runners.dashboard.panels.servers as servers
+    import testflows.github.hetzner.runners.dashboard.panels.jobs as jobs
+    import testflows.github.hetzner.runners.dashboard.panels.runners as runners
+    import testflows.github.hetzner.runners.dashboard.panels.scale_up_errors as scale_up_errors
+    import testflows.github.hetzner.runners.dashboard.panels.log as log
 
     try:
         configure_page()
