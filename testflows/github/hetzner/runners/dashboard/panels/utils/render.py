@@ -86,7 +86,7 @@ def render_details_dataframe(
     title: str = "Details",
     name_key: str = "name",
     status_key: str = "status",
-    link_key: str = "link",
+    link_keys: List[str] = None,
     additional_columns: Dict[str, str] = None,
 ):
     """Render details as a dataframe where each item field becomes a column.
@@ -96,7 +96,7 @@ def render_details_dataframe(
         title: Title for the details section
         name_key: Key for name in item dict
         status_key: Key for status in item dict
-        link_key: Key for link in item dict
+        link_keys: List of keys for link fields in item dict
         additional_columns: Dictionary mapping column names to item keys
     """
     if not items:
@@ -127,8 +127,12 @@ def render_details_dataframe(
 
     # Configure column display
     column_config = {}
+
+    # Determine which columns should be link columns
+    link_columns = set(link_keys) if link_keys else set()
+
     for col_name in df.columns:
-        if col_name == link_key:
+        if col_name in link_columns:
             # Use LinkColumn for link fields
             column_config[col_name] = st.column_config.LinkColumn(
                 col_name, width="small"

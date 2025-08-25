@@ -282,7 +282,7 @@ def render_jobs_details():
             title="Job Details",
             name_key="name",
             status_key="status",
-            link_key="job_link",
+            link_keys=["job_link", "run_link", "repo_link"],
         )
 
     except Exception as e:

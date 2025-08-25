@@ -275,7 +275,7 @@ def render_runners_details():
             title="Runner Details",
             name_key="name",
             status_key="status",
-            link_key="link",
+            link_keys=["link"],
         )
 
     except Exception as e:
