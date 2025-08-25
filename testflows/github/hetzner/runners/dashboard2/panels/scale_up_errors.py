@@ -45,7 +45,7 @@ def get_scale_up_errors_data():
     errors_info = metrics.get_metric_info(
         "github_hetzner_runners_scale_up_failure_last_hour"
     )
-    
+
     # Get total number of errors from metrics
     total_errors = (
         metrics.get_metric_value("github_hetzner_runners_scale_up_failures_last_hour")
@@ -54,7 +54,7 @@ def get_scale_up_errors_data():
 
     # Create error list data
     error_items = []
-    
+
     if errors_info:
         # Sort errors_info by timestamp in descending order
         errors_info.sort(
@@ -100,7 +100,7 @@ def get_scale_up_errors_data():
                         {"label": "Location", "value": location},
                         {"label": "Labels", "value": ", ".join(labels) or "None"},
                         {"label": "Error Message", "value": error_message},
-                    ]
+                    ],
                 }
                 error_items.append(error_item)
 
@@ -113,23 +113,23 @@ def get_scale_up_errors_data():
         "name": "errors",
         "count": total_errors,
         "items": error_items,
-        "title": "Total errors" if total_errors > 0 else "No scale-up errors in the last hour"
+        "title": (
+            "Total errors"
+            if total_errors > 0
+            else "No scale-up errors in the last hour"
+        ),
     }
 
     # Get history data for plotting
     current_time = datetime.now()
     one_hour_ago = current_time - timedelta(hours=1)
-    
+
     # Get error count history
     timestamps, values = metrics.get_metric_history_data(
-        "github_hetzner_runners_scale_up_failures_last_hour",
-        cutoff_minutes=60
+        "github_hetzner_runners_scale_up_failures_last_hour", cutoff_minutes=60
     )
-    
-    history_data = {
-        "timestamps": timestamps,
-        "values": values
-    }
+
+    history_data = {"timestamps": timestamps, "values": values}
 
     return error_list_data, total_errors, history_data
 
@@ -147,13 +147,10 @@ def create_errors_dataframe(history_data):
 
     # Collect all data points
     all_data = []
-    
+
     for ts, val in zip(timestamps, values):
         try:
-            all_data.append({
-                "Time": pd.to_datetime(ts),
-                "Count": int(val)
-            })
+            all_data.append({"Time": pd.to_datetime(ts), "Count": int(val)})
         except (ValueError, TypeError):
             continue
 
@@ -170,32 +167,28 @@ def create_errors_dataframe(history_data):
 def render_scale_up_errors_panel():
     """Render the scale-up errors panel using Streamlit."""
     st.header("Scale-up Errors (Last Hour)")
-    
+
     # Get data
     error_list_data, total_errors, history_data = get_scale_up_errors_data()
-    
+
     # Create two columns for layout
     col1, col2 = st.columns([1, 1])
-    
+
     with col1:
         st.subheader("Error Summary")
-        
+
         # Display total error count
         if total_errors > 0:
-            st.metric(
-                label="Total Errors",
-                value=total_errors,
-                delta=None
-            )
+            st.metric(label="Total Errors", value=total_errors, delta=None)
         else:
             st.success("No scale-up errors in the last hour")
-    
+
     with col2:
         st.subheader("Error Trend")
-        
+
         # Create and display chart
         df = create_errors_dataframe(history_data)
-        
+
         if not df.empty:
             # Create time series chart
             error_chart = chart.create_time_series_chart(
@@ -206,22 +199,24 @@ def render_scale_up_errors_panel():
                 y_title="Number of Errors",
                 height=200,
                 time_window_minutes=60,
-                y_type="count"
+                y_type="count",
             )
-            
+
             if error_chart:
                 st.altair_chart(error_chart, use_container_width=True)
             else:
                 st.info("No error data available for charting")
         else:
             st.info("No error history data available")
-    
+
     # Display error details
     if error_list_data["items"]:
         st.subheader("Error Details")
-        
+
         for i, error_item in enumerate(error_list_data["items"]):
-            with st.expander(f"{error_item['name']} - {error_item['server_name']}", expanded=i < 3):
+            with st.expander(
+                f"{error_item['name']} - {error_item['server_name']}", expanded=i < 3
+            ):
                 # Display error values in a structured format
                 for value_item in error_item["values"]:
                     if value_item["label"] == "Error Message":
@@ -237,11 +232,11 @@ def update_scale_up_errors_graph(n, cache=[]):
     """Update errors graph.
 
     This function maintains API compatibility with the original dashboard.
-    
+
     Args:
         n: Placeholder for compatibility
         cache: Cache for storing historical data
-        
+
     Returns:
         dict: Graph configuration (not used in Streamlit version)
     """
@@ -267,7 +262,7 @@ def update_scale_up_errors_graph(n, cache=[]):
         {},
         error_count,
         current_time,
-        cutoff_minutes=60
+        cutoff_minutes=60,
     )
 
     # Return empty dict for compatibility

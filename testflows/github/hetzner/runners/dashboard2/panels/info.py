@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import streamlit as st
+import pandas as pd
 from ...config import Config
 from ..colors import COLORS
 from ... import __version__
@@ -236,19 +237,18 @@ def render_config_item(label: str, value, link: dict = None):
         label: The configuration label
         value: The configuration value
         link: Optional dictionary with 'text' and 'href' keys for adding a link
+
+    Returns:
+        tuple: (label, formatted_value, link_href) tuple for the configuration item
     """
     if link:
-        # Simple HTML link, just like the original
-        st.write(
-            f"<div style='margin-bottom: -10px;'>{label}: <b>{value}</b> <a href='{link['href']}' target='_blank'>({link['text']})</a></div>",
-            unsafe_allow_html=True,
-        )
+        formatted_value = f"{value} ({link['text']})"
+        link_href = link["href"]
     else:
-        # Use write with custom CSS to reduce spacing
-        st.write(
-            f"<div style='margin-bottom: -10px;'>{label}: <b>{value}</b></div>",
-            unsafe_allow_html=True,
-        )
+        formatted_value = str(value)
+        link_href = ""
+
+    return label, formatted_value, link_href
 
 
 def render(config: Config):
@@ -274,9 +274,34 @@ def render(config: Config):
         values = info_data["items"][0]["values"]
 
         # Create a scrollable container with max height (like original dashboard)
-        with st.container(height=400):
-            # Display all configuration items in a compact format
+        with st.container(border=False):
+            # Convert configuration items to separate label and value lists
+            labels = []
+            values_list = []
+            links_list = []
             for item in values:
-                render_config_item(item["label"], item["value"], item.get("link"))
+                label, formatted_value, link_href = render_config_item(
+                    item["label"], item["value"], item.get("link")
+                )
+                labels.append(label)
+                values_list.append(formatted_value)
+                links_list.append(link_href)
+
+            # Create a dataframe with three columns
+            df = pd.DataFrame(
+                {"Name": labels, "Value": values_list, "Link": links_list}
+            )
+
+            # Display the dataframe with column headers, maintaining original order
+            st.dataframe(
+                df,
+                hide_index=True,
+                use_container_width=True,
+                column_config={
+                    "Name": st.column_config.TextColumn("Name", width="medium"),
+                    "Value": st.column_config.TextColumn("Value", width="large"),
+                    "Link": st.column_config.LinkColumn("Link", width="small"),
+                },
+            )
     else:
         st.warning("No configuration information available")

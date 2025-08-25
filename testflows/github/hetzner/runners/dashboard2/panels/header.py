@@ -17,17 +17,17 @@ import streamlit as st
 
 def render():
     """Render the header section with logo, title, and update interval selector."""
-    # Logo using st.image for compatibility
-    st.image(
-        "https://raw.githubusercontent.com/testflows/TestFlows-ArtWork/refs/heads/master/images/logo.png",
-        width=80,
+    # Logo using HTML img tag for full styling control
+    st.markdown(
+        f'<img src="https://raw.githubusercontent.com/testflows/TestFlows-ArtWork/refs/heads/master/images/logo.png" width="120" style="border-radius: 0; border: none; box-shadow: none;">',
+        unsafe_allow_html=True,
     )
 
     # Header section
     col1, col2 = st.columns([3, 1], gap="medium")
 
     with col1:
-        st.title("GitHub Hetzner Runners Dashboard")
+        st.markdown("### GitHub Hetzner Runners Dashboard")
 
     with col2:
         st.caption("update interval:")

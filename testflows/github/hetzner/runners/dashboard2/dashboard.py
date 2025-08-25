@@ -38,6 +38,7 @@ import testflows.github.hetzner.runners.dashboard2.panels.servers as servers
 import testflows.github.hetzner.runners.dashboard2.panels.jobs as jobs
 import testflows.github.hetzner.runners.dashboard2.panels.runners as runners
 import testflows.github.hetzner.runners.dashboard2.panels.scale_up_errors as scale_up_errors
+import testflows.github.hetzner.runners.dashboard2.panels.log as log
 import testflows.github.hetzner.runners.dashboard2.bootstrap as bootstrap
 
 
@@ -89,6 +90,7 @@ def main():
         jobs.render()
         runners.render()
         scale_up_errors.render_scale_up_errors_panel()
+        log.render(config)
         footer.render()
 
         logger.info("✅ Dashboard rendered successfully")
