@@ -21,7 +21,7 @@ import logging
 
 from .. import metrics
 from ..colors import STREAMLIT_COLORS
-from .utils import format_duration
+from .utils import chart, render as render_utils, data, format
 
 
 def create_panel():
@@ -45,16 +45,8 @@ def get_jobs_history_data(cutoff_minutes=15):
         dict: Dictionary with job status history data
     """
     job_types = ["queued", "running"]
-    history_data = {}
-
-    for job_type in job_types:
-        metric_name = f"github_hetzner_runners_{job_type}_jobs"
-        timestamps, values = metrics.get_metric_history_data(
-            metric_name, cutoff_minutes=cutoff_minutes
-        )
-        history_data[job_type] = {"timestamps": timestamps, "values": values}
-
-    return history_data
+    metric_names = [f"github_hetzner_runners_{job_type}_jobs" for job_type in job_types]
+    return data.get_multiple_metrics_history(metric_names, cutoff_minutes)
 
 
 def create_jobs_dataframe(history_data):
@@ -62,10 +54,17 @@ def create_jobs_dataframe(history_data):
     if not history_data:
         return pd.DataFrame({"Time": pd.to_datetime([]), "Status": [], "Count": []})
 
+    # Map metric names to status names
+    metric_to_status = {
+        "github_hetzner_runners_queued_jobs": "queued",
+        "github_hetzner_runners_running_jobs": "running",
+    }
+
     # Collect all data points
     all_data = []
 
-    for job_type, data in history_data.items():
+    for metric_name, data in history_data.items():
+        status = metric_to_status.get(metric_name, metric_name)
         timestamps = data.get("timestamps", [])
         values = data.get("values", [])
 
@@ -75,7 +74,7 @@ def create_jobs_dataframe(history_data):
                     all_data.append(
                         {
                             "Time": pd.to_datetime(ts),
-                            "Status": job_type,
+                            "Status": status,
                             "Count": int(val),
                         }
                     )
@@ -94,24 +93,9 @@ def create_jobs_dataframe(history_data):
 
 def get_current_jobs_data():
     """Get current jobs data without caching to ensure fresh data."""
-    current_time = datetime.now()
     job_types = ["queued", "running"]
-    current_values = {}
-
-    # Get current values for each job type
-    for job_type in job_types:
-        metric_name = f"github_hetzner_runners_{job_type}_jobs"
-        value = metrics.get_metric_value(metric_name) or 0
-        current_values[job_type] = value
-
-        # Update metric history
-        metrics.update_metric_history(
-            metric_name,
-            {},
-            value,
-            current_time,
-            cutoff_minutes=15,
-        )
+    metric_names = [f"github_hetzner_runners_{job_type}_jobs" for job_type in job_types]
+    current_values, current_time = data.get_current_multiple_metrics(metric_names)
 
     # Get history data for plotting
     history_data = get_jobs_history_data()
@@ -126,26 +110,14 @@ def render_jobs_metrics():
         # Get current jobs summary
         jobs_summary = metrics.get_jobs_summary()
 
-        # Display current jobs metrics in columns
-        col1, col2, col3 = st.columns(3)
+        # Build metrics data
+        metrics_data = [
+            {"label": "Total Jobs", "value": jobs_summary["total"]},
+            {"label": "Running Jobs", "value": jobs_summary["running"]},
+            {"label": "Queued Jobs", "value": jobs_summary["queued"]},
+        ]
 
-        with col1:
-            st.metric(
-                label="Total Jobs",
-                value=jobs_summary["total"],
-            )
-
-        with col2:
-            st.metric(
-                label="Running Jobs",
-                value=jobs_summary["running"],
-            )
-
-        with col3:
-            st.metric(
-                label="Queued Jobs",
-                value=jobs_summary["queued"],
-            )
+        render_utils.render_metrics_columns(metrics_data)
 
     except Exception as e:
         logger = logging.getLogger(__name__)
@@ -163,73 +135,28 @@ def render_jobs_chart():
         # Create DataFrame for the chart
         df = create_jobs_dataframe(history_data)
 
-        # Display the chart using Altair for multi-line visualization
-        if not df.empty:
-            # Create proper time window (last 15 minutes)
-            current_time = pd.Timestamp.now()
-            time_window_start = current_time - pd.Timedelta(minutes=15)
+        # Create color mapping for job states
+        color_domain = ["running", "queued"]
+        color_range = [
+            STREAMLIT_COLORS["success"],  # Green for running
+            STREAMLIT_COLORS["warning"],  # Orange for queued
+        ]
 
-            # Filter data to time window
-            window_df = df[df["Time"] >= time_window_start].copy()
-
-            if not window_df.empty:
-                # Calculate dynamic y-axis range and tick count
-                max_count = window_df["Count"].max()
-                y_max = max(max_count * 1.1, 1)  # At least 1 for visibility
-
-                # Create color mapping for job states
-                color_domain = ["running", "queued"]
-                color_range = [
-                    STREAMLIT_COLORS["success"],  # Green for running
-                    STREAMLIT_COLORS["warning"],  # Orange for queued
-                ]
-
-                # Create chart with proper time window and dynamic count range
-                chart = (
-                    alt.Chart(window_df)
-                    .mark_line()
-                    .encode(
-                        x=alt.X(
-                            "Time:T",
-                            title="Time",
-                            axis=alt.Axis(format="%H:%M", tickCount=15),
-                            scale=alt.Scale(domain=[time_window_start, current_time]),
-                        ),
-                        y=alt.Y(
-                            "Count:Q",
-                            title="Number of Jobs",
-                            scale=alt.Scale(domain=[0, y_max]),
-                            axis=alt.Axis(
-                                values=list(range(0, int(y_max) + 1)), format="d"
-                            ),
-                        ),
-                        color=alt.Color(
-                            "Status:N",
-                            scale=alt.Scale(domain=color_domain, range=color_range),
-                            legend=alt.Legend(title="Job Status"),
-                        ),
-                        tooltip=[
-                            alt.Tooltip("Time:T", title="Time", format="%H:%M:%S"),
-                            alt.Tooltip("Status:N", title="Status"),
-                            alt.Tooltip("Count:Q", title="Count"),
-                        ],
-                    )
-                    .configure_axis(grid=True, gridColor="lightgray", gridOpacity=0.5)
-                    .properties(
-                        width="container",
-                        height=300,
-                    )
-                )
-
-                st.altair_chart(chart, use_container_width=True)
-            else:
-                st.info("No jobs data available in the current time window.")
-
-        else:
-            # Show placeholder when no data
-            st.info(
-                "No jobs data available yet. The chart will appear once data is collected."
+        def create_chart():
+            return chart.create_time_series_chart(
+                df=df,
+                y_title="Number of Jobs",
+                color_column="Status",
+                color_domain=color_domain,
+                color_range=color_range,
+                y_type="count",
             )
+
+        chart.render_chart_with_fallback(
+            create_chart,
+            "No jobs data available yet. The chart will appear once data is collected.",
+            "Error rendering jobs chart",
+        )
 
     except Exception as e:
         logger = logging.getLogger(__name__)
@@ -287,7 +214,7 @@ def render_jobs_details():
                     )
                     try:
                         time_str = (
-                            format_duration(time_value)
+                            format.format_duration(time_value)
                             if time_value is not None
                             else "unknown"
                         )
@@ -388,24 +315,13 @@ def render():
     This function creates a Streamlit-compatible version of the jobs panel
     that maintains all the functionality of the original dashboard panel.
     """
-    logger = logging.getLogger(__name__)
-
-    try:
-        with st.container(border=True):
-            st.header("Jobs")
-
-            # Render the jobs metrics header with stable updates
-            render_jobs_metrics()
-
-            # Render the jobs chart with stable updates
-            render_jobs_chart()
-
-            # Render jobs details
-            render_jobs_details()
-
-    except Exception as e:
-        logger.exception(f"Error rendering jobs panel: {e}")
-        st.error(f"Error rendering jobs panel: {e}")
+    render_utils.render_panel_with_fragments(
+        title="Jobs",
+        metrics_func=render_jobs_metrics,
+        chart_func=render_jobs_chart,
+        details_func=render_jobs_details,
+        error_message="Error rendering jobs panel",
+    )
 
 
 def render_graph_only():

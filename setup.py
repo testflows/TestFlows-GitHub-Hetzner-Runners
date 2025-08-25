@@ -46,6 +46,7 @@ setup(
         "testflows.github.hetzner.runners.dashboard.panels",
         "testflows.github.hetzner.runners.dashboard2",
         "testflows.github.hetzner.runners.dashboard2.panels",
+        "testflows.github.hetzner.runners.dashboard2.panels.utils",
     ],
     package_data={
         "testflows.github.hetzner.runners.config": ["*.json"],

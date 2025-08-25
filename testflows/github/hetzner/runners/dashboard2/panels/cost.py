@@ -20,6 +20,7 @@ from datetime import datetime, timedelta
 import logging
 
 from .. import metrics
+from .utils import chart, render as render_utils, data
 
 
 def create_panel():
@@ -42,7 +43,7 @@ def get_cost_history_data(cutoff_minutes=15):
     Returns:
         tuple: (timestamps, values) for plotting
     """
-    return metrics.get_metric_history_data(
+    return data.get_simple_metric_history(
         "github_hetzner_runners_cost_total", cutoff_minutes=cutoff_minutes
     )
 
@@ -96,18 +97,15 @@ def get_current_cost_data():
                 continue
 
     # Update metric history (same as original)
-    key = metrics.update_metric_history(
+    data.update_simple_metric_history(
         "github_hetzner_runners_cost_total",
-        {},
         current_value,
         current_time,
         cutoff_minutes=15,
     )
 
     # Get history data for plotting
-    history_data = metrics.metric_history.get(key, {"timestamps": [], "values": []})
-    timestamps = history_data["timestamps"]
-    values = history_data["values"]
+    timestamps, values = get_cost_history_data()
 
     return timestamps, values, current_value, current_time
 
@@ -126,26 +124,23 @@ def render_cost_metrics():
         # Get current cost summary for display
         cost_summary = metrics.get_cost_summary()
 
-        # Display current cost metrics in columns
-        col1, col2, col3 = st.columns(3)
+        # Build metrics data
+        metrics_data = [
+            {
+                "label": "Current Hourly Cost",
+                "value": f"€{cost_summary['hourly']:.3f}/h",
+            },
+            {
+                "label": "Daily Cost Estimate",
+                "value": f"€{cost_summary['daily']:.2f}/day",
+            },
+            {
+                "label": "Monthly Cost Estimate",
+                "value": f"€{cost_summary['monthly']:.2f}/month",
+            },
+        ]
 
-        with col1:
-            st.metric(
-                label="Current Hourly Cost",
-                value=f"€{cost_summary['hourly']:.3f}/h",
-            )
-
-        with col2:
-            st.metric(
-                label="Daily Cost Estimate",
-                value=f"€{cost_summary['daily']:.2f}/day",
-            )
-
-        with col3:
-            st.metric(
-                label="Monthly Cost Estimate",
-                value=f"€{cost_summary['monthly']:.2f}/month",
-            )
+        render_utils.render_metrics_columns(metrics_data)
 
     except Exception as e:
         logger = logging.getLogger(__name__)
@@ -155,7 +150,7 @@ def render_cost_metrics():
 
 @st.fragment(run_every=st.session_state.get("update_interval", 5))
 def render_cost_chart():
-    """Render the cost chart using Streamlit's native line chart to prevent flickering."""
+    """Render the cost chart using Altair for proper time series visualization."""
     try:
         # Get fresh data
         timestamps, values, current_value, current_time = get_current_cost_data()
@@ -163,90 +158,19 @@ def render_cost_chart():
         # Create DataFrame for the chart
         df = create_cost_dataframe(timestamps, values)
 
-        # Display the chart using Streamlit's native line chart with proper x-axis scaling
-        if not df.empty:
-            # Add custom CSS for better chart styling
-            st.markdown(
-                """
-            <style>
-            .stLineChart {
-                border: 1px solid #e0e0e0;
-                border-radius: 8px;
-                padding: 10px;
-                background-color: #f8f9fa;
-            }
-            </style>
-            """,
-                unsafe_allow_html=True,
+        def create_chart():
+            return chart.create_time_series_chart(
+                df=df,
+                y_column="Total Cost (€/h)",
+                y_title="Cost (€/h)",
+                y_type="price",
             )
 
-            # Use Streamlit's native line chart - much more reliable for real-time data
-            # Reset index and ensure proper data types
-            chart_df = df.reset_index()
-            chart_df["Total Cost (€/h)"] = chart_df["Total Cost (€/h)"].astype(float)
-            chart_df = chart_df.dropna()
-            chart_df = chart_df.sort_values("Time")
-
-            # Use Altair for proper time window and dynamic price range
-
-            # Create proper time window (last 15 minutes)
-            current_time = pd.Timestamp.now()
-            time_window_start = current_time - pd.Timedelta(minutes=15)
-
-            # Filter data to time window
-            window_df = chart_df[chart_df["Time"] >= time_window_start].copy()
-
-            # Calculate dynamic y-axis range
-            if len(window_df) > 0:
-                min_cost = window_df["Total Cost (€/h)"].min()
-                max_cost = window_df["Total Cost (€/h)"].max()
-                cost_range = max_cost - min_cost
-
-                # Set y-axis range with padding
-                if cost_range == 0:
-                    y_min = 0
-                    y_max = max(max_cost * 1.1, 0.01)  # At least 0.001 for visibility
-                else:
-                    y_min = max(0, min_cost - cost_range * 0.1)
-                    y_max = max_cost + cost_range * 0.1
-            else:
-                y_min, y_max = 0, 1
-
-            # Create chart with proper time window and dynamic price range
-            chart = (
-                alt.Chart(window_df)
-                .mark_line()
-                .encode(
-                    x=alt.X(
-                        "Time:T",
-                        title="Time",
-                        axis=alt.Axis(format="%H:%M", tickCount=15),
-                        scale=alt.Scale(domain=[time_window_start, current_time]),
-                    ),
-                    y=alt.Y(
-                        "Total Cost (€/h):Q",
-                        title="Cost (€/h)",
-                        scale=alt.Scale(domain=[y_min, y_max]),
-                    ),
-                    tooltip=[
-                        alt.Tooltip("Time:T", title="Time", format="%H:%M:%S"),
-                        alt.Tooltip("Total Cost (€/h):Q", title="Cost", format=".3f"),
-                    ],
-                )
-                .configure_axis(grid=True, gridColor="lightgray", gridOpacity=0.5)
-                .properties(
-                    width="container",
-                    height=300,
-                )
-            )
-
-            st.altair_chart(chart, use_container_width=True)
-
-        else:
-            # Show placeholder when no data
-            st.info(
-                "No cost data available yet. The chart will appear once data is collected."
-            )
+        chart.render_chart_with_fallback(
+            create_chart,
+            "No cost data available yet. The chart will appear once data is collected.",
+            "Error rendering cost chart",
+        )
 
     except Exception as e:
         logger = logging.getLogger(__name__)
@@ -260,21 +184,12 @@ def render():
     This function creates a Streamlit-compatible version of the cost panel
     that maintains all the functionality of the original dashboard panel.
     """
-    logger = logging.getLogger(__name__)
-
-    try:
-        with st.container(border=True):
-            st.header("Cost")
-
-            # Render the cost metrics header with stable updates
-            render_cost_metrics()
-
-            # Render the cost chart with stable updates
-            render_cost_chart()
-
-    except Exception as e:
-        logger.exception(f"Error rendering cost panel: {e}")
-        st.error(f"Error rendering cost panel: {e}")
+    render_utils.render_panel_with_fragments(
+        title="Cost",
+        metrics_func=render_cost_metrics,
+        chart_func=render_cost_chart,
+        error_message="Error rendering cost panel",
+    )
 
 
 def render_graph_only():
