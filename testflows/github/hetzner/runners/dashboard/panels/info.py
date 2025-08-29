@@ -281,7 +281,7 @@ def create_download_config_button(config: Config):
                 help="No config file was specified",
                 key="download_config_disabled_btn",
             )
-            
+
     except Exception as e:
         st.error(f"Error creating download config button: {str(e)}")
 

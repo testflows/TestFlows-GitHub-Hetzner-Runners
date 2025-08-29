@@ -62,7 +62,12 @@ def create_time_series_chart(
         df = df.reset_index()
 
     # Create proper time window
-    current_time = pd.Timestamp.now()
+    # Check if DataFrame has timezone-aware timestamps
+    if not df.empty and df[x_column].dt.tz is not None:
+        current_time = pd.Timestamp.now(tz=df[x_column].dt.tz)
+    else:
+        current_time = pd.Timestamp.now()
+
     time_window_start = current_time - pd.Timedelta(minutes=time_window_minutes)
 
     # Filter data to time window

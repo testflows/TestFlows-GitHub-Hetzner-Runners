@@ -35,6 +35,44 @@ def create_panel():
     return {"title": "Scale-up Errors (Last Hour)", "type": "scale_up_errors"}
 
 
+def get_scale_up_errors_history_data(cutoff_minutes=60):
+    """Get scale-up errors history data for plotting.
+
+    Args:
+        cutoff_minutes: Number of minutes to keep in history
+
+    Returns:
+        dict: Dictionary with error history data
+    """
+    timestamps, values = metrics.get_metric_history_data(
+        "github_hetzner_runners_scale_up_failures_last_hour",
+        cutoff_minutes=cutoff_minutes,
+    )
+    return {"timestamps": timestamps, "values": values}
+
+
+def get_current_scale_up_errors_data():
+    """Get current scale-up errors data without caching to ensure fresh data."""
+    current_time = datetime.now()
+    current_value = (
+        metrics.get_metric_value("github_hetzner_runners_scale_up_failures_last_hour")
+        or 0
+    )
+
+    # Update metric history for plotting (this tracks the gauge value over time)
+    data.update_simple_metric_history(
+        "github_hetzner_runners_scale_up_failures_last_hour",
+        current_value,
+        current_time,
+        cutoff_minutes=60,
+    )
+
+    # Get history data for plotting
+    history_data = get_scale_up_errors_history_data()
+
+    return history_data, current_value, current_time
+
+
 def get_scale_up_errors_data():
     """Get scale-up errors data for display and plotting.
 
@@ -121,15 +159,7 @@ def get_scale_up_errors_data():
     }
 
     # Get history data for plotting
-    current_time = datetime.now()
-    one_hour_ago = current_time - timedelta(hours=1)
-
-    # Get error count history
-    timestamps, values = metrics.get_metric_history_data(
-        "github_hetzner_runners_scale_up_failures_last_hour", cutoff_minutes=60
-    )
-
-    history_data = {"timestamps": timestamps, "values": values}
+    history_data = get_scale_up_errors_history_data()
 
     return error_list_data, total_errors, history_data
 
@@ -137,13 +167,17 @@ def get_scale_up_errors_data():
 def create_errors_dataframe(history_data):
     """Create a pandas DataFrame for the errors data with proper time formatting."""
     if not history_data or not history_data.get("timestamps"):
-        return pd.DataFrame({"Time": pd.to_datetime([]), "Count": []})
+        # Return a DataFrame with a single data point at 0 for the current time
+        current_time = pd.Timestamp.now()
+        return pd.DataFrame({"Time": [current_time], "Count": [0]})
 
     timestamps = history_data["timestamps"]
     values = history_data["values"]
 
     if not timestamps or not values or len(timestamps) != len(values):
-        return pd.DataFrame({"Time": pd.to_datetime([]), "Count": []})
+        # Return a DataFrame with a single data point at 0 for the current time
+        current_time = pd.Timestamp.now()
+        return pd.DataFrame({"Time": [current_time], "Count": [0]})
 
     # Collect all data points
     all_data = []
@@ -155,7 +189,9 @@ def create_errors_dataframe(history_data):
             continue
 
     if not all_data:
-        return pd.DataFrame({"Time": pd.to_datetime([]), "Count": []})
+        # Return a DataFrame with a single data point at 0 for the current time
+        current_time = pd.Timestamp.now()
+        return pd.DataFrame({"Time": [current_time], "Count": [0]})
 
     # Create DataFrame and sort by time
     df = pd.DataFrame(all_data)
@@ -164,133 +200,126 @@ def create_errors_dataframe(history_data):
     return df
 
 
-def render_scale_up_errors_panel():
-    """Render the scale-up errors panel using Streamlit."""
-    st.header("Scale-up Errors (Last Hour)")
+@st.fragment(run_every=st.session_state.get("update_interval", 5))
+def render_scale_up_errors_metrics():
+    """Render the scale-up errors metrics section."""
+    try:
+        # Get data
+        _, total_errors, _ = get_scale_up_errors_data()
 
-    # Get data
-    error_list_data, total_errors, history_data = get_scale_up_errors_data()
+        # Build metrics data
+        metrics_data = [
+            {"label": "Total Errors", "value": int(total_errors)},
+        ]
 
-    # Create two columns for layout
-    col1, col2 = st.columns([1, 1])
+        render_utils.render_metrics_columns(metrics_data)
 
-    with col1:
-        st.subheader("Error Summary")
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.exception(f"Error rendering scale-up errors metrics: {e}")
+        st.error(f"Error rendering scale-up errors metrics: {e}")
 
-        # Display total error count
-        if total_errors > 0:
-            st.metric(label="Total Errors", value=total_errors, delta=None)
-        else:
-            st.success("No scale-up errors in the last hour")
 
-    with col2:
-        st.subheader("Error Trend")
+@st.fragment(run_every=st.session_state.get("update_interval", 5))
+def render_scale_up_errors_chart():
+    """Render the scale-up errors chart section."""
+    try:
+        # Get fresh data
+        history_data, current_value, current_time = get_current_scale_up_errors_data()
 
-        # Create and display chart
+        # Create DataFrame for the chart
         df = create_errors_dataframe(history_data)
 
-        if not df.empty:
-            # Create time series chart
-            error_chart = chart.create_time_series_chart(
+        def create_chart():
+            return chart.create_time_series_chart(
                 df=df,
                 x_column="Time",
                 y_column="Count",
                 title="Scale-up Errors Over Time",
                 y_title="Number of Errors",
-                height=200,
                 time_window_minutes=60,
                 y_type="count",
             )
 
-            if error_chart:
-                st.altair_chart(error_chart, use_container_width=True)
-            else:
-                st.info("No error data available for charting")
-        else:
-            st.info("No error history data available")
-
-    # Display error details
-    if error_list_data["items"]:
-        # Prepare error data for dataframe
-        formatted_errors = []
-        for error_item in error_list_data["items"]:
-            # Extract values from the error item
-            error_data = {}
-            for value_item in error_item["values"]:
-                error_data[value_item["label"].lower().replace(" ", "_")] = value_item[
-                    "value"
-                ]
-
-            # Create formatted error data
-            formatted_error = {
-                "name": error_item["name"],
-                "server_name": error_item["server_name"],
-                "error_message": error_data.get("error_message", ""),
-                "server_type": error_data.get("server_type", ""),
-                "location": error_data.get("location", ""),
-                "labels": error_data.get("labels", ""),
-            }
-
-            formatted_errors.append(formatted_error)
-
-        render_utils.render_details_dataframe(
-            items=formatted_errors,
-            title="Error Details",
-            name_key="name",
-            status_key="server_name",
+        chart.render_chart_with_fallback(
+            create_chart,
+            "No error data available yet. The chart will appear once data is collected.",
+            "Error rendering scale-up errors chart",
         )
-    elif total_errors > 0:
-        st.warning("Error details are not available, but errors were detected")
+
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.exception(f"Error rendering scale-up errors chart: {e}")
+        st.error(f"Error rendering scale-up errors chart: {e}")
 
 
-def update_scale_up_errors_graph(n, cache=[]):
-    """Update errors graph.
+@st.fragment(run_every=st.session_state.get("update_interval", 5))
+def render_scale_up_errors_details():
+    """Render the scale-up errors details section."""
+    try:
+        # Get data
+        error_list_data, total_errors, _ = get_scale_up_errors_data()
 
-    This function maintains API compatibility with the original dashboard.
+        # Display error details
+        if error_list_data["items"]:
+            # Prepare error data for dataframe
+            formatted_errors = []
+            for error_item in error_list_data["items"]:
+                # Extract values from the error item
+                error_data = {}
+                for value_item in error_item["values"]:
+                    error_data[value_item["label"].lower().replace(" ", "_")] = (
+                        value_item["value"]
+                    )
 
-    Args:
-        n: Placeholder for compatibility
-        cache: Cache for storing historical data
+                # Create formatted error data
+                formatted_error = {
+                    "name": error_item["name"],
+                    "server_name": error_item["server_name"],
+                    "error_message": error_data.get("error_message", ""),
+                    "server_type": error_data.get("server_type", ""),
+                    "location": error_data.get("location", ""),
+                    "labels": error_data.get("labels", ""),
+                }
 
-    Returns:
-        dict: Graph configuration (not used in Streamlit version)
+                formatted_errors.append(formatted_error)
+
+            render_utils.render_details_dataframe(
+                items=formatted_errors,
+                title="Error Details",
+                name_key="name",
+                status_key="server_name",
+            )
+        else:
+            if total_errors > 0:
+                st.info(f"Total errors: {total_errors} (details not available)")
+            else:
+                st.info("No errors found")
+
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.exception(f"Error rendering scale-up errors details: {e}")
+        st.error(f"Error rendering scale-up errors details: {e}")
+
+
+def render():
+    """Render the scale-up errors panel in Streamlit.
+
+    This function creates a Streamlit-compatible version of the scale-up errors panel
+    that maintains all the functionality of the original dashboard panel.
     """
-    current_time = datetime.now()
-    one_hour_ago = current_time - timedelta(hours=1)
-
-    # Get current error count
-    error_count = (
-        metrics.get_metric_value("github_hetzner_runners_scale_up_failures_last_hour")
-        or 0
+    render_utils.render_panel_with_fragments(
+        title="Scale-up Errors (Last Hour)",
+        metrics_func=render_scale_up_errors_metrics,
+        chart_func=render_scale_up_errors_chart,
+        details_func=render_scale_up_errors_details,
+        error_message="Error rendering scale-up errors panel",
     )
 
-    # Add current state to cache
-    cache.append((current_time.timestamp(), error_count))
 
-    # Clean up old entries and sort by timestamp
-    cache[:] = [(ts, count) for ts, count in cache if ts >= one_hour_ago.timestamp()]
-    cache.sort()
+def render_graph_only():
+    """Render only the scale-up errors graph without header and metrics.
 
-    # Update metric history
-    metrics.update_metric_history(
-        "github_hetzner_runners_scale_up_failures_last_hour",
-        {},
-        error_count,
-        current_time,
-        cutoff_minutes=60,
-    )
-
-    # Return empty dict for compatibility
-    return {}
-
-
-def create_error_list():
-    """Create a list of errors with their descriptions.
-
-    This function maintains API compatibility with the original dashboard.
-
-    Returns:
-        dict: Error list data
+    This is useful for embedding the scale-up errors graph in other panels or layouts.
     """
-    error_list_data, _, _ = get_scale_up_errors_data()
-    return error_list_data
+    render_scale_up_errors_chart()

@@ -90,7 +90,7 @@ def main():
         servers.render()
         jobs.render()
         runners.render()
-        scale_up_errors.render_scale_up_errors_panel()
+        scale_up_errors.render()
         log.render(config)
         footer.render()
 
