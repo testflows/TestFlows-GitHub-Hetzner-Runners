@@ -17,9 +17,9 @@ import streamlit as st
 
 def render():
     """Render the header section with logo, title, and update interval selector."""
-    # Logo using HTML img tag for full styling control
+    # Logo using HTML img tag for full styling control with clickable link
     st.markdown(
-        f'<img src="https://raw.githubusercontent.com/testflows/TestFlows-ArtWork/refs/heads/master/images/logo.png" width="120" style="border-radius: 0; border: none; box-shadow: none;">',
+        f'<a href="https://testflows.com" target="_blank"><img src="https://raw.githubusercontent.com/testflows/TestFlows-ArtWork/refs/heads/master/images/logo.png" width="120" style="border-radius: 0; border: none; box-shadow: none; cursor: pointer;"></a>',
         unsafe_allow_html=True,
     )
 
