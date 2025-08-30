@@ -19,6 +19,7 @@ import weakref
 import logging
 import threading
 import importlib
+import functools
 from types import SimpleNamespace
 
 import streamlit as st
@@ -110,15 +111,30 @@ def main():
         panels = reload_panels()
 
         configure_page()
+
+        # Always visible panels (outside tabs)
         panels.header.render()
         panels.gauges.render()
-        panels.info.render(config)
-        panels.cost.render()
-        panels.servers.render()
-        panels.volumes.render()
-        panels.jobs.render()
-        panels.runners.render()
-        panels.scale_up_errors.render()
+
+        # Build tabs for panels that should be in tabs
+        tabbed_panels = {
+            "Cost": panels.cost.render,
+            "Servers": panels.servers.render,
+            "Volumes": panels.volumes.render,
+            "Jobs": panels.jobs.render,
+            "Runners": panels.runners.render,
+            "Scale-up Errors": panels.scale_up_errors.render,
+            "System Information": functools.partial(panels.info.render, config),
+        }
+
+        # Render tabs if we have any
+        if tabbed_panels:
+            tabs = st.tabs(list(tabbed_panels.keys()))
+            for i, (name, panel) in enumerate(tabbed_panels.items()):
+                with tabs[i]:
+                    panel()
+
+        # Log panel at the bottom
         panels.log.render(config)
         panels.footer.render()
 
