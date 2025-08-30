@@ -31,12 +31,13 @@ def render_gauges_fragment():
         heartbeat_status, _ = metrics.get_heartbeat_status()
         cost_summary = metrics.get_cost_summary()
         servers_summary = metrics.get_servers_summary()
+        volumes_summary = metrics.get_volumes_summary()
         runners_summary = metrics.get_runners_summary()
         jobs_summary = metrics.get_jobs_summary()
         errors_summary = metrics.get_errors_summary()
 
         # Gauges in columns
-        col1, col2, col3, col4, col5, col6, col7 = st.columns(7, gap="medium")
+        col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8, gap="medium")
 
         with col1:
             st.caption("Heartbeat")
@@ -63,6 +64,14 @@ def render_gauges_fragment():
             )
 
         with col4:
+            st.caption("Volumes")
+            st.metric(
+                label="Volumes",
+                value=volumes_summary["total"],
+                label_visibility="collapsed",
+            )
+
+        with col5:
             st.caption("Runners")
             st.metric(
                 label="Runners",
@@ -70,7 +79,7 @@ def render_gauges_fragment():
                 label_visibility="collapsed",
             )
 
-        with col5:
+        with col6:
             st.caption("Queued Jobs")
             st.metric(
                 label="Queued Jobs",
@@ -78,7 +87,7 @@ def render_gauges_fragment():
                 label_visibility="collapsed",
             )
 
-        with col6:
+        with col7:
             st.caption("Running Jobs")
             st.metric(
                 label="Running Jobs",
@@ -86,7 +95,7 @@ def render_gauges_fragment():
                 label_visibility="collapsed",
             )
 
-        with col7:
+        with col8:
             st.caption("Scale Up Errors")
             st.metric(
                 label="Scale Up Errors",

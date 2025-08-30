@@ -75,6 +75,7 @@ def reload_panels():
         "info",
         "cost",
         "servers",
+        "volumes",
         "jobs",
         "runners",
         "scale_up_errors",
@@ -114,6 +115,7 @@ def main():
         panels.info.render(config)
         panels.cost.render()
         panels.servers.render()
+        panels.volumes.render()
         panels.jobs.render()
         panels.runners.render()
         panels.scale_up_errors.render()

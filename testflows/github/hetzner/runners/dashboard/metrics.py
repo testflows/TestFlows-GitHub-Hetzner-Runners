@@ -168,6 +168,22 @@ def get_servers_summary():
     }
 
 
+def get_volumes_summary():
+    """Get volumes summary data.
+
+    Returns:
+        dict: Summary of volumes data
+    """
+    total_volumes = get_metric_value("github_hetzner_runners_volumes_total_count") or 0
+    volumes_info = get_metric_info("github_hetzner_runners_volume")
+
+    return {
+        "total": int(total_volumes),
+        "details": volumes_info,
+        "by_status": _count_by_status(volumes_info, "status"),
+    }
+
+
 def get_jobs_summary():
     """Get jobs summary data.
 

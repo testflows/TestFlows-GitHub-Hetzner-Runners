@@ -34,6 +34,10 @@ STATE_COLORS = {
     "ready": "#00FFFF",  # Cyan
     "busy": "#FF00FF",  # Magenta
     "unknown": "#808080",  # Gray
+    # Volume state colors
+    "available": "#00FF00",  # Green
+    "creating": "#FFA500",  # Orange
+    "attached": "#0000FF",  # Blue
 }
 
 # Streamlit-specific color mappings

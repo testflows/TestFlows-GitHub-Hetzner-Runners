@@ -1408,10 +1408,12 @@ def scale_up(
                     level=logging.DEBUG,
                     interval=interval,
                 ):
-                    volumes = client.volumes.get_all(
+                    # Get all volumes for metrics tracking
+                    all_volumes = client.volumes.get_all(
                         label_selector="github-hetzner-runner-volume=active",
-                        status=["available"],
                     )
+                    # Filter to only available volumes for server attachment logic
+                    volumes = [v for v in all_volumes if v.status == "available"]
 
                 with Action(
                     "Getting list of self-hosted runners",
@@ -1448,6 +1450,7 @@ def scale_up(
                     standby_runners,
                     count_available_fn=count_available,
                 )
+                metrics.update_volumes(all_volumes)
 
                 with Action(
                     "Looking for queued jobs",

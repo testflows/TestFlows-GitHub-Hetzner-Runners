@@ -78,6 +78,65 @@ SERVER_STATUS = Gauge(
     ],
 )
 
+# Volume metrics
+VOLUMES_TOTAL = Gauge(
+    "github_hetzner_runners_volumes_total",
+    "Total number of volumes",
+    ["status"],  # status: available, creating, attached
+)
+
+VOLUMES_TOTAL_COUNT = Gauge(
+    "github_hetzner_runners_volumes_total_count",
+    "Total number of volumes across all statuses",
+)
+
+VOLUMES_CREATED_TOTAL = Counter(
+    "github_hetzner_runners_volumes_created_total",
+    "Total number of volumes created",
+    ["volume_type", "location"],
+)
+
+VOLUMES_DELETED_TOTAL = Counter(
+    "github_hetzner_runners_volumes_deleted_total",
+    "Total number of volumes deleted",
+    ["volume_type", "location"],
+)
+
+# Detailed volume metrics
+VOLUME_INFO = Info(
+    "github_hetzner_runners_volume",
+    "Information about a volume",
+    ["volume_id", "volume_name"],
+)
+
+VOLUME_LABELS = Gauge(
+    "github_hetzner_runners_volume_labels",
+    "Labels assigned to volumes",
+    ["volume_id", "volume_name", "label"],
+)
+
+VOLUME_STATUS = Gauge(
+    "github_hetzner_runners_volume_status",
+    "Volume status (1 for active, 0 for inactive)",
+    [
+        "volume_id",
+        "volume_name",
+        "status",  # status: available, creating, attached
+    ],
+)
+
+VOLUME_ATTACHMENT = Gauge(
+    "github_hetzner_runners_volume_attachment",
+    "Volume attachment status and server info",
+    [
+        "volume_id",
+        "volume_name",
+        "attached",  # attached: true, false
+        "server_id",
+        "server_name",
+    ],
+)
+
 # Standby server metrics
 STANDBY_SERVERS_TOTAL = Gauge(
     "github_hetzner_runners_standby_servers_total",
@@ -552,6 +611,109 @@ def update_servers(servers, server_prices=None, ipv4_price=0.0008, ipv6_price=0.
             server_type=server_type,
             location=location,
         ).set(count)
+
+
+def update_volumes(volumes):
+    """Update all volume-related metrics.
+
+    Args:
+        volumes: List of volumes to track metrics for
+    """
+    # Clear all existing volume metrics
+    VOLUME_INFO._metrics.clear()
+    VOLUME_LABELS._metrics.clear()
+    VOLUME_STATUS._metrics.clear()
+    VOLUME_ATTACHMENT._metrics.clear()
+
+    total_volumes = 0
+
+    # Track counts by status
+    status_counts = {}
+
+    # Define all possible statuses
+    all_statuses = ["available", "creating", "attached"]
+
+    for volume in volumes:
+        # Count volumes by status
+        # Determine status based on volume state and attachment
+        if hasattr(volume, "server") and volume.server is not None:
+            status = "attached"
+        else:
+            status = getattr(volume, "status", "unknown")
+
+        status_counts[status] = status_counts.get(status, 0) + 1
+        total_volumes += 1
+
+        try:
+            # Track detailed volume information
+            volume_info = {
+                "name": volume.name,
+                "size": str(volume.size),
+                "location": (
+                    getattr(volume.location, "name", "unknown")
+                    if hasattr(volume, "location") and volume.location
+                    else "unknown"
+                ),
+                "status": status,  # Use the status we determined above
+                "format": getattr(volume, "format", "unknown"),
+                "created": (
+                    volume.created.strftime("%Y-%m-%d %H:%M:%S")
+                    if hasattr(volume, "created") and volume.created
+                    else ""
+                ),
+            }
+
+            # Add server information if attached
+            if hasattr(volume, "server") and volume.server:
+                volume_info["server_name"] = volume.server.name
+                volume_info["server_id"] = str(volume.server.id)
+            else:
+                volume_info["server_name"] = "none"
+                volume_info["server_id"] = "none"
+
+            VOLUME_INFO.labels(volume_id=str(volume.id), volume_name=volume.name).info(
+                volume_info
+            )
+
+            # Track volume labels
+            if hasattr(volume, "labels"):
+                for label_name, label_value in volume.labels.items():
+                    VOLUME_LABELS.labels(
+                        volume_id=str(volume.id),
+                        volume_name=volume.name,
+                        label=f"{label_name}:{label_value}".lower(),
+                    ).set(1)
+
+            # Track volume status
+            VOLUME_STATUS.labels(
+                volume_id=str(volume.id),
+                volume_name=volume.name,
+                status=status,
+            ).set(1)
+
+            # Track volume attachment
+            is_attached = hasattr(volume, "server") and volume.server is not None
+            server_id = str(volume.server.id) if is_attached else "none"
+            server_name = volume.server.name if is_attached else "none"
+
+            VOLUME_ATTACHMENT.labels(
+                volume_id=str(volume.id),
+                volume_name=volume.name,
+                attached=str(is_attached).lower(),
+                server_id=server_id,
+                server_name=server_name,
+            ).set(1)
+
+        except AttributeError:
+            # Skip volume metrics if volume.id or volume.name is missing
+            pass
+
+    # Set total counts
+    VOLUMES_TOTAL_COUNT.set(total_volumes)
+
+    # Set counts for all possible statuses, defaulting to 0 if not present
+    for status in all_statuses:
+        VOLUMES_TOTAL.labels(status=status).set(status_counts.get(status, 0))
 
 
 def update_runners(
