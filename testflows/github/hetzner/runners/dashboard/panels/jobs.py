@@ -112,9 +112,9 @@ def render_jobs_metrics():
 
         # Build metrics data
         metrics_data = [
-            {"label": "Total Jobs", "value": jobs_summary["total"]},
-            {"label": "Running Jobs", "value": jobs_summary["running"]},
-            {"label": "Queued Jobs", "value": jobs_summary["queued"]},
+            {"label": "Total", "value": jobs_summary["total"]},
+            {"label": "Running", "value": jobs_summary["running"]},
+            {"label": "Queued", "value": jobs_summary["queued"]},
         ]
 
         render_utils.render_metrics_columns(metrics_data)

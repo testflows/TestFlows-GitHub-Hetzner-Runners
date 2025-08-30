@@ -77,13 +77,13 @@ def render_server_metrics():
 
         # Build metrics data
         metrics_data = [
-            {"label": "Total Servers", "value": servers_summary["total"]},
+            {"label": "Total", "value": servers_summary["total"]},
             {
-                "label": "Running Servers",
+                "label": "Running",
                 "value": servers_summary["by_status"].get("running", 0),
             },
             {
-                "label": "Other States",
+                "label": "Other",
                 "value": sum(
                     count
                     for status, count in servers_summary["by_status"].items()
@@ -211,6 +211,38 @@ def render_server_details():
             name_key="name",
             status_key="status",
         )
+
+        # Add standby server summary
+        try:
+            standby_summary = metrics.get_standby_servers_summary()
+            if standby_summary["total"] > 0:
+                st.subheader("Standby Summary")
+
+                # Create standby summary metrics
+                standby_metrics = [
+                    {"label": "Total", "value": standby_summary["total"]},
+                    {
+                        "label": "Running",
+                        "value": standby_summary["by_status"].get("running", 0),
+                    },
+                    {
+                        "label": "Ready",
+                        "value": standby_summary["by_status"].get("ready", 0),
+                    },
+                ]
+
+                render_utils.render_metrics_columns(standby_metrics)
+
+                # Show standby by type and location
+                if standby_summary["by_type_location"]:
+                    st.write("**By Type and Location:**")
+                    for type_location, count in standby_summary[
+                        "by_type_location"
+                    ].items():
+                        st.write(f"- {type_location}: {count}")
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.debug(f"Could not display standby summary: {e}")
 
     except Exception as e:
         logger = logging.getLogger(__name__)

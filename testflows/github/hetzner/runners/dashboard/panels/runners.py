@@ -150,16 +150,16 @@ def render_runners_metrics():
 
         # Build metrics data
         metrics_data = [
-            {"label": "Total Runners", "value": runners_summary["total"]},
+            {"label": "Total", "value": runners_summary["total"]},
             {
-                "label": "Online Runners",
+                "label": "Online",
                 "value": runners_summary["by_status"].get("online", 0),
             },
             {
-                "label": "Offline Runners",
+                "label": "Offline",
                 "value": runners_summary["by_status"].get("offline", 0),
             },
-            {"label": "Busy Runners", "value": int(busy_runners)},
+            {"label": "Busy", "value": int(busy_runners)},
         ]
 
         render_utils.render_metrics_columns(metrics_data)
@@ -277,6 +277,51 @@ def render_runners_details():
             status_key="status",
             link_keys=["link"],
         )
+
+        # Add standby runner information
+        try:
+            # Check for standby runners in the current runners list
+            standby_runners = [
+                r
+                for r in formatted_runners
+                if r.get("name", "").startswith("github-hetzner-runner-standby-")
+            ]
+
+            if standby_runners:
+                st.subheader("Standby Runners")
+
+                # Create standby runner metrics
+                standby_runner_metrics = [
+                    {"label": "Total Standby Runners", "value": len(standby_runners)},
+                    {
+                        "label": "Online Standby",
+                        "value": len(
+                            [r for r in standby_runners if r.get("status") == "online"]
+                        ),
+                    },
+                    {
+                        "label": "Idle Standby",
+                        "value": len(
+                            [r for r in standby_runners if r.get("busy") == "Idle"]
+                        ),
+                    },
+                ]
+
+                render_utils.render_metrics_columns(standby_runner_metrics)
+
+                # Show standby runners by status
+                standby_by_status = {}
+                for runner in standby_runners:
+                    status = runner.get("status", "unknown")
+                    standby_by_status[status] = standby_by_status.get(status, 0) + 1
+
+                if standby_by_status:
+                    st.write("**Standby Runners by Status:**")
+                    for status, count in standby_by_status.items():
+                        st.write(f"- {status}: {count}")
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.debug(f"Could not display standby runner summary: {e}")
 
     except Exception as e:
         logger = logging.getLogger(__name__)

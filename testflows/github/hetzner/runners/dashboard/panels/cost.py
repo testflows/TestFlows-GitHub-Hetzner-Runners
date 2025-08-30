@@ -127,15 +127,15 @@ def render_cost_metrics():
         # Build metrics data
         metrics_data = [
             {
-                "label": "Current Hourly Cost",
+                "label": "Hourly",
                 "value": f"€{cost_summary['hourly']:.3f}/h",
             },
             {
-                "label": "Daily Cost Estimate",
+                "label": "Daily",
                 "value": f"€{cost_summary['daily']:.2f}/day",
             },
             {
-                "label": "Monthly Cost Estimate",
+                "label": "Monthly",
                 "value": f"€{cost_summary['monthly']:.2f}/month",
             },
         ]

@@ -168,6 +168,43 @@ def get_servers_summary():
     }
 
 
+def get_standby_servers_summary():
+    """Get standby servers summary data.
+
+    Returns:
+        dict: Summary of standby servers data
+    """
+    standby_servers_info = get_metric_info(
+        "github_hetzner_runners_standby_servers_total"
+    )
+    standby_servers_labels = get_metric_info(
+        "github_hetzner_runners_standby_servers_labels"
+    )
+
+    # Calculate totals by status, server_type, and location
+    standby_by_status = defaultdict(int)
+    standby_by_type_location = defaultdict(int)
+    total_standby = 0
+
+    for server in standby_servers_info:
+        status = server.get("status", "unknown")
+        server_type = server.get("server_type", "unknown")
+        location = server.get("location", "unknown")
+        count = int(server.get("value", 0))
+
+        standby_by_status[status] += count
+        standby_by_type_location[f"{server_type}-{location}"] += count
+        total_standby += count
+
+    return {
+        "total": total_standby,
+        "details": standby_servers_info,
+        "labels": standby_servers_labels,
+        "by_status": dict(standby_by_status),
+        "by_type_location": dict(standby_by_type_location),
+    }
+
+
 def get_volumes_summary():
     """Get volumes summary data.
 
@@ -213,6 +250,36 @@ def get_runners_summary():
         "total": int(total_runners),
         "details": runners_info,
         "by_status": _count_by_status(runners_info, "status"),
+    }
+
+
+def get_standby_runners_summary():
+    """Get standby runners summary data.
+
+    Returns:
+        dict: Summary of standby runners data
+    """
+    runners_info = get_metric_info("github_hetzner_runners_runner")
+
+    # Filter for standby runners
+    standby_runners = [
+        r
+        for r in runners_info
+        if r.get("name", "").startswith("github-hetzner-runner-standby-")
+    ]
+
+    # Calculate totals by status
+    standby_by_status = defaultdict(int)
+    total_standby = len(standby_runners)
+
+    for runner in standby_runners:
+        status = runner.get("status", "unknown")
+        standby_by_status[status] += 1
+
+    return {
+        "total": total_standby,
+        "details": standby_runners,
+        "by_status": dict(standby_by_status),
     }
 
 

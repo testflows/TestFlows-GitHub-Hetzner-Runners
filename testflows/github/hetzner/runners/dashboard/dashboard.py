@@ -79,6 +79,7 @@ def reload_panels():
         "volumes",
         "jobs",
         "runners",
+        "standby",
         "scale_up_errors",
         "log",
     ]
@@ -123,6 +124,7 @@ def main():
             "Volumes": panels.volumes.render,
             "Jobs": panels.jobs.render,
             "Runners": panels.runners.render,
+            "Standby": functools.partial(panels.standby.render, config),
             "Scale-up Errors": panels.scale_up_errors.render,
             "System Information": functools.partial(panels.info.render, config),
         }

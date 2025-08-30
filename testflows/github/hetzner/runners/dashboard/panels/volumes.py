@@ -55,17 +55,17 @@ def render_volume_metrics():
 
         # Build metrics data
         metrics_data = [
-            {"label": "Total Volumes", "value": volumes_summary["total"]},
+            {"label": "Total", "value": volumes_summary["total"]},
             {
-                "label": "Available Volumes",
+                "label": "Available",
                 "value": volumes_summary["by_status"].get("available", 0),
             },
             {
-                "label": "Attached Volumes",
+                "label": "Attached",
                 "value": volumes_summary["by_status"].get("attached", 0),
             },
             {
-                "label": "Creating Volumes",
+                "label": "Creating",
                 "value": volumes_summary["by_status"].get("creating", 0),
             },
         ]
