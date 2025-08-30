@@ -517,7 +517,7 @@ The service supports an embedded monitoring dashboard that provides real-time vi
 * Scale-up error tracking
 * Log messages (last 100 lines) with full log download capability
 
-Below is a live demonstration of the `embedded monitoring dashboard <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Embedded-Monitoring-Dashboard>`_ in action, monitoring runners for the `altinity/clickhouse-regression <https://github.com/altinity/clickhouse-regression>`_ project:
+Below is a demonstration of the `embedded monitoring dashboard <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Embedded-Monitoring-Dashboard>`_ in action, monitoring runners for the `altinity/clickhouse-regression <https://github.com/altinity/clickhouse-regression>`_ project:
 
 .. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Hetzner-Runners/master/docs/images/embedded-monitoring-dashboard.gif
    :align: center
