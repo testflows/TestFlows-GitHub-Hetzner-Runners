@@ -81,6 +81,7 @@ def reload_panels():
         "runners",
         "standby",
         "scale_up_errors",
+        "scale_down_errors",
         "log",
     ]
 
@@ -126,6 +127,7 @@ def main():
             "Runners": panels.runners.render,
             "Standby": functools.partial(panels.standby.render, config),
             "Scale-up Errors": panels.scale_up_errors.render,
+            "Scale-down Errors": panels.scale_down_errors.render,
             "System Information": functools.partial(panels.info.render, config),
         }
 

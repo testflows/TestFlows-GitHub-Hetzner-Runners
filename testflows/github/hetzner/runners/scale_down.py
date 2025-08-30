@@ -64,6 +64,16 @@ class ScaleUpFailure:
 
 
 @dataclass
+class ScaleDownFailureMessage:
+    """Scale down server failure."""
+
+    time: float
+    labels: set[str]
+    server_name: str
+    exception: Exception
+
+
+@dataclass
 class PoweredOffServer:
     """Powered off server."""
 
@@ -90,9 +100,44 @@ class UnusedRunner:
     observed_interval: float
 
 
-def delete_server(server: BoundServer):
-    """Delete server."""
-    server.delete()
+def delete_server(server: BoundServer, action: str = "delete"):
+    """Delete server and record any failures.
+
+    Args:
+        server: The server to delete
+        action: The action being performed (e.g., "powered_off_delete", "zombie_delete", "unused_delete")
+    """
+    try:
+        server.delete()
+    except Exception as e:
+        # Record scale down failure
+        server_labels = set(
+            [
+                value.lower()
+                for name, value in server.labels.items()
+                if name.startswith("github-hetzner-runner-label")
+            ]
+        )
+
+        error_details = {
+            "error": str(e),
+            "server_type": server.server_type.name,
+            "location": server.datacenter.location.name,
+            "labels": ",".join(server_labels),
+            "timestamp": time.time(),
+        }
+
+        metrics.record_scale_down_failure(
+            error_type=f"{action}_failed",
+            server_name=server.name,
+            server_type=server.server_type.name,
+            location=server.datacenter.location.name,
+            error_details=error_details,
+        )
+
+        # Mark that this failure was already logged
+        e.failure_logged = True
+        raise
 
 
 def delete_recyclable_server(
@@ -144,7 +189,7 @@ def delete_recyclable_server(
         ignore_fail=True,
         server_name=server_name,
     ):
-        delete_server(recyclable_server)
+        delete_server(recyclable_server, action="delete_recyclable")
 
     return recyclable_server.name
 
@@ -163,7 +208,7 @@ def recycle_server(reason: str, server: BoundServer, ssh_key: SSHKey, end_of_lif
             server_name=server.name,
         ):
             try:
-                delete_server(server)
+                delete_server(server, action=f"delete_{reason}_no_ssh_key")
             finally:
                 return
 
@@ -177,7 +222,7 @@ def recycle_server(reason: str, server: BoundServer, ssh_key: SSHKey, end_of_lif
             server_name=server.name,
         ):
             try:
-                delete_server(server)
+                delete_server(server, action=f"delete_{reason}_wrong_ssh_key")
             finally:
                 return
 
@@ -191,7 +236,7 @@ def recycle_server(reason: str, server: BoundServer, ssh_key: SSHKey, end_of_lif
             server_name=server.name,
         ):
             try:
-                delete_server(server)
+                delete_server(server, action=f"delete_{reason}_end_of_life")
             finally:
                 return
 
@@ -254,7 +299,7 @@ def scale_down(
 
         with Action(
             "Scale down cycle", level=logging.DEBUG, ignore_fail=True, interval=interval
-        ):
+        ) as scale_down_cycle:
 
             with Action(
                 "Getting list of servers", level=logging.DEBUG, interval=interval
@@ -452,7 +497,7 @@ def scale_down(
                         ):
                             if recycle:
                                 recycle_server(
-                                    reason="powered off",
+                                    reason="powered_off",
                                     server=powered_off_server.server,
                                     ssh_key=ssh_key,
                                     end_of_life=end_of_life,
@@ -469,7 +514,10 @@ def scale_down(
                                         location=powered_off_server.server.datacenter.location.name,
                                         reason="powered_off",
                                     )
-                                    delete_server(powered_off_server.server)
+                                    delete_server(
+                                        powered_off_server.server,
+                                        action="delete_powered_off",
+                                    )
                             powered_off_servers.pop(server_name)
 
             with Action(
@@ -512,7 +560,9 @@ def scale_down(
                                         location=zombie_server.server.datacenter.location.name,
                                         reason="zombie",
                                     )
-                                    delete_server(zombie_server.server)
+                                    delete_server(
+                                        zombie_server.server, action="delete_zombie"
+                                    )
                             zombie_servers.pop(server_name)
 
             with Action(
@@ -551,7 +601,7 @@ def scale_down(
                             if runner_server is not None:
                                 if recycle:
                                     recycle_server(
-                                        reason="unused runner",
+                                        reason="unused_runner",
                                         server=runner_server,
                                         ssh_key=ssh_key,
                                         end_of_life=end_of_life,
@@ -568,7 +618,9 @@ def scale_down(
                                             location=runner_server.datacenter.location.name,
                                             reason="unused",
                                         )
-                                        delete_server(runner_server)
+                                        delete_server(
+                                            runner_server, action="delete_unused"
+                                        )
                                 runner_server = None
 
                             if runner_server is None:
@@ -591,7 +643,7 @@ def scale_down(
                         break
                     recyclable_server = recyclable_servers[server_name]
                     recycle_server(
-                        reason="unused recyclable",
+                        reason="unused_recyclable",
                         server=recyclable_server,
                         ssh_key=ssh_key,
                         end_of_life=end_of_life,
@@ -665,6 +717,40 @@ def scale_down(
                                         deleted_recyclable_server_name
                                     )
                                     scaleup_failures.pop(scaleup_failure.server_name)
+
+        # Check if there were any exceptions in the scale down cycle
+        if scale_down_cycle.exc_value is None:
+            # Record successful scale down cycle
+            with Action(
+                "Recording successful scale down cycle",
+                ignore_fail=True,
+                level=logging.DEBUG,
+            ):
+                metrics.record_scale_down_failure(
+                    error_type="success",
+                    server_name=None,
+                    server_type=None,
+                    location=None,
+                    error_details=None,
+                )
+        else:
+            # Only record if it's not a failure that was already logged
+            if not hasattr(scale_down_cycle.exc_value, "failure_logged"):
+                error_details = {
+                    "error": str(scale_down_cycle.exc_value),
+                    "server_type": "unknown",
+                    "location": "unknown",
+                    "labels": "",
+                    "timestamp": time.time(),
+                }
+
+                metrics.record_scale_down_failure(
+                    error_type="scale_down_cycle_failed",
+                    server_name="unknown",
+                    server_type="unknown",
+                    location="unknown",
+                    error_details=error_details,
+                )
 
         with Action(
             f"Sleeping until next interval {interval_period}s",
