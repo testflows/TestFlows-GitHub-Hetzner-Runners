@@ -259,3 +259,8 @@ class ssh_tunnel:
             time.sleep(check_interval)
 
         return False
+
+
+def get_runner_server_name(runner_name: str) -> str:
+    """Determine runner's server name."""
+    return "-".join(runner_name.split("-")[:5])

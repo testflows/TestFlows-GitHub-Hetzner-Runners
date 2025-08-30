@@ -22,6 +22,8 @@ from github.WorkflowJob import WorkflowJob
 from prometheus_client import Counter, Gauge, Histogram, Info
 from .estimate import get_server_price
 from .constants import standby_server_name_prefix, recycle_server_name_prefix
+from .server import get_runner_server_name
+
 
 # Server metrics
 SERVERS_TOTAL = Gauge(
@@ -1094,6 +1096,100 @@ def update_github_api(current_calls: int, total_calls: int, reset_time: float):
     GITHUB_API_REMAINING.set(current_calls)
     GITHUB_API_LIMIT.set(total_calls)
     GITHUB_API_RESET_TIME.set(reset_time - time.time())
+
+
+def update_zombie_servers(zombie_servers_dict):
+    """Update zombie server metrics.
+
+    Args:
+        zombie_servers_dict: Dictionary of zombie servers with server objects
+    """
+    # Clear existing zombie server metrics
+    ZOMBIE_SERVERS_TOTAL._metrics.clear()
+    ZOMBIE_SERVER_AGE._metrics.clear()
+
+    total_zombie_servers = 0
+    zombie_counts = {}
+    current_time = time.time()
+
+    for server_name, zombie_server in zombie_servers_dict.items():
+        server = zombie_server.server
+        server_type = server.server_type.name
+        location = server.datacenter.location.name
+        key = (server_type, location)
+
+        # Count by type and location
+        zombie_counts[key] = zombie_counts.get(key, 0) + 1
+        total_zombie_servers += 1
+
+        # Track zombie server age
+        zombie_age = current_time - zombie_server.time
+        ZOMBIE_SERVER_AGE.labels(server_id=str(server.id), server_name=server.name).set(
+            zombie_age
+        )
+
+    # Set total count
+    ZOMBIE_SERVERS_TOTAL_COUNT.set(total_zombie_servers)
+
+    # Set counts by type and location
+    for (server_type, location), count in zombie_counts.items():
+        ZOMBIE_SERVERS_TOTAL.labels(server_type=server_type, location=location).set(
+            count
+        )
+
+
+def update_unused_runners(unused_runners_dict):
+    """Update unused runner metrics.
+
+    Args:
+        unused_runners_dict: Dictionary of unused runners with runner objects
+    """
+    # Clear existing unused runner metrics
+    UNUSED_RUNNERS_TOTAL._metrics.clear()
+    UNUSED_RUNNER_AGE._metrics.clear()
+
+    total_unused_runners = 0
+    unused_counts = {}
+    current_time = time.time()
+
+    for runner_name, unused_runner in unused_runners_dict.items():
+        runner = unused_runner.runner
+
+        # Try to get server type and location from runner name
+        # This assumes runner names follow the pattern: server_name-runner_id
+        server_name = get_runner_server_name(runner_name)
+        server_type = "unknown"
+        location = "unknown"
+
+        # Extract server type and location from server name if possible
+        # This is a simplified approach - in practice, you might need to look up the actual server
+        if server_name and "-" in server_name:
+            parts = server_name.split("-")
+            if len(parts) >= 3:
+                # Assuming format: prefix-type-location-...
+                server_type = parts[1] if len(parts) > 1 else "unknown"
+                location = parts[2] if len(parts) > 2 else "unknown"
+
+        key = (server_type, location)
+
+        # Count by type and location
+        unused_counts[key] = unused_counts.get(key, 0) + 1
+        total_unused_runners += 1
+
+        # Track unused runner age
+        unused_age = current_time - unused_runner.time
+        UNUSED_RUNNER_AGE.labels(runner_id=str(runner.id), runner_name=runner.name).set(
+            unused_age
+        )
+
+    # Set total count
+    UNUSED_RUNNERS_TOTAL_COUNT.set(total_unused_runners)
+
+    # Set counts by type and location
+    for (server_type, location), count in unused_counts.items():
+        UNUSED_RUNNERS_TOTAL.labels(server_type=server_type, location=location).set(
+            count
+        )
 
 
 def record_server_creation(server_type: str, location: str, creation_time: float):

@@ -297,6 +297,45 @@ def get_errors_summary():
     return {"last_hour": int(error_count), "details": errors_info}
 
 
+def get_recycled_servers_summary():
+    """Get summary of recycled servers.
+
+    Returns:
+        dict: Summary of recycled servers
+    """
+    try:
+        recycled_metrics = get_metric_info(
+            "github_hetzner_runners_recycled_servers_total"
+        )
+
+        total = 0
+        by_status = {}
+        by_type_location = {}
+
+        for metric in recycled_metrics:
+            status = metric.get("status", "unknown")
+            server_type = metric.get("server_type", "unknown")
+            location = metric.get("location", "unknown")
+            value = metric.get("value", 0)
+
+            if value > 0:
+                total += value
+                by_status[status] = by_status.get(status, 0) + value
+                type_location = f"{server_type}-{location}"
+                by_type_location[type_location] = (
+                    by_type_location.get(type_location, 0) + value
+                )
+
+        return {
+            "total": total,
+            "by_status": by_status,
+            "by_type_location": by_type_location,
+        }
+    except Exception as e:
+        logger.exception(f"Error getting recycled servers summary: {e}")
+        return {"total": 0, "by_status": {}, "by_type_location": {}}
+
+
 def get_cost_summary():
     """Get cost summary data.
 

@@ -242,7 +242,7 @@ def render_standby_details():
 def render_standby_pool_info(config=None):
     """Render standby pool configuration information."""
     try:
-        st.subheader("Standby Pool Configuration")
+        st.subheader("Pool Configuration")
 
         if not config or not config.standby_runners:
             st.info("No standby runners configured")
@@ -278,8 +278,6 @@ def render_standby_runners_info():
     try:
         # Get standby runners summary
         standby_runners_summary = metrics.get_standby_runners_summary()
-
-        st.subheader("Standby Runners Information")
 
         # Always show metrics, even when there are no standby runners
         standby_runners_metrics = [
@@ -455,21 +453,21 @@ def render(config=None):
     render_standby_pool_info(config)
 
     render_utils.render_panel_with_fragments(
-        title="Standby Servers & Runners",
+        title="Servers",
         metrics_func=render_standby_metrics,
         chart_func=render_standby_chart,
         details_func=render_standby_details,
         error_message="Error rendering standby panel",
     )
 
-    # Add standby runners information section
-    render_standby_runners_info()
-
-    # Add standby runners chart
-    render_standby_runners_chart()
-
-    # Add standby runners details
-    render_standby_runners_details()
+    # Group standby runners metrics, chart and details together
+    render_utils.render_panel_with_fragments(
+        title="Runners",
+        metrics_func=render_standby_runners_info,
+        chart_func=render_standby_runners_chart,
+        details_func=render_standby_runners_details,
+        error_message="Error rendering standby runners panel",
+    )
 
 
 def render_graph_only():

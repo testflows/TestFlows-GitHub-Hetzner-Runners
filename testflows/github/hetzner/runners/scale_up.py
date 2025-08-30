@@ -39,7 +39,7 @@ from .constants import (
     github_runner_label,
 )
 
-from .server import wait_ssh, ssh
+from .server import wait_ssh, ssh, get_runner_server_name
 
 from hcloud import APIException
 from hcloud.ssh_keys.domain import SSHKey
@@ -123,11 +123,6 @@ def uid():
 def get_volume_name(name: str):
     """Get volume name. Format: <name>-<architecture>-<os_flavor>-<os_version>-<uid>."""
     return name.split("-", 1)[0]
-
-
-def get_runner_server_name(runner_name: str) -> str:
-    """Determine runner's server name."""
-    return "-".join(runner_name.split("-")[:5])
 
 
 def get_runner_server_type_and_location(runner_name: str):

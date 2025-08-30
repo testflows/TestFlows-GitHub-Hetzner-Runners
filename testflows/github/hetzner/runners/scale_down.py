@@ -437,6 +437,15 @@ def scale_down(
                                 current_interval
                             )
 
+            # Update zombie and unused runner metrics
+            with Action(
+                "Updating zombie and unused runner metrics",
+                level=logging.DEBUG,
+                interval=interval,
+            ):
+                metrics.update_zombie_servers(zombie_servers)
+                metrics.update_unused_runners(unused_runners)
+
             with Action(
                 "Checking for scale up failures", level=logging.DEBUG, interval=interval
             ):

@@ -20,6 +20,7 @@ from datetime import datetime, timedelta
 import logging
 
 from .. import metrics
+from ..metrics import get_metric_value
 from ..colors import STATE_COLORS
 from .utils import chart, render as render_utils, data
 
@@ -50,6 +51,52 @@ def get_server_history_data(cutoff_minutes=15):
     )
 
 
+def get_health_metrics_history_data(cutoff_minutes=15):
+    """Get health metrics history data for plotting.
+
+    Args:
+        cutoff_minutes: Number of minutes to keep in history
+
+    Returns:
+        dict: Dictionary with health metrics history data
+    """
+    health_metrics = {}
+
+    # Get zombie servers total count history
+    zombie_timestamps, zombie_values = data.get_simple_metric_history(
+        "github_hetzner_runners_zombie_servers_total_count",
+        cutoff_minutes=cutoff_minutes,
+    )
+    if zombie_timestamps and zombie_values:
+        health_metrics["zombie"] = {
+            "timestamps": zombie_timestamps,
+            "values": zombie_values,
+        }
+
+    # Get unused runners total count history
+    unused_timestamps, unused_values = data.get_simple_metric_history(
+        "github_hetzner_runners_unused_runners_total_count",
+        cutoff_minutes=cutoff_minutes,
+    )
+    if unused_timestamps and unused_values:
+        health_metrics["unused"] = {
+            "timestamps": unused_timestamps,
+            "values": unused_values,
+        }
+
+    # Get recycled servers total count history (sum across all statuses)
+    recycled_timestamps, recycled_values = data.get_simple_metric_history(
+        "github_hetzner_runners_recycled_servers_total", cutoff_minutes=cutoff_minutes
+    )
+    if recycled_timestamps and recycled_values:
+        health_metrics["recycled"] = {
+            "timestamps": recycled_timestamps,
+            "values": recycled_values,
+        }
+
+    return health_metrics
+
+
 def create_server_dataframe(history_data):
     """Create a pandas DataFrame for the server data with proper time formatting."""
     return chart.create_dataframe_from_history(history_data)
@@ -75,6 +122,16 @@ def render_server_metrics():
         # Get current server summary
         servers_summary = metrics.get_servers_summary()
 
+        # Get health metrics
+        zombie_total = int(
+            get_metric_value("github_hetzner_runners_zombie_servers_total_count") or 0
+        )
+        unused_total = int(
+            get_metric_value("github_hetzner_runners_unused_runners_total_count") or 0
+        )
+        recycled_summary = metrics.get_recycled_servers_summary()
+        recycled_total = int(recycled_summary["total"])
+
         # Build metrics data
         metrics_data = [
             {"label": "Total", "value": servers_summary["total"]},
@@ -89,6 +146,21 @@ def render_server_metrics():
                     for status, count in servers_summary["by_status"].items()
                     if status != "running"
                 ),
+            },
+            {
+                "label": "Zombie",
+                "value": zombie_total,
+                "color": "red" if zombie_total > 0 else "green",
+            },
+            {
+                "label": "Unused",
+                "value": unused_total,
+                "color": "orange" if unused_total > 0 else "green",
+            },
+            {
+                "label": "Recycled",
+                "value": recycled_total,
+                "color": "blue",
             },
         ]
 
@@ -106,9 +178,15 @@ def render_server_chart():
     try:
         # Get fresh data
         history_data, current_values, current_time = get_current_server_data()
+        health_history_data = get_health_metrics_history_data()
 
         # Create DataFrame for the chart
         df = create_server_dataframe(history_data)
+
+        # Create DataFrame for health metrics
+        health_df = None
+        if health_history_data:
+            health_df = chart.create_dataframe_from_history(health_history_data)
 
         # Create color mapping for server states
         color_domain = ["running", "off", "initializing", "ready", "busy"]
@@ -121,7 +199,8 @@ def render_server_chart():
         ]
 
         def create_chart():
-            return chart.create_time_series_chart(
+            # Create main server chart
+            main_chart = chart.create_time_series_chart(
                 df=df,
                 y_title="Number of Servers",
                 color_column="Status",
@@ -129,6 +208,30 @@ def render_server_chart():
                 color_range=color_range,
                 y_type="count",
             )
+
+            # Add health metrics if available
+            if health_df is not None and not health_df.empty:
+                # Create health metrics chart with different colors
+                health_color_domain = ["zombie", "unused", "recycled"]
+                health_color_range = [
+                    "#ff4444",
+                    "#ff8800",
+                    "#4444ff",
+                ]  # red, orange, blue
+
+                health_chart = chart.create_time_series_chart(
+                    df=health_df,
+                    y_title="Health Metrics",
+                    color_column="Status",
+                    color_domain=health_color_domain,
+                    color_range=health_color_range,
+                    y_type="count",
+                )
+
+                # Combine charts vertically
+                return alt.vconcat(main_chart, health_chart, spacing=20)
+
+            return main_chart
 
         chart.render_chart_with_fallback(
             create_chart,
@@ -177,10 +280,19 @@ def render_server_details():
                 ):
                     server_labels_list.append(label_dict["label"])
 
+            # Determine server pool based on name prefix
+            server_name = server.get("name", "")
+            pool = "regular"
+            if server_name.startswith("github-hetzner-runner-standby-"):
+                pool = "standby"
+            elif server_name.startswith("github-hetzner-runner-recycle-"):
+                pool = "recycled"
+
             # Create formatted server data with all fields
             formatted_server = {
                 "name": server.get("name", "Unknown"),
                 "status": server.get("status", "unknown"),
+                "pool": pool,
                 "server_id": server.get("server_id", ""),
                 "server_type": server.get("server_type", ""),
                 "location": server.get("location", ""),
@@ -212,38 +324,6 @@ def render_server_details():
             status_key="status",
         )
 
-        # Add standby server summary
-        try:
-            standby_summary = metrics.get_standby_servers_summary()
-            if standby_summary["total"] > 0:
-                st.subheader("Standby Summary")
-
-                # Create standby summary metrics
-                standby_metrics = [
-                    {"label": "Total", "value": standby_summary["total"]},
-                    {
-                        "label": "Running",
-                        "value": standby_summary["by_status"].get("running", 0),
-                    },
-                    {
-                        "label": "Ready",
-                        "value": standby_summary["by_status"].get("ready", 0),
-                    },
-                ]
-
-                render_utils.render_metrics_columns(standby_metrics)
-
-                # Show standby by type and location
-                if standby_summary["by_type_location"]:
-                    st.write("**By Type and Location:**")
-                    for type_location, count in standby_summary[
-                        "by_type_location"
-                    ].items():
-                        st.write(f"- {type_location}: {count}")
-        except Exception as e:
-            logger = logging.getLogger(__name__)
-            logger.debug(f"Could not display standby summary: {e}")
-
     except Exception as e:
         logger = logging.getLogger(__name__)
         logger.exception(f"Error rendering server details: {e}")
@@ -271,71 +351,3 @@ def render_graph_only():
     This is useful for embedding the servers graph in other panels or layouts.
     """
     render_server_chart()
-
-
-def render_server_panel_optimized():
-    """Render the servers panel with optimized layout and performance."""
-    try:
-        # Get server information
-        servers_summary = metrics.get_servers_summary()
-        servers_info = servers_summary["details"]
-        total_servers = servers_summary["total"]
-
-        # Create metrics data
-        metrics_data = [
-            {"label": "Total Servers", "value": total_servers, "delta": None},
-            {
-                "label": "Running",
-                "value": sum(1 for s in servers_info if s.get("status") == "running"),
-                "delta": None,
-            },
-            {
-                "label": "Stopped",
-                "value": sum(1 for s in servers_info if s.get("status") == "stopped"),
-                "delta": None,
-            },
-        ]
-
-        def build_server_content(info):
-            server_id = info.get("server_id")
-            server_name = info.get("name")
-
-            # Get server labels
-            server_labels_info = metrics.get_metric_info(
-                "github_hetzner_runners_server_labels"
-            )
-            server_labels_list = []
-            for label_dict in server_labels_info:
-                if (
-                    label_dict.get("server_id") == server_id
-                    and label_dict.get("server_name") == server_name
-                    and "label" in label_dict
-                ):
-                    server_labels_list.append(label_dict["label"])
-
-            content_lines = data.format_server_content(info, server_labels_list)
-            st.markdown("  \n".join(content_lines))
-
-        # Use the new optimized metrics with details function
-        render_utils.render_metrics_with_details(
-            metrics_data=metrics_data,
-            details_data=servers_info if servers_info else None,
-            details_title="Server Details",
-            details_builder=build_server_content,
-        )
-
-        # Add chart in a collapsible section
-        def chart_content():
-            render_server_chart()
-
-        render_utils.render_collapsible_section(
-            title="Server Chart",
-            content_func=chart_content,
-            default_expanded=True,
-            icon="📊",
-        )
-
-    except Exception as e:
-        logger = logging.getLogger(__name__)
-        logger.exception(f"Error rendering optimized servers panel: {e}")
-        st.error(f"Error rendering optimized servers panel: {e}")
