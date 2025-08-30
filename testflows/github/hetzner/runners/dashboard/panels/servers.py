@@ -68,7 +68,7 @@ def get_current_server_data():
     return history_data, current_values, current_time
 
 
-@st.fragment(run_every=st.session_state.get("update_interval", 5))
+@st.fragment(run_every=st.session_state.update_interval)
 def render_server_metrics():
     """Render the server metrics header in an isolated fragment for optimal performance."""
     try:
@@ -100,7 +100,7 @@ def render_server_metrics():
         st.error(f"Error rendering server metrics: {e}")
 
 
-@st.fragment(run_every=st.session_state.get("update_interval", 5))
+@st.fragment(run_every=st.session_state.update_interval)
 def render_server_chart():
     """Render the server chart using Altair for proper multi-line visualization."""
     try:
@@ -142,7 +142,7 @@ def render_server_chart():
         st.error(f"Error rendering server chart: {e}")
 
 
-@st.fragment(run_every=st.session_state.get("update_interval", 5))
+@st.fragment(run_every=st.session_state.update_interval)
 def render_server_details():
     """Render the server details as a dataframe."""
     try:

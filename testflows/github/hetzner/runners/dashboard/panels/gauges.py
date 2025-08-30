@@ -17,7 +17,7 @@ import streamlit as st
 import testflows.github.hetzner.runners.dashboard.metrics as metrics
 
 
-@st.fragment(run_every=st.session_state.get("update_interval", 5))
+@st.fragment(run_every=st.session_state.update_interval)
 def render_gauges_fragment():
     """Render the metrics gauges in an isolated fragment for optimal performance.
 

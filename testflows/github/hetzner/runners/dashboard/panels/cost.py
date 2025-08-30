@@ -113,7 +113,7 @@ def get_current_cost_data():
 # Removed update_cost_data function - no longer needed with st.line_chart
 
 
-@st.fragment(run_every=st.session_state.get("update_interval", 5))
+@st.fragment(run_every=st.session_state.update_interval)
 def render_cost_metrics():
     """Render the cost metrics header in an isolated fragment for optimal performance.
 
@@ -148,7 +148,7 @@ def render_cost_metrics():
         st.error(f"Error rendering cost metrics: {e}")
 
 
-@st.fragment(run_every=st.session_state.get("update_interval", 5))
+@st.fragment(run_every=st.session_state.update_interval)
 def render_cost_chart():
     """Render the cost chart using Altair for proper time series visualization."""
     try:

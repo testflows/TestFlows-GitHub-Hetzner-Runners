@@ -200,7 +200,7 @@ def create_errors_dataframe(history_data):
     return df
 
 
-@st.fragment(run_every=st.session_state.get("update_interval", 5))
+@st.fragment(run_every=st.session_state.update_interval)
 def render_scale_up_errors_metrics():
     """Render the scale-up errors metrics section."""
     try:
@@ -220,7 +220,7 @@ def render_scale_up_errors_metrics():
         st.error(f"Error rendering scale-up errors metrics: {e}")
 
 
-@st.fragment(run_every=st.session_state.get("update_interval", 5))
+@st.fragment(run_every=st.session_state.update_interval)
 def render_scale_up_errors_chart():
     """Render the scale-up errors chart section."""
     try:
@@ -253,7 +253,7 @@ def render_scale_up_errors_chart():
         st.error(f"Error rendering scale-up errors chart: {e}")
 
 
-@st.fragment(run_every=st.session_state.get("update_interval", 5))
+@st.fragment(run_every=st.session_state.update_interval)
 def render_scale_up_errors_details():
     """Render the scale-up errors details section."""
     try:

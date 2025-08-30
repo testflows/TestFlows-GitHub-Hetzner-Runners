@@ -14,9 +14,17 @@
 # limitations under the License.
 import streamlit as st
 
+import testflows.github.hetzner.runners.dashboard.panels.update_interval as update_interval
 
+
+@st.fragment()
 def render():
     """Render the header section with logo, title, and update interval selector."""
+
+    if update_interval.update_interval != st.session_state.update_interval:
+        update_interval.update_interval = st.session_state.update_interval
+        st.rerun()
+
     # Logo using HTML img tag for full styling control with clickable link
     st.markdown(
         f'<a href="https://testflows.com" target="_blank"><img src="https://raw.githubusercontent.com/testflows/TestFlows-ArtWork/refs/heads/master/images/logo.png" width="120" style="border-radius: 0; border: none; box-shadow: none; cursor: pointer;"></a>',
@@ -33,8 +41,12 @@ def render():
         st.caption("update interval:")
         st.selectbox(
             "Update Interval",
-            options=[5, 10, 30, 60, 300],
-            format_func=lambda x: f"{x} seconds" if x < 60 else f"{x//60} minutes",
+            options=[5, 10, 15, 30, 60, 300],
+            format_func=lambda x: (
+                f"{x} seconds"
+                if x < 60
+                else f"{x//60} minute{'s' if x//60 > 1 else ''}"
+            ),
             index=0,
             key="update_interval",
             label_visibility="collapsed",

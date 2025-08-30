@@ -103,7 +103,7 @@ def get_current_jobs_data():
     return history_data, current_values, current_time
 
 
-@st.fragment(run_every=st.session_state.get("update_interval", 5))
+@st.fragment(run_every=st.session_state.update_interval)
 def render_jobs_metrics():
     """Render the jobs metrics header in an isolated fragment for optimal performance."""
     try:
@@ -125,7 +125,7 @@ def render_jobs_metrics():
         st.error(f"Error rendering jobs metrics: {e}")
 
 
-@st.fragment(run_every=st.session_state.get("update_interval", 5))
+@st.fragment(run_every=st.session_state.update_interval)
 def render_jobs_chart():
     """Render the jobs chart using Altair for proper multi-line visualization."""
     try:
@@ -164,7 +164,7 @@ def render_jobs_chart():
         st.error(f"Error rendering jobs chart: {e}")
 
 
-@st.fragment(run_every=st.session_state.get("update_interval", 5))
+@st.fragment(run_every=st.session_state.update_interval)
 def render_jobs_details():
     """Render the jobs details as a dataframe."""
     try:

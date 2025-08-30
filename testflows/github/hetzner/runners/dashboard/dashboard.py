@@ -18,6 +18,8 @@ import time
 import weakref
 import logging
 import threading
+import importlib
+from types import SimpleNamespace
 
 import streamlit as st
 
@@ -29,10 +31,12 @@ if project_root not in sys.path:
 
 # Now try absolute imports
 import testflows.github.hetzner.runners.dashboard.bootstrap as bootstrap
+import testflows.github.hetzner.runners.dashboard.panels.update_interval as update_interval
 
 
 def configure_page():
     """Configure Streamlit page settings."""
+
     st.set_page_config(
         page_title="GitHub Hetzner Runners Dashboard",
         page_icon=None,
@@ -59,40 +63,62 @@ def configure_page():
 # This prevents conflicts and flickering between multiple refresh mechanisms
 
 
+def reload_panels():
+    """Dynamically reload all panel modules and return them as a namespace."""
+    panels = SimpleNamespace()
+
+    # Define panel names and load them
+    panel_names = [
+        "header",
+        "footer",
+        "gauges",
+        "info",
+        "cost",
+        "servers",
+        "jobs",
+        "runners",
+        "scale_up_errors",
+        "log",
+    ]
+
+    for name in panel_names:
+        module_name = f"testflows.github.hetzner.runners.dashboard.panels.{name}"
+
+        # Reload if already loaded, otherwise import
+        if module_name in sys.modules:
+            importlib.reload(sys.modules[module_name])
+            setattr(panels, name, sys.modules[module_name])
+        else:
+            setattr(panels, name, importlib.import_module(module_name))
+
+    return panels
+
+
 def main():
     """Main dashboard function."""
-    # Set up logging for debug messages
-    logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
 
     logger.info("🚀 Streamlit Dashboard Main Function Called")
 
     config = sys.argv[1]
 
-    # Import panels here to avoid Streamlit warnings
-    import testflows.github.hetzner.runners.dashboard.panels.header as header
-    import testflows.github.hetzner.runners.dashboard.panels.footer as footer
-    import testflows.github.hetzner.runners.dashboard.panels.gauges as gauges
-    import testflows.github.hetzner.runners.dashboard.panels.info as info
-    import testflows.github.hetzner.runners.dashboard.panels.cost as cost
-    import testflows.github.hetzner.runners.dashboard.panels.servers as servers
-    import testflows.github.hetzner.runners.dashboard.panels.jobs as jobs
-    import testflows.github.hetzner.runners.dashboard.panels.runners as runners
-    import testflows.github.hetzner.runners.dashboard.panels.scale_up_errors as scale_up_errors
-    import testflows.github.hetzner.runners.dashboard.panels.log as log
-
     try:
+        # Set update interval
+        st.session_state.update_interval = update_interval.update_interval
+        # Reload panels and get them
+        panels = reload_panels()
+
         configure_page()
-        header.render()
-        gauges.render()
-        info.render(config)
-        cost.render()
-        servers.render()
-        jobs.render()
-        runners.render()
-        scale_up_errors.render()
-        log.render(config)
-        footer.render()
+        panels.header.render()
+        panels.gauges.render()
+        panels.info.render(config)
+        panels.cost.render()
+        panels.servers.render()
+        panels.jobs.render()
+        panels.runners.render()
+        panels.scale_up_errors.render()
+        panels.log.render(config)
+        panels.footer.render()
 
         logger.info("✅ Dashboard rendered successfully")
 

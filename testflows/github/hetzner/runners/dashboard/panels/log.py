@@ -142,7 +142,7 @@ def create_download_button(config: Config):
         st.error(f"Error creating download button: {str(e)}")
 
 
-@st.fragment(run_every=st.session_state.get("update_interval", 5))
+@st.fragment(run_every=st.session_state.update_interval)
 def render(config: Config):
     """Render the log messages panel.
 

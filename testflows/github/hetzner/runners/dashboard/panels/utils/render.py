@@ -200,25 +200,6 @@ def render_expandable_details(
             continue
 
 
-def create_fragment_wrapper(func: Callable, update_interval: int = 5):
-    """Create a fragment wrapper for a function with standardized update interval.
-
-    Args:
-        func: Function to wrap in fragment
-        update_interval: Update interval in seconds
-
-    Returns:
-        Callable: Wrapped function with fragment decorator
-    """
-    from streamlit import fragment
-
-    @fragment(run_every=update_interval)
-    def wrapped_func():
-        return func()
-
-    return wrapped_func
-
-
 def render_with_error_handling(
     func: Callable,
     error_message: str = "Error occurred",
