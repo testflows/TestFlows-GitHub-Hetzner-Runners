@@ -19,26 +19,27 @@ import testflows.github.hetzner.runners.dashboard.panels.update_interval as upda
 
 @st.fragment()
 def render():
-    """Render the header section with logo, title, and update interval selector."""
+    """Render a modern, compact header section with logo, title, and update interval selector."""
 
     if update_interval.update_interval != st.session_state.update_interval:
         update_interval.update_interval = st.session_state.update_interval
         st.rerun()
 
-    # Logo using HTML img tag for full styling control with clickable link
-    st.markdown(
-        f'<a href="https://testflows.com" target="_blank"><img src="https://raw.githubusercontent.com/testflows/TestFlows-ArtWork/refs/heads/master/images/logo.png" width="120" style="border-radius: 0; border: none; box-shadow: none; cursor: pointer;"></a>',
-        unsafe_allow_html=True,
-    )
-
-    # Header section
-    col1, col2 = st.columns([3, 1], gap="medium")
+    # Top row: Logo and title
+    col1, col2 = st.columns([5, 1])
 
     with col1:
-        st.markdown("### GitHub Hetzner Runners Dashboard")
+        logo_col, title_col = st.columns([1, 9])
+        with logo_col:
+            st.markdown(
+                '<a href="https://testflows.com" target="_blank"><img src="https://raw.githubusercontent.com/testflows/TestFlows-ArtWork/refs/heads/master/images/logo.png" width="100" style="cursor: pointer;"></a>',
+                unsafe_allow_html=True,
+            )
+
+        with title_col:
+            st.subheader("GitHub Hetzner Runners")
 
     with col2:
-        st.caption("update interval:")
         st.selectbox(
             "Update Interval",
             options=[5, 10, 15, 30, 60, 300],
@@ -51,5 +52,3 @@ def render():
             key="update_interval",
             label_visibility="collapsed",
         )
-
-    st.divider()
