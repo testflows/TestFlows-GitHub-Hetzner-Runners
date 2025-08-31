@@ -127,13 +127,6 @@ def render_volume_details():
         volumes_info = volumes_summary["details"]
         total_volumes = volumes_summary["total"]
 
-        if not volumes_info:
-            if total_volumes > 0:
-                st.info(f"Total volumes: {total_volumes} (details not available)")
-            else:
-                st.info("No volumes found")
-            return
-
         # Prepare volume data for dataframe with all relevant fields
         formatted_volumes = []
         for volume in volumes_info:
@@ -169,31 +162,12 @@ def render_volume_details():
 
             formatted_volumes.append(formatted_volume)
 
-        # Display as dataframe
-        if formatted_volumes:
-            st.dataframe(
-                formatted_volumes,
-                column_config={
-                    "name": st.column_config.TextColumn("Name", width="medium"),
-                    "status": st.column_config.TextColumn("Status", width="small"),
-                    "volume_id": st.column_config.TextColumn(
-                        "Volume ID", width="small"
-                    ),
-                    "size": st.column_config.TextColumn("Size", width="small"),
-                    "location": st.column_config.TextColumn("Location", width="small"),
-                    "format": st.column_config.TextColumn("Format", width="small"),
-                    "server_name": st.column_config.TextColumn(
-                        "Server", width="medium"
-                    ),
-                    "server_id": st.column_config.TextColumn(
-                        "Server ID", width="small"
-                    ),
-                    "created": st.column_config.TextColumn("Created", width="medium"),
-                    "labels": st.column_config.TextColumn("Labels", width="large"),
-                },
-                hide_index=True,
-                use_container_width=True,
-            )
+        render_utils.render_details_dataframe(
+            items=formatted_volumes,
+            title="Volume Details",
+            name_key="name",
+            status_key="status",
+        )
 
     except Exception as e:
         logger = logging.getLogger(__name__)

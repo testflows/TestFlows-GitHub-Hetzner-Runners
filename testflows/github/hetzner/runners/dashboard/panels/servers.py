@@ -60,6 +60,42 @@ def get_health_metrics_history_data(cutoff_minutes=15):
     Returns:
         dict: Dictionary with health metrics history data
     """
+    # First, ensure health metrics are updated in history
+    current_time = datetime.now()
+
+    # Update zombie servers history
+    zombie_total = (
+        get_metric_value("github_hetzner_runners_zombie_servers_total_count") or 0
+    )
+    data.update_simple_metric_history(
+        "github_hetzner_runners_zombie_servers_total_count",
+        zombie_total,
+        current_time,
+        cutoff_minutes,
+    )
+
+    # Update unused runners history
+    unused_total = (
+        get_metric_value("github_hetzner_runners_unused_runners_total_count") or 0
+    )
+    data.update_simple_metric_history(
+        "github_hetzner_runners_unused_runners_total_count",
+        unused_total,
+        current_time,
+        cutoff_minutes,
+    )
+
+    # Update recycled servers history
+    recycled_summary = metrics.get_recycled_servers_summary()
+    recycled_total = recycled_summary["total"]
+    data.update_simple_metric_history(
+        "github_hetzner_runners_recycled_servers_total",
+        recycled_total,
+        current_time,
+        cutoff_minutes,
+    )
+
+    # Now get the history data
     health_metrics = {}
 
     # Get zombie servers total count history
@@ -67,32 +103,29 @@ def get_health_metrics_history_data(cutoff_minutes=15):
         "github_hetzner_runners_zombie_servers_total_count",
         cutoff_minutes=cutoff_minutes,
     )
-    if zombie_timestamps and zombie_values:
-        health_metrics["zombie"] = {
-            "timestamps": zombie_timestamps,
-            "values": zombie_values,
-        }
+    health_metrics["zombie"] = {
+        "timestamps": zombie_timestamps,
+        "values": zombie_values,
+    }
 
     # Get unused runners total count history
     unused_timestamps, unused_values = data.get_simple_metric_history(
         "github_hetzner_runners_unused_runners_total_count",
         cutoff_minutes=cutoff_minutes,
     )
-    if unused_timestamps and unused_values:
-        health_metrics["unused"] = {
-            "timestamps": unused_timestamps,
-            "values": unused_values,
-        }
+    health_metrics["unused"] = {
+        "timestamps": unused_timestamps,
+        "values": unused_values,
+    }
 
-    # Get recycled servers total count history (sum across all statuses)
+    # Get recycled servers total count history
     recycled_timestamps, recycled_values = data.get_simple_metric_history(
         "github_hetzner_runners_recycled_servers_total", cutoff_minutes=cutoff_minutes
     )
-    if recycled_timestamps and recycled_values:
-        health_metrics["recycled"] = {
-            "timestamps": recycled_timestamps,
-            "values": recycled_values,
-        }
+    health_metrics["recycled"] = {
+        "timestamps": recycled_timestamps,
+        "values": recycled_values,
+    }
 
     return health_metrics
 
@@ -100,6 +133,30 @@ def get_health_metrics_history_data(cutoff_minutes=15):
 def create_server_dataframe(history_data):
     """Create a pandas DataFrame for the server data with proper time formatting."""
     return chart.create_dataframe_from_history(history_data)
+
+
+def create_health_metrics_dataframe(history_data):
+    """Create a pandas DataFrame for the health metrics data with proper time formatting."""
+    return chart.create_dataframe_from_history(history_data)
+
+
+def calculate_server_age(created_time):
+    """Calculate server age in seconds from creation time.
+
+    Args:
+        created_time: ISO format timestamp string
+
+    Returns:
+        int: Age in seconds, or 0 if parsing fails
+    """
+    if not created_time:
+        return 0
+
+    try:
+        created_dt = datetime.fromisoformat(created_time.replace("Z", "+00:00"))
+        return int((datetime.now(created_dt.tzinfo) - created_dt).total_seconds())
+    except (ValueError, TypeError):
+        return 0
 
 
 def get_current_server_data():
@@ -122,16 +179,6 @@ def render_server_metrics():
         # Get current server summary
         servers_summary = metrics.get_servers_summary()
 
-        # Get health metrics
-        zombie_total = int(
-            get_metric_value("github_hetzner_runners_zombie_servers_total_count") or 0
-        )
-        unused_total = int(
-            get_metric_value("github_hetzner_runners_unused_runners_total_count") or 0
-        )
-        recycled_summary = metrics.get_recycled_servers_summary()
-        recycled_total = int(recycled_summary["total"])
-
         # Build metrics data
         metrics_data = [
             {"label": "Total", "value": servers_summary["total"]},
@@ -147,6 +194,74 @@ def render_server_metrics():
                     if status != "running"
                 ),
             },
+        ]
+
+        render_utils.render_metrics_columns(metrics_data)
+
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.exception(f"Error rendering server metrics: {e}")
+        st.error(f"Error rendering server metrics: {e}")
+
+
+@st.fragment(run_every=st.session_state.update_interval)
+def render_server_chart():
+    """Render the server chart using Altair for proper multi-line visualization."""
+    try:
+        # Get fresh data
+        history_data, current_values, current_time = get_current_server_data()
+
+        # Create DataFrame for the chart
+        df = create_server_dataframe(history_data)
+
+        # Create color mapping for server states
+        color_domain = ["running", "off", "initializing", "ready", "busy"]
+        color_range = [
+            STATE_COLORS["running"],
+            STATE_COLORS["off"],
+            STATE_COLORS["initializing"],
+            STATE_COLORS["ready"],
+            STATE_COLORS["busy"],
+        ]
+
+        def create_chart():
+            return chart.create_time_series_chart(
+                df=df,
+                y_title="Number of Servers",
+                color_column="Status",
+                color_domain=color_domain,
+                color_range=color_range,
+                y_type="count",
+            )
+
+        chart.render_chart_with_fallback(
+            create_chart,
+            "No server data available yet. The chart will appear once data is collected.",
+            "Error rendering server chart",
+        )
+
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.exception(f"Error rendering server chart: {e}")
+        st.error(f"Error rendering server chart: {e}")
+
+
+@st.fragment(run_every=st.session_state.update_interval)
+def render_health_metrics():
+    """Render the health metrics header in an isolated fragment for optimal performance."""
+    try:
+        # Get health metrics
+        zombie_total = int(
+            get_metric_value("github_hetzner_runners_zombie_servers_total_count") or 0
+        )
+        unused_total = int(
+            get_metric_value("github_hetzner_runners_unused_runners_total_count") or 0
+        )
+        recycled_summary = metrics.get_recycled_servers_summary()
+        recycled_total = int(recycled_summary["total"])
+
+        # Build metrics data
+        metrics_data = [
             {
                 "label": "Zombie",
                 "value": zombie_total,
@@ -168,81 +283,165 @@ def render_server_metrics():
 
     except Exception as e:
         logger = logging.getLogger(__name__)
-        logger.exception(f"Error rendering server metrics: {e}")
-        st.error(f"Error rendering server metrics: {e}")
+        logger.exception(f"Error rendering health metrics: {e}")
+        st.error(f"Error rendering health metrics: {e}")
 
 
 @st.fragment(run_every=st.session_state.update_interval)
-def render_server_chart():
-    """Render the server chart using Altair for proper multi-line visualization."""
+def render_health_chart():
+    """Render the health metrics chart using Altair."""
     try:
-        # Get fresh data
-        history_data, current_values, current_time = get_current_server_data()
+        # Get health metrics history data
         health_history_data = get_health_metrics_history_data()
 
-        # Create DataFrame for the chart
-        df = create_server_dataframe(history_data)
-
         # Create DataFrame for health metrics
-        health_df = None
-        if health_history_data:
-            health_df = chart.create_dataframe_from_history(health_history_data)
+        health_df = create_health_metrics_dataframe(health_history_data)
 
-        # Create color mapping for server states
-        color_domain = ["running", "off", "initializing", "ready", "busy"]
-        color_range = [
-            STATE_COLORS["running"],
-            STATE_COLORS["off"],
-            STATE_COLORS["initializing"],
-            STATE_COLORS["ready"],
-            STATE_COLORS["busy"],
+        # Create color mapping for health metrics
+        health_color_domain = ["zombie", "unused", "recycled"]
+        health_color_range = [
+            STATE_COLORS["zombie"],
+            STATE_COLORS["unused"],
+            STATE_COLORS["recycled"],
         ]
 
-        def create_chart():
-            # Create main server chart
-            main_chart = chart.create_time_series_chart(
-                df=df,
-                y_title="Number of Servers",
+        def create_health_chart():
+            return chart.create_time_series_chart(
+                df=health_df,
+                y_title="Health Metrics",
                 color_column="Status",
-                color_domain=color_domain,
-                color_range=color_range,
+                color_domain=health_color_domain,
+                color_range=health_color_range,
                 y_type="count",
             )
 
-            # Add health metrics if available
-            if health_df is not None and not health_df.empty:
-                # Create health metrics chart with different colors
-                health_color_domain = ["zombie", "unused", "recycled"]
-                health_color_range = [
-                    "#ff4444",
-                    "#ff8800",
-                    "#4444ff",
-                ]  # red, orange, blue
-
-                health_chart = chart.create_time_series_chart(
-                    df=health_df,
-                    y_title="Health Metrics",
-                    color_column="Status",
-                    color_domain=health_color_domain,
-                    color_range=health_color_range,
-                    y_type="count",
-                )
-
-                # Combine charts vertically
-                return alt.vconcat(main_chart, health_chart, spacing=20)
-
-            return main_chart
-
         chart.render_chart_with_fallback(
-            create_chart,
-            "No server data available yet. The chart will appear once data is collected.",
-            "Error rendering server chart",
+            create_health_chart,
+            "No health metrics data available yet. The chart will appear once data is collected.",
+            "Error rendering health metrics chart",
         )
 
     except Exception as e:
         logger = logging.getLogger(__name__)
-        logger.exception(f"Error rendering server chart: {e}")
-        st.error(f"Error rendering server chart: {e}")
+        logger.exception(f"Error rendering health chart: {e}")
+        st.error(f"Error rendering health chart: {e}")
+
+
+@st.fragment(run_every=st.session_state.update_interval)
+def render_health_details():
+    """Render the health status details as a dataframe."""
+    try:
+        # Get server information
+        servers_summary = metrics.get_servers_summary()
+        servers_info = servers_summary["details"]
+
+        if not servers_info:
+            st.info("No servers found")
+            return
+
+        # Get individual server health data
+        zombie_servers = metrics.get_metric_info(
+            "github_hetzner_runners_zombie_server_age_seconds"
+        )
+        zombie_server_ids = {
+            zombie.get("server_id")
+            for zombie in zombie_servers
+            if zombie.get("server_id")
+        }
+
+        unused_runners = metrics.get_metric_info(
+            "github_hetzner_runners_unused_runner_age_seconds"
+        )
+        unused_server_names = set()
+        for runner in unused_runners:
+            runner_name = runner.get("runner_name", "")
+            if "-" in runner_name:
+                server_name = runner_name.rsplit("-", 1)[0]
+                unused_server_names.add(server_name)
+
+        # Prepare health data for dataframe
+        health_data = []
+
+        # Add zombie servers
+        for zombie in zombie_servers:
+            server_id = zombie.get("server_id")
+            if server_id:
+                # Find the corresponding server info
+                server_info = next(
+                    (
+                        s
+                        for s in servers_info
+                        if str(s.get("server_id")) == str(server_id)
+                    ),
+                    None,
+                )
+
+                age_seconds = calculate_server_age(server_info.get("created"))
+                health_data.append(
+                    {
+                        "server_name": server_info.get("name", "Unknown"),
+                        "server_id": server_id,
+                        "health_status": "zombie",
+                        "age_seconds": age_seconds,
+                    }
+                )
+
+        # Add unused runners
+        for runner in unused_runners:
+            runner_name = runner.get("runner_name", "")
+            if "-" in runner_name:
+                server_name = runner_name.rsplit("-", 1)[0]
+                if server_name in unused_server_names:
+                    # Find the corresponding server info to get creation time
+                    server_info = next(
+                        (s for s in servers_info if s.get("name") == server_name), None
+                    )
+
+                    age_seconds = calculate_server_age(
+                        server_info.get("created") if server_info else None
+                    )
+                    health_data.append(
+                        {
+                            "server_name": server_name,
+                            "server_id": (
+                                server_info.get("server_id", "") if server_info else ""
+                            ),
+                            "health_status": "unused",
+                            "age_seconds": age_seconds,
+                        }
+                    )
+
+        # Add recycled servers
+        for server in servers_info:
+            server_name = server.get("name", "")
+            if server_name.startswith("github-hetzner-runner-recycle-"):
+                age_seconds = calculate_server_age(server.get("created"))
+                health_data.append(
+                    {
+                        "server_name": server_name,
+                        "server_id": server.get("server_id", ""),
+                        "health_status": "recycled",
+                        "age_seconds": age_seconds,
+                    }
+                )
+
+        # Sort by health status priority (zombie first, then unused, then recycled)
+        status_priority = {"zombie": 1, "unused": 2, "recycled": 3}
+        health_data.sort(
+            key=lambda x: (status_priority.get(x["health_status"], 4), x["server_name"])
+        )
+
+        render_utils.render_details_dataframe(
+            items=health_data,
+            title="Health Status Details",
+            name_key="server_name",
+            status_key="health_status",
+        )
+
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.exception(f"Error rendering health details: {e}")
+        st.error(f"Error rendering health details: {e}")
 
 
 @st.fragment(run_every=st.session_state.update_interval)
@@ -253,13 +452,6 @@ def render_server_details():
         servers_summary = metrics.get_servers_summary()
         servers_info = servers_summary["details"]
         total_servers = servers_summary["total"]
-
-        if not servers_info:
-            if total_servers > 0:
-                st.info(f"Total servers: {total_servers} (details not available)")
-            else:
-                st.info("No servers found")
-            return
 
         # Prepare server data for dataframe with all relevant fields
         formatted_servers = []
@@ -336,12 +528,22 @@ def render():
     This function creates a Streamlit-compatible version of the servers panel
     that maintains all the functionality of the original dashboard panel.
     """
+    # First section: Servers
     render_utils.render_panel_with_fragments(
         title="Servers",
         metrics_func=render_server_metrics,
         chart_func=render_server_chart,
         details_func=render_server_details,
         error_message="Error rendering servers panel",
+    )
+
+    # Second section: Health Status
+    render_utils.render_panel_with_fragments(
+        title="Health Status",
+        metrics_func=render_health_metrics,
+        chart_func=render_health_chart,
+        details_func=render_health_details,
+        error_message="Error rendering health status panel",
     )
 
 

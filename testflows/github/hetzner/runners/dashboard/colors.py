@@ -38,6 +38,10 @@ STATE_COLORS = {
     "available": "#00FF00",  # Green
     "creating": "#FFA500",  # Orange
     "attached": "#0000FF",  # Blue
+    # Health metric colors
+    "zombie": "#ff4444",  # Red
+    "unused": "#ff8800",  # Orange
+    "recycled": "#4444ff",  # Blue
 }
 
 # Streamlit-specific color mappings

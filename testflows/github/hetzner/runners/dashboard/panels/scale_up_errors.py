@@ -260,41 +260,34 @@ def render_scale_up_errors_details():
         # Get data
         error_list_data, total_errors, _ = get_scale_up_errors_data()
 
-        # Display error details
-        if error_list_data["items"]:
-            # Prepare error data for dataframe
-            formatted_errors = []
-            for error_item in error_list_data["items"]:
-                # Extract values from the error item
-                error_data = {}
-                for value_item in error_item["values"]:
-                    error_data[value_item["label"].lower().replace(" ", "_")] = (
-                        value_item["value"]
-                    )
+        # Prepare error data for dataframe
+        formatted_errors = []
+        for error_item in error_list_data["items"]:
+            # Extract values from the error item
+            error_data = {}
+            for value_item in error_item["values"]:
+                error_data[value_item["label"].lower().replace(" ", "_")] = value_item[
+                    "value"
+                ]
 
-                # Create formatted error data
-                formatted_error = {
-                    "name": error_item["name"],
-                    "server_name": error_item["server_name"],
-                    "error_message": error_data.get("error_message", ""),
-                    "server_type": error_data.get("server_type", ""),
-                    "location": error_data.get("location", ""),
-                    "labels": error_data.get("labels", ""),
-                }
+            # Create formatted error data
+            formatted_error = {
+                "name": error_item["name"],
+                "server_name": error_item["server_name"],
+                "error_message": error_data.get("error_message", ""),
+                "server_type": error_data.get("server_type", ""),
+                "location": error_data.get("location", ""),
+                "labels": error_data.get("labels", ""),
+            }
 
-                formatted_errors.append(formatted_error)
+            formatted_errors.append(formatted_error)
 
-            render_utils.render_details_dataframe(
-                items=formatted_errors,
-                title="Error Details",
-                name_key="name",
-                status_key="server_name",
-            )
-        else:
-            if total_errors > 0:
-                st.info(f"Total errors: {total_errors} (details not available)")
-            else:
-                st.info("No errors found")
+        render_utils.render_details_dataframe(
+            items=formatted_errors,
+            title="Error Details",
+            name_key="name",
+            status_key="server_name",
+        )
 
     except Exception as e:
         logger = logging.getLogger(__name__)

@@ -219,13 +219,6 @@ def render_runners_details():
         runners_info = runners_summary["details"]
         total_runners = runners_summary["total"]
 
-        if not runners_info:
-            if total_runners > 0:
-                st.info(f"Total runners: {total_runners} (details not available)")
-            else:
-                st.info("No runners found")
-            return
-
         # Prepare runner data for dataframe with all relevant fields
         formatted_runners = []
         for runner in runners_info:

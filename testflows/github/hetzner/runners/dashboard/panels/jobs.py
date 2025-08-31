@@ -177,13 +177,6 @@ def render_jobs_details():
 
         total_jobs = jobs_summary["total"]
 
-        if not queued_jobs_info and not running_jobs_info:
-            if total_jobs > 0:
-                st.info(f"Total jobs: {total_jobs} (details not available)")
-            else:
-                st.info("No jobs found")
-            return
-
         # Prepare job data for dataframe
         formatted_jobs = []
 
