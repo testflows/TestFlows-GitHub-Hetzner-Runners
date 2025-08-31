@@ -103,7 +103,6 @@ def create_time_series_chart(
             axis=alt.Axis(format=".3f", tickCount=6),
         )
     else:  # count
-
         y_encoding = alt.Y(
             f"{y_column}:Q",
             title=y_title or y_column,

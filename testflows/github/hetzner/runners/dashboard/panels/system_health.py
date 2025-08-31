@@ -357,34 +357,26 @@ def render_system_health_chart():
         # Always create a chart, even with empty data
         if df.empty:
             # Create empty chart with proper structure
-            empty_df = pd.DataFrame(
+            df_chart = pd.DataFrame(
                 {
                     "Time": pd.to_datetime([pd.Timestamp.now()]),
                     "Metric": ["System CPU"],
                     "Count": [0.0],
                 }
             )
-            chart_obj = chart.create_time_series_chart(
-                df=empty_df,
-                y_title="Percentage (%)",
-                color_column="Metric",
-                color_domain=color_domain,
-                color_range=color_range,
-                y_type="value",
-            )
         else:
             # Rename "Value" column to "Count" to match expected column name
             df_chart = df.copy()
             df_chart = df_chart.rename(columns={"Value": "Count"})
 
-            chart_obj = chart.create_time_series_chart(
-                df=df_chart,
-                y_title="Percentage (%)",
-                color_column="Metric",
-                color_domain=color_domain,
-                color_range=color_range,
-                y_type="value",
-            )
+        chart_obj = chart.create_time_series_chart(
+            df=df_chart,
+            y_title="Percentage (%)",
+            color_column="Metric",
+            color_domain=color_domain,
+            color_range=color_range,
+            y_type="value",
+        )
 
         if chart_obj is not None:
             st.altair_chart(chart_obj, use_container_width=True)
