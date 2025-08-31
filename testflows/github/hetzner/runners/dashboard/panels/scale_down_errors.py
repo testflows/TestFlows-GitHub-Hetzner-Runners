@@ -227,7 +227,6 @@ def create_errors_dataframe(history_data):
     return df
 
 
-@st.fragment(run_every=st.session_state.update_interval)
 def render_scale_down_errors_metrics():
     """Render the scale-down errors metrics section."""
     try:
@@ -247,7 +246,6 @@ def render_scale_down_errors_metrics():
         st.error(f"Error rendering scale-down errors metrics: {e}")
 
 
-@st.fragment(run_every=st.session_state.update_interval)
 def render_scale_down_errors_chart():
     """Render the scale-down errors chart section."""
     try:
@@ -280,7 +278,6 @@ def render_scale_down_errors_chart():
         st.error(f"Error rendering scale-down errors chart: {e}")
 
 
-@st.fragment(run_every=st.session_state.update_interval)
 def render_scale_down_errors_details():
     """Render the scale-down errors details section."""
     try:

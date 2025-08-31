@@ -70,7 +70,6 @@ def get_current_standby_data():
     return history_data, current_values, current_time
 
 
-@st.fragment(run_every=st.session_state.update_interval)
 def render_standby_metrics():
     """Render the standby metrics header in an isolated fragment for optimal performance."""
     try:
@@ -116,7 +115,6 @@ def render_standby_metrics():
         st.error(f"Error rendering standby metrics: {e}")
 
 
-@st.fragment(run_every=st.session_state.update_interval)
 def render_standby_chart():
     """Render the standby chart using Altair for proper multi-line visualization."""
     try:
@@ -158,7 +156,6 @@ def render_standby_chart():
         st.error(f"Error rendering standby chart: {e}")
 
 
-@st.fragment(run_every=st.session_state.update_interval)
 def render_standby_details():
     """Render the standby details as a dataframe."""
     try:
@@ -238,7 +235,6 @@ def render_standby_details():
         st.error(f"Error rendering standby details: {e}")
 
 
-@st.fragment(run_every=st.session_state.update_interval)
 def render_standby_pool_info(config=None):
     """Render standby pool configuration information."""
     try:
@@ -272,7 +268,6 @@ def render_standby_pool_info(config=None):
         st.error(f"Error rendering standby pool info: {e}")
 
 
-@st.fragment(run_every=st.session_state.update_interval)
 def render_standby_runners_info():
     """Render standby runners information."""
     try:
@@ -300,7 +295,6 @@ def render_standby_runners_info():
         st.error(f"Error rendering standby runners info: {e}")
 
 
-@st.fragment(run_every=st.session_state.update_interval)
 def render_standby_runners_chart():
     """Render the standby runners chart using Altair for proper multi-line visualization."""
     try:
@@ -375,7 +369,6 @@ def render_standby_runners_chart():
         st.error(f"Error rendering standby runners chart: {e}")
 
 
-@st.fragment(run_every=st.session_state.update_interval)
 def render_standby_runners_details():
     """Render the standby runners details as a dataframe."""
     try:

@@ -136,7 +136,6 @@ def get_current_runners_data():
     return history_data, current_values, current_time
 
 
-@st.fragment(run_every=st.session_state.update_interval)
 def render_runners_metrics():
     """Render the runners metrics header in an isolated fragment for optimal performance."""
     try:
@@ -170,7 +169,6 @@ def render_runners_metrics():
         st.error(f"Error rendering runners metrics: {e}")
 
 
-@st.fragment(run_every=st.session_state.update_interval)
 def render_runners_chart():
     """Render the runners chart using Altair for proper multi-line visualization."""
     try:
@@ -210,7 +208,6 @@ def render_runners_chart():
         st.error(f"Error rendering runners chart: {e}")
 
 
-@st.fragment(run_every=st.session_state.update_interval)
 def render_runners_details():
     """Render the runners details as a dataframe."""
     try:

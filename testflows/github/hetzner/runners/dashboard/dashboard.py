@@ -112,35 +112,39 @@ def main():
         # Reload panels and get them
         panels = reload_panels()
 
-        configure_page()
+        @st.fragment(run_every=st.session_state.update_interval)
+        def render_page():
+            configure_page()
 
-        # Always visible panels (outside tabs)
-        panels.header.render()
-        panels.gauges.render()
+            # Always visible panels (outside tabs)
+            panels.header.render()
+            panels.gauges.render()
 
-        # Build tabs for panels that should be in tabs
-        tabbed_panels = {
-            "Cost": panels.cost.render,
-            "Servers": panels.servers.render,
-            "Volumes": panels.volumes.render,
-            "Jobs": panels.jobs.render,
-            "Runners": panels.runners.render,
-            "Standby": functools.partial(panels.standby.render, config),
-            "Scale-up Errors": panels.scale_up_errors.render,
-            "Scale-down Errors": panels.scale_down_errors.render,
-            "System Information": functools.partial(panels.info.render, config),
-        }
+            # Build tabs for panels that should be in tabs
+            tabbed_panels = {
+                "Cost": panels.cost.render,
+                "Servers": panels.servers.render,
+                "Volumes": panels.volumes.render,
+                "Jobs": panels.jobs.render,
+                "Runners": panels.runners.render,
+                "Standby": functools.partial(panels.standby.render, config),
+                "Scale-up Errors": panels.scale_up_errors.render,
+                "Scale-down Errors": panels.scale_down_errors.render,
+                "System Information": functools.partial(panels.info.render, config),
+            }
 
-        # Render tabs if we have any
-        if tabbed_panels:
-            tabs = st.tabs(list(tabbed_panels.keys()))
-            for i, (name, panel) in enumerate(tabbed_panels.items()):
-                with tabs[i]:
-                    panel()
+            # Render tabs if we have any
+            if tabbed_panels:
+                tabs = st.tabs(list(tabbed_panels.keys()))
+                for i, (name, panel) in enumerate(tabbed_panels.items()):
+                    with tabs[i]:
+                        panel()
 
-        # Log panel at the bottom
-        panels.log.render(config)
-        panels.footer.render()
+            # Log panel at the bottom
+            panels.log.render(config)
+            panels.footer.render()
+
+        render_page()
 
         logger.info("✅ Dashboard rendered successfully")
 

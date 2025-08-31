@@ -46,7 +46,6 @@ def get_current_volume_data():
     return history_data, current_values, current_time
 
 
-@st.fragment(run_every=st.session_state.update_interval)
 def render_volume_metrics():
     """Render the volume metrics header in an isolated fragment for optimal performance."""
     try:
@@ -78,7 +77,6 @@ def render_volume_metrics():
         st.error(f"Error rendering volume metrics: {e}")
 
 
-@st.fragment(run_every=st.session_state.update_interval)
 def render_volume_chart():
     """Render the volume chart using Altair for proper multi-line visualization."""
     try:
@@ -118,7 +116,6 @@ def render_volume_chart():
         st.error(f"Error rendering volume chart: {e}")
 
 
-@st.fragment(run_every=st.session_state.update_interval)
 def render_volume_details():
     """Render the volume details as a dataframe."""
     try:
