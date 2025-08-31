@@ -82,6 +82,7 @@ def reload_panels():
         "standby",
         "scale_up_errors",
         "scale_down_errors",
+        "system_health",
         "log",
     ]
 
@@ -131,6 +132,7 @@ def main():
                 "Scale-up Errors": panels.scale_up_errors.render,
                 "Scale-down Errors": panels.scale_down_errors.render,
                 "System Information": functools.partial(panels.info.render, config),
+                "System Health": panels.system_health.render,
             }
 
             # Render tabs if we have any

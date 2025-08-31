@@ -15,6 +15,7 @@
 import time
 import dateutil.parser
 import logging
+import psutil
 from datetime import datetime
 
 from github.WorkflowRun import WorkflowRun
@@ -379,6 +380,117 @@ SCALE_DOWN_FAILURE_DETAILS_LAST_HOUR = Gauge(
         "timestamp_iso",
         "error",
     ],
+)
+
+# System health metrics
+SYSTEM_CPU_PERCENT = Gauge(
+    "github_hetzner_runners_system_cpu_percent",
+    "System CPU utilization percentage",
+)
+
+SYSTEM_MEMORY_TOTAL = Gauge(
+    "github_hetzner_runners_system_memory_total_bytes",
+    "Total system memory in bytes",
+)
+
+SYSTEM_MEMORY_AVAILABLE = Gauge(
+    "github_hetzner_runners_system_memory_available_bytes",
+    "Available system memory in bytes",
+)
+
+SYSTEM_MEMORY_USED = Gauge(
+    "github_hetzner_runners_system_memory_used_bytes",
+    "Used system memory in bytes",
+)
+
+SYSTEM_MEMORY_PERCENT = Gauge(
+    "github_hetzner_runners_system_memory_percent",
+    "System memory utilization percentage",
+)
+
+SYSTEM_DISK_TOTAL = Gauge(
+    "github_hetzner_runners_system_disk_total_bytes",
+    "Total disk space in bytes",
+    ["mountpoint"],
+)
+
+SYSTEM_DISK_USED = Gauge(
+    "github_hetzner_runners_system_disk_used_bytes",
+    "Used disk space in bytes",
+    ["mountpoint"],
+)
+
+SYSTEM_DISK_FREE = Gauge(
+    "github_hetzner_runners_system_disk_free_bytes",
+    "Free disk space in bytes",
+    ["mountpoint"],
+)
+
+SYSTEM_DISK_PERCENT = Gauge(
+    "github_hetzner_runners_system_disk_percent",
+    "Disk utilization percentage",
+    ["mountpoint"],
+)
+
+PROCESS_CPU_PERCENT = Gauge(
+    "github_hetzner_runners_process_cpu_percent",
+    "Current process CPU utilization percentage",
+)
+
+PROCESS_MEMORY_RSS = Gauge(
+    "github_hetzner_runners_process_memory_rss_bytes",
+    "Current process RSS memory usage in bytes",
+)
+
+PROCESS_MEMORY_VMS = Gauge(
+    "github_hetzner_runners_process_memory_vms_bytes",
+    "Current process VMS memory usage in bytes",
+)
+
+PROCESS_MEMORY_PERCENT = Gauge(
+    "github_hetzner_runners_process_memory_percent",
+    "Current process memory utilization percentage",
+)
+
+PROCESS_NUM_THREADS = Gauge(
+    "github_hetzner_runners_process_num_threads",
+    "Number of threads used by current process",
+)
+
+PROCESS_NUM_FDS = Gauge(
+    "github_hetzner_runners_process_num_fds",
+    "Number of file descriptors used by current process",
+)
+
+SYSTEM_LOAD_AVERAGE_1M = Gauge(
+    "github_hetzner_runners_system_load_average_1m",
+    "System load average over 1 minute",
+)
+
+SYSTEM_LOAD_AVERAGE_5M = Gauge(
+    "github_hetzner_runners_system_load_average_5m",
+    "System load average over 5 minutes",
+)
+
+SYSTEM_LOAD_AVERAGE_15M = Gauge(
+    "github_hetzner_runners_system_load_average_15m",
+    "System load average over 15 minutes",
+)
+
+SYSTEM_NUM_CPUS = Gauge(
+    "github_hetzner_runners_system_num_cpus",
+    "Number of CPU cores",
+)
+
+SYSTEM_BOOT_TIME = Gauge(
+    "github_hetzner_runners_system_boot_time",
+    "System boot time as Unix timestamp",
+)
+
+# Simple root disk metric (no labels)
+SYSTEM_ROOT_DISK_PERCENT = Gauge(
+    "github_hetzner_runners_system_root_disk_percent",
+    "Root filesystem disk usage percentage",
 )
 
 
@@ -1221,3 +1333,97 @@ def record_server_deletion(server_type: str, location: str, reason: str):
         reason=reason, server_type=server_type, location=location
     ).inc()
     SCALE_DOWN_OPERATIONS_TOTAL.inc()
+
+
+def update_system_health():
+    """Update system health metrics.
+
+    This function collects various system health metrics including:
+    - CPU utilization (system and process)
+    - Memory usage (system and process)
+    - Disk usage
+    - Process statistics (threads, file descriptors)
+    - System load averages
+    - System information (CPU count, boot time)
+    """
+    try:
+        # Get current process
+        current_process = psutil.Process()
+
+        # System CPU metrics
+        cpu_percent = psutil.cpu_percent(interval=0.1)
+        SYSTEM_CPU_PERCENT.set(cpu_percent)
+
+        # System memory metrics
+        memory = psutil.virtual_memory()
+        SYSTEM_MEMORY_TOTAL.set(memory.total)
+        SYSTEM_MEMORY_AVAILABLE.set(memory.available)
+        SYSTEM_MEMORY_USED.set(memory.used)
+        SYSTEM_MEMORY_PERCENT.set(memory.percent)
+
+        # System disk metrics
+        for partition in psutil.disk_partitions():
+            try:
+                usage = psutil.disk_usage(partition.mountpoint)
+                mountpoint = partition.mountpoint
+
+                SYSTEM_DISK_TOTAL.labels(mountpoint=mountpoint).set(usage.total)
+                SYSTEM_DISK_USED.labels(mountpoint=mountpoint).set(usage.used)
+                SYSTEM_DISK_FREE.labels(mountpoint=mountpoint).set(usage.free)
+                SYSTEM_DISK_PERCENT.labels(mountpoint=mountpoint).set(usage.percent)
+
+                # Set simple root disk metric for root filesystem
+                if mountpoint == "/":
+                    SYSTEM_ROOT_DISK_PERCENT.set(usage.percent)
+            except (PermissionError, FileNotFoundError):
+                # Skip partitions that can't be accessed
+                continue
+
+        # Process CPU metrics
+        try:
+            process_cpu_percent = current_process.cpu_percent()
+            PROCESS_CPU_PERCENT.set(process_cpu_percent)
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
+
+        # Process memory metrics
+        try:
+            process_memory = current_process.memory_info()
+            PROCESS_MEMORY_RSS.set(process_memory.rss)
+            PROCESS_MEMORY_VMS.set(process_memory.vms)
+
+            # Calculate process memory percentage
+            process_memory_percent = current_process.memory_percent()
+            PROCESS_MEMORY_PERCENT.set(process_memory_percent)
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
+
+        # Process thread and file descriptor metrics
+        try:
+            PROCESS_NUM_THREADS.set(current_process.num_threads())
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
+
+        try:
+            # Get number of file descriptors (Unix only)
+            if hasattr(current_process, "num_fds"):
+                PROCESS_NUM_FDS.set(current_process.num_fds())
+        except (psutil.NoSuchProcess, psutil.AccessDenied, AttributeError):
+            pass
+
+        # System load averages
+        try:
+            load_avg = psutil.getloadavg()
+            SYSTEM_LOAD_AVERAGE_1M.set(load_avg[0])
+            SYSTEM_LOAD_AVERAGE_5M.set(load_avg[1])
+            SYSTEM_LOAD_AVERAGE_15M.set(load_avg[2])
+        except (OSError, AttributeError):
+            # Load average not available on all systems
+            pass
+
+        # System information
+        SYSTEM_NUM_CPUS.set(psutil.cpu_count())
+        SYSTEM_BOOT_TIME.set(psutil.boot_time())
+
+    except Exception as e:
+        logging.exception(f"Error updating system health metrics: {e}")

@@ -1446,6 +1446,7 @@ def scale_up(
                     count_available_fn=count_available,
                 )
                 metrics.update_volumes(all_volumes)
+                metrics.update_system_health()
 
                 with Action(
                     "Looking for queued jobs",

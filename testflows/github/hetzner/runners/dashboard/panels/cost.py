@@ -183,7 +183,7 @@ def render():
     that maintains all the functionality of the original dashboard panel.
     """
     render_utils.render_panel_with_fragments(
-        title="Cost",
+        title="Estimated Cost",
         metrics_func=render_cost_metrics,
         chart_func=render_cost_chart,
         error_message="Error rendering cost panel",
