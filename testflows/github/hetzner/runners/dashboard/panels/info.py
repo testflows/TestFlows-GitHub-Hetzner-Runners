@@ -229,7 +229,7 @@ def update_info_list(config: Config):
         create_list_item("system-information", COLORS["nav"], None, values)
     )
 
-    return create_list("system information", 1, info_items, "System Information")
+    return create_list("system information", 1, info_items, "Configuration")
 
 
 def render_config_item(label: str, value, link: dict = None):
@@ -295,7 +295,7 @@ def render(config: Config):
     Args:
         config: Configuration object containing system settings
     """
-    st.header("System Information")
+    st.header("Configuration")
 
     if config is None:
         st.warning("Configuration not available")

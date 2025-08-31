@@ -131,7 +131,7 @@ def main():
                 "Standby": functools.partial(panels.standby.render, config),
                 "Scale-up Errors": panels.scale_up_errors.render,
                 "Scale-down Errors": panels.scale_down_errors.render,
-                "System Information": functools.partial(panels.info.render, config),
+                "Configuration": functools.partial(panels.info.render, config),
                 "System Health": panels.system_health.render,
             }
 
