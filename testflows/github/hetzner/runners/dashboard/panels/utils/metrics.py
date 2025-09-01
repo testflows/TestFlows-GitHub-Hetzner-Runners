@@ -156,3 +156,50 @@ class CombinedMetric:
                     base_df = metric_df
 
         return base_df.sort_values("Time") if not base_df.empty else base_df
+
+
+class MultipleSimpleMetrics:
+    """Abstraction for tracking multiple individual metrics that should be combined."""
+
+    def __init__(self, metrics_config: List[dict], cutoff_minutes: int = 15):
+        """
+        Initialize with a list of metric configurations.
+
+        Args:
+            metrics_config: List of dicts with 'metric_name' and 'status_name' keys
+            cutoff_minutes: History cutoff in minutes
+        """
+        self.metrics_config = metrics_config
+        self.cutoff_minutes = cutoff_minutes
+        self.simple_metrics = {
+            config["status_name"]: SimpleMetric(config["metric_name"], cutoff_minutes)
+            for config in metrics_config
+        }
+
+    def get_dataframe(self) -> pd.DataFrame:
+        """Get a combined DataFrame with all metrics."""
+        all_data = []
+
+        for status_name, simple_metric in self.simple_metrics.items():
+            # Update history and get data in one call
+            timestamps, values, _, _ = simple_metric.update_and_get_history()
+
+            if timestamps and values and len(timestamps) == len(values):
+                for ts, val in zip(timestamps, values):
+                    try:
+                        all_data.append(
+                            {
+                                "Time": pd.to_datetime(ts),
+                                "Status": status_name,
+                                "Count": int(val),
+                            }
+                        )
+                    except (ValueError, TypeError):
+                        continue
+
+        if not all_data:
+            return pd.DataFrame({"Time": pd.to_datetime([]), "Status": [], "Count": []})
+
+        # Create DataFrame and sort by time
+        df = pd.DataFrame(all_data)
+        return df.sort_values("Time")

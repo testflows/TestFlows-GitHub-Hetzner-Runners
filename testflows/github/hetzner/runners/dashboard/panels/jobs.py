@@ -21,74 +21,19 @@ import logging
 from .. import metrics
 from ..colors import STREAMLIT_COLORS
 from .utils import chart, render as render_utils, data, format
+from .utils.metrics import MultipleSimpleMetrics
 
 
-def get_jobs_history_data(cutoff_minutes=15):
-    """Get jobs history data for plotting.
-
-    Args:
-        cutoff_minutes: Number of minutes to keep in history
-
-    Returns:
-        dict: Dictionary with job status history data
-    """
-    job_types = ["queued", "running"]
-    metric_names = [f"github_hetzner_runners_{job_type}_jobs" for job_type in job_types]
-    return data.get_multiple_metrics_history(metric_names, cutoff_minutes)
-
-
-def create_jobs_dataframe(history_data):
-    """Create a pandas DataFrame for the jobs data with proper time formatting."""
-    if not history_data:
-        return pd.DataFrame({"Time": pd.to_datetime([]), "Status": [], "Count": []})
-
-    # Map metric names to status names
-    metric_to_status = {
-        "github_hetzner_runners_queued_jobs": "queued",
-        "github_hetzner_runners_running_jobs": "running",
-    }
-
-    # Collect all data points
-    all_data = []
-
-    for metric_name, data in history_data.items():
-        status = metric_to_status.get(metric_name, metric_name)
-        timestamps = data.get("timestamps", [])
-        values = data.get("values", [])
-
-        if timestamps and values and len(timestamps) == len(values):
-            for ts, val in zip(timestamps, values):
-                try:
-                    all_data.append(
-                        {
-                            "Time": pd.to_datetime(ts),
-                            "Status": status,
-                            "Count": int(val),
-                        }
-                    )
-                except (ValueError, TypeError):
-                    continue
-
-    if not all_data:
-        return pd.DataFrame({"Time": pd.to_datetime([]), "Status": [], "Count": []})
-
-    # Create DataFrame and sort by time
-    df = pd.DataFrame(all_data)
-    df = df.sort_values("Time")
-
-    return df
-
-
-def get_current_jobs_data():
-    """Get current jobs data without caching to ensure fresh data."""
-    job_types = ["queued", "running"]
-    metric_names = [f"github_hetzner_runners_{job_type}_jobs" for job_type in job_types]
-    current_values, current_time = data.get_current_multiple_metrics(metric_names)
-
-    # Get history data for plotting
-    history_data = get_jobs_history_data()
-
-    return history_data, current_values, current_time
+# Create metric abstraction
+jobs_metrics = MultipleSimpleMetrics(
+    [
+        {"metric_name": "github_hetzner_runners_queued_jobs", "status_name": "queued"},
+        {
+            "metric_name": "github_hetzner_runners_running_jobs",
+            "status_name": "running",
+        },
+    ]
+)
 
 
 def render_jobs_metrics():
@@ -115,11 +60,8 @@ def render_jobs_metrics():
 def render_jobs_chart():
     """Render the jobs chart using Altair for proper multi-line visualization."""
     try:
-        # Get fresh data
-        history_data, current_values, current_time = get_current_jobs_data()
-
-        # Create DataFrame for the chart
-        df = create_jobs_dataframe(history_data)
+        # Get DataFrame using the simple abstraction
+        df = jobs_metrics.get_dataframe()
 
         # Create color mapping for job states
         color_domain = ["running", "queued"]
