@@ -321,11 +321,3 @@ def render():
         details_func=render_scale_down_errors_details,
         error_message="Error rendering scale-down errors panel",
     )
-
-
-def render_graph_only():
-    """Render only the scale-down errors graph without header and metrics.
-
-    This is useful for embedding the scale-down errors graph in other panels or layouts.
-    """
-    render_scale_down_errors_chart()

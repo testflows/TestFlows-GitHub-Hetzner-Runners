@@ -283,11 +283,3 @@ def render():
         details_func=render_jobs_details,
         error_message="Error rendering jobs panel",
     )
-
-
-def render_graph_only():
-    """Render only the jobs graph without header and metrics.
-
-    This is useful for embedding the jobs graph in other panels or layouts.
-    """
-    render_jobs_chart()

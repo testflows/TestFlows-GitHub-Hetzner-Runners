@@ -152,54 +152,6 @@ def render_details_dataframe(
     )
 
 
-def render_expandable_details(
-    items: List[Dict[str, Any]],
-    title_prefix: str = "Item",
-    status_key: str = "status",
-    name_key: str = "name",
-    content_builder: Callable = None,
-):
-    """Render expandable details for a list of items.
-
-    Args:
-        items: List of item dictionaries
-        title_prefix: Prefix for expander title
-        status_key: Key for status in item dict
-        name_key: Key for name in item dict
-        content_builder: Function to build content for each item
-    """
-    if not items:
-        st.info("No items found")
-        return
-
-    st.subheader("Details")
-
-    for item in items:
-        try:
-            name = item.get(name_key, "Unknown")
-            status = item.get(status_key, "unknown")
-
-            # Create expander title
-            expander_title = f"{title_prefix}: {name} ({status})"
-
-            with st.expander(expander_title, expanded=False):
-                if content_builder:
-                    content_builder(item)
-                else:
-                    # Default content builder - just show all key-value pairs
-                    content_lines = []
-                    for key, value in item.items():
-                        if key not in [name_key, status_key]:
-                            content_lines.append(f"**{key.title()}:** {value}")
-
-                    if content_lines:
-                        st.markdown("  \n".join(content_lines))
-
-        except Exception as e:
-            logging.exception(f"Error processing item: {item}")
-            continue
-
-
 def render_with_error_handling(
     func: Callable,
     error_message: str = "Error occurred",

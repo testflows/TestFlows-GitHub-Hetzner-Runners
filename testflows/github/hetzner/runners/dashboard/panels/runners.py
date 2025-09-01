@@ -321,11 +321,3 @@ def render():
         details_func=render_runners_details,
         error_message="Error rendering runners panel",
     )
-
-
-def render_graph_only():
-    """Render only the runners graph without header and metrics.
-
-    This is useful for embedding the runners graph in other panels or layouts.
-    """
-    render_runners_chart()

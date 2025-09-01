@@ -528,11 +528,3 @@ def render():
         details_func=render_health_details,
         error_message="Error rendering health status panel",
     )
-
-
-def render_graph_only():
-    """Render only the servers graph without header and metrics.
-
-    This is useful for embedding the servers graph in other panels or layouts.
-    """
-    render_server_chart()

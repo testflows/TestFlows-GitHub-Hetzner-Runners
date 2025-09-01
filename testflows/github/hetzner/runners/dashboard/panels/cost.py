@@ -177,11 +177,3 @@ def render():
         chart_func=render_cost_chart,
         error_message="Error rendering cost panel",
     )
-
-
-def render_graph_only():
-    """Render only the cost graph without header and metrics.
-
-    This is useful for embedding the cost graph in other panels or layouts.
-    """
-    render_cost_chart()

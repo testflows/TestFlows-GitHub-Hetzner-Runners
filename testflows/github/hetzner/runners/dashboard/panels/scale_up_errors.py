@@ -294,11 +294,3 @@ def render():
         details_func=render_scale_up_errors_details,
         error_message="Error rendering scale-up errors panel",
     )
-
-
-def render_graph_only():
-    """Render only the scale-up errors graph without header and metrics.
-
-    This is useful for embedding the scale-up errors graph in other panels or layouts.
-    """
-    render_scale_up_errors_chart()
