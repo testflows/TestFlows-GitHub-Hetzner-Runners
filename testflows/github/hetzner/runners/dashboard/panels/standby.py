@@ -40,11 +40,6 @@ def get_standby_history_data(cutoff_minutes=15):
     )
 
 
-def create_standby_dataframe(history_data):
-    """Create a pandas DataFrame for the standby server data with proper time formatting."""
-    return chart.create_dataframe_from_history(history_data)
-
-
 def get_current_standby_data():
     """Get current standby server data without caching to ensure fresh data."""
     states = ["running", "off", "initializing", "ready", "busy"]
@@ -110,7 +105,7 @@ def render_standby_chart():
         history_data, current_values, current_time = get_current_standby_data()
 
         # Create DataFrame for the chart
-        df = create_standby_dataframe(history_data)
+        df = chart.create_dataframe_from_history(history_data)
 
         # Create color mapping for standby server states
         color_domain = ["running", "off", "initializing", "ready", "busy"]

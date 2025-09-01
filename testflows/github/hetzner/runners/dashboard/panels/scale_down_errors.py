@@ -22,6 +22,7 @@ import logging
 from ..colors import STREAMLIT_COLORS
 from .. import metrics
 from .utils import chart, render as render_utils, data, format
+from .scale_up_errors import create_errors_dataframe
 
 
 def get_scale_down_errors_history_data(cutoff_minutes=60):
@@ -178,42 +179,6 @@ def get_scale_down_errors_data():
     history_data = get_scale_down_errors_history_data()
 
     return error_list_data, total_errors, history_data
-
-
-def create_errors_dataframe(history_data):
-    """Create a pandas DataFrame for the errors data with proper time formatting."""
-    if not history_data or not history_data.get("timestamps"):
-        # Return a DataFrame with a single data point at 0 for the current time
-        current_time = pd.Timestamp.now()
-        return pd.DataFrame({"Time": [current_time], "Count": [0]})
-
-    timestamps = history_data["timestamps"]
-    values = history_data["values"]
-
-    if not timestamps or not values or len(timestamps) != len(values):
-        # Return a DataFrame with a single data point at 0 for the current time
-        current_time = pd.Timestamp.now()
-        return pd.DataFrame({"Time": [current_time], "Count": [0]})
-
-    # Collect all data points
-    all_data = []
-
-    for ts, val in zip(timestamps, values):
-        try:
-            all_data.append({"Time": pd.to_datetime(ts), "Count": int(val)})
-        except (ValueError, TypeError):
-            continue
-
-    if not all_data:
-        # Return a DataFrame with a single data point at 0 for the current time
-        current_time = pd.Timestamp.now()
-        return pd.DataFrame({"Time": [current_time], "Count": [0]})
-
-    # Create DataFrame and sort by time
-    df = pd.DataFrame(all_data)
-    df = df.sort_values("Time")
-
-    return df
 
 
 def render_scale_down_errors_metrics():
