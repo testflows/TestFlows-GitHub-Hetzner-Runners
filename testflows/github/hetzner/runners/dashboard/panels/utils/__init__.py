@@ -17,7 +17,6 @@
 
 from . import chart
 from . import render
-from . import data
 from . import format
 
-__all__ = ["chart", "render", "data", "format"]
+__all__ = ["chart", "render", "format"]

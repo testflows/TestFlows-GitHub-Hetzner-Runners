@@ -22,7 +22,7 @@ import psutil
 from datetime import datetime, timedelta
 
 from .. import metrics
-from .utils import render as render_utils, data, chart
+from .utils import render as render_utils, chart
 from .utils.metrics import MultipleSimpleMetrics
 from ..colors import COLORS, STREAMLIT_COLORS
 

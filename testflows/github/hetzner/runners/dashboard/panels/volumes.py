@@ -16,7 +16,7 @@ import logging
 import streamlit as st
 
 from .. import metrics
-from .utils import data, chart, render as render_utils
+from .utils import chart, render as render_utils
 from .utils.metrics import StateMetric
 from ..colors import STATE_COLORS
 

@@ -18,7 +18,128 @@ from datetime import datetime
 from typing import List, Dict, Any, Tuple
 
 from ... import metrics
-from . import data
+
+
+# Low-level data access functions
+
+
+def get_metric_history_for_states(
+    metric_name: str,
+    states: List[str],
+    labels: Dict[str, str] = None,
+    cutoff_minutes: int = 15,
+) -> Dict[str, Dict[str, List]]:
+    """Get metric history data for multiple states.
+
+    Args:
+        metric_name: Name of the metric
+        states: List of state values to fetch
+        labels: Optional labels to filter by
+        cutoff_minutes: Number of minutes to keep in history
+
+    Returns:
+        Dictionary with state history data
+    """
+    history_data = {}
+
+    for state in states:
+        if labels:
+            # Add state to labels
+            state_labels = labels.copy()
+            state_labels["status"] = state
+            timestamps, values = metrics.get_metric_history_data(
+                metric_name, state_labels, cutoff_minutes=cutoff_minutes
+            )
+        else:
+            timestamps, values = metrics.get_metric_history_data(
+                metric_name, {"status": state}, cutoff_minutes=cutoff_minutes
+            )
+        history_data[state] = {"timestamps": timestamps, "values": values}
+
+    return history_data
+
+
+def get_current_metric_values(
+    metric_name: str,
+    states: List[str],
+    labels: Dict[str, str] = None,
+) -> Tuple[Dict[str, int], datetime]:
+    """Get current metric values for multiple states.
+
+    Args:
+        metric_name: Name of the metric
+        states: List of state values to fetch
+        labels: Optional labels to filter by
+
+    Returns:
+        Tuple of (current_values_dict, current_time)
+    """
+    current_time = datetime.now()
+    current_values = {}
+
+    for state in states:
+        if labels:
+            # Add state to labels
+            state_labels = labels.copy()
+            state_labels["status"] = state
+            value = metrics.get_metric_value(metric_name, state_labels) or 0
+        else:
+            value = metrics.get_metric_value(metric_name, {"status": state}) or 0
+
+        current_values[state] = value
+
+        # Update metric history
+        if labels:
+            metrics.update_metric_history(
+                metric_name, state_labels, value, current_time, cutoff_minutes=15
+            )
+        else:
+            metrics.update_metric_history(
+                metric_name, {"status": state}, value, current_time, cutoff_minutes=15
+            )
+
+    return current_values, current_time
+
+
+def get_simple_metric_history(
+    metric_name: str,
+    cutoff_minutes: int = 15,
+) -> Tuple[List, List]:
+    """Get simple metric history data (no labels).
+
+    Args:
+        metric_name: Name of the metric
+        cutoff_minutes: Number of minutes to keep in history
+
+    Returns:
+        Tuple of (timestamps, values)
+    """
+    return metrics.get_metric_history_data(metric_name, cutoff_minutes=cutoff_minutes)
+
+
+def update_simple_metric_history(
+    metric_name: str,
+    value: float,
+    current_time: datetime = None,
+    cutoff_minutes: int = 15,
+):
+    """Update simple metric history (no labels).
+
+    Args:
+        metric_name: Name of the metric
+        value: Current value
+        current_time: Current time (defaults to now)
+        cutoff_minutes: Number of minutes to keep in history
+    """
+    if current_time is None:
+        current_time = datetime.now()
+
+    metrics.update_metric_history(
+        metric_name, {}, value, current_time, cutoff_minutes=cutoff_minutes
+    )
+
+
+# High-level abstraction classes
 
 
 class SimpleMetric:
@@ -38,7 +159,7 @@ class SimpleMetric:
         current_value = self.get_current_value()
 
         # Update history
-        data.update_simple_metric_history(
+        update_simple_metric_history(
             self.metric_name,
             current_value,
             current_time,
@@ -46,7 +167,7 @@ class SimpleMetric:
         )
 
         # Get history
-        timestamps, values = data.get_simple_metric_history(
+        timestamps, values = get_simple_metric_history(
             self.metric_name, cutoff_minutes=self.cutoff_minutes
         )
 
@@ -97,9 +218,7 @@ class StateMetric:
 
     def get_current_values(self) -> Dict[str, int]:
         """Get current values for all states."""
-        current_values, _ = data.get_current_metric_values(
-            self.metric_name, self.states
-        )
+        current_values, _ = get_current_metric_values(self.metric_name, self.states)
         return current_values
 
     def get_dataframe(self) -> pd.DataFrame:
@@ -108,7 +227,7 @@ class StateMetric:
         self.get_current_values()
 
         # Get history data
-        history_data = data.get_metric_history_for_states(
+        history_data = get_metric_history_for_states(
             self.metric_name, self.states, cutoff_minutes=self.cutoff_minutes
         )
 

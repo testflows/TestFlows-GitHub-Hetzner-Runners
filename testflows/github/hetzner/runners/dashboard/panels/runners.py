@@ -20,7 +20,7 @@ import logging
 
 from .. import metrics
 from ..colors import STREAMLIT_COLORS, STATE_COLORS
-from .utils import chart, render as render_utils, data
+from .utils import chart, render as render_utils
 from .utils.metrics import StateMetric, SimpleMetric, CombinedMetric
 
 

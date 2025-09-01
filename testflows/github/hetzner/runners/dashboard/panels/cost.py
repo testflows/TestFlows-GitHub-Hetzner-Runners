@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 import logging
 
 from .. import metrics
-from .utils import chart, render as render_utils, data
+from .utils import chart, render as render_utils
 from .utils.metrics import ComputedMetric
 
 
