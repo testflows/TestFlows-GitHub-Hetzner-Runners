@@ -15,13 +15,6 @@
 
 from .. import metrics
 from .utils import chart, renderers
-from .utils.metrics import ComputedMetric
-
-
-# Create the cost metric abstraction
-cost_metric = ComputedMetric(
-    "github_hetzner_runners_cost_total", metrics.cost.compute_total_cost
-)
 
 
 def render_cost_metrics():
@@ -52,8 +45,8 @@ def render_cost_metrics():
 def render_cost_chart():
     """Render the cost chart using Altair for proper time series visualization."""
 
-    # Get DataFrame using the simple abstraction
-    df = cost_metric.get_dataframe()
+    timestamps, values, _, _ = metrics.cost.total_cost_history()
+    df = metrics.history.dataframe(timestamps, values)
 
     # Rename column for display
     if not df.empty:

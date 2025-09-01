@@ -14,9 +14,10 @@
 # limitations under the License.
 
 from . import get
+from . import history
 
 
-def compute_total_cost():
+def total_cost():
     """Compute total cost from all servers."""
     total_cost = 0
     servers_info = get.metric_info("github_hetzner_runners_server")
@@ -54,3 +55,20 @@ def summary():
         "daily": current_hourly_cost * 24,
         "monthly": current_hourly_cost * 24 * 30,
     }
+
+
+def total_cost_history():
+    """Update and get total cost history data.
+
+    Updates the cost history with the current total cost value and returns
+    the historical data for the last 15 minutes.
+
+    Returns:
+        tuple: (timestamps, values, current_value, current_time)
+    """
+    return history.update_and_get(
+        "github_hetzner_runners_cost_total",
+        labels={},
+        value=total_cost(),
+        cutoff_minutes=15,
+    )

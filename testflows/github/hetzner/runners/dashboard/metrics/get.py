@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import logging
+from typing import List, Dict
 from prometheus_client import REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -74,3 +75,34 @@ def metric_info(metric_name, job_id=None):
     except Exception as e:
         logging.exception(f"Error getting metric info {metric_name}")
         return []
+
+
+def metric_value_for_states(
+    metric_name: str,
+    states: List[str],
+    labels: Dict[str, str] = None,
+) -> Dict[str, int]:
+    """Get current metric value for multiple states.
+
+    Args:
+        metric_name: Name of the metric
+        states: List of state values to fetch
+        labels: Optional labels to filter by
+
+    Returns:
+        Dictionary mapping states to their current value
+    """
+    current_values = {}
+
+    for state in states:
+        if labels:
+            # Add state to labels
+            state_labels = labels.copy()
+            state_labels["status"] = state
+            value = metric_value(metric_name, state_labels) or 0
+        else:
+            value = metric_value(metric_name, {"status": state}) or 0
+
+        current_values[state] = value
+
+    return current_values

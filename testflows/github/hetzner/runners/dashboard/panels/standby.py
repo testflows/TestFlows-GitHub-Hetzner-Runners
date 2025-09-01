@@ -20,7 +20,7 @@ import logging
 from .. import metrics
 from ..colors import STATE_COLORS
 from .utils import chart, renderers
-from .utils.metrics import StateMetric, get_metric_history_for_states
+from .utils.metrics import StateMetric
 
 
 # Create metric abstraction
@@ -260,7 +260,7 @@ def render_standby_runners_chart():
         try:
             # Get history data for online/offline runners and filter for standby
             states = ["online", "offline"]
-            runners_history = get_metric_history_for_states(
+            runners_history = metrics.history.data_for_states(
                 "github_hetzner_runners_runners_total", states, cutoff_minutes=15
             )
 

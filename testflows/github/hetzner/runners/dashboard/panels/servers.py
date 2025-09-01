@@ -23,8 +23,6 @@ from .utils import chart, renderers
 from .utils.metrics import (
     StateMetric,
     SimpleMetric,
-    get_simple_metric_history,
-    update_simple_metric_history,
 )
 
 
@@ -55,8 +53,9 @@ def get_health_metrics_history_data(cutoff_minutes=15):
         metrics.get.metric_value("github_hetzner_runners_zombie_servers_total_count")
         or 0
     )
-    update_simple_metric_history(
+    metrics.history.update(
         "github_hetzner_runners_zombie_servers_total_count",
+        {},
         zombie_total,
         current_time,
         cutoff_minutes,
@@ -67,8 +66,9 @@ def get_health_metrics_history_data(cutoff_minutes=15):
         metrics.get.metric_value("github_hetzner_runners_unused_runners_total_count")
         or 0
     )
-    update_simple_metric_history(
+    metrics.history.update(
         "github_hetzner_runners_unused_runners_total_count",
+        {},
         unused_total,
         current_time,
         cutoff_minutes,
@@ -77,8 +77,9 @@ def get_health_metrics_history_data(cutoff_minutes=15):
     # Update recycled servers history
     recycled_summary = metrics.servers.recycled_summary()
     recycled_total = recycled_summary["total"]
-    update_simple_metric_history(
+    metrics.history.update(
         "github_hetzner_runners_recycled_servers_total",
+        {},
         recycled_total,
         current_time,
         cutoff_minutes,
@@ -88,7 +89,7 @@ def get_health_metrics_history_data(cutoff_minutes=15):
     health_metrics = {}
 
     # Get zombie servers total count history
-    zombie_timestamps, zombie_values = get_simple_metric_history(
+    zombie_timestamps, zombie_values = metrics.history.data(
         "github_hetzner_runners_zombie_servers_total_count",
         cutoff_minutes=cutoff_minutes,
     )
@@ -98,7 +99,7 @@ def get_health_metrics_history_data(cutoff_minutes=15):
     }
 
     # Get unused runners total count history
-    unused_timestamps, unused_values = get_simple_metric_history(
+    unused_timestamps, unused_values = metrics.history.data(
         "github_hetzner_runners_unused_runners_total_count",
         cutoff_minutes=cutoff_minutes,
     )
@@ -108,7 +109,7 @@ def get_health_metrics_history_data(cutoff_minutes=15):
     }
 
     # Get recycled servers total count history
-    recycled_timestamps, recycled_values = get_simple_metric_history(
+    recycled_timestamps, recycled_values = metrics.history.data(
         "github_hetzner_runners_recycled_servers_total", cutoff_minutes=cutoff_minutes
     )
     health_metrics["recycled"] = {

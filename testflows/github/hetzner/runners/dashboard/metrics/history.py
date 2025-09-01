@@ -13,26 +13,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pandas as pd
+
 from datetime import datetime, timedelta
 from collections import defaultdict
+from typing import List, Dict, Tuple
 
 # Store metric history
 metric_history = defaultdict(lambda: {"timestamps": [], "values": []})
 
+from . import get
 
-def update(metric_name, labels, value, timestamp, cutoff_minutes=15):
+
+def update(metric_name, labels, value, timestamp=None, cutoff_minutes=15):
     """Update metric history with new value.
 
     Args:
         metric_name: Name of the metric
         labels: Dictionary of labels
         value: Current value
-        timestamp: Current timestamp
+        timestamp: Current timestamp (defaults to now)
         cutoff_minutes: Number of minutes to keep in history. Defaults to 15 minutes.
 
     Returns:
         str: The key used for the metric history
     """
+    if timestamp is None:
+        timestamp = datetime.now()
+
     # Only add labels to key if there are any
     if labels:
         key = f"{metric_name}_{','.join(f'{k}={v}' for k, v in sorted(labels.items()))}"
@@ -59,6 +67,70 @@ def update(metric_name, labels, value, timestamp, cutoff_minutes=15):
     metric_history[key]["values"].append(value)
 
     return key
+
+
+def update_for_states(
+    metric_name: str,
+    states: List[str],
+    values: Dict[str, float],
+    labels: Dict[str, str] = None,
+    timestamp: datetime = None,
+    cutoff_minutes: int = 15,
+) -> None:
+    """Update metric history for multiple states.
+
+    Args:
+        metric_name: Name of the metric
+        states: List of state values to update
+        values: Dictionary mapping states to their values
+        labels: Optional labels to filter by
+        timestamp: Current timestamp (defaults to now)
+        cutoff_minutes: Number of minutes to keep in history
+    """
+    if timestamp is None:
+        timestamp = datetime.now()
+
+    for state in states:
+        value = values.get(state, 0)
+        if labels:
+            # Add state to labels
+            state_labels = labels.copy()
+            state_labels["status"] = state
+            update(metric_name, state_labels, value, timestamp, cutoff_minutes)
+        else:
+            update(metric_name, {"status": state}, value, timestamp, cutoff_minutes)
+
+
+def update_and_get(
+    metric_name, labels, value=None, timestamp=None, cutoff_minutes=15
+) -> Tuple[List, List, float, datetime]:
+    """Update and get history for metric with labels,
+    and using given value and timestamp.
+
+    If value is not provided, use current value.
+    If timestamp is not provided, use current time.
+
+    return (timestamps, values, value, timestamp).
+    """
+    if timestamp is None:
+        timestamp = datetime.now()
+
+    if value is None:
+        value = get.current_value(metric_name)
+
+    # Update history
+    update(
+        metric_name,
+        labels,
+        value,
+        timestamp,
+        cutoff_minutes=cutoff_minutes,
+    )
+
+    # Get history
+    timestamps, values = data(metric_name, cutoff_minutes=cutoff_minutes)
+
+    return timestamps, values, value, timestamp
 
 
 def data(metric_name, labels=None, cutoff_minutes=15):
@@ -92,3 +164,61 @@ def data(metric_name, labels=None, cutoff_minutes=15):
             values.append(history["values"][i])
 
     return timestamps, values
+
+
+def data_for_states(
+    metric_name: str,
+    states: List[str],
+    labels: Dict[str, str] = None,
+    cutoff_minutes: int = 15,
+) -> Dict[str, Dict[str, List]]:
+    """Get metric history data for multiple states.
+
+    Args:
+        metric_name: Name of the metric
+        states: List of state values to fetch
+        labels: Optional labels to filter by
+        cutoff_minutes: Number of minutes to keep in history
+
+    Returns:
+        Dictionary with state history data
+    """
+    history_data = {}
+
+    for state in states:
+        if labels:
+            # Add state to labels
+            state_labels = labels.copy()
+            state_labels["status"] = state
+            timestamps, values = data(
+                metric_name, state_labels, cutoff_minutes=cutoff_minutes
+            )
+        else:
+            timestamps, values = data(
+                metric_name, {"status": state}, cutoff_minutes=cutoff_minutes
+            )
+        history_data[state] = {"timestamps": timestamps, "values": values}
+
+    return history_data
+
+
+def dataframe(timestamps, values) -> pd.DataFrame:
+    """Get a pandas DataFrame for history data."""
+
+    if not timestamps or not values:
+        return pd.DataFrame({"Time": pd.to_datetime([]), "Value": []})
+
+    if len(timestamps) != len(values):
+        return pd.DataFrame({"Time": pd.to_datetime([]), "Value": []})
+
+    df = pd.DataFrame(
+        {
+            "Time": pd.to_datetime(timestamps),
+            "Value": [float(v) for v in values],
+        }
+    )
+
+    df = df.dropna()
+    df = df.sort_values("Time")
+
+    return df
