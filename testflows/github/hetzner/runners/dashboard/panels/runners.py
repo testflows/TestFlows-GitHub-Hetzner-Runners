@@ -21,107 +21,18 @@ import logging
 from .. import metrics
 from ..colors import STREAMLIT_COLORS, STATE_COLORS
 from .utils import chart, render as render_utils, data
+from .utils.metrics import StateMetric, SimpleMetric, CombinedMetric
 
 
-def get_runners_history_data(cutoff_minutes=15):
-    """Get runners history data for plotting.
+# Create metric abstractions
+runners_states_metric = StateMetric(
+    "github_hetzner_runners_runners_total", ["online", "offline"]
+)
 
-    Args:
-        cutoff_minutes: Number of minutes to keep in history
+busy_metric = SimpleMetric("github_hetzner_runners_runners_busy")
 
-    Returns:
-        dict: Dictionary with runner status history data
-    """
-    # Get online/offline runners history
-    states = ["online", "offline"]
-    runners_history = data.get_metric_history_for_states(
-        "github_hetzner_runners_runners_total", states, cutoff_minutes=cutoff_minutes
-    )
-
-    # Get busy runners history
-    busy_timestamps, busy_values = data.get_simple_metric_history(
-        "github_hetzner_runners_runners_busy", cutoff_minutes=cutoff_minutes
-    )
-
-    # Add busy runners to the history data
-    if busy_timestamps and busy_values:
-        runners_history["github_hetzner_runners_runners_busy"] = {
-            "timestamps": busy_timestamps,
-            "values": busy_values,
-        }
-
-    return runners_history
-
-
-def create_runners_dataframe(history_data):
-    """Create a pandas DataFrame for the runners data with proper time formatting."""
-    if not history_data:
-        return pd.DataFrame({"Time": pd.to_datetime([]), "Status": [], "Count": []})
-
-    # Map metric names to status names
-    metric_to_status = {
-        "github_hetzner_runners_runners_total": "online",  # This will be overridden by the actual status
-        "github_hetzner_runners_runners_busy": "busy",
-    }
-
-    # Collect all data points
-    all_data = []
-
-    for metric_name, data in history_data.items():
-        if metric_name == "github_hetzner_runners_runners_busy":
-            status = "busy"
-        else:
-            # For the runners_total metric, we need to check the status label
-            continue  # Skip this as it's handled by create_dataframe_from_history
-
-        timestamps = data.get("timestamps", [])
-        values = data.get("values", [])
-
-        if timestamps and values and len(timestamps) == len(values):
-            for ts, val in zip(timestamps, values):
-                try:
-                    all_data.append(
-                        {
-                            "Time": pd.to_datetime(ts),
-                            "Status": status,
-                            "Count": int(val),
-                        }
-                    )
-                except (ValueError, TypeError):
-                    continue
-
-    # Get the online/offline data using the existing function
-    df_online_offline = chart.create_dataframe_from_history(
-        {
-            k: v
-            for k, v in history_data.items()
-            if k != "github_hetzner_runners_runners_busy"
-        }
-    )
-
-    # Create DataFrame for busy runners
-    if all_data:
-        df_busy = pd.DataFrame(all_data)
-        # Combine the dataframes
-        df = pd.concat([df_online_offline, df_busy], ignore_index=True)
-        df = df.sort_values("Time")
-    else:
-        df = df_online_offline
-
-    return df
-
-
-def get_current_runners_data():
-    """Get current runners data without caching to ensure fresh data."""
-    states = ["online", "offline"]
-    current_values, current_time = data.get_current_metric_values(
-        "github_hetzner_runners_runners_total", states
-    )
-
-    # Get history data for plotting
-    history_data = get_runners_history_data()
-
-    return history_data, current_values, current_time
+# Combine state metrics with busy metric
+runners_combined_metric = CombinedMetric(runners_states_metric, [busy_metric])
 
 
 def render_runners_metrics():
@@ -160,11 +71,8 @@ def render_runners_metrics():
 def render_runners_chart():
     """Render the runners chart using Altair for proper multi-line visualization."""
     try:
-        # Get fresh data
-        history_data, current_values, current_time = get_current_runners_data()
-
-        # Create DataFrame for the chart
-        df = create_runners_dataframe(history_data)
+        # Get DataFrame using the simple abstraction
+        df = runners_combined_metric.get_dataframe()
 
         # Create color mapping for runner states
         color_domain = ["online", "offline", "busy"]

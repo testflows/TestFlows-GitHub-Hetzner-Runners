@@ -17,33 +17,14 @@ import streamlit as st
 
 from .. import metrics
 from .utils import data, chart, render as render_utils
+from .utils.metrics import StateMetric
 from ..colors import STATE_COLORS
 
 
-def create_volume_dataframe(history_data):
-    """Create DataFrame from volume history data."""
-    return chart.create_dataframe_from_history(history_data)
-
-
-def get_volume_history_data():
-    """Get volume history data for plotting."""
-    states = ["available", "creating", "attached"]
-    return data.get_metric_history_for_states(
-        "github_hetzner_runners_volumes_total", states, cutoff_minutes=15
-    )
-
-
-def get_current_volume_data():
-    """Get current volume data without caching to ensure fresh data."""
-    states = ["available", "creating", "attached"]
-    current_values, current_time = data.get_current_metric_values(
-        "github_hetzner_runners_volumes_total", states
-    )
-
-    # Get history data for plotting
-    history_data = get_volume_history_data()
-
-    return history_data, current_values, current_time
+# Create metric abstraction
+volume_states_metric = StateMetric(
+    "github_hetzner_runners_volumes_total", ["available", "creating", "attached"]
+)
 
 
 def render_volume_metrics():
@@ -80,11 +61,8 @@ def render_volume_metrics():
 def render_volume_chart():
     """Render the volume chart using Altair for proper multi-line visualization."""
     try:
-        # Get fresh data
-        history_data, current_values, current_time = get_current_volume_data()
-
-        # Create DataFrame for the chart
-        df = create_volume_dataframe(history_data)
+        # Get DataFrame using the simple abstraction
+        df = volume_states_metric.get_dataframe()
 
         # Create color mapping for volume states
         color_domain = ["available", "creating", "attached"]

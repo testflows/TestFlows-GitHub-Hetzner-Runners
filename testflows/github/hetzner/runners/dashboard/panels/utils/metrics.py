@@ -85,3 +85,74 @@ class ComputedMetric(SimpleMetric):
     def get_current_value(self) -> float:
         """Compute current value using the provided function."""
         return self.compute_func()
+
+
+class StateMetric:
+    """Abstraction for metrics that have multiple states (e.g., running, off, ready)."""
+
+    def __init__(self, metric_name: str, states: List[str], cutoff_minutes: int = 15):
+        self.metric_name = metric_name
+        self.states = states
+        self.cutoff_minutes = cutoff_minutes
+
+    def get_current_values(self) -> Dict[str, int]:
+        """Get current values for all states."""
+        current_values, _ = data.get_current_metric_values(
+            self.metric_name, self.states
+        )
+        return current_values
+
+    def get_dataframe(self) -> pd.DataFrame:
+        """Get a pandas DataFrame ready for charting with multiple state lines."""
+        # Update current values (this also updates history)
+        self.get_current_values()
+
+        # Get history data
+        history_data = data.get_metric_history_for_states(
+            self.metric_name, self.states, cutoff_minutes=self.cutoff_minutes
+        )
+
+        # Use existing chart utility to create DataFrame
+        from . import chart
+
+        return chart.create_dataframe_from_history(history_data)
+
+
+class CombinedMetric:
+    """Abstraction for metrics that combine state-based and individual metrics."""
+
+    def __init__(
+        self, base_metric: StateMetric, additional_metrics: List[SimpleMetric]
+    ):
+        self.base_metric = base_metric
+        self.additional_metrics = additional_metrics
+
+    def get_dataframe(self) -> pd.DataFrame:
+        """Get a combined DataFrame with all metrics."""
+        # Get the base state metric DataFrame
+        base_df = self.base_metric.get_dataframe()
+
+        # Get additional metrics and combine them
+        for simple_metric in self.additional_metrics:
+            # Update the metric and get its history
+            timestamps, values, _, _ = simple_metric.update_and_get_history()
+
+            if timestamps and values and len(timestamps) == len(values):
+                # Create simple DataFrame for this metric
+                metric_df = pd.DataFrame(
+                    {
+                        "Time": pd.to_datetime(timestamps),
+                        "Status": simple_metric.metric_name.split("_")[
+                            -1
+                        ],  # Extract last part as status
+                        "Count": [int(v) for v in values],
+                    }
+                )
+
+                # Combine with base DataFrame
+                if not base_df.empty:
+                    base_df = pd.concat([base_df, metric_df], ignore_index=True)
+                else:
+                    base_df = metric_df
+
+        return base_df.sort_values("Time") if not base_df.empty else base_df

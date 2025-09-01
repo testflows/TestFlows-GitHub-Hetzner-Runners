@@ -22,21 +22,17 @@ from .. import metrics
 from ..metrics import get_metric_value
 from ..colors import STATE_COLORS
 from .utils import chart, render as render_utils, data
+from .utils.metrics import StateMetric, SimpleMetric
 
 
-def get_server_history_data(cutoff_minutes=15):
-    """Get server history data for plotting.
+# Create metric abstractions
+server_states_metric = StateMetric(
+    "github_hetzner_runners_servers_total",
+    ["running", "off", "initializing", "ready", "busy"],
+)
 
-    Args:
-        cutoff_minutes: Number of minutes to keep in history
-
-    Returns:
-        dict: Dictionary with server status history data
-    """
-    states = ["running", "off", "initializing", "ready", "busy"]
-    return data.get_metric_history_for_states(
-        "github_hetzner_runners_servers_total", states, cutoff_minutes=cutoff_minutes
-    )
+zombie_metric = SimpleMetric("github_hetzner_runners_zombie_servers_total_count")
+unused_metric = SimpleMetric("github_hetzner_runners_unused_runners_total_count")
 
 
 def get_health_metrics_history_data(cutoff_minutes=15):
@@ -118,16 +114,6 @@ def get_health_metrics_history_data(cutoff_minutes=15):
     return health_metrics
 
 
-def create_server_dataframe(history_data):
-    """Create a pandas DataFrame for the server data with proper time formatting."""
-    return chart.create_dataframe_from_history(history_data)
-
-
-def create_health_metrics_dataframe(history_data):
-    """Create a pandas DataFrame for the health metrics data with proper time formatting."""
-    return chart.create_dataframe_from_history(history_data)
-
-
 def calculate_server_age(created_time):
     """Calculate server age in seconds from creation time.
 
@@ -145,19 +131,6 @@ def calculate_server_age(created_time):
         return int((datetime.now(created_dt.tzinfo) - created_dt).total_seconds())
     except (ValueError, TypeError):
         return 0
-
-
-def get_current_server_data():
-    """Get current server data without caching to ensure fresh data."""
-    states = ["running", "off", "initializing", "ready", "busy"]
-    current_values, current_time = data.get_current_metric_values(
-        "github_hetzner_runners_servers_total", states
-    )
-
-    # Get history data for plotting
-    history_data = get_server_history_data()
-
-    return history_data, current_values, current_time
 
 
 def render_server_metrics():
@@ -194,11 +167,8 @@ def render_server_metrics():
 def render_server_chart():
     """Render the server chart using Altair for proper multi-line visualization."""
     try:
-        # Get fresh data
-        history_data, current_values, current_time = get_current_server_data()
-
-        # Create DataFrame for the chart
-        df = create_server_dataframe(history_data)
+        # Get DataFrame using the simple abstraction
+        df = server_states_metric.get_dataframe()
 
         # Create color mapping for server states
         color_domain = ["running", "off", "initializing", "ready", "busy"]
@@ -279,7 +249,7 @@ def render_health_chart():
         health_history_data = get_health_metrics_history_data()
 
         # Create DataFrame for health metrics
-        health_df = create_health_metrics_dataframe(health_history_data)
+        health_df = chart.create_dataframe_from_history(health_history_data)
 
         # Create color mapping for health metrics
         health_color_domain = ["zombie", "unused", "recycled"]
