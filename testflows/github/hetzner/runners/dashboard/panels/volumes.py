@@ -16,9 +16,11 @@ import logging
 import streamlit as st
 
 from .. import metrics
-from .utils import chart, render as render_utils
+from .utils import chart, renderers
 from .utils.metrics import StateMetric
 from ..colors import STATE_COLORS
+
+logger = logging.getLogger(__name__)
 
 
 # Create metric abstraction
@@ -29,7 +31,7 @@ volume_states_metric = StateMetric(
 
 def render_volume_metrics():
     """Render the volume metrics header in an isolated fragment for optimal performance."""
-    try:
+    with renderers.errors("rendering volume metrics", logger):
         # Get current volume summary
         volumes_summary = metrics.volumes.summary()
 
@@ -50,17 +52,12 @@ def render_volume_metrics():
             },
         ]
 
-        render_utils.render_metrics_columns(metrics_data)
-
-    except Exception as e:
-        logger = logging.getLogger(__name__)
-        logger.exception(f"Error rendering volume metrics: {e}")
-        st.error(f"Error rendering volume metrics: {e}")
+        renderers.render_metrics_columns(metrics_data)
 
 
 def render_volume_chart():
     """Render the volume chart using Altair for proper multi-line visualization."""
-    try:
+    with renderers.errors("rendering volume chart", logger):
         # Get DataFrame using the simple abstraction
         df = volume_states_metric.get_dataframe()
 
@@ -82,16 +79,11 @@ def render_volume_chart():
                 y_type="count",
             )
 
-        chart.render_chart_with_fallback(
+        renderers.render_chart(
             create_chart,
             "No volume data available yet. The chart will appear once data is collected.",
-            "Error rendering volume chart",
+            "rendering volume chart",
         )
-
-    except Exception as e:
-        logger = logging.getLogger(__name__)
-        logger.exception(f"Error rendering volume chart: {e}")
-        st.error(f"Error rendering volume chart: {e}")
 
 
 def render_volume_details():
@@ -136,7 +128,7 @@ def render_volume_details():
 
             formatted_volumes.append(formatted_volume)
 
-        render_utils.render_details_dataframe(
+        renderers.render_details_dataframe(
             items=formatted_volumes,
             title="Volume Details",
             name_key="name",

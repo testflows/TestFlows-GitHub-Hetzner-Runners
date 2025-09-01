@@ -15,12 +15,11 @@
 
 import streamlit as st
 import pandas as pd
-from datetime import datetime, timedelta
 import logging
 
 from .. import metrics
 from ..colors import STATE_COLORS
-from .utils import chart, render as render_utils
+from .utils import chart, renderers
 from .utils.metrics import StateMetric, get_metric_history_for_states
 
 
@@ -68,7 +67,7 @@ def render_standby_metrics():
             {"label": "Other", "value": other_states},
         ]
 
-        render_utils.render_metrics_columns(metrics_data)
+        renderers.render_metrics_columns(metrics_data)
 
     except Exception as e:
         logger = logging.getLogger(__name__)
@@ -102,10 +101,10 @@ def render_standby_chart():
                 y_type="count",
             )
 
-        chart.render_chart_with_fallback(
+        renderers.render_chart(
             create_chart,
             "No standby server data available yet. The chart will appear once data is collected.",
-            "Error rendering standby chart",
+            "rendering standby chart",
         )
 
     except Exception as e:
@@ -178,7 +177,7 @@ def render_standby_details():
             formatted_standby_servers.append(formatted_server)
 
         # Use the same render_details_dataframe function as regular servers for consistency
-        render_utils.render_details_dataframe(
+        renderers.render_details_dataframe(
             items=formatted_standby_servers,
             title="Standby Server Details",
             name_key="name",
@@ -243,7 +242,7 @@ def render_standby_runners_info():
             },
         ]
 
-        render_utils.render_metrics_columns(standby_runners_metrics)
+        renderers.render_metrics_columns(standby_runners_metrics)
 
     except Exception as e:
         logger = logging.getLogger(__name__)
@@ -313,10 +312,10 @@ def render_standby_runners_chart():
                 y_type="count",
             )
 
-        chart.render_chart_with_fallback(
+        renderers.render_chart(
             create_chart,
             "No standby runners data available yet. The chart will appear once data is collected.",
-            "Error rendering standby runners chart",
+            "rendering standby runners chart",
         )
 
     except Exception as e:
@@ -377,7 +376,7 @@ def render_standby_runners_details():
             formatted_standby_runners.append(formatted_runner)
 
         # Always render the dataframe, even if empty
-        render_utils.render_details_dataframe(
+        renderers.render_details_dataframe(
             items=formatted_standby_runners,
             title="Standby Runner Details",
             name_key="name",
@@ -400,19 +399,19 @@ def render(config=None):
     # Add pool configuration section at the top
     render_standby_pool_info(config)
 
-    render_utils.render_panel_with_fragments(
+    renderers.render_panel(
         title="Servers",
         metrics_func=render_standby_metrics,
         chart_func=render_standby_chart,
         details_func=render_standby_details,
-        error_message="Error rendering standby panel",
+        message="rendering standby panel",
     )
 
     # Group standby runners metrics, chart and details together
-    render_utils.render_panel_with_fragments(
+    renderers.render_panel(
         title="Runners",
         metrics_func=render_standby_runners_info,
         chart_func=render_standby_runners_chart,
         details_func=render_standby_runners_details,
-        error_message="Error rendering standby runners panel",
+        message="rendering standby runners panel",
     )

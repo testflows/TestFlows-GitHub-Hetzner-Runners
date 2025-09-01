@@ -16,15 +16,11 @@ import logging
 import streamlit as st
 from .. import metrics
 
+logger = logging.getLogger(__name__)
 
-def render_gauges_fragment():
-    """Render the metrics gauges in an isolated fragment for optimal performance.
 
-    This fragment updates independently from the main dashboard using the same
-    refresh interval selected by the user in the header dropdown.
-    """
-    logger = logging.getLogger(__name__)
-
+def render():
+    """Render the metrics gauges section displaying key system metrics."""
     try:
         # Get metrics data
         heartbeat_status, _ = metrics.heartbeat.status()
@@ -106,10 +102,4 @@ def render_gauges_fragment():
 
     except Exception as e:
         logger.exception(f"Error fetching metrics: {e}")
-        print(f"❌ Error fetching metrics: {e}")
         st.error(f"Error fetching metrics: {e}")
-
-
-def render():
-    """Render the metrics gauges section using fragment for optimal performance."""
-    render_gauges_fragment()

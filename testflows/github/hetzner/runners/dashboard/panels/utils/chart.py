@@ -16,10 +16,7 @@
 """Common chart creation utilities for dashboard panels."""
 
 import altair as alt
-import streamlit as st
 import pandas as pd
-from datetime import datetime, timedelta
-import logging
 
 
 def create_time_series_chart(
@@ -42,7 +39,7 @@ def create_time_series_chart(
         x_column: Column name for x-axis (time) or index name if time is in index
         y_column: Column name for y-axis (values)
         color_column: Column name for color encoding (optional)
-        title: Chart title
+        title: Chart title (defaults to "Time Series Chart")
         y_title: Y-axis title (defaults to y_column)
         color_domain: List of color domain values
         color_range: List of color range values
@@ -151,32 +148,6 @@ def create_time_series_chart(
         width="container",
         height=height,
     )
-
-
-def render_chart_with_fallback(
-    chart_func,
-    no_data_message="No data available yet. The chart will appear once data is collected.",
-    error_message="Error rendering chart",
-):
-    """Render a chart with standardized error handling and fallback messages.
-
-    Args:
-        chart_func: Function that returns an Altair chart
-        no_data_message: Message to show when no data is available
-        error_message: Base error message for exceptions
-    """
-    try:
-        chart = chart_func()
-
-        if chart is not None:
-            st.altair_chart(chart, use_container_width=True)
-        else:
-            st.info(no_data_message)
-
-    except Exception as e:
-        logger = logging.getLogger(__name__)
-        logger.exception(f"{error_message}: {e}")
-        st.error(f"{error_message}: {e}")
 
 
 def create_dataframe_from_history(

@@ -21,7 +21,7 @@ import socket
 import psutil
 
 from .. import metrics
-from .utils import render as render_utils, chart
+from .utils import renderers, chart
 from .utils.metrics import MultipleSimpleMetrics
 from ..colors import STREAMLIT_COLORS
 
@@ -264,7 +264,7 @@ def render_system_health_metrics():
             {"label": "Load (1m)", "value": f"{health_data['system']['load_1m']:.2f}"},
         ]
 
-        render_utils.render_metrics_columns(metrics_data)
+        renderers.render_metrics_columns(metrics_data)
 
         # Display network info
         hostname, network_df = get_network_info()

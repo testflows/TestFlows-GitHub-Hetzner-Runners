@@ -16,6 +16,22 @@
 from . import get
 
 
+def compute_total_cost():
+    """Compute total cost from all servers."""
+    total_cost = 0
+    servers_info = get.metric_info("github_hetzner_runners_server")
+
+    if servers_info:
+        for info in servers_info:
+            try:
+                cost_hourly = float(info.get("cost_hourly", 0))
+                total_cost += cost_hourly
+            except (ValueError, TypeError):
+                continue
+
+    return total_cost
+
+
 def summary():
     """Get cost summary data.
 

@@ -16,7 +16,7 @@
 """Utility modules for dashboard panels."""
 
 from . import chart
-from . import render
+from . import renderers
 from . import format
 
-__all__ = ["chart", "render", "format"]
+__all__ = ["chart", "renderers", "format"]

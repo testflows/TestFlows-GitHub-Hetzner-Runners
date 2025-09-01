@@ -18,15 +18,40 @@
 import streamlit as st
 import pandas as pd
 import logging
+from contextlib import contextmanager
 from typing import Callable, List, Dict, Any
 
+logger = logging.getLogger(__name__)
 
-def render_panel_with_fragments(
+
+@contextmanager
+def errors(name: str, logger: logging.Logger):
+    """Context manager for consistent error handling in dashboard panels.
+
+    Args:
+        name: Descriptive name for the operation (e.g., "rendering cost metrics")
+        logger: Logger instance to use. If None, logging is disabled.
+
+    Usage:
+        with renderers.errors("rendering cost metrics", logger):
+            # Your code here
+            pass
+    """
+    try:
+        yield
+    except Exception as e:
+        error_msg = f"Error {name}: {e}"
+        if logger is not None:
+            logger.exception(error_msg)
+        st.error(error_msg)
+
+
+def render_panel(
     title: str,
     metrics_func: Callable = None,
     chart_func: Callable = None,
     details_func: Callable = None,
-    error_message: str = "Error rendering panel",
+    message: str = "rendering panel",
 ):
     """Render a panel with standardized structure and error handling.
 
@@ -35,11 +60,10 @@ def render_panel_with_fragments(
         metrics_func: Function to render metrics section
         chart_func: Function to render chart section
         details_func: Function to render details section
-        error_message: Base error message for exceptions
+        message: message for exceptions
     """
-    logger = logging.getLogger(__name__)
 
-    try:
+    with errors(message, logger):
         with st.container(border=True):
             st.header(title)
 
@@ -55,13 +79,9 @@ def render_panel_with_fragments(
             if details_func:
                 details_func()
 
-    except Exception as e:
-        logger.exception(f"{error_message}: {e}")
-        st.error(f"{error_message}: {e}")
-
 
 def render_metrics_columns(metrics_data: List[Dict[str, Any]]):
-    """Render metrics in columns with standardized layout.
+    """Render summary header with key values in columns.
 
     Args:
         metrics_data: List of dictionaries with 'label' and 'value' keys
@@ -152,27 +172,22 @@ def render_details_dataframe(
     )
 
 
-def render_with_error_handling(
-    func: Callable,
-    error_message: str = "Error occurred",
-    fallback_message: str = None,
+def render_chart(
+    chart_func,
+    no_data_message="No data available yet. The chart will appear once data is collected.",
+    message="rendering chart",
 ):
-    """Render a function with standardized error handling.
+    """Render a chart with standardized error handling and fallback messages.
 
     Args:
-        func: Function to render
-        error_message: Base error message
-        fallback_message: Message to show on error (if None, shows error)
+        chart_func: Function that returns an Altair chart
+        no_data_message: Message to show when no data is available
+        message: Base message for exceptions
     """
-    try:
-        return func()
-    except Exception as e:
-        logger = logging.getLogger(__name__)
-        logger.exception(f"{error_message}: {e}")
+    with errors(message, logger):
+        chart = chart_func()
 
-        if fallback_message:
-            st.info(fallback_message)
+        if chart is not None:
+            st.altair_chart(chart, use_container_width=True)
         else:
-            st.error(f"{error_message}: {e}")
-
-        return None
+            st.info(no_data_message)

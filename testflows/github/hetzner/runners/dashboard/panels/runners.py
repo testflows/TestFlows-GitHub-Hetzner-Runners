@@ -18,7 +18,7 @@ import logging
 
 from .. import metrics
 from ..colors import STREAMLIT_COLORS
-from .utils import chart, render as render_utils
+from .utils import chart, renderers
 from .utils.metrics import StateMetric, SimpleMetric, CombinedMetric
 
 
@@ -58,7 +58,7 @@ def render_runners_metrics():
             {"label": "Busy", "value": int(busy_runners)},
         ]
 
-        render_utils.render_metrics_columns(metrics_data)
+        renderers.render_metrics_columns(metrics_data)
 
     except Exception as e:
         logger = logging.getLogger(__name__)
@@ -90,10 +90,10 @@ def render_runners_chart():
                 y_type="count",
             )
 
-        chart.render_chart_with_fallback(
+        renderers.render_chart(
             create_chart,
             "No runners data available yet. The chart will appear once data is collected.",
-            "Error rendering runners chart",
+            "rendering runners chart",
         )
 
     except Exception as e:
@@ -153,7 +153,7 @@ def render_runners_details():
 
             formatted_runners.append(formatted_runner)
 
-        render_utils.render_details_dataframe(
+        renderers.render_details_dataframe(
             items=formatted_runners,
             title="Runner Details",
             name_key="name",
@@ -190,7 +190,7 @@ def render_runners_details():
                     },
                 ]
 
-                render_utils.render_metrics_columns(standby_runner_metrics)
+                renderers.render_metrics_columns(standby_runner_metrics)
 
                 # Show standby runners by status
                 standby_by_status = {}
@@ -218,10 +218,10 @@ def render():
     This function creates a Streamlit-compatible version of the runners panel
     that maintains all the functionality of the original dashboard panel.
     """
-    render_utils.render_panel_with_fragments(
+    renderers.render_panel(
         title="Runners",
         metrics_func=render_runners_metrics,
         chart_func=render_runners_chart,
         details_func=render_runners_details,
-        error_message="Error rendering runners panel",
+        message="rendering runners panel",
     )

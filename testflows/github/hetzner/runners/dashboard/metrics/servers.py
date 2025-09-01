@@ -77,34 +77,28 @@ def recycled_summary():
     Returns:
         dict: Summary of recycled servers
     """
-    try:
-        recycled_metrics = get.metric_info(
-            "github_hetzner_runners_recycled_servers_total"
-        )
+    recycled_metrics = get.metric_info("github_hetzner_runners_recycled_servers_total")
 
-        total = 0
-        by_status = {}
-        by_type_location = {}
+    total = 0
+    by_status = {}
+    by_type_location = {}
 
-        for metric in recycled_metrics:
-            status = metric.get("status", "unknown")
-            server_type = metric.get("server_type", "unknown")
-            location = metric.get("location", "unknown")
-            value = metric.get("value", 0)
+    for metric in recycled_metrics:
+        status = metric.get("status", "unknown")
+        server_type = metric.get("server_type", "unknown")
+        location = metric.get("location", "unknown")
+        value = metric.get("value", 0)
 
-            if value > 0:
-                total += value
-                by_status[status] = by_status.get(status, 0) + value
-                type_location = f"{server_type}-{location}"
-                by_type_location[type_location] = (
-                    by_type_location.get(type_location, 0) + value
-                )
+        if value > 0:
+            total += value
+            by_status[status] = by_status.get(status, 0) + value
+            type_location = f"{server_type}-{location}"
+            by_type_location[type_location] = (
+                by_type_location.get(type_location, 0) + value
+            )
 
-        return {
-            "total": total,
-            "by_status": by_status,
-            "by_type_location": by_type_location,
-        }
-    except Exception as e:
-        logger.exception(f"Error getting recycled servers summary: {e}")
-        return {"total": 0, "by_status": {}, "by_type_location": {}}
+    return {
+        "total": total,
+        "by_status": by_status,
+        "by_type_location": by_type_location,
+    }

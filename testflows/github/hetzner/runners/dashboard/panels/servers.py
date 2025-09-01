@@ -14,13 +14,12 @@
 # limitations under the License.
 
 import streamlit as st
-import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
 
 from .. import metrics
 from ..colors import STATE_COLORS
-from .utils import chart, render as render_utils
+from .utils import chart, renderers
 from .utils.metrics import (
     StateMetric,
     SimpleMetric,
@@ -162,7 +161,7 @@ def render_server_metrics():
             },
         ]
 
-        render_utils.render_metrics_columns(metrics_data)
+        renderers.render_metrics_columns(metrics_data)
 
     except Exception as e:
         logger = logging.getLogger(__name__)
@@ -196,10 +195,10 @@ def render_server_chart():
                 y_type="count",
             )
 
-        chart.render_chart_with_fallback(
+        renderers.render_chart(
             create_chart,
             "No server data available yet. The chart will appear once data is collected.",
-            "Error rendering server chart",
+            "rendering server chart",
         )
 
     except Exception as e:
@@ -246,7 +245,7 @@ def render_health_metrics():
             },
         ]
 
-        render_utils.render_metrics_columns(metrics_data)
+        renderers.render_metrics_columns(metrics_data)
 
     except Exception as e:
         logger = logging.getLogger(__name__)
@@ -281,10 +280,10 @@ def render_health_chart():
                 y_type="count",
             )
 
-        chart.render_chart_with_fallback(
+        renderers.render_chart(
             create_health_chart,
             "No health metrics data available yet. The chart will appear once data is collected.",
-            "Error rendering health metrics chart",
+            "rendering health metrics chart",
         )
 
     except Exception as e:
@@ -308,11 +307,6 @@ def render_health_details():
         zombie_servers = metrics.get.metric_info(
             "github_hetzner_runners_zombie_server_age_seconds"
         )
-        zombie_server_ids = {
-            zombie.get("server_id")
-            for zombie in zombie_servers
-            if zombie.get("server_id")
-        }
 
         unused_runners = metrics.get.metric_info(
             "github_hetzner_runners_unused_runner_age_seconds"
@@ -396,7 +390,7 @@ def render_health_details():
             key=lambda x: (status_priority.get(x["health_status"], 4), x["server_name"])
         )
 
-        render_utils.render_details_dataframe(
+        renderers.render_details_dataframe(
             items=health_data,
             title="Health Status Details",
             name_key="server_name",
@@ -472,7 +466,7 @@ def render_server_details():
 
             formatted_servers.append(formatted_server)
 
-        render_utils.render_details_dataframe(
+        renderers.render_details_dataframe(
             items=formatted_servers,
             title="Server Details",
             name_key="name",
@@ -492,19 +486,19 @@ def render():
     that maintains all the functionality of the original dashboard panel.
     """
     # First section: Servers
-    render_utils.render_panel_with_fragments(
+    renderers.render_panel(
         title="Servers",
         metrics_func=render_server_metrics,
         chart_func=render_server_chart,
         details_func=render_server_details,
-        error_message="Error rendering servers panel",
+        message="rendering servers panel",
     )
 
     # Second section: Health Status
-    render_utils.render_panel_with_fragments(
+    renderers.render_panel(
         title="Health Status",
         metrics_func=render_health_metrics,
         chart_func=render_health_chart,
         details_func=render_health_details,
-        error_message="Error rendering health status panel",
+        message="rendering health status panel",
     )

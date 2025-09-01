@@ -19,7 +19,7 @@ import logging
 
 from ..colors import STREAMLIT_COLORS
 from .. import metrics
-from .utils import chart, render as render_utils
+from .utils import chart, renderers
 from .utils.metrics import SimpleMetric
 
 
@@ -166,7 +166,7 @@ def render_scale_down_errors_metrics():
             {"label": "Total Errors", "value": int(total_errors)},
         ]
 
-        render_utils.render_metrics_columns(metrics_data)
+        renderers.render_metrics_columns(metrics_data)
 
     except Exception as e:
         logger = logging.getLogger(__name__)
@@ -194,10 +194,10 @@ def render_scale_down_errors_chart():
                 y_type="count",
             )
 
-        chart.render_chart_with_fallback(
+        renderers.render_chart(
             create_chart,
             "No error data available yet. The chart will appear once data is collected.",
-            "Error rendering scale-down errors chart",
+            "rendering scale-down errors chart",
         )
 
     except Exception as e:
@@ -234,7 +234,7 @@ def render_scale_down_errors_details():
 
             formatted_errors.append(formatted_error)
 
-        render_utils.render_details_dataframe(
+        renderers.render_details_dataframe(
             items=formatted_errors,
             title="Error Details",
             name_key="name",
@@ -253,10 +253,10 @@ def render():
     This function creates a Streamlit-compatible version of the scale-down errors panel
     that maintains all the functionality of the original dashboard panel.
     """
-    render_utils.render_panel_with_fragments(
+    renderers.render_panel(
         title="Scale-down Errors (Last Hour)",
         metrics_func=render_scale_down_errors_metrics,
         chart_func=render_scale_down_errors_chart,
         details_func=render_scale_down_errors_details,
-        error_message="Error rendering scale-down errors panel",
+        message="rendering scale-down errors panel",
     )

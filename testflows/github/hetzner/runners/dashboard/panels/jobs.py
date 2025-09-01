@@ -18,7 +18,7 @@ import logging
 
 from .. import metrics
 from ..colors import STREAMLIT_COLORS
-from .utils import chart, render as render_utils, format
+from .utils import chart, renderers, format
 from .utils.metrics import MultipleSimpleMetrics
 
 
@@ -47,7 +47,7 @@ def render_jobs_metrics():
             {"label": "Queued", "value": jobs_summary["queued"]},
         ]
 
-        render_utils.render_metrics_columns(metrics_data)
+        renderers.render_metrics_columns(metrics_data)
 
     except Exception as e:
         logger = logging.getLogger(__name__)
@@ -78,10 +78,10 @@ def render_jobs_chart():
                 y_type="count",
             )
 
-        chart.render_chart_with_fallback(
+        renderers.render_chart(
             create_chart,
             "No jobs data available yet. The chart will appear once data is collected.",
-            "Error rendering jobs chart",
+            "rendering jobs chart",
         )
 
     except Exception as e:
@@ -193,7 +193,7 @@ def render_jobs_details():
                     logging.exception(f"Error processing job info: {info}")
                     continue
 
-        render_utils.render_details_dataframe(
+        renderers.render_details_dataframe(
             items=formatted_jobs,
             title="Job Details",
             name_key="name",
@@ -213,10 +213,10 @@ def render():
     This function creates a Streamlit-compatible version of the jobs panel
     that maintains all the functionality of the original dashboard panel.
     """
-    render_utils.render_panel_with_fragments(
+    renderers.render_panel(
         title="Jobs",
         metrics_func=render_jobs_metrics,
         chart_func=render_jobs_chart,
         details_func=render_jobs_details,
-        error_message="Error rendering jobs panel",
+        message="rendering jobs panel",
     )
