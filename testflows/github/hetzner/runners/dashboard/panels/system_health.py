@@ -23,7 +23,35 @@ from datetime import datetime, timedelta
 
 from .. import metrics
 from .utils import render as render_utils, data, chart
+from .utils.metrics import MultipleSimpleMetrics
 from ..colors import COLORS, STREAMLIT_COLORS
+
+
+# Create metric abstraction
+system_health_metrics = MultipleSimpleMetrics(
+    [
+        {
+            "metric_name": "github_hetzner_runners_system_cpu_percent",
+            "status_name": "System CPU",
+        },
+        {
+            "metric_name": "github_hetzner_runners_system_memory_percent",
+            "status_name": "System Memory",
+        },
+        {
+            "metric_name": "github_hetzner_runners_process_cpu_percent",
+            "status_name": "Process CPU",
+        },
+        {
+            "metric_name": "github_hetzner_runners_process_memory_percent",
+            "status_name": "Process Memory",
+        },
+        {
+            "metric_name": "github_hetzner_runners_system_root_disk_percent",
+            "status_name": "Root Disk",
+        },
+    ]
+)
 
 
 def get_network_info():
@@ -206,74 +234,6 @@ def get_system_health_data():
     }
 
 
-def get_system_health_history_data(cutoff_minutes=15):
-    """Get system health history data for plotting.
-
-    Args:
-        cutoff_minutes: Number of minutes to keep in history
-
-    Returns:
-        dict: Dictionary with system health metrics history data
-    """
-    metric_names = [
-        "github_hetzner_runners_system_cpu_percent",
-        "github_hetzner_runners_system_memory_percent",
-        "github_hetzner_runners_process_cpu_percent",
-        "github_hetzner_runners_process_memory_percent",
-        "github_hetzner_runners_system_root_disk_percent",
-    ]
-
-    # Update system health metrics and store in history
-    data.get_current_multiple_metrics(metric_names)
-
-    return data.get_multiple_metrics_history(metric_names, cutoff_minutes)
-
-
-def create_system_health_dataframe(history_data):
-    """Create a pandas DataFrame for the system health data with proper time formatting."""
-    if not history_data:
-        return pd.DataFrame({"Time": pd.to_datetime([]), "Metric": [], "Value": []})
-
-    # Map metric names to display names
-    metric_to_display = {
-        "github_hetzner_runners_system_cpu_percent": "System CPU",
-        "github_hetzner_runners_system_memory_percent": "System Memory",
-        "github_hetzner_runners_process_cpu_percent": "Process CPU",
-        "github_hetzner_runners_process_memory_percent": "Process Memory",
-        "github_hetzner_runners_system_root_disk_percent": "Root Disk",
-    }
-
-    # Collect all data points
-    all_data = []
-
-    for metric_name, data in history_data.items():
-        display_name = metric_to_display.get(metric_name, metric_name)
-        timestamps = data.get("timestamps", [])
-        values = data.get("values", [])
-
-        if timestamps and values and len(timestamps) == len(values):
-            for ts, val in zip(timestamps, values):
-                try:
-                    all_data.append(
-                        {
-                            "Time": pd.to_datetime(ts),
-                            "Metric": display_name,
-                            "Value": float(val),
-                        }
-                    )
-                except (ValueError, TypeError):
-                    continue
-
-    if not all_data:
-        return pd.DataFrame({"Time": pd.to_datetime([]), "Metric": [], "Value": []})
-
-    # Create DataFrame and sort by time
-    df = pd.DataFrame(all_data)
-    df = df.sort_values("Time")
-
-    return df
-
-
 def render_system_health_metrics():
     """Render the system health metrics header."""
     try:
@@ -332,11 +292,11 @@ def render_system_health_metrics():
 def render_system_health_chart():
     """Render the system health chart using Altair for proper multi-line visualization."""
     try:
-        # Get fresh data
-        history_data = get_system_health_history_data()
-
-        # Create DataFrame for the chart
-        df = create_system_health_dataframe(history_data)
+        # Get DataFrame using the simple abstraction
+        df = system_health_metrics.get_dataframe()
+        # Rename columns to match expected format
+        if not df.empty:
+            df = df.rename(columns={"Status": "Metric", "Count": "Value"})
 
         # Create color mapping for metrics
         color_domain = [

@@ -22,45 +22,13 @@ import logging
 from ..colors import STREAMLIT_COLORS
 from .. import metrics
 from .utils import chart, render as render_utils, data, format
-from .scale_up_errors import create_errors_dataframe
+from .utils.metrics import SimpleMetric
 
 
-def get_scale_down_errors_history_data(cutoff_minutes=60):
-    """Get scale-down errors history data for plotting.
-
-    Args:
-        cutoff_minutes: Number of minutes to keep in history
-
-    Returns:
-        dict: Dictionary with error history data
-    """
-    timestamps, values = metrics.get_metric_history_data(
-        "github_hetzner_runners_scale_down_failures_last_hour",
-        cutoff_minutes=cutoff_minutes,
-    )
-    return {"timestamps": timestamps, "values": values}
-
-
-def get_current_scale_down_errors_data():
-    """Get current scale-down errors data without caching to ensure fresh data."""
-    current_time = datetime.now()
-    current_value = (
-        metrics.get_metric_value("github_hetzner_runners_scale_down_failures_last_hour")
-        or 0
-    )
-
-    # Update metric history for plotting (this tracks the gauge value over time)
-    data.update_simple_metric_history(
-        "github_hetzner_runners_scale_down_failures_last_hour",
-        current_value,
-        current_time,
-        cutoff_minutes=60,
-    )
-
-    # Get history data for plotting
-    history_data = get_scale_down_errors_history_data()
-
-    return history_data, current_value, current_time
+# Create metric abstraction
+scale_down_errors_metric = SimpleMetric(
+    "github_hetzner_runners_scale_down_failures_last_hour", cutoff_minutes=60
+)
 
 
 def get_scale_down_errors_data():
@@ -175,8 +143,16 @@ def get_scale_down_errors_data():
         ),
     }
 
-    # Get history data for plotting
-    history_data = get_scale_down_errors_history_data()
+    # Get history data for plotting using metric abstraction
+    df = scale_down_errors_metric.get_dataframe()
+    # Convert back to the expected format for backward compatibility
+    if not df.empty:
+        history_data = {
+            "timestamps": df["Time"].tolist(),
+            "values": df["Value"].tolist(),
+        }
+    else:
+        history_data = {"timestamps": [], "values": []}
 
     return error_list_data, total_errors, history_data
 
@@ -203,11 +179,11 @@ def render_scale_down_errors_metrics():
 def render_scale_down_errors_chart():
     """Render the scale-down errors chart section."""
     try:
-        # Get fresh data
-        history_data, current_value, current_time = get_current_scale_down_errors_data()
-
-        # Create DataFrame for the chart
-        df = create_errors_dataframe(history_data)
+        # Get DataFrame using the simple abstraction
+        df = scale_down_errors_metric.get_dataframe()
+        # Rename Value column to Count for consistency with the chart
+        if not df.empty:
+            df = df.rename(columns={"Value": "Count"})
 
         def create_chart():
             return chart.create_time_series_chart(

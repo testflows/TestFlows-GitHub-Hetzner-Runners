@@ -21,36 +21,14 @@ import logging
 from .. import metrics
 from ..colors import STATE_COLORS
 from .utils import chart, render as render_utils, data
+from .utils.metrics import StateMetric
 
 
-def get_standby_history_data(cutoff_minutes=15):
-    """Get standby server history data for plotting.
-
-    Args:
-        cutoff_minutes: Number of minutes to keep in history
-
-    Returns:
-        dict: Dictionary with standby server status history data
-    """
-    states = ["running", "off", "initializing", "ready", "busy"]
-    return data.get_metric_history_for_states(
-        "github_hetzner_runners_standby_servers_total",
-        states,
-        cutoff_minutes=cutoff_minutes,
-    )
-
-
-def get_current_standby_data():
-    """Get current standby server data without caching to ensure fresh data."""
-    states = ["running", "off", "initializing", "ready", "busy"]
-    current_values, current_time = data.get_current_metric_values(
-        "github_hetzner_runners_standby_servers_total", states
-    )
-
-    # Get history data for plotting
-    history_data = get_standby_history_data()
-
-    return history_data, current_values, current_time
+# Create metric abstraction
+standby_states_metric = StateMetric(
+    "github_hetzner_runners_standby_servers_total",
+    ["running", "off", "initializing", "ready", "busy"],
+)
 
 
 def render_standby_metrics():
@@ -101,11 +79,8 @@ def render_standby_metrics():
 def render_standby_chart():
     """Render the standby chart using Altair for proper multi-line visualization."""
     try:
-        # Get fresh data
-        history_data, current_values, current_time = get_current_standby_data()
-
-        # Create DataFrame for the chart
-        df = chart.create_dataframe_from_history(history_data)
+        # Get DataFrame using the simple abstraction
+        df = standby_states_metric.get_dataframe()
 
         # Create color mapping for standby server states
         color_domain = ["running", "off", "initializing", "ready", "busy"]
