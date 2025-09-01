@@ -14,14 +14,12 @@
 # limitations under the License.
 
 import streamlit as st
-import pandas as pd
-from datetime import datetime, timedelta
 import dateutil.parser
 import logging
 
 from ..colors import STREAMLIT_COLORS
 from .. import metrics
-from .utils import chart, render as render_utils, format
+from .utils import chart, render as render_utils
 from .utils.metrics import SimpleMetric
 
 
@@ -38,13 +36,13 @@ def get_scale_up_errors_data():
         tuple: (error_list_data, error_count, history_data)
     """
     # Get error information from metrics
-    errors_info = metrics.get_metric_info(
+    errors_info = metrics.get.metric_info(
         "github_hetzner_runners_scale_up_failure_last_hour"
     )
 
     # Get total number of errors from metrics
     total_errors = (
-        metrics.get_metric_value("github_hetzner_runners_scale_up_failures_last_hour")
+        metrics.get.metric_value("github_hetzner_runners_scale_up_failures_last_hour")
         or 0
     )
 
@@ -185,7 +183,7 @@ def render_scale_up_errors_details():
     """Render the scale-up errors details section."""
     try:
         # Get data
-        error_list_data, total_errors, _ = get_scale_up_errors_data()
+        error_list_data, _, _ = get_scale_up_errors_data()
 
         # Prepare error data for dataframe
         formatted_errors = []

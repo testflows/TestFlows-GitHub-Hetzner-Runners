@@ -19,7 +19,6 @@ from datetime import datetime, timedelta
 import logging
 
 from .. import metrics
-from ..metrics import get_metric_value
 from ..colors import STATE_COLORS
 from .utils import chart, render as render_utils
 from .utils.metrics import (
@@ -54,7 +53,8 @@ def get_health_metrics_history_data(cutoff_minutes=15):
 
     # Update zombie servers history
     zombie_total = (
-        get_metric_value("github_hetzner_runners_zombie_servers_total_count") or 0
+        metrics.get.metric_value("github_hetzner_runners_zombie_servers_total_count")
+        or 0
     )
     update_simple_metric_history(
         "github_hetzner_runners_zombie_servers_total_count",
@@ -65,7 +65,8 @@ def get_health_metrics_history_data(cutoff_minutes=15):
 
     # Update unused runners history
     unused_total = (
-        get_metric_value("github_hetzner_runners_unused_runners_total_count") or 0
+        metrics.get.metric_value("github_hetzner_runners_unused_runners_total_count")
+        or 0
     )
     update_simple_metric_history(
         "github_hetzner_runners_unused_runners_total_count",
@@ -75,7 +76,7 @@ def get_health_metrics_history_data(cutoff_minutes=15):
     )
 
     # Update recycled servers history
-    recycled_summary = metrics.get_recycled_servers_summary()
+    recycled_summary = metrics.servers.recycled_summary()
     recycled_total = recycled_summary["total"]
     update_simple_metric_history(
         "github_hetzner_runners_recycled_servers_total",
@@ -142,7 +143,7 @@ def render_server_metrics():
     """Render the server metrics header in an isolated fragment for optimal performance."""
     try:
         # Get current server summary
-        servers_summary = metrics.get_servers_summary()
+        servers_summary = metrics.servers.summary()
 
         # Build metrics data
         metrics_data = [
@@ -212,12 +213,18 @@ def render_health_metrics():
     try:
         # Get health metrics
         zombie_total = int(
-            get_metric_value("github_hetzner_runners_zombie_servers_total_count") or 0
+            metrics.get.metric_value(
+                "github_hetzner_runners_zombie_servers_total_count"
+            )
+            or 0
         )
         unused_total = int(
-            get_metric_value("github_hetzner_runners_unused_runners_total_count") or 0
+            metrics.get.metric_value(
+                "github_hetzner_runners_unused_runners_total_count"
+            )
+            or 0
         )
-        recycled_summary = metrics.get_recycled_servers_summary()
+        recycled_summary = metrics.servers.recycled_summary()
         recycled_total = int(recycled_summary["total"])
 
         # Build metrics data
@@ -290,7 +297,7 @@ def render_health_details():
     """Render the health status details as a dataframe."""
     try:
         # Get server information
-        servers_summary = metrics.get_servers_summary()
+        servers_summary = metrics.servers.summary()
         servers_info = servers_summary["details"]
 
         if not servers_info:
@@ -298,7 +305,7 @@ def render_health_details():
             return
 
         # Get individual server health data
-        zombie_servers = metrics.get_metric_info(
+        zombie_servers = metrics.get.metric_info(
             "github_hetzner_runners_zombie_server_age_seconds"
         )
         zombie_server_ids = {
@@ -307,7 +314,7 @@ def render_health_details():
             if zombie.get("server_id")
         }
 
-        unused_runners = metrics.get_metric_info(
+        unused_runners = metrics.get.metric_info(
             "github_hetzner_runners_unused_runner_age_seconds"
         )
         unused_server_names = set()
@@ -406,9 +413,8 @@ def render_server_details():
     """Render the server details as a dataframe."""
     try:
         # Get server information using the same approach as metrics
-        servers_summary = metrics.get_servers_summary()
+        servers_summary = metrics.servers.summary()
         servers_info = servers_summary["details"]
-        total_servers = servers_summary["total"]
 
         # Prepare server data for dataframe with all relevant fields
         formatted_servers = []
@@ -417,7 +423,7 @@ def render_server_details():
             server_name = server.get("name")
 
             # Get server labels
-            server_labels_info = metrics.get_metric_info(
+            server_labels_info = metrics.get.metric_info(
                 "github_hetzner_runners_server_labels"
             )
             server_labels_list = []

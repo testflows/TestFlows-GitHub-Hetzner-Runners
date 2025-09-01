@@ -14,7 +14,7 @@
 # limitations under the License.
 import logging
 import streamlit as st
-import testflows.github.hetzner.runners.dashboard.metrics as metrics
+from .. import metrics
 
 
 def render_gauges_fragment():
@@ -27,13 +27,13 @@ def render_gauges_fragment():
 
     try:
         # Get metrics data
-        heartbeat_status, _ = metrics.get_heartbeat_status()
-        cost_summary = metrics.get_cost_summary()
-        servers_summary = metrics.get_servers_summary()
-        volumes_summary = metrics.get_volumes_summary()
-        runners_summary = metrics.get_runners_summary()
-        jobs_summary = metrics.get_jobs_summary()
-        errors_summary = metrics.get_errors_summary()
+        heartbeat_status, _ = metrics.heartbeat.status()
+        cost_summary = metrics.cost.summary()
+        servers_summary = metrics.servers.summary()
+        volumes_summary = metrics.volumes.summary()
+        runners_summary = metrics.runners.summary()
+        jobs_summary = metrics.jobs.summary()
+        errors_summary = metrics.errors.summary()
 
         # Gauges in columns
         col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8, gap="medium")

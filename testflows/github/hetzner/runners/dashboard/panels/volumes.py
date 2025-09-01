@@ -31,7 +31,7 @@ def render_volume_metrics():
     """Render the volume metrics header in an isolated fragment for optimal performance."""
     try:
         # Get current volume summary
-        volumes_summary = metrics.get_volumes_summary()
+        volumes_summary = metrics.volumes.summary()
 
         # Build metrics data
         metrics_data = [
@@ -98,9 +98,8 @@ def render_volume_details():
     """Render the volume details as a dataframe."""
     try:
         # Get volume information using the same approach as metrics
-        volumes_summary = metrics.get_volumes_summary()
+        volumes_summary = metrics.volumes.summary()
         volumes_info = volumes_summary["details"]
-        total_volumes = volumes_summary["total"]
 
         # Prepare volume data for dataframe with all relevant fields
         formatted_volumes = []

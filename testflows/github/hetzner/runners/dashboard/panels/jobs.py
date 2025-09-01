@@ -14,8 +14,6 @@
 # limitations under the License.
 
 import streamlit as st
-import pandas as pd
-from datetime import datetime, timedelta
 import logging
 
 from .. import metrics
@@ -40,7 +38,7 @@ def render_jobs_metrics():
     """Render the jobs metrics header in an isolated fragment for optimal performance."""
     try:
         # Get current jobs summary
-        jobs_summary = metrics.get_jobs_summary()
+        jobs_summary = metrics.jobs.summary()
 
         # Build metrics data
         metrics_data = [
@@ -96,13 +94,11 @@ def render_jobs_details():
     """Render the jobs details as a dataframe."""
     try:
         # Get job information
-        queued_jobs_info = metrics.get_metric_info("github_hetzner_runners_queued_job")
-        running_jobs_info = metrics.get_metric_info(
+        queued_jobs_info = metrics.get.metric_info("github_hetzner_runners_queued_job")
+        running_jobs_info = metrics.get.metric_info(
             "github_hetzner_runners_running_job"
         )
-        jobs_summary = metrics.get_jobs_summary()
-
-        total_jobs = jobs_summary["total"]
+        jobs_summary = metrics.jobs.summary()
 
         # Prepare job data for dataframe
         formatted_jobs = []

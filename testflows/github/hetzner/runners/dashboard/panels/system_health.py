@@ -19,12 +19,11 @@ import pandas as pd
 from datetime import datetime
 import socket
 import psutil
-from datetime import datetime, timedelta
 
 from .. import metrics
 from .utils import render as render_utils, chart
 from .utils.metrics import MultipleSimpleMetrics
-from ..colors import COLORS, STREAMLIT_COLORS
+from ..colors import STREAMLIT_COLORS
 
 
 # Create metric abstraction
@@ -115,73 +114,73 @@ def get_system_health_data():
 
     # Get system metrics
     system_cpu = (
-        metrics.get_metric_value("github_hetzner_runners_system_cpu_percent") or 0
+        metrics.get.metric_value("github_hetzner_runners_system_cpu_percent") or 0
     )
     system_memory_percent = (
-        metrics.get_metric_value("github_hetzner_runners_system_memory_percent") or 0
+        metrics.get.metric_value("github_hetzner_runners_system_memory_percent") or 0
     )
     system_memory_total = (
-        metrics.get_metric_value("github_hetzner_runners_system_memory_total_bytes")
+        metrics.get.metric_value("github_hetzner_runners_system_memory_total_bytes")
         or 0
     )
     system_memory_used = (
-        metrics.get_metric_value("github_hetzner_runners_system_memory_used_bytes") or 0
+        metrics.get.metric_value("github_hetzner_runners_system_memory_used_bytes") or 0
     )
     system_memory_available = (
-        metrics.get_metric_value("github_hetzner_runners_system_memory_available_bytes")
+        metrics.get.metric_value("github_hetzner_runners_system_memory_available_bytes")
         or 0
     )
 
     # Get process metrics
     process_cpu = (
-        metrics.get_metric_value("github_hetzner_runners_process_cpu_percent") or 0
+        metrics.get.metric_value("github_hetzner_runners_process_cpu_percent") or 0
     )
     process_memory_percent = (
-        metrics.get_metric_value("github_hetzner_runners_process_memory_percent") or 0
+        metrics.get.metric_value("github_hetzner_runners_process_memory_percent") or 0
     )
     process_memory_rss = (
-        metrics.get_metric_value("github_hetzner_runners_process_memory_rss_bytes") or 0
+        metrics.get.metric_value("github_hetzner_runners_process_memory_rss_bytes") or 0
     )
     process_memory_vms = (
-        metrics.get_metric_value("github_hetzner_runners_process_memory_vms_bytes") or 0
+        metrics.get.metric_value("github_hetzner_runners_process_memory_vms_bytes") or 0
     )
     process_threads = (
-        metrics.get_metric_value("github_hetzner_runners_process_num_threads") or 0
+        metrics.get.metric_value("github_hetzner_runners_process_num_threads") or 0
     )
     process_fds = (
-        metrics.get_metric_value("github_hetzner_runners_process_num_fds") or 0
+        metrics.get.metric_value("github_hetzner_runners_process_num_fds") or 0
     )
 
     # Get system load averages
     load_1m = (
-        metrics.get_metric_value("github_hetzner_runners_system_load_average_1m") or 0
+        metrics.get.metric_value("github_hetzner_runners_system_load_average_1m") or 0
     )
     load_5m = (
-        metrics.get_metric_value("github_hetzner_runners_system_load_average_5m") or 0
+        metrics.get.metric_value("github_hetzner_runners_system_load_average_5m") or 0
     )
     load_15m = (
-        metrics.get_metric_value("github_hetzner_runners_system_load_average_15m") or 0
+        metrics.get.metric_value("github_hetzner_runners_system_load_average_15m") or 0
     )
 
     # Get system info
-    num_cpus = metrics.get_metric_value("github_hetzner_runners_system_num_cpus") or 0
-    boot_time = metrics.get_metric_value("github_hetzner_runners_system_boot_time") or 0
+    num_cpus = metrics.get.metric_value("github_hetzner_runners_system_num_cpus") or 0
+    boot_time = metrics.get.metric_value("github_hetzner_runners_system_boot_time") or 0
 
     # Get disk metrics for root filesystem
     root_disk_percent = (
-        metrics.get_metric_value(
+        metrics.get.metric_value(
             "github_hetzner_runners_system_disk_percent", {"mountpoint": "/"}
         )
         or 0
     )
     root_disk_used = (
-        metrics.get_metric_value(
+        metrics.get.metric_value(
             "github_hetzner_runners_system_disk_used_bytes", {"mountpoint": "/"}
         )
         or 0
     )
     root_disk_total = (
-        metrics.get_metric_value(
+        metrics.get.metric_value(
             "github_hetzner_runners_system_disk_total_bytes", {"mountpoint": "/"}
         )
         or 0
@@ -239,7 +238,6 @@ def render_system_health_metrics():
     try:
         # Get current system health data
         health_data = get_system_health_data()
-        network_info = get_network_info()
 
         # Build metrics data
         metrics_data = [

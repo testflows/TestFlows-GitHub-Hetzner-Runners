@@ -47,11 +47,11 @@ def get_metric_history_for_states(
             # Add state to labels
             state_labels = labels.copy()
             state_labels["status"] = state
-            timestamps, values = metrics.get_metric_history_data(
+            timestamps, values = metrics.history.data(
                 metric_name, state_labels, cutoff_minutes=cutoff_minutes
             )
         else:
-            timestamps, values = metrics.get_metric_history_data(
+            timestamps, values = metrics.history.data(
                 metric_name, {"status": state}, cutoff_minutes=cutoff_minutes
             )
         history_data[state] = {"timestamps": timestamps, "values": values}
@@ -82,19 +82,19 @@ def get_current_metric_values(
             # Add state to labels
             state_labels = labels.copy()
             state_labels["status"] = state
-            value = metrics.get_metric_value(metric_name, state_labels) or 0
+            value = metrics.get.metric_value(metric_name, state_labels) or 0
         else:
-            value = metrics.get_metric_value(metric_name, {"status": state}) or 0
+            value = metrics.get.metric_value(metric_name, {"status": state}) or 0
 
         current_values[state] = value
 
         # Update metric history
         if labels:
-            metrics.update_metric_history(
+            metrics.history.update(
                 metric_name, state_labels, value, current_time, cutoff_minutes=15
             )
         else:
-            metrics.update_metric_history(
+            metrics.history.update(
                 metric_name, {"status": state}, value, current_time, cutoff_minutes=15
             )
 
@@ -114,7 +114,7 @@ def get_simple_metric_history(
     Returns:
         Tuple of (timestamps, values)
     """
-    return metrics.get_metric_history_data(metric_name, cutoff_minutes=cutoff_minutes)
+    return metrics.history.data(metric_name, cutoff_minutes=cutoff_minutes)
 
 
 def update_simple_metric_history(
@@ -134,7 +134,7 @@ def update_simple_metric_history(
     if current_time is None:
         current_time = datetime.now()
 
-    metrics.update_metric_history(
+    metrics.history.update(
         metric_name, {}, value, current_time, cutoff_minutes=cutoff_minutes
     )
 
@@ -151,7 +151,7 @@ class SimpleMetric:
 
     def get_current_value(self) -> float:
         """Get current value of the metric."""
-        return metrics.get_metric_value(self.metric_name) or 0
+        return metrics.get.metric_value(self.metric_name) or 0
 
     def update_and_get_history(self) -> Tuple[List, List, float, datetime]:
         """Update history with current value and return (timestamps, values, current_value, current_time)."""

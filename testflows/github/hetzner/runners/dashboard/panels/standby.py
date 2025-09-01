@@ -35,7 +35,7 @@ def render_standby_metrics():
     """Render the standby metrics header in an isolated fragment for optimal performance."""
     try:
         # Get all server information and filter for standby servers
-        servers_summary = metrics.get_servers_summary()
+        servers_summary = metrics.servers.summary()
         servers_info = servers_summary["details"]
 
         # Filter for standby servers
@@ -118,7 +118,7 @@ def render_standby_details():
     """Render the standby details as a dataframe."""
     try:
         # Get all server information and filter for standby servers
-        servers_summary = metrics.get_servers_summary()
+        servers_summary = metrics.servers.summary()
         servers_info = servers_summary["details"]
 
         # Filter for standby servers
@@ -127,8 +127,6 @@ def render_standby_details():
             server_name = server.get("name", "")
             if server_name.startswith("github-hetzner-runner-standby-"):
                 standby_servers.append(server)
-
-        total_standby = len(standby_servers)
 
         # Always continue to show the dataframe, even if empty
 
@@ -139,7 +137,7 @@ def render_standby_details():
             server_name = server.get("name")
 
             # Get server labels
-            server_labels_info = metrics.get_metric_info(
+            server_labels_info = metrics.get.metric_info(
                 "github_hetzner_runners_server_labels"
             )
             server_labels_list = []
@@ -230,7 +228,7 @@ def render_standby_runners_info():
     """Render standby runners information."""
     try:
         # Get standby runners summary
-        standby_runners_summary = metrics.get_standby_runners_summary()
+        standby_runners_summary = metrics.runners.standby_summary()
 
         # Always show metrics, even when there are no standby runners
         standby_runners_metrics = [
@@ -257,7 +255,7 @@ def render_standby_runners_chart():
     """Render the standby runners chart using Altair for proper multi-line visualization."""
     try:
         # Get standby runners summary
-        standby_runners_summary = metrics.get_standby_runners_summary()
+        standby_runners_summary = metrics.runners.standby_summary()
 
         # Try to get historical data for standby runners
         try:
@@ -331,9 +329,8 @@ def render_standby_runners_details():
     """Render the standby runners details as a dataframe."""
     try:
         # Get standby runners summary
-        standby_runners_summary = metrics.get_standby_runners_summary()
+        standby_runners_summary = metrics.runners.standby_summary()
         standby_runners_info = standby_runners_summary["details"]
-        total_standby = standby_runners_summary["total"]
 
         # Prepare standby runner data for dataframe
         formatted_standby_runners = []
@@ -342,7 +339,7 @@ def render_standby_runners_details():
             runner_name = runner.get("name")
 
             # Get runner labels
-            runner_labels_info = metrics.get_metric_info(
+            runner_labels_info = metrics.get.metric_info(
                 "github_hetzner_runners_runner_labels"
             )
             runner_labels_list = []

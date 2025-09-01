@@ -14,12 +14,10 @@
 # limitations under the License.
 
 import streamlit as st
-import pandas as pd
-from datetime import datetime, timedelta
 import logging
 
 from .. import metrics
-from ..colors import STREAMLIT_COLORS, STATE_COLORS
+from ..colors import STREAMLIT_COLORS
 from .utils import chart, render as render_utils
 from .utils.metrics import StateMetric, SimpleMetric, CombinedMetric
 
@@ -39,11 +37,11 @@ def render_runners_metrics():
     """Render the runners metrics header in an isolated fragment for optimal performance."""
     try:
         # Get current runners summary
-        runners_summary = metrics.get_runners_summary()
+        runners_summary = metrics.runners.summary()
 
         # Get busy runners count
         busy_runners = (
-            metrics.get_metric_value("github_hetzner_runners_runners_busy") or 0
+            metrics.get.metric_value("github_hetzner_runners_runners_busy") or 0
         )
 
         # Build metrics data
@@ -108,9 +106,8 @@ def render_runners_details():
     """Render the runners details as a dataframe."""
     try:
         # Get runner information using the same approach as metrics
-        runners_summary = metrics.get_runners_summary()
+        runners_summary = metrics.runners.summary()
         runners_info = runners_summary["details"]
-        total_runners = runners_summary["total"]
 
         # Prepare runner data for dataframe with all relevant fields
         formatted_runners = []
@@ -119,7 +116,7 @@ def render_runners_details():
             runner_name = runner.get("name")
 
             # Get runner labels
-            runner_labels_info = metrics.get_metric_info(
+            runner_labels_info = metrics.get.metric_info(
                 "github_hetzner_runners_runner_labels"
             )
             runner_labels_list = []

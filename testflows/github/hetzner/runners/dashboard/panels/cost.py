@@ -26,7 +26,7 @@ from .utils.metrics import ComputedMetric
 def compute_total_cost():
     """Compute total cost from all servers."""
     total_cost = 0
-    servers_info = metrics.get_metric_info("github_hetzner_runners_server")
+    servers_info = metrics.get.metric_info("github_hetzner_runners_server")
 
     if servers_info:
         for info in servers_info:
@@ -51,7 +51,7 @@ def render_cost_metrics():
     """
     try:
         # Get current cost summary for display
-        cost_summary = metrics.get_cost_summary()
+        cost_summary = metrics.cost.summary()
 
         # Build metrics data
         metrics_data = [
