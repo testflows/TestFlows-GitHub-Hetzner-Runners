@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 @contextmanager
-def errors(name: str, logger: logging.Logger):
+def errors(name: str, _logger: logging.Logger = None):
     """Context manager for consistent error handling in dashboard panels.
 
     Args:
@@ -37,12 +37,12 @@ def errors(name: str, logger: logging.Logger):
             # Your code here
             pass
     """
+    _logger = _logger if _logger is not None else logger
     try:
         yield
     except Exception as e:
         error_msg = f"Error {name}: {e}"
-        if logger is not None:
-            logger.exception(error_msg)
+        _logger.exception(error_msg)
         st.error(error_msg)
 
 
@@ -63,24 +63,27 @@ def render_panel(
         message: message for exceptions
     """
 
-    with errors(message, logger):
+    with errors(message):
         with st.container(border=True):
             st.header(title)
 
             # Render metrics if provided
             if metrics_func:
-                metrics_func()
+                with errors(f"rendering {title} metrics"):
+                    metrics_func()
 
             # Render chart if provided
             if chart_func:
-                chart_func()
+                with errors(f"rendering {title} chart"):
+                    chart_func()
 
             # Render details if provided
             if details_func:
-                details_func()
+                with errors(f"rendering {title} details"):
+                    details_func()
 
 
-def render_metrics_columns(metrics_data: List[Dict[str, Any]]):
+def render_metrics(metrics_data: List[Dict[str, Any]]):
     """Render summary header with key values in columns.
 
     Args:
@@ -99,6 +102,16 @@ def render_metrics_columns(metrics_data: List[Dict[str, Any]]):
                 value=metric.get("value", 0),
                 delta=metric.get("delta", None),
             )
+
+
+def render_metrics_columns(metrics_data: List[Dict[str, Any]]):
+    """Render summary header with key values in columns.
+
+    Args:
+        metrics_data: List of dictionaries with 'label' and 'value' keys
+    """
+    # FIXME: Deprecated, use render_metrics instead
+    render_metrics(metrics_data)
 
 
 def render_details_dataframe(
@@ -184,10 +197,9 @@ def render_chart(
         no_data_message: Message to show when no data is available
         message: Base message for exceptions
     """
-    with errors(message, logger):
-        chart = chart_func()
+    chart = chart_func()
 
-        if chart is not None:
-            st.altair_chart(chart, use_container_width=True)
-        else:
-            st.info(no_data_message)
+    if chart is not None:
+        st.altair_chart(chart, use_container_width=True)
+    else:
+        st.info(no_data_message)

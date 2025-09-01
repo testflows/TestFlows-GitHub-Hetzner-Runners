@@ -13,13 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
-
 from .. import metrics
 from .utils import chart, renderers
 from .utils.metrics import ComputedMetric
-
-logger = logging.getLogger(__name__)
 
 
 # Create the cost metric abstraction
@@ -31,53 +27,51 @@ cost_metric = ComputedMetric(
 def render_cost_metrics():
     """Render the cost metrics header."""
 
-    with renderers.errors("rendering cost metrics", logger):
-        # Get current cost summary for display
-        cost_summary = metrics.cost.summary()
+    # Get current cost summary for display
+    cost_summary = metrics.cost.summary()
 
-        # Build metrics data
-        metrics_data = [
-            {
-                "label": "Hourly",
-                "value": f"€{cost_summary['hourly']:.3f}/h",
-            },
-            {
-                "label": "Daily",
-                "value": f"€{cost_summary['daily']:.2f}/day",
-            },
-            {
-                "label": "Monthly",
-                "value": f"€{cost_summary['monthly']:.2f}/month",
-            },
-        ]
+    # Build metrics data
+    metrics_data = [
+        {
+            "label": "Hourly",
+            "value": f"€{cost_summary['hourly']:.3f}/h",
+        },
+        {
+            "label": "Daily",
+            "value": f"€{cost_summary['daily']:.2f}/day",
+        },
+        {
+            "label": "Monthly",
+            "value": f"€{cost_summary['monthly']:.2f}/month",
+        },
+    ]
 
-        renderers.render_metrics_columns(metrics_data)
+    renderers.render_metrics(metrics_data)
 
 
 def render_cost_chart():
     """Render the cost chart using Altair for proper time series visualization."""
 
-    with renderers.errors("rendering cost chart", logger):
-        # Get DataFrame using the simple abstraction
-        df = cost_metric.get_dataframe()
+    # Get DataFrame using the simple abstraction
+    df = cost_metric.get_dataframe()
 
-        # Rename column for display
-        if not df.empty:
-            df = df.rename(columns={"Value": "Total Cost (€/h)"})
+    # Rename column for display
+    if not df.empty:
+        df = df.rename(columns={"Value": "Total Cost (€/h)"})
 
-        def create_chart():
-            return chart.create_time_series_chart(
-                df=df,
-                y_column="Total Cost (€/h)",
-                y_title="Cost (€/h)",
-                y_type="price",
-            )
-
-        renderers.render_chart(
-            create_chart,
-            "No cost data available yet. The chart will appear once data is collected.",
-            "rendering cost chart",
+    def create_chart():
+        return chart.create_time_series_chart(
+            df=df,
+            y_column="Total Cost (€/h)",
+            y_title="Cost (€/h)",
+            y_type="price",
         )
+
+    renderers.render_chart(
+        create_chart,
+        "No cost data available yet. The chart will appear once data is collected.",
+        "rendering cost chart",
+    )
 
 
 def render():
