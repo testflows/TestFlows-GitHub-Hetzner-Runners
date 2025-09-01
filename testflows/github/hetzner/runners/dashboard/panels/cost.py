@@ -20,85 +20,27 @@ import logging
 
 from .. import metrics
 from .utils import chart, render as render_utils, data
+from .utils.metrics import ComputedMetric
 
 
-def get_cost_history_data(cutoff_minutes=15):
-    """Get cost history data for plotting.
-
-    Args:
-        cutoff_minutes: Number of minutes to keep in history
-
-    Returns:
-        tuple: (timestamps, values) for plotting
-    """
-    return data.get_simple_metric_history(
-        "github_hetzner_runners_cost_total", cutoff_minutes=cutoff_minutes
-    )
-
-
-def create_cost_dataframe(timestamps, values):
-    """Create a pandas DataFrame for the cost data with proper time formatting."""
-    if not timestamps or not values:
-        # Return empty DataFrame with proper structure
-        return pd.DataFrame({"Time": pd.to_datetime([]), "Total Cost (€/h)": []})
-
-    # Ensure we have valid data
-    if len(timestamps) != len(values):
-        return pd.DataFrame({"Time": pd.to_datetime([]), "Total Cost (€/h)": []})
-
-    # Create DataFrame from the data with proper time formatting
-    df = pd.DataFrame(
-        {
-            "Time": pd.to_datetime(timestamps),
-            "Total Cost (€/h)": [float(v) for v in values],  # Ensure values are floats
-        }
-    )
-
-    # Remove any NaN values
-    df = df.dropna()
-
-    # Convert time to proper datetime and set as index
-    df["Time"] = pd.to_datetime(df["Time"])
-    df.set_index("Time", inplace=True)
-
-    # Sort by time to ensure proper line chart
-    df = df.sort_index()
-
-    return df
-
-
-def get_current_cost_data():
-    """Get current cost data without caching to ensure fresh data."""
-    current_time = datetime.now()
-    current_value = 0
-
-    # Get all server info metrics (exact same logic as original)
+def compute_total_cost():
+    """Compute total cost from all servers."""
+    total_cost = 0
     servers_info = metrics.get_metric_info("github_hetzner_runners_server")
 
     if servers_info:
         for info in servers_info:
             try:
-                # Get cost per hour from server info
                 cost_hourly = float(info.get("cost_hourly", 0))
-                current_value += cost_hourly
+                total_cost += cost_hourly
             except (ValueError, TypeError):
                 continue
 
-    # Update metric history (same as original)
-    data.update_simple_metric_history(
-        "github_hetzner_runners_cost_total",
-        current_value,
-        current_time,
-        cutoff_minutes=15,
-    )
-
-    # Get history data for plotting
-    timestamps, values = get_cost_history_data()
-
-    return timestamps, values, current_value, current_time
+    return total_cost
 
 
-# Removed update_cost_data function - no longer needed with st.line_chart
+# Create the cost metric abstraction
+cost_metric = ComputedMetric("github_hetzner_runners_cost_total", compute_total_cost)
 
 
 def render_cost_metrics():
@@ -138,11 +80,12 @@ def render_cost_metrics():
 def render_cost_chart():
     """Render the cost chart using Altair for proper time series visualization."""
     try:
-        # Get fresh data
-        timestamps, values, current_value, current_time = get_current_cost_data()
+        # Get DataFrame using the simple abstraction
+        df = cost_metric.get_dataframe()
 
-        # Create DataFrame for the chart
-        df = create_cost_dataframe(timestamps, values)
+        # Rename column for display
+        if not df.empty:
+            df = df.rename(columns={"Value": "Total Cost (€/h)"})
 
         def create_chart():
             return chart.create_time_series_chart(
