@@ -25,17 +25,6 @@ from ..colors import STATE_COLORS
 from .utils import chart, render as render_utils, data
 
 
-def create_panel():
-    """Create servers panel.
-
-    This function maintains API compatibility with the original dashboard.
-
-    Returns:
-        dict: Panel configuration dictionary
-    """
-    return {"title": "Servers", "type": "servers"}
-
-
 def get_server_history_data(cutoff_minutes=15):
     """Get server history data for plotting.
 

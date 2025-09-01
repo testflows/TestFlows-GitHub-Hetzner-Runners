@@ -23,17 +23,6 @@ from .. import metrics
 from .utils import chart, render as render_utils, data
 
 
-def create_panel():
-    """Create cost panel.
-
-    This function maintains API compatibility with the original dashboard.
-
-    Returns:
-        dict: Panel configuration dictionary
-    """
-    return {"title": "Cost", "type": "cost"}
-
-
 def get_cost_history_data(cutoff_minutes=15):
     """Get cost history data for plotting.
 

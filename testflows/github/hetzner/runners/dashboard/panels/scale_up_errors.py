@@ -24,17 +24,6 @@ from .. import metrics
 from .utils import chart, render as render_utils, data, format
 
 
-def create_panel():
-    """Create scale-up errors panel.
-
-    This function maintains API compatibility with the original dashboard.
-
-    Returns:
-        dict: Panel configuration dictionary
-    """
-    return {"title": "Scale-up Errors (Last Hour)", "type": "scale_up_errors"}
-
-
 def get_scale_up_errors_history_data(cutoff_minutes=60):
     """Get scale-up errors history data for plotting.
 

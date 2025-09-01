@@ -76,22 +76,6 @@ def create_list(name, count, items, title):
     return {"name": name, "count": count, "items": items, "title": title}
 
 
-def create_panel(title, with_header=True, with_graph=False):
-    """Create information panel.
-
-    This function maintains API compatibility with the original dashboard.
-
-    Args:
-        title (str): Panel title
-        with_header (bool): Whether to include header
-        with_graph (bool): Whether to include graph (not used in info panel)
-
-    Returns:
-        dict: Panel configuration dictionary
-    """
-    return {"title": title, "with_header": with_header, "with_graph": with_graph}
-
-
 def update_info_list(config: Config):
     """Create a list of information values.
 

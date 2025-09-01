@@ -24,17 +24,6 @@ from ..colors import STATE_COLORS
 from .utils import chart, render as render_utils, data
 
 
-def create_panel():
-    """Create standby panel.
-
-    This function maintains API compatibility with the original dashboard.
-
-    Returns:
-        dict: Panel configuration dictionary
-    """
-    return {"title": "Standby", "type": "standby"}
-
-
 def get_standby_history_data(cutoff_minutes=15):
     """Get standby server history data for plotting.
 

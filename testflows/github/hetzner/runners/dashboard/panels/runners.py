@@ -24,17 +24,6 @@ from ..colors import STREAMLIT_COLORS, STATE_COLORS
 from .utils import chart, render as render_utils, data
 
 
-def create_panel():
-    """Create runners panel.
-
-    This function maintains API compatibility with the original dashboard.
-
-    Returns:
-        dict: Panel configuration dictionary
-    """
-    return {"title": "Runners", "type": "runners"}
-
-
 def get_runners_history_data(cutoff_minutes=15):
     """Get runners history data for plotting.
 

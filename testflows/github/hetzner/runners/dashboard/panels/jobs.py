@@ -24,17 +24,6 @@ from ..colors import STREAMLIT_COLORS
 from .utils import chart, render as render_utils, data, format
 
 
-def create_panel():
-    """Create jobs panel.
-
-    This function maintains API compatibility with the original dashboard.
-
-    Returns:
-        dict: Panel configuration dictionary
-    """
-    return {"title": "Jobs", "type": "jobs"}
-
-
 def get_jobs_history_data(cutoff_minutes=15):
     """Get jobs history data for plotting.
 
