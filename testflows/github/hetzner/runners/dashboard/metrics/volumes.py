@@ -104,9 +104,34 @@ def formatted_details(volumes_info):
             "labels": volume_labels if volume_labels else [],
         }
 
+        # Add cost information if available
+        cost_hourly = volume.get("cost_hourly")
+        if cost_hourly:
+            try:
+                cost_value = float(cost_hourly)
+                formatted_volume["cost hourly"] = f"€{cost_value:.4f}/h"
+                formatted_volume["cost daily"] = f"€{cost_value * 24:.3f}/day"
+                formatted_volume["cost monthly"] = f"€{cost_value * 24 * 30:.2f}/month"
+            except (ValueError, TypeError):
+                pass
+
+        cost_total = volume.get("cost_total")
+        if cost_total:
+            try:
+                formatted_volume["cost total"] = f"€{float(cost_total):.3f}"
+            except (ValueError, TypeError):
+                pass
+
         # Add any additional fields from the original volume data
         # Skip Prometheus metric labels that are not part of the actual volume info
-        prometheus_labels = {"volume_id", "volume_name", "server_id", "server_name"}
+        prometheus_labels = {
+            "volume_id",
+            "volume_name",
+            "server_id",
+            "server_name",
+            "cost_hourly",
+            "cost_total",
+        }
         for key, value in volume.items():
             if key not in formatted_volume and key not in prometheus_labels and value:
                 formatted_volume[key.replace("_", " ")] = str(value)

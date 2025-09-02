@@ -14,6 +14,7 @@
 # limitations under the License.
 
 from .. import metrics
+from ..colors import STREAMLIT_COLORS
 from .utils import chart, renderers
 
 
@@ -43,27 +44,70 @@ def render_cost_metrics():
 
 
 def render_cost_chart():
-    """Render the cost chart using Altair for proper time series visualization."""
+    """Render the cost breakdown chart showing total, servers, and volumes costs."""
 
-    timestamps, values, _, _ = metrics.cost.total_cost_history()
-    df = metrics.history.dataframe(timestamps, values)
+    # Get cost history data for all three metrics
+    total_timestamps, total_values, _, _ = metrics.cost.total_cost_history()
+    servers_timestamps, servers_values, _, _ = metrics.cost.servers_cost_history()
+    volumes_timestamps, volumes_values, _, _ = metrics.cost.volumes_cost_history()
 
-    # Rename column for display
+    # Create data structure compatible with dataframe_for_states
+    cost_data = {
+        "total": {"timestamps": total_timestamps, "values": total_values},
+        "servers": {"timestamps": servers_timestamps, "values": servers_values},
+        "volumes": {"timestamps": volumes_timestamps, "values": volumes_values},
+    }
+
+    # Use dataframe_for_states to create the DataFrame
+    df = metrics.history.dataframe_for_states(
+        cost_data,
+        time_column="Time",
+        value_column="Cost (€/h)",
+        status_column="Type",
+        value_type=float,
+    )
+
+    # Convert values to float for price display
     if not df.empty:
-        df = df.rename(columns={"Value": "Total Cost (€/h)"})
+        df["Cost (€/h)"] = df["Cost (€/h)"].astype(float)
+
+    # Create color mapping for cost types
+    color_domain = ["total", "servers", "volumes"]
+    color_range = [
+        STREAMLIT_COLORS["primary"],  # Red for total
+        STREAMLIT_COLORS["success"],  # Green for servers
+        STREAMLIT_COLORS["info"],  # Cyan for volumes
+    ]
 
     def create_chart():
         return chart.create_time_series_chart(
             df=df,
-            y_column="Total Cost (€/h)",
+            y_column="Cost (€/h)",
             y_title="Cost (€/h)",
+            color_column="Type",
+            color_domain=color_domain,
+            color_range=color_range,
             y_type="price",
         )
 
     renderers.render_chart(
         create_chart,
         "No cost data available yet. The chart will appear once data is collected.",
-        "rendering cost chart",
+        "rendering cost breakdown chart",
+    )
+
+
+def render_cost_details():
+    """Render cost details showing servers and volumes with hourly, daily, and monthly costs."""
+
+    # Get formatted cost details
+    formatted_costs = metrics.cost.formatted_details()
+
+    renderers.render_details_dataframe(
+        items=formatted_costs,
+        title="Cost Details",
+        name_key="name",
+        status_key="status",
     )
 
 
@@ -74,8 +118,9 @@ def render():
     that maintains all the functionality of the original dashboard panel.
     """
     renderers.render_panel(
-        title="Estimated Cost",
+        title="Estimated Cost (Servers and Volumes)",
         metrics_func=render_cost_metrics,
         chart_func=render_cost_chart,
+        details_func=render_cost_details,
         message="rendering cost panel",
     )

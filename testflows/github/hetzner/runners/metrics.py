@@ -644,11 +644,12 @@ def update_servers(servers, server_prices=None, ipv4_price=0.0008, ipv6_price=0.
         SERVERS_TOTAL.labels(status=status).set(status_counts.get(status, 0))
 
 
-def update_volumes(volumes):
+def update_volumes(volumes, price=0.044):
     """Update all volume-related metrics.
 
     Args:
         volumes: List of volumes to track metrics for
+        price: Price per GB per month in EUR (default: 0.044)
     """
     # Clear all existing volume metrics
     VOLUME_INFO._metrics.clear()
@@ -676,6 +677,13 @@ def update_volumes(volumes):
         total_volumes += 1
 
         try:
+            # Calculate volume cost
+            volume_size_gb = getattr(volume, "size", 0)
+            # Convert monthly price to hourly (price per GB per month / hours per month)
+            cost_hourly = (
+                (price * volume_size_gb) / (24 * 30) if volume_size_gb > 0 else 0.0
+            )
+
             # Track detailed volume information
             volume_info = {
                 "name": volume.name,
@@ -692,7 +700,22 @@ def update_volumes(volumes):
                     if hasattr(volume, "created") and volume.created
                     else ""
                 ),
+                "cost_hourly": str(cost_hourly) if cost_hourly > 0 else None,
+                "cost_currency": "EUR",
             }
+
+            # Calculate total cost based on volume lifetime
+            try:
+                created = getattr(volume, "created", None)
+                if created and cost_hourly > 0:
+                    lifetime_seconds = time.time() - created.timestamp()
+                    lifetime_hours = max(
+                        1.0, lifetime_seconds / 3600.0
+                    )  # minimum 1 hour billing
+                    total_cost_so_far = cost_hourly * lifetime_hours
+                    volume_info["cost_total"] = f"{total_cost_so_far:.3f}"
+            except (AttributeError, TypeError):
+                pass
 
             # Add server information if attached
             if hasattr(volume, "server") and volume.server:

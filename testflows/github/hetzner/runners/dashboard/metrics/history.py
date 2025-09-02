@@ -268,7 +268,11 @@ def dataframe(timestamps, values) -> pd.DataFrame:
 
 
 def dataframe_for_states(
-    data_for_states, time_column="Time", value_column="Count", status_column="Status"
+    data_for_states,
+    time_column="Time",
+    value_column="Count",
+    status_column="Status",
+    value_type=int,
 ):
     """Create a standardized DataFrame from history data.
 
@@ -297,7 +301,7 @@ def dataframe_for_states(
                 try:
                     data_point = {
                         time_column: pd.to_datetime(ts),
-                        value_column: int(val),
+                        value_column: value_type(val),
                     }
                     if status_column:
                         data_point[status_column] = status
