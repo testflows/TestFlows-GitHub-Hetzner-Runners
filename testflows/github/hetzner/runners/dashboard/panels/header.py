@@ -29,10 +29,10 @@ def render():
     col1, col2 = st.columns([5, 1])
 
     with col1:
-        logo_col, title_col = st.columns([1, 9])
+        logo_col, title_col = st.columns([1, 9], vertical_alignment="center")
         with logo_col:
             st.markdown(
-                '<a href="https://testflows.com" target="_blank"><img src="https://raw.githubusercontent.com/testflows/TestFlows-ArtWork/refs/heads/master/images/logo.png" width="100" style="cursor: pointer;"></a>',
+                '<a href="https://testflows.com" target="_blank"><img src="https://raw.githubusercontent.com/testflows/TestFlows-ArtWork/refs/heads/master/images/logo_multicolor.png" width="150" style="cursor: pointer;"></a>',
                 unsafe_allow_html=True,
             )
 
