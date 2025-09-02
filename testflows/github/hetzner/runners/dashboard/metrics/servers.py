@@ -252,7 +252,7 @@ def formatted_details(servers_info):
                         formatted_value = str(value)
                 else:
                     formatted_value = str(value)
-                formatted_server[key] = formatted_value
+                formatted_server[key.replace("_", " ")] = formatted_value
 
         formatted_servers.append(formatted_server)
 
@@ -285,8 +285,7 @@ def health_details():
             {
                 "name": item.get("server_name", "Unknown"),
                 "id": item.get("server_id", "unknown"),
-                "health_status": "zombie",
-                "age_seconds": age(item.get("created", "")),
+                "health status": "zombie",
                 "status": item.get("status", "unknown"),
                 "type": item.get("server_type", "unknown"),
                 "location": item.get("location", "unknown"),
@@ -301,12 +300,11 @@ def health_details():
             {
                 "server_name": item.get("server_name", "Unknown"),
                 "name": item.get("runner_name", "Unknown"),
-                "server_id": item.get("server_id", "unknown"),
+                "server id": item.get("server_id", "unknown"),
                 "id": item.get("runner_id", "unknown"),
-                "health_status": "unused",
-                "age_seconds": age(item.get("created", "")),
+                "health status": "unused",
                 "status": item.get("status", "unknown"),
-                "server_type": item.get("server_type", "unknown"),
+                "server type": item.get("server_type", "unknown"),
                 "location": item.get("location", "unknown"),
                 "created": format.format_created_time(item.get("created", "")),
             }
@@ -323,8 +321,7 @@ def health_details():
             {
                 "name": item.get("name", "Unknown"),
                 "id": item.get("id", "unknown"),
-                "health_status": "recycled",
-                "age_seconds": age(item.get("created", "")),
+                "health status": "recycled",
                 "status": item.get("status", "unknown"),
                 "type": item.get("type", "unknown"),
                 "location": item.get("location", "unknown"),
@@ -335,7 +332,7 @@ def health_details():
     # Sort by health status priority (zombie first, then unused, then recycled)
     status_priority = {"zombie": 1, "unused": 2, "recycled": 3}
     health_data.sort(
-        key=lambda x: (status_priority.get(x["health_status"], 4), x["name"])
+        key=lambda x: (status_priority.get(x["health status"], 4), x["name"])
     )
 
     return health_data

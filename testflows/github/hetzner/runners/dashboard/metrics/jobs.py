@@ -179,23 +179,27 @@ def formatted_details():
                 # Create formatted job data
                 formatted_job = {
                     "name": info.get("name", "Unknown"),
-                    "status": status_text,
-                    "job_id": f"{info.get('job_id', 'Unknown')} (attempt {info.get('run_attempt', '1')})",
-                    "run_id": info.get("run_id", ""),
+                    "status": status_text.lower(),
+                    "job id": f"{info.get('job_id', 'Unknown')}",
+                    "run id": info.get("run_id", ""),
                     "workflow": info.get("workflow_name", "").strip(),
                     "repository": info.get("repository", "").strip(),
                     "branch": info.get("head_branch", ""),
+                    "sha": info.get("head_sha", ""),
                     "labels": ", ".join(job_labels) if job_labels else "",
-                    time_label.lower().replace(" ", "_"): time_str,
-                    "job_link": job_url,
-                    "run_link": run_url,
-                    "repo_link": repo_url,
+                    time_label.lower(): time_str,
+                    "job": job_url,
+                    "run": run_url,
+                    "repository": repo_url,
+                    "queued at": format.format_created_time(info.get("queued_at", "")),
                 }
 
                 # Add any additional fields from the original job data
                 for key, value in info.items():
+                    if key in ("head_branch", "workflow_name", "head_sha", "queued_at"):
+                        continue
                     if key not in formatted_job and value:
-                        formatted_job[key] = str(value)
+                        formatted_job[key.replace("_", " ")] = str(value)
 
                 formatted_jobs.append(formatted_job)
 

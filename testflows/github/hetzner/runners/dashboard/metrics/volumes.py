@@ -98,18 +98,18 @@ def formatted_details(volumes_info):
             "size": volume.get("size", ""),
             "location": volume.get("location", ""),
             "format": volume.get("format", ""),
-            "server_name": volume.get("server_name", ""),
-            "server_id": volume.get("server_id", ""),
+            "server name": volume.get("server_name", ""),
+            "server id": volume.get("server_id", ""),
             "created": format.format_created_time(volume.get("created", "")),
             "labels": ", ".join(volume_labels) if volume_labels else "",
         }
 
         # Add any additional fields from the original volume data
         # Skip Prometheus metric labels that are not part of the actual volume info
-        prometheus_labels = {"volume_id", "volume_name"}
+        prometheus_labels = {"volume_id", "volume_name", "server_id", "server_name"}
         for key, value in volume.items():
             if key not in formatted_volume and key not in prometheus_labels and value:
-                formatted_volume[key] = str(value)
+                formatted_volume[key.replace("_", " ")] = str(value)
 
         formatted_volumes.append(formatted_volume)
 

@@ -93,18 +93,22 @@ def format_error_details(errors_info, error_type_colors):
             error_message = info.get("error", "Unknown error")
             server_type = info.get("server_type", "Unknown")
             server_location = info.get("server_location", "Unknown") or "Unspecified"
-            labels = info.get("labels", "").split(",") if info.get("labels") else []
+            server_labels = (
+                info.get("server_labels", "").split(",")
+                if info.get("server_labels")
+                else []
+            )
             time_str = format.format_created_time(info.get("timestamp_iso"))
 
             # Create formatted error data
             formatted_error = {
                 "time": time_str,
-                "type": error_type,
+                "type": error_type.replace("_", " "),
                 "message": error_message,
-                "server_name": server_name,
-                "server_type": server_type,
-                "server_location": server_location,
-                "server_labels": ", ".join(labels) if labels else "None",
+                "server name": server_name,
+                "server type": server_type,
+                "server location": server_location,
+                "server labels": ", ".join(server_labels) if server_labels else "None",
             }
 
             formatted_errors.append(formatted_error)
