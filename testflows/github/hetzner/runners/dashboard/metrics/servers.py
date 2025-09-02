@@ -236,7 +236,7 @@ def formatted_details(servers_info):
             "ipv4": server.get("ipv4", ""),
             "ipv6": server.get("ipv6", ""),
             "created": format.format_created_time(server.get("created", "")),
-            "labels": ", ".join(server_labels) if server_labels else "",
+            "labels": server_labels if server_labels else [],
         }
 
         # Add any additional fields from the original server data

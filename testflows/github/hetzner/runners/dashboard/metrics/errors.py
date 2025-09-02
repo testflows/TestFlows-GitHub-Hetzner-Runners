@@ -108,7 +108,7 @@ def format_error_details(errors_info, error_type_colors):
                 "server name": server_name,
                 "server type": server_type,
                 "server location": server_location,
-                "server labels": ", ".join(server_labels) if server_labels else "None",
+                "server labels": server_labels if server_labels else [],
             }
 
             formatted_errors.append(formatted_error)

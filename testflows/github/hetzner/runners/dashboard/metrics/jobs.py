@@ -186,7 +186,7 @@ def formatted_details():
                     "repository": info.get("repository", "").strip(),
                     "branch": info.get("head_branch", ""),
                     "sha": info.get("head_sha", ""),
-                    "labels": ", ".join(job_labels) if job_labels else "",
+                    "labels": job_labels if job_labels else [],
                     time_label.lower(): time_str,
                     "job": job_url,
                     "run": run_url,

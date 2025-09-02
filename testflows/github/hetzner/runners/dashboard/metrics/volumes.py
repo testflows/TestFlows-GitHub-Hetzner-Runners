@@ -101,7 +101,7 @@ def formatted_details(volumes_info):
             "server name": volume.get("server_name", ""),
             "server id": volume.get("server_id", ""),
             "created": format.format_created_time(volume.get("created", "")),
-            "labels": ", ".join(volume_labels) if volume_labels else "",
+            "labels": volume_labels if volume_labels else [],
         }
 
         # Add any additional fields from the original volume data

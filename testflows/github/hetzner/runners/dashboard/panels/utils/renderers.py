@@ -170,11 +170,6 @@ def render_details_dataframe(
             column_config[col_name] = st.column_config.LinkColumn(
                 col_name, width="small"
             )
-        else:
-            # Use TextColumn for all other fields
-            column_config[col_name] = st.column_config.TextColumn(
-                col_name, width="medium"
-            )
 
     # Display the dataframe
     st.dataframe(

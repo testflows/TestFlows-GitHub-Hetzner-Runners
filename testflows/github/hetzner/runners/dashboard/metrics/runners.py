@@ -174,7 +174,7 @@ def formatted_details(runners_info):
             "id": runner.get("runner_id", ""),
             "os": runner.get("os", ""),
             "repository": runner.get("repository", ""),
-            "labels": ", ".join(runner_labels_list) if runner_labels_list else "",
+            "labels": runner_labels_list if runner_labels_list else [],
             "busy": (
                 "Busy" if runner.get("busy", "false").lower() == "true" else "Idle"
             ),

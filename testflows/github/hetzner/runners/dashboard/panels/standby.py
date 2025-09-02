@@ -37,7 +37,7 @@ def render_standby_pool_info(config=None):
                 {
                     "labels": standby_runner.labels,
                     "count": standby_runner.count,
-                    "replenish_immediately": standby_runner.replenish_immediately,
+                    "replenish immediately": standby_runner.replenish_immediately,
                 }
             )
 
