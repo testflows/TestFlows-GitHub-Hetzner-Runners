@@ -13,7 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import datetime
 from . import get
+from . import history
 
 
 def summary():
@@ -30,3 +32,174 @@ def summary():
         "running": int(running_jobs),
         "total": int(queued_jobs + running_jobs),
     }
+
+
+def jobs_history(cutoff_minutes=15):
+    """Update and get history for jobs metrics."""
+
+    # Get history for both queued and running jobs
+    current_time = datetime.now()
+
+    # Update and get queued jobs history
+    queued_timestamps, queued_values, _, _ = history.update_and_get(
+        "github_hetzner_runners_queued_jobs",
+        timestamp=current_time,
+        cutoff_minutes=cutoff_minutes,
+        default_value=0,
+    )
+
+    # Update and get running jobs history
+    running_timestamps, running_values, _, _ = history.update_and_get(
+        "github_hetzner_runners_running_jobs",
+        timestamp=current_time,
+        cutoff_minutes=cutoff_minutes,
+        default_value=0,
+    )
+
+    return {
+        "queued": {
+            "timestamps": queued_timestamps,
+            "values": queued_values,
+        },
+        "running": {
+            "timestamps": running_timestamps,
+            "values": running_values,
+        },
+    }
+
+
+def labels_info(is_running=False):
+    """Get all job label information from metrics.
+
+    Args:
+        is_running: If True, get running job labels, else get queued job labels
+
+    Returns:
+        list: List of label dictionaries containing job_id, run_id, and label data
+    """
+    metric_name = (
+        "github_hetzner_runners_running_job_labels"
+        if is_running
+        else "github_hetzner_runners_queued_job_labels"
+    )
+    return get.metric_info(metric_name)
+
+
+def labels(labels_info, job_id, run_id):
+    """Extract labels for a specific job from labels info.
+
+    Args:
+        labels_info: List of label dictionaries from labels_info()
+        job_id: Job ID to filter by
+        run_id: Run ID to filter by
+
+    Returns:
+        list: List of labels associated with the specified job
+    """
+    labels = []
+    for label_dict in labels_info:
+        if (
+            label_dict.get("job_id") == job_id
+            and label_dict.get("run_id") == run_id
+            and "label" in label_dict
+        ):
+            labels.append(label_dict["label"])
+    return labels
+
+
+def formatted_details():
+    """Format jobs information with enhanced data including labels and timing.
+
+    Returns:
+        list: List of formatted job dictionaries with enhanced fields including
+              name, status, job_id, labels, timing, and links
+    """
+    from ..panels.utils import format
+
+    # Get job information
+    queued_jobs_info = get.metric_info("github_hetzner_runners_queued_job")
+    running_jobs_info = get.metric_info("github_hetzner_runners_running_job")
+
+    # Get labels info once for each type
+    queued_labels_info = labels_info(is_running=False)
+    running_labels_info = labels_info(is_running=True)
+
+    formatted_jobs = []
+
+    # Process both queued and running jobs
+    for jobs_info, is_running, job_labels_info in [
+        (queued_jobs_info, False, queued_labels_info),
+        (running_jobs_info, True, running_labels_info),
+    ]:
+        if not jobs_info:
+            continue
+
+        for info in jobs_info:
+            try:
+                job_id = info.get("job_id")
+                run_id = info.get("run_id")
+                if not job_id or not run_id:
+                    continue
+
+                # Get wait/run time for this job
+                metric_name = (
+                    "github_hetzner_runners_running_job_time_seconds"
+                    if is_running
+                    else "github_hetzner_runners_queued_job_wait_time_seconds"
+                )
+                time_value = get.metric_value(
+                    metric_name,
+                    {"job_id": job_id, "run_id": run_id},
+                )
+                try:
+                    time_str = (
+                        format.format_duration(time_value)
+                        if time_value is not None
+                        else "unknown"
+                    )
+                except (ValueError, TypeError):
+                    time_str = "unknown"
+                time_label = "Run time" if is_running else "Wait time"
+
+                # Get labels for this job
+                job_labels = labels(job_labels_info, job_id, run_id)
+
+                status_text = "Running" if is_running else "Queued"
+
+                # Create job links
+                job_url = ""
+                run_url = ""
+                repo_url = ""
+
+                if info.get("repository"):
+                    job_url = f"https://github.com/{info.get('repository', '')}/actions/runs/{info.get('run_id', '')}/job/{info.get('job_id', '')}"
+                    run_url = f"https://github.com/{info.get('repository', '')}/actions/runs/{info.get('run_id', '')}"
+                    repo_url = f"https://github.com/{info.get('repository', '')}"
+
+                # Create formatted job data
+                formatted_job = {
+                    "name": info.get("name", "Unknown"),
+                    "status": status_text,
+                    "job_id": f"{info.get('job_id', 'Unknown')} (attempt {info.get('run_attempt', '1')})",
+                    "run_id": info.get("run_id", ""),
+                    "workflow": info.get("workflow_name", "").strip(),
+                    "repository": info.get("repository", "").strip(),
+                    "branch": info.get("head_branch", ""),
+                    "labels": ", ".join(job_labels) if job_labels else "",
+                    time_label.lower().replace(" ", "_"): time_str,
+                    "job_link": job_url,
+                    "run_link": run_url,
+                    "repo_link": repo_url,
+                }
+
+                # Add any additional fields from the original job data
+                for key, value in info.items():
+                    if key not in formatted_job and value:
+                        formatted_job[key] = str(value)
+
+                formatted_jobs.append(formatted_job)
+
+            except (ValueError, KeyError, AttributeError):
+                continue
+
+    return formatted_jobs

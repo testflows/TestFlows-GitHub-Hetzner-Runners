@@ -15,6 +15,7 @@
 
 from . import get
 from . import utils
+from . import history
 
 
 def summary():
@@ -31,3 +32,92 @@ def summary():
         "details": volumes_info,
         "by_status": utils.count_by_status(volumes_info, "status"),
     }
+
+
+def labels_info():
+    """Get all volume label information from metrics.
+
+    Returns:
+        list: List of label dictionaries containing volume_id, volume_name, and label data
+    """
+    return get.metric_info("github_hetzner_runners_volume_labels")
+
+
+def labels(labels_info, volume_id, volume_name):
+    """Extract labels for a specific volume from labels info.
+
+    Args:
+        labels_info: List of label dictionaries from labels_info()
+        volume_id: Volume ID to filter by
+        volume_name: Volume name to filter by
+
+    Returns:
+        list: List of labels associated with the specified volume
+    """
+    labels = []
+    for label_dict in labels_info:
+        if (
+            label_dict.get("volume_id") == volume_id
+            and label_dict.get("volume_name") == volume_name
+            and "label" in label_dict
+        ):
+            labels.append(label_dict["label"])
+    return labels
+
+
+def formatted_details(volumes_info):
+    """Format volumes information with enhanced data including labels.
+
+    Takes raw volume information and enriches it with:
+    - Volume labels from metrics
+    - Standardized field structure
+
+    Args:
+        volumes_info: List of raw volume dictionaries from volume metrics
+
+    Returns:
+        list: List of formatted volume dictionaries with enhanced fields including
+              name, status, volume_id, labels, and other volume metadata
+    """
+    volume_labels_info = labels_info()
+
+    formatted_volumes = []
+
+    for volume in volumes_info:
+        volume_id = volume.get("volume_id")
+        volume_name = volume.get("name", "")
+        # Get volume labels
+        volume_labels = labels(volume_labels_info, volume_id, volume_name)
+
+        # Create formatted volume data with all fields
+        formatted_volume = {
+            "name": volume.get("name", "Unknown"),
+            "status": volume.get("status", "unknown"),
+            "volume_id": volume.get("volume_id", ""),
+            "size": volume.get("size", ""),
+            "location": volume.get("location", ""),
+            "format": volume.get("format", ""),
+            "server_name": volume.get("server_name", ""),
+            "server_id": volume.get("server_id", ""),
+            "created": volume.get("created", ""),
+            "labels": ", ".join(volume_labels) if volume_labels else "",
+        }
+
+        # Add any additional fields from the original volume data
+        for key, value in volume.items():
+            if key not in formatted_volume and value:
+                formatted_volume[key] = str(value)
+
+        formatted_volumes.append(formatted_volume)
+
+    return formatted_volumes
+
+
+def states_history(cutoff_minutes=15):
+    """Update and get history for volume states."""
+
+    return history.update_and_get_for_states(
+        "github_hetzner_runners_volumes_total",
+        states=["available", "creating", "attached"],
+        cutoff_minutes=cutoff_minutes,
+    )

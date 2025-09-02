@@ -273,6 +273,76 @@ def states_history(cutoff_minutes=15):
     )
 
 
+def health_details():
+    """Get detailed health status information for all problematic servers.
+
+    Returns:
+        list: List of dictionaries with server health details, each containing:
+              name, server_id, health_status, age_seconds, and other server fields
+    """
+    health_data = []
+
+    # Add zombie servers
+    zombie_servers = get.metric_info("github_hetzner_runners_zombie_server")
+    for item in zombie_servers:
+        health_data.append(
+            {
+                "name": item.get("server_name", "Unknown"),
+                "server_id": item.get("server_id", "unknown"),
+                "health_status": "zombie",
+                "age_seconds": age(item.get("created", "")),
+                "status": item.get("status", "unknown"),
+                "server_type": item.get("server_type", "unknown"),
+                "location": item.get("location", "unknown"),
+                "created": item.get("created", ""),
+            }
+        )
+
+    # Add unused runners
+    unused_runners = get.metric_info("github_hetzner_runners_unused_runner")
+    for item in unused_runners:
+        health_data.append(
+            {
+                "name": item.get("server_name", "Unknown"),
+                "server_id": item.get("server_id", "unknown"),
+                "health_status": "unused",
+                "age_seconds": age(item.get("created", "")),
+                "status": item.get("status", "unknown"),
+                "server_type": item.get("server_type", "unknown"),
+                "location": item.get("location", "unknown"),
+                "created": item.get("created", ""),
+            }
+        )
+
+    # Add recycled servers
+    recycled_servers = [
+        server
+        for server in summary()["details"]
+        if server.get("server_name", "").startswith("github-hetzner-runner-recycle-")
+    ]
+    for item in recycled_servers:
+        health_data.append(
+            {
+                "name": item.get("server_name", "Unknown"),
+                "server_id": item.get("server_id", "unknown"),
+                "health_status": "recycled",
+                "age_seconds": age(item.get("created", "")),
+                "status": item.get("status", "unknown"),
+                "server_type": item.get("server_type", "unknown"),
+                "location": item.get("location", "unknown"),
+                "created": item.get("created", ""),
+            }
+        )
+
+    # Sort by health status priority (zombie first, then unused, then recycled)
+    status_priority = {"zombie": 1, "unused": 2, "recycled": 3}
+    health_data.sort(
+        key=lambda x: (status_priority.get(x["health_status"], 4), x["name"])
+    )
+
+    return health_data
+
+
 def health_history(cutoff_minutes=15):
     """Update and get health metrics history.
 

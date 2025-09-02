@@ -111,7 +111,7 @@ def render_health_metrics():
 
 
 def render_health_chart():
-    """Render the health metrics chart using Altair."""
+    """Render the health metrics chart."""
 
     # Get health metrics history data
     health_history = metrics.servers.health_history()
@@ -145,103 +145,13 @@ def render_health_chart():
 def render_health_details():
     """Render the health status details as a dataframe."""
 
-    # FIXME: Finish this function !!!!!!!!
-
-    # Get server information
-    servers_summary = metrics.servers.summary()
-    servers_info = servers_summary["details"]
-
-    if not servers_info:
-        st.info("No servers found")
-        return
-
-    # Get individual server health data
-    zombie_servers = metrics.get.metric_info(
-        "github_hetzner_runners_zombie_server_age_seconds"
-    )
-
-    unused_runners = metrics.get.metric_info(
-        "github_hetzner_runners_unused_runner_age_seconds"
-    )
-    unused_server_names = set()
-    for runner in unused_runners:
-        runner_name = runner.get("runner_name", "")
-        if "-" in runner_name:
-            server_name = runner_name.rsplit("-", 1)[0]
-            unused_server_names.add(server_name)
-
-    # Prepare health data for dataframe
-    health_data = []
-
-    # Add zombie servers
-    for zombie in zombie_servers:
-        server_id = zombie.get("server_id")
-        if server_id:
-            # Find the corresponding server info
-            server_info = next(
-                (s for s in servers_info if str(s.get("server_id")) == str(server_id)),
-                None,
-            )
-
-            age_seconds = metrics.servers.age(server_info.get("created"))
-            health_data.append(
-                {
-                    "server_name": server_info.get("name", "Unknown"),
-                    "server_id": server_id,
-                    "health_status": "zombie",
-                    "age_seconds": age_seconds,
-                }
-            )
-
-    # Add unused runners
-    for runner in unused_runners:
-        runner_name = runner.get("runner_name", "")
-        if "-" in runner_name:
-            server_name = runner_name.rsplit("-", 1)[0]
-            if server_name in unused_server_names:
-                # Find the corresponding server info to get creation time
-                server_info = next(
-                    (s for s in servers_info if s.get("name") == server_name), None
-                )
-
-                age_seconds = metrics.servers.age(
-                    server_info.get("created") if server_info else None
-                )
-                health_data.append(
-                    {
-                        "server_name": server_name,
-                        "server_id": (
-                            server_info.get("server_id", "") if server_info else ""
-                        ),
-                        "health_status": "unused",
-                        "age_seconds": age_seconds,
-                    }
-                )
-
-    # Add recycled servers
-    for server in servers_info:
-        server_name = server.get("name", "")
-        if server_name.startswith("github-hetzner-runner-recycle-"):
-            age_seconds = metrics.servers.age(server.get("created"))
-            health_data.append(
-                {
-                    "server_name": server_name,
-                    "server_id": server.get("server_id", ""),
-                    "health_status": "recycled",
-                    "age_seconds": age_seconds,
-                }
-            )
-
-    # Sort by health status priority (zombie first, then unused, then recycled)
-    status_priority = {"zombie": 1, "unused": 2, "recycled": 3}
-    health_data.sort(
-        key=lambda x: (status_priority.get(x["health_status"], 4), x["server_name"])
-    )
+    # Get health details using the clean metrics API
+    health_details = metrics.servers.health_details()
 
     renderers.render_details_dataframe(
-        items=health_data,
+        items=health_details,
         title="Health Status Details",
-        name_key="server_name",
+        name_key="name",
         status_key="health_status",
     )
 
@@ -262,11 +172,8 @@ def render_servers_details():
 
 
 def render():
-    """Render the servers panel in Streamlit.
+    """Render the servers panel."""
 
-    This function creates a Streamlit-compatible version of the servers panel
-    that maintains all the functionality of the original dashboard panel.
-    """
     # First section: Servers
     renderers.render_panel(
         title="Servers",

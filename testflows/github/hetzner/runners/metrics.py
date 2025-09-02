@@ -260,10 +260,10 @@ ZOMBIE_SERVERS_TOTAL_COUNT = Gauge(
     "Total number of zombie servers across all types and locations",
 )
 
-ZOMBIE_SERVER_AGE = Gauge(
-    "github_hetzner_runners_zombie_server_age_seconds",
-    "Time since server became a zombie",
-    ["server_id", "server_name"],
+ZOMBIE_SERVER_INFO = Gauge(
+    "github_hetzner_runners_zombie_server",
+    "Zombie server information including age in seconds",
+    ["server_id", "server_name", "server_type", "location", "status", "created"],
 )
 
 UNUSED_RUNNERS_TOTAL = Gauge(
@@ -277,10 +277,19 @@ UNUSED_RUNNERS_TOTAL_COUNT = Gauge(
     "Total number of unused runners across all types and locations",
 )
 
-UNUSED_RUNNER_AGE = Gauge(
-    "github_hetzner_runners_unused_runner_age_seconds",
-    "Time since runner was last used",
-    ["runner_id", "runner_name"],
+UNUSED_RUNNER_INFO = Gauge(
+    "github_hetzner_runners_unused_runner",
+    "Unused runner information including age in seconds",
+    [
+        "runner_id",
+        "runner_name",
+        "server_id",
+        "server_name",
+        "server_type",
+        "location",
+        "status",
+        "created",
+    ],
 )
 
 # Runner pool metrics
@@ -853,8 +862,6 @@ def update_volumes(volumes):
 def update_runners(
     runners,
     github_repository,
-    max_server_ready_time=None,
-    get_runner_server_type_and_location_fn=None,
 ):
     """Update all runner-related metrics."""
     # Clear all existing runner metrics
@@ -863,13 +870,10 @@ def update_runners(
     RUNNER_STATUS._metrics.clear()
 
     total_runners = 0
-    total_unused_runners = 0
     busy_runners = 0
-    current_time = time.time()
 
     # Track counts by status
     status_counts = {}
-    unused_counts = {}
 
     for runner in runners:
         # Count runners by status
@@ -910,29 +914,6 @@ def update_runners(
 
             if status == "online" and is_busy:
                 busy_runners += 1
-
-            # Track unused runners
-            if max_server_ready_time and status == "online" and not is_busy:
-                last_job_time = getattr(runner, "last_job_time")
-                if last_job_time:
-                    unused_age = current_time - last_job_time
-                    if unused_age > max_server_ready_time:
-                        # Get server type and location from runner name
-                        if get_runner_server_type_and_location_fn:
-                            try:
-                                server_type, location = (
-                                    get_runner_server_type_and_location_fn(runner.name)
-                                )
-                                if server_type and location:
-                                    key = (server_type, location)
-                                    unused_counts[key] = unused_counts.get(key, 0) + 1
-                                    total_unused_runners += 1
-                                    UNUSED_RUNNER_AGE.labels(
-                                        runner_id=str(runner.id),
-                                        runner_name=runner.name,
-                                    ).set(unused_age)
-                            except (ValueError, AttributeError):
-                                pass
         except AttributeError:
             # Skip runner metrics if runner.id or runner.name is missing
             pass
@@ -940,18 +921,10 @@ def update_runners(
     # Set total counts
     RUNNERS_TOTAL_COUNT.set(total_runners)
     RUNNERS_BUSY.set(busy_runners)
-    UNUSED_RUNNERS_TOTAL_COUNT.set(total_unused_runners)
 
     # Set counts by status
     for status in ["online", "offline"]:
         RUNNERS_TOTAL.labels(status=status).set(status_counts.get(status, 0))
-
-    # Set unused runner counts
-    for (server_type, location), count in unused_counts.items():
-        UNUSED_RUNNERS_TOTAL.labels(
-            server_type=server_type,
-            location=location,
-        ).set(count)
 
 
 def update_jobs(run_jobs: list[(WorkflowRun, WorkflowJob)]):
@@ -1218,7 +1191,7 @@ def update_zombie_servers(zombie_servers_dict):
     """
     # Clear existing zombie server metrics
     ZOMBIE_SERVERS_TOTAL._metrics.clear()
-    ZOMBIE_SERVER_AGE._metrics.clear()
+    ZOMBIE_SERVER_INFO._metrics.clear()
 
     total_zombie_servers = 0
     zombie_counts = {}
@@ -1236,9 +1209,14 @@ def update_zombie_servers(zombie_servers_dict):
 
         # Track zombie server age
         zombie_age = current_time - zombie_server.time
-        ZOMBIE_SERVER_AGE.labels(server_id=str(server.id), server_name=server.name).set(
-            zombie_age
-        )
+        ZOMBIE_SERVER_INFO.labels(
+            server_id=str(server.id),
+            server_name=server.name,
+            server_type=server_type,
+            location=location,
+            status=server.status,
+            created=server.created.isoformat() if server.created else "",
+        ).set(zombie_age)
 
     # Set total count
     ZOMBIE_SERVERS_TOTAL_COUNT.set(total_zombie_servers)
@@ -1258,7 +1236,8 @@ def update_unused_runners(unused_runners_dict):
     """
     # Clear existing unused runner metrics
     UNUSED_RUNNERS_TOTAL._metrics.clear()
-    UNUSED_RUNNER_AGE._metrics.clear()
+    UNUSED_RUNNER_INFO._metrics.clear()
+    UNUSED_RUNNERS_TOTAL_COUNT.set(0)
 
     total_unused_runners = 0
     unused_counts = {}
@@ -1290,9 +1269,23 @@ def update_unused_runners(unused_runners_dict):
 
         # Track unused runner age
         unused_age = current_time - unused_runner.time
-        UNUSED_RUNNER_AGE.labels(runner_id=str(runner.id), runner_name=runner.name).set(
-            unused_age
-        )
+        # Extract server name from runner name (this is the actual server name)
+        server_name = get_runner_server_name(runner_name)
+        # For now we don't have direct server object access, but server_name is correct
+        server_id = "unknown"
+        status = "unknown"
+        created = ""
+
+        UNUSED_RUNNER_INFO.labels(
+            runner_id=str(runner.id),
+            runner_name=runner.name,
+            server_id=server_id,
+            server_name=server_name or "unknown",
+            server_type=server_type,
+            location=location,
+            status=status,
+            created=created,
+        ).set(unused_age)
 
     # Set total count
     UNUSED_RUNNERS_TOTAL_COUNT.set(total_unused_runners)

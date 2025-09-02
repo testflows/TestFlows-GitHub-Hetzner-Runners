@@ -14,7 +14,9 @@
 # limitations under the License.
 
 from collections import defaultdict
+from datetime import datetime
 from . import get
+from . import history
 from . import utils
 
 
@@ -62,3 +64,127 @@ def standby_summary():
         "details": standby_runners,
         "by_status": dict(standby_by_status),
     }
+
+
+def runners_history(cutoff_minutes=15):
+    """Update and get history for runners metrics."""
+
+    # Get history for total runners and busy runners
+    current_time = datetime.now()
+
+    # Update and get total runners history
+    total_timestamps, total_values, _, _ = history.update_and_get(
+        "github_hetzner_runners_runners_total_count",
+        timestamp=current_time,
+        cutoff_minutes=cutoff_minutes,
+        default_value=0,
+    )
+
+    # Update and get busy runners history
+    busy_timestamps, busy_values, _, _ = history.update_and_get(
+        "github_hetzner_runners_runners_busy",
+        timestamp=current_time,
+        cutoff_minutes=cutoff_minutes,
+        default_value=0,
+    )
+
+    # Update and get online runners history
+    online_timestamps, online_values, _, _ = history.update_and_get(
+        "github_hetzner_runners_runners_total",
+        timestamp=current_time,
+        cutoff_minutes=cutoff_minutes,
+        default_value=0,
+        labels={"status": "online"},
+    )
+
+    # Update and get offline runners history
+    offline_timestamps, offline_values, _, _ = history.update_and_get(
+        "github_hetzner_runners_runners_total",
+        timestamp=current_time,
+        cutoff_minutes=cutoff_minutes,
+        default_value=0,
+        labels={"status": "offline"},
+    )
+
+    return {
+        "total": {
+            "timestamps": total_timestamps,
+            "values": total_values,
+        },
+        "busy": {
+            "timestamps": busy_timestamps,
+            "values": busy_values,
+        },
+        "online": {
+            "timestamps": online_timestamps,
+            "values": online_values,
+        },
+        "offline": {
+            "timestamps": offline_timestamps,
+            "values": offline_values,
+        },
+    }
+
+
+def labels_info():
+    """Get all runner label information from metrics."""
+    return get.metric_info("github_hetzner_runners_runner_labels")
+
+
+def labels(labels_info, runner_id, runner_name):
+    """Extract labels for a specific runner from labels info."""
+    labels = []
+    for label_dict in labels_info:
+        if (
+            label_dict.get("runner_id") == runner_id
+            and label_dict.get("runner_name") == runner_name
+            and "label" in label_dict
+        ):
+            labels.append(label_dict["label"])
+    return labels
+
+
+def formatted_details():
+    """Get formatted runner details with labels and links."""
+    # Get runner information
+    runners_summary = summary()
+    runners_info = runners_summary["details"]
+
+    # Get all runner labels once
+    runner_labels_info = labels_info()
+
+    # Prepare runner data for dataframe
+    formatted_runners = []
+    for runner in runners_info:
+        runner_id = runner.get("runner_id")
+        runner_name = runner.get("name")
+
+        # Get runner labels
+        runner_labels_list = labels(runner_labels_info, runner_id, runner_name)
+
+        # Create formatted runner data
+        formatted_runner = {
+            "name": runner.get("name", "Unknown"),
+            "status": runner.get("status", "unknown"),
+            "runner_id": runner.get("runner_id", ""),
+            "os": runner.get("os", ""),
+            "repository": runner.get("repository", ""),
+            "labels": ", ".join(runner_labels_list) if runner_labels_list else "",
+            "busy": (
+                "Busy" if runner.get("busy", "false").lower() == "true" else "Idle"
+            ),
+            "link": (
+                f"https://github.com/{runner.get('repository', '')}/settings/actions/runners/{runner.get('runner_id', '')}"
+                if runner.get("repository") and runner.get("runner_id")
+                else ""
+            ),
+        }
+
+        # Add any additional fields from the original runner data
+        for key, value in runner.items():
+            if key not in formatted_runner and value:
+                formatted_runner[key] = str(value)
+
+        formatted_runners.append(formatted_runner)
+
+    return formatted_runners

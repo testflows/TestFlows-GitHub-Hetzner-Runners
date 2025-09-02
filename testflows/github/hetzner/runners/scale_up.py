@@ -1437,8 +1437,6 @@ def scale_up(
                 metrics.update_runners(
                     runners,
                     github_repository,
-                    max_server_ready_time,
-                    get_runner_server_type_and_location_fn=get_runner_server_type_and_location,
                 )
                 metrics.update_pools(
                     servers,
