@@ -19,6 +19,7 @@ from datetime import datetime
 from . import get
 from . import history
 from ..colors import STREAMLIT_COLORS
+from ..panels.utils import format
 
 
 def scale_up_summary():
@@ -47,26 +48,6 @@ def scale_down_summary():
     errors_info = get.metric_info("github_hetzner_runners_scale_down_failure_last_hour")
 
     return {"last_hour": int(error_count), "details": errors_info}
-
-
-def format_error_time(timestamp_iso):
-    """Format error timestamp to readable string.
-
-    Args:
-        timestamp_iso: ISO format timestamp string
-
-    Returns:
-        str: Formatted time string
-    """
-    try:
-        if timestamp_iso:
-            return dateutil.parser.parse(timestamp_iso).strftime(
-                "%Y-%m-%d %H:%M:%S UTC"
-            )
-        else:
-            return "Unknown time"
-    except (ValueError, TypeError):
-        return "Unknown time"
 
 
 def get_error_color(error_type, error_type_colors):
@@ -113,7 +94,7 @@ def format_error_details(errors_info, error_type_colors):
             server_type = info.get("server_type", "Unknown")
             location = info.get("location", "Unknown") or "Unspecified"
             labels = info.get("labels", "").split(",") if info.get("labels") else []
-            time_str = format_error_time(info.get("timestamp_iso"))
+            time_str = format.format_created_time(info.get("timestamp_iso"))
 
             # Create formatted error data
             formatted_error = {

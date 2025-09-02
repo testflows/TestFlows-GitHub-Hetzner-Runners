@@ -15,6 +15,9 @@
 
 """Utility functions for dashboard panels."""
 
+import time
+from datetime import datetime
+
 
 def format_duration(seconds):
     """Format duration in seconds to human-readable format.
@@ -47,3 +50,36 @@ def format_duration(seconds):
         parts.append(f"{remaining_seconds}s")
 
     return " ".join(parts)
+
+
+def format_created_time(created_time):
+    """Format creation time with duration.
+
+    Args:
+        created_time: ISO format timestamp string (can be with or without timezone)
+
+    Returns:
+        str: Formatted timestamp with duration like "2025-01-02 17:53:46 UTC (10d 2h 30m)"
+    """
+    if not created_time:
+        return ""
+
+    try:
+        # Handle different timestamp formats
+        if "Z" in created_time or "+" in created_time:
+            # ISO format with timezone (servers)
+            created_dt = datetime.fromisoformat(created_time.replace("Z", "+00:00"))
+        else:
+            # Simple format without timezone (volumes) - assume UTC
+            created_dt = datetime.fromisoformat(created_time + "+00:00")
+
+        # Format the creation time with UTC
+        created_str = created_dt.strftime("%Y-%m-%d %H:%M:%S UTC")
+
+        # Calculate duration
+        lifetime_seconds = time.time() - created_dt.timestamp()
+        duration_str = format_duration(lifetime_seconds)
+
+        return f"{created_str} ({duration_str})"
+    except (ValueError, TypeError):
+        return created_time  # Fallback to original string

@@ -16,6 +16,7 @@
 from . import get
 from . import utils
 from . import history
+from ..panels.utils import format
 
 
 def summary():
@@ -99,7 +100,7 @@ def formatted_details(volumes_info):
             "format": volume.get("format", ""),
             "server_name": volume.get("server_name", ""),
             "server_id": volume.get("server_id", ""),
-            "created": volume.get("created", ""),
+            "created": format.format_created_time(volume.get("created", "")),
             "labels": ", ".join(volume_labels) if volume_labels else "",
         }
 

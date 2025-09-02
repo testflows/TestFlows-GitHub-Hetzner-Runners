@@ -16,6 +16,7 @@ from datetime import datetime
 from collections import defaultdict
 from . import get
 from . import utils
+from ..panels.utils import format
 from . import history
 from ...constants import standby_server_name_prefix, recycle_server_name_prefix
 
@@ -232,7 +233,7 @@ def formatted_details(servers_info):
             "location": server.get("location", ""),
             "ipv4": server.get("ipv4", ""),
             "ipv6": server.get("ipv6", ""),
-            "created": server.get("created", ""),
+            "created": format.format_created_time(server.get("created", "")),
             "labels": ", ".join(server_labels) if server_labels else "",
         }
 
@@ -285,7 +286,7 @@ def health_details():
                 "status": item.get("status", "unknown"),
                 "server_type": item.get("server_type", "unknown"),
                 "location": item.get("location", "unknown"),
-                "created": item.get("created", ""),
+                "created": format.format_created_time(item.get("created", "")),
             }
         )
 
@@ -301,7 +302,7 @@ def health_details():
                 "status": item.get("status", "unknown"),
                 "server_type": item.get("server_type", "unknown"),
                 "location": item.get("location", "unknown"),
-                "created": item.get("created", ""),
+                "created": format.format_created_time(item.get("created", "")),
             }
         )
 
@@ -321,7 +322,7 @@ def health_details():
                 "status": item.get("status", "unknown"),
                 "server_type": item.get("server_type", "unknown"),
                 "location": item.get("location", "unknown"),
-                "created": item.get("created", ""),
+                "created": format.format_created_time(item.get("created", "")),
             }
         )
 

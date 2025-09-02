@@ -506,49 +506,6 @@ def nested_getattr(obj, *attrs, default=""):
         return default
 
 
-def format_server_lifetime(created_dt):
-    """Format server lifetime into a human readable string.
-
-    Args:
-        created_dt: datetime object of server creation time
-
-    Returns:
-        Tuple of (formatted creation time, lifetime string)
-    """
-    # Convert to UTC if not already
-    if created_dt.tzinfo is None:
-        created_dt = created_dt.replace(tzinfo=dateutil.tz.UTC)
-
-    lifetime_seconds = time.time() - created_dt.timestamp()
-    days = int(lifetime_seconds // (24 * 3600))
-    hours = int((lifetime_seconds % (24 * 3600)) // 3600)
-    minutes = int((lifetime_seconds % 3600) // 60)
-    lifetime_str = f"{days}d {hours}h {minutes}m"
-    created_str = created_dt.strftime("%Y-%m-%d %H:%M:%S UTC")
-    return created_str, lifetime_str
-
-
-def normalize_server_creation_time(server):
-    """Helper function to normalize server creation time with consistent error handling.
-
-    Args:
-        server: Server object containing the creation timestamp
-
-    Returns:
-        Normalized creation time string with lifetime, defaults to empty string
-    """
-    created = nested_getattr(server, "server", "created")
-    if not created:
-        return ""
-
-    try:
-        created_str, lifetime_str = format_server_lifetime(created)
-        return f"{created_str} ({lifetime_str})"
-    except (ValueError, TypeError) as e:
-        logging.debug(f"Failed to handle created timestamp {created}: {e}")
-        return str(created)  # Fallback to string representation
-
-
 def update_servers(servers, server_prices=None, ipv4_price=0.0008, ipv6_price=0.0000):
     """Update all server-related metrics.
 
@@ -624,7 +581,13 @@ def update_servers(servers, server_prices=None, ipv4_price=0.0008, ipv6_price=0.
                 "runner_status": normalize_status(server),
                 "ipv4": nested_getattr(server, "server", "public_net", "ipv4", "ip"),
                 "ipv6": nested_getattr(server, "server", "public_net", "ipv6", "ip"),
-                "created": normalize_server_creation_time(server),
+                "created": (
+                    nested_getattr(server, "server", "created").strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    )
+                    if nested_getattr(server, "server", "created")
+                    else ""
+                ),
                 "cost_hourly": str(total_cost) if total_cost is not None else None,
                 "cost_currency": "EUR",
             }
