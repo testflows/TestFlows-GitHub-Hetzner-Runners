@@ -118,7 +118,7 @@ def render():
     that maintains all the functionality of the original dashboard panel.
     """
     renderers.render_panel(
-        title="Estimated Cost (Servers and Volumes)",
+        title="Estimated Cost",
         metrics_func=render_cost_metrics,
         chart_func=render_cost_chart,
         details_func=render_cost_details,
