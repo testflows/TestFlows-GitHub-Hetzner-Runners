@@ -81,8 +81,9 @@ def render_runners_chart():
 def render_runners_details():
     """Render the runners details as a dataframe."""
 
-    # Get formatted runner details
-    formatted_runners = metrics.runners.formatted_details()
+    # Get runners summary and format details
+    runners_summary = metrics.runners.summary()
+    formatted_runners = metrics.runners.formatted_details(runners_summary["details"])
 
     renderers.render_details_dataframe(
         items=formatted_runners,

@@ -47,7 +47,7 @@ def get_config_data(config: Config):
         },
         {
             "label": "Label Prefix (--label-prefix)",
-            "value": config.label_prefix or "[no prefix]",
+            "value": config.label_prefix or "",
             "link": None,
         },
         {
@@ -55,7 +55,7 @@ def get_config_data(config: Config):
             "value": (
                 ", ".join(f"{k}: {', '.join(v)}" for k, v in config.meta_label.items())
                 if config.meta_label
-                else "[no meta labels]"
+                else ""
             ),
             "link": None,
         },
@@ -72,13 +72,13 @@ def get_config_data(config: Config):
                     for labels, max_count in config.max_runners_for_label
                 )
                 if config.max_runners_for_label
-                else "[no label limits]"
+                else ""
             ),
             "link": None,
         },
         {
             "label": "Max Runners in Workflow Run (--max-runners-in-workflow-run)",
-            "value": config.max_runners_in_workflow_run or "[no limit]",
+            "value": config.max_runners_in_workflow_run or "",
             "link": None,
         },
         {
@@ -145,34 +145,24 @@ def get_config_data(config: Config):
         },
         {
             "label": "Default Image (--default-image)",
-            "value": (
-                config.default_image.name
-                if config.default_image
-                else "[no default image]"
-            ),
+            "value": (config.default_image.name if config.default_image else ""),
             "link": None,
         },
         {
             "label": "Default Server Type (--default-server-type)",
             "value": (
-                config.default_server_type.name
-                if config.default_server_type
-                else "[no default server type]"
+                config.default_server_type.name if config.default_server_type else ""
             ),
             "link": None,
         },
         {
             "label": "Default Location (--default-location)",
-            "value": (
-                config.default_location.name
-                if config.default_location
-                else "[no default location]"
-            ),
+            "value": (config.default_location.name if config.default_location else ""),
             "link": None,
         },
         {
             "label": "Config File (--config)",
-            "value": config.config_file or "[no config file]",
+            "value": config.config_file or "",
             "link": None,
         },
         {
@@ -197,7 +187,7 @@ def get_config_data(config: Config):
         },
         {
             "label": "SSH Key (--ssh-key)",
-            "value": config.ssh_key or "[no SSH key]",
+            "value": config.ssh_key or "",
             "link": None,
         },
         {
@@ -205,7 +195,7 @@ def get_config_data(config: Config):
             "value": (
                 ", ".join(config.additional_ssh_keys)
                 if config.additional_ssh_keys
-                else "[no additional SSH keys]"
+                else ""
             ),
             "link": None,
         },

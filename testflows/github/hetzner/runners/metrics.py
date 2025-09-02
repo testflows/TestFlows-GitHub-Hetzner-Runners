@@ -22,7 +22,7 @@ from github.WorkflowRun import WorkflowRun
 from github.WorkflowJob import WorkflowJob
 from prometheus_client import Counter, Gauge, Histogram, Info
 from .estimate import get_server_price
-from .constants import standby_server_name_prefix, recycle_server_name_prefix
+from .constants import standby_server_name_prefix
 from .server import get_runner_server_name
 
 
@@ -138,40 +138,6 @@ VOLUME_ATTACHMENT = Gauge(
         "server_id",
         "server_name",
     ],
-)
-
-# Standby server metrics
-STANDBY_SERVERS_TOTAL = Gauge(
-    "github_hetzner_runners_standby_servers_total",
-    "Total number of standby servers",
-    [
-        "status",
-        "server_type",
-        "location",
-    ],  # status: running, off, initializing, ready, busy
-)
-
-STANDBY_SERVERS_LABELS = Gauge(
-    "github_hetzner_runners_standby_servers_labels",
-    "Labels assigned to standby servers",
-    ["server_type", "location", "label"],
-)
-
-# Recycled server metrics
-RECYCLED_SERVERS_TOTAL = Gauge(
-    "github_hetzner_runners_recycled_servers_total",
-    "Total number of recycled servers available",
-    [
-        "status",
-        "server_type",
-        "location",
-    ],  # status: running, off, initializing, ready, busy
-)
-
-RECYCLED_SERVERS_LABELS = Gauge(
-    "github_hetzner_runners_recycled_servers_labels",
-    "Labels assigned to recycled servers",
-    ["server_type", "location", "label"],
 )
 
 # Runner metrics
@@ -596,15 +562,11 @@ def update_servers(servers, server_prices=None, ipv4_price=0.0008, ipv6_price=0.
     SERVER_INFO._metrics.clear()
     SERVER_LABELS._metrics.clear()
     SERVER_STATUS._metrics.clear()
-    STANDBY_SERVERS_LABELS._metrics.clear()
-    RECYCLED_SERVERS_LABELS._metrics.clear()
 
     total_servers = 0
 
     # Track counts by status
     status_counts = {}
-    standby_counts = {}
-    recycled_counts = {}
 
     # Define all possible statuses
     all_statuses = ["running", "off", "initializing", "ready", "busy"]
@@ -617,7 +579,6 @@ def update_servers(servers, server_prices=None, ipv4_price=0.0008, ipv6_price=0.
 
         # Calculate costs once
         total_cost = None
-        base_cost = None
         server_ipv4_cost = None
         server_ipv6_cost = None
 
@@ -625,7 +586,6 @@ def update_servers(servers, server_prices=None, ipv4_price=0.0008, ipv6_price=0.
             try:
                 server_type = server.server_type.name
                 location = server.server_location.name
-                base_cost = server_prices[server_type.lower()][location]
                 server_ipv4_cost = (
                     ipv4_price
                     if nested_getattr(server, "server", "public_net", "ipv4", "ip")
@@ -704,30 +664,6 @@ def update_servers(servers, server_prices=None, ipv4_price=0.0008, ipv6_price=0.
                 server_name=server.name,
                 status=status,
             ).set(1)
-
-            # Track standby servers
-            if server.name.startswith(standby_server_name_prefix):
-                key = (status, server.server_type.name, server.server_location.name)
-                standby_counts[key] = standby_counts.get(key, 0) + 1
-
-                for label in server.labels:
-                    STANDBY_SERVERS_LABELS.labels(
-                        server_type=server.server_type.name,
-                        location=server.server_location.name,
-                        label=label.lower(),
-                    ).set(1)
-
-            # Track recycled servers
-            if server.name.startswith(recycle_server_name_prefix):
-                key = (status, server.server_type.name, server.server_location.name)
-                recycled_counts[key] = recycled_counts.get(key, 0) + 1
-
-                for label in server.labels:
-                    RECYCLED_SERVERS_LABELS.labels(
-                        server_type=server.server_type.name,
-                        location=server.server_location.name,
-                        label=label.lower(),
-                    ).set(1)
         except AttributeError:
             # Skip label and status tracking if required attributes are missing
             pass
@@ -738,22 +674,6 @@ def update_servers(servers, server_prices=None, ipv4_price=0.0008, ipv6_price=0.
     # Set counts for all possible statuses, defaulting to 0 if not present
     for status in all_statuses:
         SERVERS_TOTAL.labels(status=status).set(status_counts.get(status, 0))
-
-    # Set standby server counts
-    for (status, server_type, location), count in standby_counts.items():
-        STANDBY_SERVERS_TOTAL.labels(
-            status=status,
-            server_type=server_type,
-            location=location,
-        ).set(count)
-
-    # Set recycled server counts
-    for (status, server_type, location), count in recycled_counts.items():
-        RECYCLED_SERVERS_TOTAL.labels(
-            status=status,
-            server_type=server_type,
-            location=location,
-        ).set(count)
 
 
 def update_volumes(volumes):

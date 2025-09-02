@@ -17,6 +17,7 @@ from collections import defaultdict
 from . import get
 from . import utils
 from . import history
+from ...constants import standby_server_name_prefix, recycle_server_name_prefix
 
 
 def summary():
@@ -41,34 +42,27 @@ def standby_summary():
     Returns:
         dict: Summary of standby servers data
     """
-    standby_servers_info = get.metric_info(
-        "github_hetzner_runners_standby_servers_total"
-    )
-    standby_servers_labels = get.metric_info(
-        "github_hetzner_runners_standby_servers_labels"
-    )
+    # Get all servers and filter for standby servers
+    servers_summary = summary()
+    all_servers = servers_summary["details"]
 
-    # Calculate totals by status, server_type, and location
+    # Filter for standby servers
+    standby_servers = [
+        server
+        for server in all_servers
+        if server.get("name", "").startswith(standby_server_name_prefix)
+    ]
+
+    # Calculate totals by status
     standby_by_status = defaultdict(int)
-    standby_by_type_location = defaultdict(int)
-    total_standby = 0
-
-    for server in standby_servers_info:
+    for server in standby_servers:
         status = server.get("status", "unknown")
-        server_type = server.get("server_type", "unknown")
-        location = server.get("location", "unknown")
-        count = int(server.get("value", 0))
-
-        standby_by_status[status] += count
-        standby_by_type_location[f"{server_type}-{location}"] += count
-        total_standby += count
+        standby_by_status[status] += 1
 
     return {
-        "total": total_standby,
-        "details": standby_servers_info,
-        "labels": standby_servers_labels,
+        "total": len(standby_servers),
+        "details": standby_servers,
         "by_status": dict(standby_by_status),
-        "by_type_location": dict(standby_by_type_location),
     }
 
 
@@ -78,30 +72,27 @@ def recycled_summary():
     Returns:
         dict: Summary of recycled servers
     """
-    recycled_metrics = get.metric_info("github_hetzner_runners_recycled_servers_total")
+    # Get all servers and filter for recycled servers
+    servers_summary = summary()
+    all_servers = servers_summary["details"]
 
-    total = 0
-    by_status = {}
-    by_type_location = {}
+    # Filter for recycled servers
+    recycled_servers = [
+        server
+        for server in all_servers
+        if server.get("name", "").startswith(recycle_server_name_prefix)
+    ]
 
-    for metric in recycled_metrics:
-        status = metric.get("status", "unknown")
-        server_type = metric.get("server_type", "unknown")
-        location = metric.get("location", "unknown")
-        value = metric.get("value", 0)
-
-        if value > 0:
-            total += value
-            by_status[status] = by_status.get(status, 0) + value
-            type_location = f"{server_type}-{location}"
-            by_type_location[type_location] = (
-                by_type_location.get(type_location, 0) + value
-            )
+    # Calculate totals by status
+    recycled_by_status = defaultdict(int)
+    for server in recycled_servers:
+        status = server.get("status", "unknown")
+        recycled_by_status[status] += 1
 
     return {
-        "total": total,
-        "by_status": by_status,
-        "by_type_location": by_type_location,
+        "total": len(recycled_servers),
+        "details": recycled_servers,
+        "by_status": dict(recycled_by_status),
     }
 
 
@@ -196,9 +187,9 @@ def pool_name(server_name):
         str: Pool type - 'standby', 'recycled', or 'regular'
     """
     pool = "regular"
-    if server_name.startswith("github-hetzner-runner-standby-"):
+    if server_name.startswith(standby_server_name_prefix):
         pool = "standby"
-    elif server_name.startswith("github-hetzner-runner-recycle-"):
+    elif server_name.startswith(recycle_server_name_prefix):
         pool = "recycled"
     return pool
 
@@ -318,7 +309,7 @@ def health_details():
     recycled_servers = [
         server
         for server in summary()["details"]
-        if server.get("server_name", "").startswith("github-hetzner-runner-recycle-")
+        if server.get("server_name", "").startswith(recycle_server_name_prefix)
     ]
     for item in recycled_servers:
         health_data.append(
@@ -395,3 +386,47 @@ def health_history(cutoff_minutes=15):
     }
 
     return health_metrics
+
+
+def standby_states_history(cutoff_minutes=15):
+    """Update and get history for standby server states.
+
+    Args:
+        cutoff_minutes: Number of minutes to keep in history
+
+    Returns:
+        dict: Dictionary with standby server states history data
+    """
+    current_time = datetime.now()
+
+    # Get current standby servers data
+    servers_summary = summary()
+    all_servers = servers_summary["details"]
+
+    # Filter for standby servers and count by status
+    standby_servers_by_status = {}
+    for server in all_servers:
+        if server.get("name", "").startswith(standby_server_name_prefix):
+            status = server.get("status", "unknown")
+            standby_servers_by_status[status] = (
+                standby_servers_by_status.get(status, 0) + 1
+            )
+
+    # Create history entries for each status
+    standby_history = {}
+
+    for status in ["running", "off", "initializing", "ready", "busy"]:
+        count = standby_servers_by_status.get(status, 0)
+        # Update history for this specific status
+        timestamps, values, _, _ = history.update_and_get(
+            f"standby_servers_{status}",
+            timestamp=current_time,
+            cutoff_minutes=cutoff_minutes,
+            default_value=count,
+        )
+        standby_history[status] = {
+            "timestamps": timestamps,
+            "values": values,
+        }
+
+    return standby_history

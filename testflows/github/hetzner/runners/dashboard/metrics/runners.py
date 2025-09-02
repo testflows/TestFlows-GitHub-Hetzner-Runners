@@ -18,6 +18,7 @@ from datetime import datetime
 from . import get
 from . import history
 from . import utils
+from ...constants import standby_runner_name_prefix
 
 
 def summary():
@@ -48,7 +49,7 @@ def standby_summary():
     standby_runners = [
         r
         for r in runners_info
-        if r.get("name", "").startswith("github-hetzner-runner-standby-")
+        if r.get("name", "").startswith(standby_runner_name_prefix)
     ]
 
     # Calculate totals by status
@@ -144,11 +145,15 @@ def labels(labels_info, runner_id, runner_name):
     return labels
 
 
-def formatted_details():
-    """Get formatted runner details with labels and links."""
-    # Get runner information
-    runners_summary = summary()
-    runners_info = runners_summary["details"]
+def formatted_details(runners_info):
+    """Get formatted runner details with labels and links.
+
+    Args:
+        runners_info: List of runner dictionaries to format
+
+    Returns:
+        list: List of formatted runner dictionaries
+    """
 
     # Get all runner labels once
     runner_labels_info = labels_info()
@@ -188,3 +193,38 @@ def formatted_details():
         formatted_runners.append(formatted_runner)
 
     return formatted_runners
+
+
+def standby_states_history(cutoff_minutes=15):
+    """Update and get history for standby runner states.
+
+    Args:
+        cutoff_minutes: Number of minutes to keep in history
+
+    Returns:
+        dict: Dictionary with standby runner states history data
+    """
+    current_time = datetime.now()
+
+    # Get current standby runners data
+    standby_runners_summary = standby_summary()
+    standby_runners_by_status = standby_runners_summary["by_status"]
+
+    # Create history entries for each status
+    standby_history = {}
+
+    for status in ["online", "offline"]:
+        count = standby_runners_by_status.get(status, 0)
+        # Update history for this specific status
+        timestamps, values, _, _ = history.update_and_get(
+            f"standby_runners_{status}",
+            timestamp=current_time,
+            cutoff_minutes=cutoff_minutes,
+            default_value=count,
+        )
+        standby_history[status] = {
+            "timestamps": timestamps,
+            "values": values,
+        }
+
+    return standby_history
