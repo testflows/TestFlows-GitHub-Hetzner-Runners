@@ -101,38 +101,6 @@ def update_for_states(
             update(metric_name, {"status": state}, value, timestamp, cutoff_minutes)
 
 
-def update_and_get(
-    metric_name, labels, value=None, timestamp=None, cutoff_minutes=15
-) -> Tuple[List, List, float, datetime]:
-    """Update and get history for metric with labels,
-    and using given value and timestamp.
-
-    If value is not provided, use current value.
-    If timestamp is not provided, use current time.
-
-    return (timestamps, values, value, timestamp).
-    """
-    if timestamp is None:
-        timestamp = datetime.now()
-
-    if value is None:
-        value = get.current_value(metric_name)
-
-    # Update history
-    update(
-        metric_name,
-        labels,
-        value,
-        timestamp,
-        cutoff_minutes=cutoff_minutes,
-    )
-
-    # Get history
-    timestamps, values = data(metric_name, cutoff_minutes=cutoff_minutes)
-
-    return timestamps, values, value, timestamp
-
-
 def data(metric_name, labels=None, cutoff_minutes=15):
     """Get metric history data for plotting.
 
@@ -202,6 +170,81 @@ def data_for_states(
     return history_data
 
 
+def update_and_get(
+    metric_name,
+    labels={},
+    value=None,
+    timestamp=None,
+    cutoff_minutes=15,
+    default_value=None,
+) -> Tuple[List, List, float, datetime]:
+    """Update and get history for metric with labels,
+    and using given value and timestamp.
+
+    If value is not provided, use current value.
+    If timestamp is not provided, use current time.
+
+    return (timestamps, values, value, timestamp).
+    """
+    if timestamp is None:
+        timestamp = datetime.now()
+
+    if value is None:
+        value = get.metric_value(metric_name)
+
+    if default_value is not None:
+        value = value if value is not None else default_value
+
+    # Update history
+    update(
+        metric_name,
+        labels,
+        value,
+        timestamp,
+        cutoff_minutes=cutoff_minutes,
+    )
+
+    # Get history
+    timestamps, values = data(metric_name, cutoff_minutes=cutoff_minutes)
+
+    return timestamps, values, value, timestamp
+
+
+def update_and_get_for_states(
+    metric_name: str,
+    states: List[str],
+    values: Dict[str, float] = None,
+    labels: Dict[str, str] = None,
+    timestamp: datetime = None,
+    cutoff_minutes: int = 15,
+) -> Dict[str, Dict[str, List]]:
+    """Update metric history for multiple states and get their historical data.
+
+    Args:
+        metric_name: Name of the metric
+        states: List of state values to update and fetch
+        values: Dictionary mapping states to their current values (if None, fetches from metrics)
+        labels: Optional labels to filter by
+        timestamp: Current timestamp (defaults to now)
+        cutoff_minutes: Number of minutes to keep in history
+
+    Returns:
+        Dictionary with state history data including current values
+    """
+    if timestamp is None:
+        timestamp = datetime.now()
+
+    # Get current values if not provided
+    if values is None:
+        values = get.metric_value_for_states(metric_name, states, labels)
+
+    # Update history for all states
+    update_for_states(metric_name, states, values, labels, timestamp, cutoff_minutes)
+
+    # Get historical data for all states
+    return data_for_states(metric_name, states, labels, cutoff_minutes)
+
+
 def dataframe(timestamps, values) -> pd.DataFrame:
     """Get a pandas DataFrame for history data."""
 
@@ -222,3 +265,50 @@ def dataframe(timestamps, values) -> pd.DataFrame:
     df = df.sort_values("Time")
 
     return df
+
+
+def dataframe_for_states(
+    data_for_states, time_column="Time", value_column="Count", status_column="Status"
+):
+    """Create a standardized DataFrame from history data.
+
+    Args:
+        history_data: Dictionary with history data
+        time_column: Name for the time column
+        value_column: Name for the value column
+        status_column: Name for the status column (if applicable)
+
+    Returns:
+        pd.DataFrame: Formatted DataFrame
+    """
+    if not data_for_states:
+        return pd.DataFrame(
+            {time_column: pd.to_datetime([]), value_column: [], status_column: []}
+        )
+
+    all_data = []
+
+    for status, data in data_for_states.items():
+        timestamps = data.get("timestamps", [])
+        values = data.get("values", [])
+
+        if timestamps and values and len(timestamps) == len(values):
+            for ts, val in zip(timestamps, values):
+                try:
+                    data_point = {
+                        time_column: pd.to_datetime(ts),
+                        value_column: int(val),
+                    }
+                    if status_column:
+                        data_point[status_column] = status
+                    all_data.append(data_point)
+                except (ValueError, TypeError):
+                    continue
+
+    if not all_data:
+        return pd.DataFrame(
+            {time_column: pd.to_datetime([]), value_column: [], status_column: []}
+        )
+
+    df = pd.DataFrame(all_data)
+    return df.sort_values(time_column)

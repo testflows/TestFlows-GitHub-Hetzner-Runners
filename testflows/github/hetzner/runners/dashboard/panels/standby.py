@@ -265,7 +265,7 @@ def render_standby_runners_chart():
             )
 
             # Create DataFrame for the chart with historical data
-            df = chart.create_dataframe_from_history(runners_history)
+            df = metrics.history.dataframe_for_states(runners_history)
 
             # Filter for standby runners if we can identify them
             # For now, we'll use current data since historical filtering is complex

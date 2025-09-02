@@ -57,7 +57,7 @@ def summary():
     }
 
 
-def total_cost_history():
+def total_cost_history(cutoff_minutes=15):
     """Update and get total cost history data.
 
     Updates the cost history with the current total cost value and returns
@@ -70,5 +70,5 @@ def total_cost_history():
         "github_hetzner_runners_cost_total",
         labels={},
         value=total_cost(),
-        cutoff_minutes=15,
+        cutoff_minutes=cutoff_minutes,
     )

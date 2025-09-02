@@ -122,10 +122,8 @@ class StateMetric:
             self.metric_name, self.states, cutoff_minutes=self.cutoff_minutes
         )
 
-        # Use existing chart utility to create DataFrame
-        from . import chart
-
-        return chart.create_dataframe_from_history(history_data)
+        # Use metrics.history to create DataFrame
+        return metrics.history.dataframe_for_states(history_data)
 
 
 class CombinedMetric:
