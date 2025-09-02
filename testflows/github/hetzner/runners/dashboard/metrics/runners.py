@@ -171,7 +171,7 @@ def formatted_details(runners_info):
         formatted_runner = {
             "name": runner.get("name", "Unknown"),
             "status": runner.get("status", "unknown"),
-            "runner_id": runner.get("runner_id", ""),
+            "id": runner.get("runner_id", ""),
             "os": runner.get("os", ""),
             "repository": runner.get("repository", ""),
             "labels": ", ".join(runner_labels_list) if runner_labels_list else "",
@@ -186,8 +186,10 @@ def formatted_details(runners_info):
         }
 
         # Add any additional fields from the original runner data
+        # Skip Prometheus metric labels that are not part of the actual runner info
+        prometheus_labels = {"runner_id", "runner_name"}
         for key, value in runner.items():
-            if key not in formatted_runner and value:
+            if key not in formatted_runner and key not in prometheus_labels and value:
                 formatted_runner[key] = str(value)
 
         formatted_runners.append(formatted_runner)

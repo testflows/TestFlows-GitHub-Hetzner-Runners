@@ -131,7 +131,7 @@ def delete_server(server: BoundServer, action: str = "delete"):
             error_type=f"{action}_failed",
             server_name=server.name,
             server_type=server.server_type.name,
-            location=server.datacenter.location.name,
+            server_location=server.datacenter.location.name,
             error_details=error_details,
         )
 
@@ -739,7 +739,7 @@ def scale_down(
                     error_type="success",
                     server_name=None,
                     server_type=None,
-                    location=None,
+                    server_location=None,
                     error_details=None,
                 )
         else:
@@ -757,7 +757,7 @@ def scale_down(
                     error_type="scale_down_cycle_failed",
                     server_name="unknown",
                     server_type="unknown",
-                    location="unknown",
+                    server_location="unknown",
                     error_details=error_details,
                 )
 

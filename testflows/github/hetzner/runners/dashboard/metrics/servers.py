@@ -216,7 +216,7 @@ def formatted_details(servers_info):
     formatted_servers = []
 
     for server in servers_info:
-        server_id = server.get("server_id")
+        server_id = server.get("id")
         server_name = server.get("name", "")
         # Get server labels
         server_labels = labels(server_labels_info, server_id, server_name)
@@ -228,8 +228,10 @@ def formatted_details(servers_info):
             "name": server.get("name", "Unknown"),
             "status": server.get("status", "unknown"),
             "pool": pool,
-            "server_id": server.get("server_id", ""),
-            "server_type": server.get("server_type", ""),
+            "id": server.get("id", ""),
+            "type": server.get("type", ""),
+            "image": server.get("image", ""),
+            "architecture": server.get("architecture", ""),
             "location": server.get("location", ""),
             "ipv4": server.get("ipv4", ""),
             "ipv6": server.get("ipv6", ""),
@@ -238,8 +240,10 @@ def formatted_details(servers_info):
         }
 
         # Add any additional fields from the original server data
+        # Skip Prometheus metric labels that are not part of the actual server info
+        prometheus_labels = {"server_id", "server_name"}
         for key, value in server.items():
-            if key not in formatted_server and value:
+            if key not in formatted_server and key not in prometheus_labels and value:
                 # Format cost_hourly to 3 decimal points
                 if key == "cost_hourly":
                     try:
@@ -280,11 +284,11 @@ def health_details():
         health_data.append(
             {
                 "name": item.get("server_name", "Unknown"),
-                "server_id": item.get("server_id", "unknown"),
+                "id": item.get("server_id", "unknown"),
                 "health_status": "zombie",
                 "age_seconds": age(item.get("created", "")),
                 "status": item.get("status", "unknown"),
-                "server_type": item.get("server_type", "unknown"),
+                "type": item.get("server_type", "unknown"),
                 "location": item.get("location", "unknown"),
                 "created": format.format_created_time(item.get("created", "")),
             }
@@ -295,8 +299,10 @@ def health_details():
     for item in unused_runners:
         health_data.append(
             {
-                "name": item.get("server_name", "Unknown"),
+                "server_name": item.get("server_name", "Unknown"),
+                "name": item.get("runner_name", "Unknown"),
                 "server_id": item.get("server_id", "unknown"),
+                "id": item.get("runner_id", "unknown"),
                 "health_status": "unused",
                 "age_seconds": age(item.get("created", "")),
                 "status": item.get("status", "unknown"),
@@ -310,17 +316,17 @@ def health_details():
     recycled_servers = [
         server
         for server in summary()["details"]
-        if server.get("server_name", "").startswith(recycle_server_name_prefix)
+        if server.get("name", "").startswith(recycle_server_name_prefix)
     ]
     for item in recycled_servers:
         health_data.append(
             {
-                "name": item.get("server_name", "Unknown"),
-                "server_id": item.get("server_id", "unknown"),
+                "name": item.get("name", "Unknown"),
+                "id": item.get("id", "unknown"),
                 "health_status": "recycled",
                 "age_seconds": age(item.get("created", "")),
                 "status": item.get("status", "unknown"),
-                "server_type": item.get("server_type", "unknown"),
+                "type": item.get("type", "unknown"),
                 "location": item.get("location", "unknown"),
                 "created": format.format_created_time(item.get("created", "")),
             }

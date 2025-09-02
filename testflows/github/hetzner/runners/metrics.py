@@ -330,8 +330,8 @@ SCALE_UP_FAILURE_DETAILS_LAST_HOUR = Gauge(
         "error_type",
         "server_name",
         "server_type",
-        "location",
-        "labels",
+        "server_location",
+        "server_labels",
         "timestamp_iso",
         "error",
     ],
@@ -350,8 +350,8 @@ SCALE_DOWN_FAILURE_DETAILS_LAST_HOUR = Gauge(
         "error_type",
         "server_name",
         "server_type",
-        "location",
-        "labels",
+        "server_location",
+        "server_labels",
         "timestamp_iso",
         "error",
     ],
@@ -574,9 +574,14 @@ def update_servers(servers, server_prices=None, ipv4_price=0.0008, ipv6_price=0.
         # Track detailed server information
         try:
             server_info = {
+                "id": str(server.server.id),
                 "name": server.name,
                 "type": nested_getattr(server, "server_type", "name"),
                 "location": nested_getattr(server, "server_location", "name"),
+                "image": nested_getattr(server, "server", "image", "name"),
+                "architecture": nested_getattr(
+                    server, "server", "image", "architecture"
+                ),
                 "status": status,
                 "runner_status": normalize_status(server),
                 "ipv4": nested_getattr(server, "server", "public_net", "ipv4", "ip"),
@@ -932,7 +937,7 @@ def update_pools(servers, standby_runners, count_available_fn=None):
 
 
 def record_scale_up_failure(
-    error_type, server_name, server_type, location, error_details, cache=[]
+    error_type, server_name, server_type, server_location, error_details, cache=[]
 ):
     """Record a scale up failure or success.
 
@@ -955,7 +960,7 @@ def record_scale_up_failure(
                 "error_type": error_type,
                 "server_name": server_name,
                 "server_type": server_type,
-                "location": location,
+                "server_location": server_location,
                 "error_details": error_details,
             }
         )
@@ -985,15 +990,15 @@ def record_scale_up_failure(
                 error_type=error["error_type"],
                 server_name=error["server_name"],
                 server_type=error["server_type"],
-                location=error["location"] or "",
+                server_location=error["server_location"] or "",
                 timestamp_iso=timestamp_iso,
-                labels=str(error["error_details"]["labels"]),
+                server_labels=str(error["error_details"]["labels"]),
                 error=str(error["error_details"]["error"]),
             ).set(1)
 
 
 def record_scale_down_failure(
-    error_type, server_name, server_type, location, error_details, cache=[]
+    error_type, server_name, server_type, server_location, error_details, cache=[]
 ):
     """Record a scale down failure or success.
 
@@ -1001,7 +1006,7 @@ def record_scale_down_failure(
         error_type: Type of the error or "success" for successful scale down
         server_name: Name of the server
         server_type: Type of the server
-        location: Location of the server
+        server_location: Location of the server
         error_details: Details about the error or success details
         cache: List to store error messages (optional)
     """
@@ -1016,7 +1021,7 @@ def record_scale_down_failure(
                 "error_type": error_type,
                 "server_name": server_name,
                 "server_type": server_type,
-                "location": location,
+                "server_location": server_location,
                 "error_details": error_details,
             }
         )
@@ -1046,9 +1051,9 @@ def record_scale_down_failure(
                 error_type=error["error_type"],
                 server_name=error["server_name"],
                 server_type=error["server_type"],
-                location=error["location"] or "",
+                server_location=error["server_location"] or "",
                 timestamp_iso=timestamp_iso,
-                labels=str(error["error_details"]["labels"]),
+                server_labels=str(error["error_details"]["labels"]),
                 error=str(error["error_details"]["error"]),
             ).set(1)
 

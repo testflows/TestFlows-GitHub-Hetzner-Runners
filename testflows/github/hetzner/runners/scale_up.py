@@ -1679,7 +1679,7 @@ def scale_up(
                                     error_type=error_type,
                                     server_name=future.server_name,
                                     server_type=future.server_type.name,
-                                    location=(
+                                    server_location=(
                                         future.server_location.name
                                         if future.server_location
                                         else ""
@@ -1714,7 +1714,7 @@ def scale_up(
                         error_type="success",
                         server_name=None,
                         server_type=None,
-                        location=None,
+                        server_location=None,
                         error_details=None,
                     )
 
