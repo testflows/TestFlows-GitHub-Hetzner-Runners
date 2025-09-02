@@ -18,7 +18,6 @@ import streamlit as st
 import pandas as pd
 
 from ...config import Config
-from ..colors import COLORS
 from ... import __version__
 
 

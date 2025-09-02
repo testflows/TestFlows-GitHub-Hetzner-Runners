@@ -13,238 +13,61 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import streamlit as st
-import dateutil.parser
-import logging
-
-from ..colors import STREAMLIT_COLORS
 from .. import metrics
 from .utils import chart, renderers
-from .utils.metrics import SimpleMetric
-
-
-# Create metric abstraction
-scale_down_errors_metric = SimpleMetric(
-    "github_hetzner_runners_scale_down_failures_last_hour", cutoff_minutes=60
-)
-
-
-def get_scale_down_errors_data():
-    """Get scale-down errors data for display and plotting.
-
-    Returns:
-        tuple: (error_list_data, error_count, history_data)
-    """
-    # Get error information from metrics
-    errors_info = metrics.get.metric_info(
-        "github_hetzner_runners_scale_down_failure_last_hour"
-    )
-
-    # Get total number of errors from metrics
-    total_errors = (
-        metrics.get.metric_value("github_hetzner_runners_scale_down_failures_last_hour")
-        or 0
-    )
-
-    # Create error list data
-    error_items = []
-
-    if errors_info:
-        # Sort errors_info by timestamp in descending order
-        errors_info.sort(
-            key=lambda x: dateutil.parser.parse(
-                x.get("timestamp_iso", "1970-01-01T00:00:00Z")
-            ),
-            reverse=True,
-        )
-
-        for info in errors_info:
-            try:
-                error_type = info.get("error_type", "Unknown")
-                server_name = info.get("server_name", "Unknown")
-                error_message = info.get("error", "Unknown error")
-                server_type = info.get("server_type", "Unknown")
-                location = info.get("location", "Unknown") or "Unspecified"
-                labels = info.get("labels", "").split(",")
-                time_str = (
-                    dateutil.parser.parse(info.get("timestamp_iso", "")).strftime(
-                        "%Y-%m-%d %H:%M:%S UTC"
-                    )
-                    if info.get("timestamp_iso")
-                    else "Unknown time"
-                )
-
-                # Map error types to colors
-                error_colors = {
-                    "delete_failed": STREAMLIT_COLORS["error"],
-                    "delete_powered_off_failed": STREAMLIT_COLORS["error"],
-                    "delete_zombie_failed": STREAMLIT_COLORS["error"],
-                    "delete_unused_failed": STREAMLIT_COLORS["error"],
-                    "delete_recyclable_failed": STREAMLIT_COLORS["error"],
-                    "delete_powered_off_no_ssh_key_failed": STREAMLIT_COLORS["error"],
-                    "delete_powered_off_wrong_ssh_key_failed": STREAMLIT_COLORS[
-                        "error"
-                    ],
-                    "delete_powered_off_end_of_life_failed": STREAMLIT_COLORS["error"],
-                    "delete_zombie_no_ssh_key_failed": STREAMLIT_COLORS["error"],
-                    "delete_zombie_wrong_ssh_key_failed": STREAMLIT_COLORS["error"],
-                    "delete_zombie_end_of_life_failed": STREAMLIT_COLORS["error"],
-                    "delete_unused_runner_no_ssh_key_failed": STREAMLIT_COLORS["error"],
-                    "delete_unused_runner_wrong_ssh_key_failed": STREAMLIT_COLORS[
-                        "error"
-                    ],
-                    "delete_unused_runner_end_of_life_failed": STREAMLIT_COLORS[
-                        "error"
-                    ],
-                    "delete_unused_recyclable_no_ssh_key_failed": STREAMLIT_COLORS[
-                        "error"
-                    ],
-                    "delete_unused_recyclable_wrong_ssh_key_failed": STREAMLIT_COLORS[
-                        "error"
-                    ],
-                    "delete_unused_recyclable_end_of_life_failed": STREAMLIT_COLORS[
-                        "error"
-                    ],
-                    "scale_down_cycle_failed": STREAMLIT_COLORS["error"],
-                    "error": STREAMLIT_COLORS["error"],
-                }
-                error_color = error_colors.get(error_type, STREAMLIT_COLORS["warning"])
-
-                # Create error item
-                error_item = {
-                    "name": f"Error Type: {error_type}",
-                    "server_name": server_name,
-                    "color": error_color,
-                    "values": [
-                        {"label": "Time", "value": time_str},
-                        {"label": "Server Type", "value": server_type},
-                        {"label": "Location", "value": location},
-                        {"label": "Labels", "value": ", ".join(labels) or "None"},
-                        {"label": "Error Message", "value": error_message},
-                    ],
-                }
-                error_items.append(error_item)
-
-            except (ValueError, KeyError, AttributeError) as e:
-                logging.exception(f"Error processing error info: {info}")
-                continue
-
-    # Create error list data structure
-    error_list_data = {
-        "name": "errors",
-        "count": total_errors,
-        "items": error_items,
-        "title": (
-            "Total errors"
-            if total_errors > 0
-            else "No scale-down errors in the last hour"
-        ),
-    }
-
-    # Get history data for plotting using metric abstraction
-    df = scale_down_errors_metric.get_dataframe()
-    # Convert back to the expected format for backward compatibility
-    if not df.empty:
-        history_data = {
-            "timestamps": df["Time"].tolist(),
-            "values": df["Value"].tolist(),
-        }
-    else:
-        history_data = {"timestamps": [], "values": []}
-
-    return error_list_data, total_errors, history_data
+from ..colors import STREAMLIT_COLORS
 
 
 def render_scale_down_errors_metrics():
     """Render the scale-down errors metrics section."""
-    try:
-        # Get data
-        _, total_errors, _ = get_scale_down_errors_data()
 
-        # Build metrics data
-        metrics_data = [
-            {"label": "Total Errors", "value": int(total_errors)},
-        ]
+    # Get scale-down errors summary
+    summary_data = metrics.errors.scale_down_summary()
 
-        renderers.render_metrics_columns(metrics_data)
+    # Build metrics data
+    metrics_data = [
+        {"label": "Total Errors", "value": summary_data["last_hour"]},
+    ]
 
-    except Exception as e:
-        logger = logging.getLogger(__name__)
-        logger.exception(f"Error rendering scale-down errors metrics: {e}")
-        st.error(f"Error rendering scale-down errors metrics: {e}")
+    renderers.render_metrics_columns(metrics_data)
 
 
 def render_scale_down_errors_chart():
     """Render the scale-down errors chart section."""
-    try:
-        # Get DataFrame using the simple abstraction
-        df = scale_down_errors_metric.get_dataframe()
-        # Rename Value column to Count for consistency with the chart
-        if not df.empty:
-            df = df.rename(columns={"Value": "Count"})
 
-        def create_chart():
-            return chart.create_time_series_chart(
-                df=df,
-                x_column="Time",
-                y_column="Count",
-                title="Scale-down Errors Over Time",
-                y_title="Number of Errors",
-                time_window_minutes=60,
-                y_type="count",
-            )
+    # Get scale-down errors history and create dataframe
+    states_history = metrics.errors.scale_down_history(cutoff_minutes=60)
+    df = metrics.history.dataframe_for_states(states_history)
 
-        renderers.render_chart(
-            create_chart,
-            "No error data available yet. The chart will appear once data is collected.",
-            "rendering scale-down errors chart",
+    def create_chart():
+        return chart.create_time_series_chart(
+            df=df,
+            y_title="Number of Errors",
+            color_column="Status",
+            color_domain=["Scale-down Errors"],
+            color_range=[STREAMLIT_COLORS["error"]],
+            y_type="count",
         )
 
-    except Exception as e:
-        logger = logging.getLogger(__name__)
-        logger.exception(f"Error rendering scale-down errors chart: {e}")
-        st.error(f"Error rendering scale-down errors chart: {e}")
+    renderers.render_chart(
+        create_chart,
+        "No error data available yet. The chart will appear once data is collected.",
+        "rendering scale-down errors chart",
+    )
 
 
 def render_scale_down_errors_details():
     """Render the scale-down errors details section."""
-    try:
-        # Get data
-        error_list_data, _, _ = get_scale_down_errors_data()
 
-        # Prepare error data for dataframe
-        formatted_errors = []
-        for error_item in error_list_data["items"]:
-            # Extract values from the error item
-            error_data = {}
-            for value_item in error_item["values"]:
-                error_data[value_item["label"].lower().replace(" ", "_")] = value_item[
-                    "value"
-                ]
+    # Get formatted scale-down error details
+    formatted_errors = metrics.errors.scale_down_formatted_details()
 
-            # Create formatted error data
-            formatted_error = {
-                "name": error_item["name"],
-                "server_name": error_item["server_name"],
-                "error_message": error_data.get("error_message", ""),
-                "server_type": error_data.get("server_type", ""),
-                "location": error_data.get("location", ""),
-                "labels": error_data.get("labels", ""),
-            }
-
-            formatted_errors.append(formatted_error)
-
-        renderers.render_details_dataframe(
-            items=formatted_errors,
-            title="Error Details",
-            name_key="name",
-            status_key="server_name",
-        )
-
-    except Exception as e:
-        logger = logging.getLogger(__name__)
-        logger.exception(f"Error rendering scale-down errors details: {e}")
-        st.error(f"Error rendering scale-down errors details: {e}")
+    renderers.render_details_dataframe(
+        items=formatted_errors,
+        title="Error Details",
+        name_key="name",
+        status_key="server_name",
+    )
 
 
 def render():

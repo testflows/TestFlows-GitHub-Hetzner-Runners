@@ -29,10 +29,13 @@ def render():
         volumes_summary = metrics.volumes.summary()
         runners_summary = metrics.runners.summary()
         jobs_summary = metrics.jobs.summary()
-        errors_summary = metrics.errors.summary()
+        scale_up_errors_summary = metrics.errors.scale_up_summary()
+        scale_down_errors_summary = metrics.errors.scale_down_summary()
 
         # Gauges in columns
-        col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8, gap="medium")
+        col1, col2, col3, col4, col5, col6, col7, col8, col9 = st.columns(
+            9, gap="medium"
+        )
 
         with col1:
             st.caption("Heartbeat")
@@ -94,7 +97,15 @@ def render():
             st.caption("Scale Up Errors")
             st.metric(
                 label="Scale Up Errors",
-                value=errors_summary["last_hour"],
+                value=scale_up_errors_summary["last_hour"],
+                label_visibility="collapsed",
+            )
+
+        with col9:
+            st.caption("Scale Down Errors")
+            st.metric(
+                label="Scale Down Errors",
+                value=scale_down_errors_summary["last_hour"],
                 label_visibility="collapsed",
             )
 
