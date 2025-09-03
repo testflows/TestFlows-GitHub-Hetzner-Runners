@@ -16,7 +16,14 @@
 from . import get
 from . import utils
 from . import history
+from . import tracker
 from .. import format
+
+# Volume status constants
+states = ["available", "creating", "attached"]
+
+# Register volume metrics for tracking
+tracker.track("github_hetzner_runners_volumes_total", states=states)
 
 
 def summary():
@@ -138,10 +145,9 @@ def formatted_details(volumes_info):
 
 
 def states_history(cutoff_minutes=15):
-    """Update and get history for volume states."""
-
-    return history.update_and_get_for_states(
+    """Get history for volume states."""
+    return history.data_for_states(
         "github_hetzner_runners_volumes_total",
-        states=["available", "creating", "attached"],
+        states=states,
         cutoff_minutes=cutoff_minutes,
     )
