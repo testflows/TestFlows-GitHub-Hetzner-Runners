@@ -188,23 +188,36 @@ def tracking():
         stop_tracking()
 
 
+def tick() -> int:
+    """Update all metrics that are due for update.
+
+    Returns:
+        int: Number of metrics that were updated
+    """
+    current_time = time.time()
+
+    with lock:
+        metrics_to_update = [
+            metric
+            for metric in tracked_metrics.values()
+            if current_time - metric["last_update"] >= metric["interval_seconds"]
+        ]
+
+    updated_count = 0
+    for metric in metrics_to_update:
+        try:
+            timestamp = datetime.fromtimestamp(current_time)
+            metric["update_func"](metric, timestamp)
+            metric["last_update"] = current_time
+            updated_count += 1
+        except Exception as e:
+            logger.exception(f"Error updating metric {metric['metric_name']}: {e}")
+
+    return updated_count
+
+
 def update_loop(frequency: int = 5) -> None:
     """Main update loop that runs in the background thread."""
 
     while not stop_event.wait(frequency):
-        current_time = time.time()
-
-        with lock:
-            metrics_to_update = [
-                metric
-                for metric in tracked_metrics.values()
-                if current_time - metric["last_update"] >= metric["interval_seconds"]
-            ]
-
-        for metric in metrics_to_update:
-            try:
-                timestamp = datetime.fromtimestamp(current_time)
-                metric["update_func"](metric, timestamp)
-                metric["last_update"] = current_time
-            except Exception as e:
-                logger.exception(f"Error updating metric {metric['metric_name']}: {e}")
+        tick()

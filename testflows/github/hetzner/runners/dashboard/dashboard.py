@@ -115,6 +115,9 @@ def main():
         # Reload panels and get them
         panels = reload_panels()
 
+        # Tick tracker to ensure all metrics are updated
+        tracker.tick()
+
         @st.fragment(run_every=update_interval.update_interval)
         def render_page():
             configure_page()
