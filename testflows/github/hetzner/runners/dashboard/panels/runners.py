@@ -13,10 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import streamlit as st
 from .. import metrics
 from ..colors import STREAMLIT_COLORS
-from .utils import chart, renderers
+from .. import chart, renderers
 
 
 def render_runners_metrics():

@@ -16,7 +16,7 @@ from datetime import datetime
 from collections import defaultdict
 from . import get
 from . import utils
-from ..panels.utils import format
+from .. import format
 from . import history
 from ...constants import standby_server_name_prefix, recycle_server_name_prefix
 

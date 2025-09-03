@@ -16,6 +16,7 @@
 from datetime import datetime
 from . import get
 from . import history
+from .. import format
 
 
 def summary():
@@ -114,8 +115,6 @@ def formatted_details():
         list: List of formatted job dictionaries with enhanced fields including
               name, status, job_id, labels, timing, and links
     """
-    from ..panels.utils import format
-
     # Get job information
     queued_jobs_info = get.metric_info("github_hetzner_runners_queued_job")
     running_jobs_info = get.metric_info("github_hetzner_runners_running_job")

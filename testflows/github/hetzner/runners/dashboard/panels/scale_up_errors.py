@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from .. import metrics
-from .utils import chart, renderers
+from .. import chart, renderers
 from ..colors import STREAMLIT_COLORS
 
 

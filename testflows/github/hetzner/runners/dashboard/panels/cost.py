@@ -15,7 +15,7 @@
 
 from .. import metrics
 from ..colors import STREAMLIT_COLORS
-from .utils import chart, renderers
+from .. import chart, renderers
 
 
 def render_cost_metrics():

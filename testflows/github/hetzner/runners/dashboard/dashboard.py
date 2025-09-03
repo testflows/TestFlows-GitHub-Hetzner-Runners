@@ -33,7 +33,7 @@ if project_root not in sys.path:
 # Now try absolute imports
 import testflows.github.hetzner.runners.dashboard.bootstrap as bootstrap
 import testflows.github.hetzner.runners.dashboard.panels.update_interval as update_interval
-import testflows.github.hetzner.runners.dashboard.panels.utils.renderers as renderers
+import testflows.github.hetzner.runners.dashboard.renderers as renderers
 
 
 def configure_page():

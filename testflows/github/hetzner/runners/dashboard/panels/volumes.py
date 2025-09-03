@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from .. import metrics
-from .utils import chart, renderers
+from .. import chart, renderers
 from ..colors import STATE_COLORS
 
 

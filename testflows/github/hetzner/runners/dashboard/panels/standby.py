@@ -18,7 +18,7 @@ import pandas as pd
 
 from .. import metrics
 from ..colors import STATE_COLORS
-from .utils import chart, renderers
+from .. import chart, renderers
 
 
 def render_standby_pool_info(config=None):

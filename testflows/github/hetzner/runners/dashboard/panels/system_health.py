@@ -16,7 +16,7 @@
 import streamlit as st
 
 from .. import metrics
-from .utils import renderers, chart
+from .. import renderers, chart
 from ..colors import STREAMLIT_COLORS
 
 

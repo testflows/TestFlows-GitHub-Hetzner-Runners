@@ -19,7 +19,7 @@ from datetime import datetime
 from . import get
 from . import history
 from ..colors import STREAMLIT_COLORS
-from ..panels.utils import format
+from .. import format
 
 
 def scale_up_summary():

@@ -16,7 +16,7 @@
 from . import get
 from . import utils
 from . import history
-from ..panels.utils import format
+from .. import format
 
 
 def summary():
