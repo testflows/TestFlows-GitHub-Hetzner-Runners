@@ -131,7 +131,6 @@ def start_tracking() -> None:
         logger.warning("Metric tracking is already running")
         return
 
-    logger.debug("Starting metric tracking")
     stop_event.clear()
     update_thread = threading.Thread(target=update_loop, daemon=True)
     update_thread.start()
@@ -145,7 +144,6 @@ def stop_tracking() -> None:
     if not running:
         return
 
-    logger.debug("Stopping metric tracking")
     stop_event.set()
     if update_thread and update_thread.is_alive():
         update_thread.join(timeout=10)

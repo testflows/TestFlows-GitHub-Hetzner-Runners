@@ -17,7 +17,7 @@ import pandas as pd
 
 from datetime import datetime, timedelta
 from collections import defaultdict
-from typing import List, Dict, Tuple
+from typing import List, Dict
 
 # Store metric history
 metric_history = defaultdict(lambda: {"timestamps": [], "values": []})
@@ -174,81 +174,6 @@ def data_for_states(
         history_data[state] = {"timestamps": timestamps, "values": values}
 
     return history_data
-
-
-def update_and_get(
-    metric_name,
-    labels={},
-    value=None,
-    timestamp=None,
-    cutoff_minutes=15,
-    default_value=None,
-) -> Tuple[List, List, float, datetime]:
-    """Update and get history for metric with labels,
-    and using given value and timestamp.
-
-    If value is not provided, use current value.
-    If timestamp is not provided, use current time.
-
-    return (timestamps, values, value, timestamp).
-    """
-    if timestamp is None:
-        timestamp = datetime.now()
-
-    if value is None:
-        value = get.metric_value(metric_name)
-
-    if default_value is not None:
-        value = value if value is not None else default_value
-
-    # Update history
-    update(
-        metric_name,
-        labels,
-        value,
-        timestamp,
-        cutoff_minutes=cutoff_minutes,
-    )
-
-    # Get history
-    timestamps, values = data(metric_name, cutoff_minutes=cutoff_minutes)
-
-    return timestamps, values, value, timestamp
-
-
-def update_and_get_for_states(
-    metric_name: str,
-    states: List[str],
-    values: Dict[str, float] = None,
-    labels: Dict[str, str] = None,
-    timestamp: datetime = None,
-    cutoff_minutes: int = 15,
-) -> Dict[str, Dict[str, List]]:
-    """Update metric history for multiple states and get their historical data.
-
-    Args:
-        metric_name: Name of the metric
-        states: List of state values to update and fetch
-        values: Dictionary mapping states to their current values (if None, fetches from metrics)
-        labels: Optional labels to filter by
-        timestamp: Current timestamp (defaults to now)
-        cutoff_minutes: Number of minutes to keep in history
-
-    Returns:
-        Dictionary with state history data including current values
-    """
-    if timestamp is None:
-        timestamp = datetime.now()
-
-    # Get current values if not provided
-    if values is None:
-        values = get.metric_value_for_states(metric_name, states, labels)
-
-    # Update history for all states
-    update_for_states(metric_name, states, values, labels, timestamp, cutoff_minutes)
-
-    # Get historical data for all states
-    return data_for_states(metric_name, states, labels, cutoff_minutes)
 
 
 def dataframe(timestamps, values) -> pd.DataFrame:
