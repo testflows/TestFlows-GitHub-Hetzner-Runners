@@ -24,7 +24,7 @@ from . import history
 
 logger = logging.getLogger(__name__)
 
-tracked_metrics = []
+tracked_metrics = {}
 stop_event = threading.Event()
 update_thread = None
 running = False
@@ -87,6 +87,12 @@ def track(
     if labels is None:
         labels = {}
 
+    # Check if this metric is already being tracked (idempotent)
+    with lock:
+        if metric_name in tracked_metrics:
+            logger.debug(f"Metric {metric_name} already being tracked, skipping")
+            return
+
     # Determine update function based on parameters
     if compute_func is not None:
         update_func = update_computed_metric
@@ -109,7 +115,7 @@ def track(
     }
 
     with lock:
-        tracked_metrics.append(metric_info)
+        tracked_metrics[metric_name] = metric_info
 
     logger.debug(
         f"Tracking {metric_type} metric: {metric_name} "
@@ -125,7 +131,7 @@ def start_tracking() -> None:
         logger.warning("Metric tracking is already running")
         return
 
-    logger.info("Starting metric tracking")
+    logger.debug("Starting metric tracking")
     stop_event.clear()
     update_thread = threading.Thread(target=update_loop, daemon=True)
     update_thread.start()
@@ -139,7 +145,7 @@ def stop_tracking() -> None:
     if not running:
         return
 
-    logger.info("Stopping metric tracking")
+    logger.debug("Stopping metric tracking")
     stop_event.set()
     if update_thread and update_thread.is_alive():
         update_thread.join(timeout=10)
@@ -163,7 +169,7 @@ def tracking_info() -> List[Dict[str, Any]]:
                 "last_update": metric["last_update"],
                 "states": metric.get("states"),
             }
-            for metric in tracked_metrics
+            for metric in tracked_metrics.values()
         ]
 
 
@@ -193,16 +199,14 @@ def update_loop(frequency: int = 5) -> None:
         with lock:
             metrics_to_update = [
                 metric
-                for metric in tracked_metrics
+                for metric in tracked_metrics.values()
                 if current_time - metric["last_update"] >= metric["interval_seconds"]
             ]
 
-            for metric in metrics_to_update:
-                try:
-                    timestamp = datetime.fromtimestamp(current_time)
-                    metric["update_func"](metric, timestamp)
-                    metric["last_update"] = current_time
-                except Exception as e:
-                    logger.exception(
-                        f"Error updating metric {metric['metric_name']}: {e}"
-                    )
+        for metric in metrics_to_update:
+            try:
+                timestamp = datetime.fromtimestamp(current_time)
+                metric["update_func"](metric, timestamp)
+                metric["last_update"] = current_time
+            except Exception as e:
+                logger.exception(f"Error updating metric {metric['metric_name']}: {e}")

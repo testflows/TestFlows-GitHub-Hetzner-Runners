@@ -47,9 +47,9 @@ def render_cost_chart():
     """Render the cost breakdown chart showing total, servers, and volumes costs."""
 
     # Get cost history data for all three metrics
-    total_timestamps, total_values, _, _ = metrics.cost.total_cost_history()
-    servers_timestamps, servers_values, _, _ = metrics.cost.servers_cost_history()
-    volumes_timestamps, volumes_values, _, _ = metrics.cost.volumes_cost_history()
+    total_timestamps, total_values = metrics.cost.total_cost_history()
+    servers_timestamps, servers_values = metrics.cost.servers_cost_history()
+    volumes_timestamps, volumes_values = metrics.cost.volumes_cost_history()
 
     # Create data structure compatible with dataframe_for_states
     cost_data = {

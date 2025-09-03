@@ -13,8 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import datetime
 from . import get
 from . import history
+from . import tracker
+
+# Register cost metrics for tracking
+tracker.track("github_hetzner_runners_cost_total", compute_func=lambda: total_cost())
+tracker.track(
+    "github_hetzner_runners_cost_servers", compute_func=lambda: servers_cost()
+)
+tracker.track(
+    "github_hetzner_runners_cost_volumes", compute_func=lambda: volumes_cost()
+)
 
 
 def servers_cost():
@@ -72,36 +83,28 @@ def summary():
 
 
 def servers_cost_history(cutoff_minutes=15):
-    """Update and get servers cost history data.
+    """Get servers cost history data.
 
-    Updates the servers cost history with the current servers cost value and returns
-    the historical data for the last 15 minutes.
+    Returns the historical data for the last 15 minutes.
 
     Returns:
-        tuple: (timestamps, values, current_value, current_time)
+        tuple: (timestamps, values)
     """
-    return history.update_and_get(
-        "github_hetzner_runners_cost_servers",
-        labels={},
-        value=servers_cost(),
-        cutoff_minutes=cutoff_minutes,
+    return history.data(
+        "github_hetzner_runners_cost_servers", cutoff_minutes=cutoff_minutes
     )
 
 
 def volumes_cost_history(cutoff_minutes=15):
-    """Update and get volumes cost history data.
+    """Get volumes cost history data.
 
-    Updates the volumes cost history with the current volumes cost value and returns
-    the historical data for the last 15 minutes.
+    Returns the historical data for the last 15 minutes.
 
     Returns:
-        tuple: (timestamps, values, current_value, current_time)
+        tuple: (timestamps, values)
     """
-    return history.update_and_get(
-        "github_hetzner_runners_cost_volumes",
-        labels={},
-        value=volumes_cost(),
-        cutoff_minutes=cutoff_minutes,
+    return history.data(
+        "github_hetzner_runners_cost_volumes", cutoff_minutes=cutoff_minutes
     )
 
 
@@ -155,17 +158,13 @@ def formatted_details():
 
 
 def total_cost_history(cutoff_minutes=15):
-    """Update and get total cost history data.
+    """Get total cost history data.
 
-    Updates the cost history with the current total cost value and returns
-    the historical data for the last 15 minutes.
+    Returns the historical data for the last 15 minutes.
 
     Returns:
-        tuple: (timestamps, values, current_value, current_time)
+        tuple: (timestamps, values)
     """
-    return history.update_and_get(
-        "github_hetzner_runners_cost_total",
-        labels={},
-        value=total_cost(),
-        cutoff_minutes=cutoff_minutes,
+    return history.data(
+        "github_hetzner_runners_cost_total", cutoff_minutes=cutoff_minutes
     )

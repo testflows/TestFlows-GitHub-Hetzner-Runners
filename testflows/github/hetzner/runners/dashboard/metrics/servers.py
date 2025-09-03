@@ -18,7 +18,39 @@ from . import get
 from . import utils
 from .. import format
 from . import history
+from . import tracker
 from ...constants import standby_server_name_prefix, recycle_server_name_prefix
+
+# Server status constants
+states = ["running", "off", "initializing", "ready", "busy"]
+
+# Register server metrics for tracking
+tracker.track("github_hetzner_runners_servers_total", states=states)
+tracker.track("github_hetzner_runners_zombie_servers_total_count")
+tracker.track("github_hetzner_runners_unused_runners_total_count")
+tracker.track("github_hetzner_runners_recycled_servers_total")
+# Register individual standby server status metrics
+for status in states:
+    tracker.track(
+        f"standby_servers_{status}",
+        compute_func=lambda s=status: standby_count_for_status(s),
+    )
+
+
+def standby_count_for_status(status):
+    """Helper function to get count of standby servers for a specific status."""
+    servers_summary = summary()
+    all_servers = servers_summary["details"]
+
+    count = 0
+    for server in all_servers:
+        if (
+            server.get("name", "").startswith(standby_server_name_prefix)
+            and server.get("status", "unknown") == status
+        ):
+            count += 1
+
+    return count
 
 
 def summary():
@@ -260,11 +292,10 @@ def formatted_details(servers_info):
 
 
 def states_history(cutoff_minutes=15):
-    """Update and get history for server states."""
-
-    return history.update_and_get_for_states(
+    """Get history for server states."""
+    return history.data_for_states(
         "github_hetzner_runners_servers_total",
-        states=["running", "off", "initializing", "ready", "busy"],
+        states=states,
         cutoff_minutes=cutoff_minutes,
     )
 
@@ -339,7 +370,7 @@ def health_details():
 
 
 def health_history(cutoff_minutes=15):
-    """Update and get health metrics history.
+    """Get health metrics history.
 
     Args:
         cutoff_minutes: Number of minutes to keep in history
@@ -347,42 +378,32 @@ def health_history(cutoff_minutes=15):
     Returns:
         dict: Dictionary with health metrics history data
     """
-    # First, ensure health metrics are updated in history
-    current_time = datetime.now()
-
-    # Now get the history data
     health_metrics = {}
 
-    # Update and get zombie servers total count history
-    zombie_timestamps, zombie_values, _, _ = history.update_and_get(
+    # Get zombie servers total count history
+    zombie_timestamps, zombie_values = history.data(
         "github_hetzner_runners_zombie_servers_total_count",
-        timestamp=current_time,
         cutoff_minutes=cutoff_minutes,
-        default_value=0,
     )
     health_metrics["zombie"] = {
         "timestamps": zombie_timestamps,
         "values": zombie_values,
     }
 
-    # Update and get unused runners total count history
-    unused_timestamps, unused_values, _, _ = history.update_and_get(
+    # Get unused runners total count history
+    unused_timestamps, unused_values = history.data(
         "github_hetzner_runners_unused_runners_total_count",
-        timestamp=current_time,
         cutoff_minutes=cutoff_minutes,
-        default_value=0,
     )
     health_metrics["unused"] = {
         "timestamps": unused_timestamps,
         "values": unused_values,
     }
 
-    # Update and get recycled servers total count history
-    recycled_timestamps, recycled_values, _, _ = history.update_and_get(
+    # Get recycled servers total count history
+    recycled_timestamps, recycled_values = history.data(
         "github_hetzner_runners_recycled_servers_total",
-        timestamp=current_time,
         cutoff_minutes=cutoff_minutes,
-        default_value=0,
     )
     health_metrics["recycled"] = {
         "timestamps": recycled_timestamps,
@@ -393,7 +414,7 @@ def health_history(cutoff_minutes=15):
 
 
 def standby_states_history(cutoff_minutes=15):
-    """Update and get history for standby server states.
+    """Get history for standby server states.
 
     Args:
         cutoff_minutes: Number of minutes to keep in history
@@ -401,32 +422,13 @@ def standby_states_history(cutoff_minutes=15):
     Returns:
         dict: Dictionary with standby server states history data
     """
-    current_time = datetime.now()
-
-    # Get current standby servers data
-    servers_summary = summary()
-    all_servers = servers_summary["details"]
-
-    # Filter for standby servers and count by status
-    standby_servers_by_status = {}
-    for server in all_servers:
-        if server.get("name", "").startswith(standby_server_name_prefix):
-            status = server.get("status", "unknown")
-            standby_servers_by_status[status] = (
-                standby_servers_by_status.get(status, 0) + 1
-            )
-
-    # Create history entries for each status
     standby_history = {}
 
-    for status in ["running", "off", "initializing", "ready", "busy"]:
-        count = standby_servers_by_status.get(status, 0)
-        # Update history for this specific status
-        timestamps, values, _, _ = history.update_and_get(
+    for status in states:
+        # Get history for this specific status
+        timestamps, values = history.data(
             f"standby_servers_{status}",
-            timestamp=current_time,
             cutoff_minutes=cutoff_minutes,
-            default_value=count,
         )
         standby_history[status] = {
             "timestamps": timestamps,
