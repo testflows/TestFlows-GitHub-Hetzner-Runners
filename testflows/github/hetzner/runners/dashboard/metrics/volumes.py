@@ -98,8 +98,6 @@ def formatted_details(volumes_info):
             "size": volume.get("size", ""),
             "location": volume.get("location", ""),
             "format": volume.get("format", ""),
-            "server name": volume.get("server_name", ""),
-            "server id": volume.get("server_id", ""),
             "created": format.format_created_time(volume.get("created", "")),
             "labels": volume_labels if volume_labels else [],
         }
@@ -127,8 +125,6 @@ def formatted_details(volumes_info):
         prometheus_labels = {
             "volume_id",
             "volume_name",
-            "server_id",
-            "server_name",
             "cost_hourly",
             "cost_total",
         }

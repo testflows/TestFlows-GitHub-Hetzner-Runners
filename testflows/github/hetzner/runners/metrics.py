@@ -130,13 +130,11 @@ VOLUME_STATUS = Gauge(
 
 VOLUME_ATTACHMENT = Gauge(
     "github_hetzner_runners_volume_attachment",
-    "Volume attachment status and server info",
+    "Volume attachment status",
     [
         "volume_id",
         "volume_name",
         "attached",  # attached: true, false
-        "server_id",
-        "server_name",
     ],
 )
 
@@ -717,13 +715,7 @@ def update_volumes(volumes, price=0.044):
             except (AttributeError, TypeError):
                 pass
 
-            # Add server information if attached
-            if hasattr(volume, "server") and volume.server:
-                volume_info["server_name"] = volume.server.name
-                volume_info["server_id"] = str(volume.server.id)
-            else:
-                volume_info["server_name"] = "none"
-                volume_info["server_id"] = "none"
+            # Server information removed from volume metrics
 
             VOLUME_INFO.labels(volume_id=str(volume.id), volume_name=volume.name).info(
                 volume_info
@@ -747,15 +739,11 @@ def update_volumes(volumes, price=0.044):
 
             # Track volume attachment
             is_attached = hasattr(volume, "server") and volume.server is not None
-            server_id = str(volume.server.id) if is_attached else "none"
-            server_name = volume.server.name if is_attached else "none"
 
             VOLUME_ATTACHMENT.labels(
                 volume_id=str(volume.id),
                 volume_name=volume.name,
                 attached=str(is_attached).lower(),
-                server_id=server_id,
-                server_name=server_name,
             ).set(1)
 
         except AttributeError:
