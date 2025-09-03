@@ -19,6 +19,14 @@ import pandas as pd
 from datetime import datetime
 from . import get
 from . import history
+from . import tracker
+
+# Register system health metrics for tracking
+tracker.track("github_hetzner_runners_system_cpu_percent")
+tracker.track("github_hetzner_runners_system_memory_percent")
+tracker.track("github_hetzner_runners_process_cpu_percent")
+tracker.track("github_hetzner_runners_process_memory_percent")
+tracker.track("github_hetzner_runners_system_root_disk_percent")
 
 
 def summary():
@@ -312,7 +320,7 @@ def formatted_details():
 
 
 def system_health_history(cutoff_minutes=15):
-    """Update and get history for system health metrics.
+    """Get history for system health metrics.
 
     Args:
         cutoff_minutes: Number of minutes to keep in history
@@ -320,46 +328,34 @@ def system_health_history(cutoff_minutes=15):
     Returns:
         dict: Dictionary with system health metrics history data
     """
-    current_time = datetime.now()
-
-    # Update and get system CPU history
-    system_cpu_timestamps, system_cpu_values, _, _ = history.update_and_get(
+    # Get system CPU history
+    system_cpu_timestamps, system_cpu_values = history.data(
         "github_hetzner_runners_system_cpu_percent",
-        timestamp=current_time,
         cutoff_minutes=cutoff_minutes,
-        default_value=0,
     )
 
-    # Update and get system memory history
-    system_memory_timestamps, system_memory_values, _, _ = history.update_and_get(
+    # Get system memory history
+    system_memory_timestamps, system_memory_values = history.data(
         "github_hetzner_runners_system_memory_percent",
-        timestamp=current_time,
         cutoff_minutes=cutoff_minutes,
-        default_value=0,
     )
 
-    # Update and get process CPU history
-    process_cpu_timestamps, process_cpu_values, _, _ = history.update_and_get(
+    # Get process CPU history
+    process_cpu_timestamps, process_cpu_values = history.data(
         "github_hetzner_runners_process_cpu_percent",
-        timestamp=current_time,
         cutoff_minutes=cutoff_minutes,
-        default_value=0,
     )
 
-    # Update and get process memory history
-    process_memory_timestamps, process_memory_values, _, _ = history.update_and_get(
+    # Get process memory history
+    process_memory_timestamps, process_memory_values = history.data(
         "github_hetzner_runners_process_memory_percent",
-        timestamp=current_time,
         cutoff_minutes=cutoff_minutes,
-        default_value=0,
     )
 
-    # Update and get root disk history
-    root_disk_timestamps, root_disk_values, _, _ = history.update_and_get(
+    # Get root disk history
+    root_disk_timestamps, root_disk_values = history.data(
         "github_hetzner_runners_system_root_disk_percent",
-        timestamp=current_time,
         cutoff_minutes=cutoff_minutes,
-        default_value=0,
     )
 
     return {

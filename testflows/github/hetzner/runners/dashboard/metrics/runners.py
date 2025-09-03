@@ -14,11 +14,34 @@
 # limitations under the License.
 
 from collections import defaultdict
-from datetime import datetime
+
 from . import get
 from . import history
+from . import tracker
 from . import utils
 from ...constants import standby_runner_name_prefix
+
+# Runner status constants
+runner_states = ["online", "offline"]
+
+# Register runner metrics for tracking
+tracker.track("github_hetzner_runners_runners_total_count")
+tracker.track("github_hetzner_runners_runners_busy")
+tracker.track("github_hetzner_runners_runners_total", states=runner_states)
+
+# Register individual standby runner status metrics
+for status in runner_states:
+    tracker.track(
+        f"standby_runners_{status}",
+        compute_func=lambda s=status: standby_count_for_status(s),
+    )
+
+
+def standby_count_for_status(status):
+    """Helper function to get count of standby runners for a specific status."""
+    standby_runners_summary = standby_summary()
+    standby_runners_by_status = standby_runners_summary["by_status"]
+    return standby_runners_by_status.get(status, 0)
 
 
 def summary():
@@ -68,43 +91,32 @@ def standby_summary():
 
 
 def runners_history(cutoff_minutes=15):
-    """Update and get history for runners metrics."""
+    """Get history for runners metrics."""
 
-    # Get history for total runners and busy runners
-    current_time = datetime.now()
-
-    # Update and get total runners history
-    total_timestamps, total_values, _, _ = history.update_and_get(
+    # Get total runners history
+    total_timestamps, total_values = history.data(
         "github_hetzner_runners_runners_total_count",
-        timestamp=current_time,
         cutoff_minutes=cutoff_minutes,
-        default_value=0,
     )
 
-    # Update and get busy runners history
-    busy_timestamps, busy_values, _, _ = history.update_and_get(
+    # Get busy runners history
+    busy_timestamps, busy_values = history.data(
         "github_hetzner_runners_runners_busy",
-        timestamp=current_time,
         cutoff_minutes=cutoff_minutes,
-        default_value=0,
     )
 
-    # Update and get online runners history
-    online_timestamps, online_values, _, _ = history.update_and_get(
+    # Get online runners history
+    online_timestamps, online_values = history.data(
         "github_hetzner_runners_runners_total",
-        timestamp=current_time,
-        cutoff_minutes=cutoff_minutes,
-        default_value=0,
         labels={"status": "online"},
+        cutoff_minutes=cutoff_minutes,
     )
 
-    # Update and get offline runners history
-    offline_timestamps, offline_values, _, _ = history.update_and_get(
+    # Get offline runners history
+    offline_timestamps, offline_values = history.data(
         "github_hetzner_runners_runners_total",
-        timestamp=current_time,
-        cutoff_minutes=cutoff_minutes,
-        default_value=0,
         labels={"status": "offline"},
+        cutoff_minutes=cutoff_minutes,
     )
 
     return {
@@ -198,7 +210,7 @@ def formatted_details(runners_info):
 
 
 def standby_states_history(cutoff_minutes=15):
-    """Update and get history for standby runner states.
+    """Get history for standby runner states.
 
     Args:
         cutoff_minutes: Number of minutes to keep in history
@@ -206,23 +218,13 @@ def standby_states_history(cutoff_minutes=15):
     Returns:
         dict: Dictionary with standby runner states history data
     """
-    current_time = datetime.now()
-
-    # Get current standby runners data
-    standby_runners_summary = standby_summary()
-    standby_runners_by_status = standby_runners_summary["by_status"]
-
-    # Create history entries for each status
     standby_history = {}
 
-    for status in ["online", "offline"]:
-        count = standby_runners_by_status.get(status, 0)
-        # Update history for this specific status
-        timestamps, values, _, _ = history.update_and_get(
+    for status in runner_states:
+        # Get history for this specific status
+        timestamps, values = history.data(
             f"standby_runners_{status}",
-            timestamp=current_time,
             cutoff_minutes=cutoff_minutes,
-            default_value=count,
         )
         standby_history[status] = {
             "timestamps": timestamps,

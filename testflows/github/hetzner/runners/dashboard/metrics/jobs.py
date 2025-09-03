@@ -13,10 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import datetime
 from . import get
 from . import history
+from . import tracker
 from .. import format
+
+# Register job metrics for tracking
+tracker.track("github_hetzner_runners_queued_jobs")
+tracker.track("github_hetzner_runners_running_jobs")
 
 
 def summary():
@@ -36,25 +40,18 @@ def summary():
 
 
 def jobs_history(cutoff_minutes=15):
-    """Update and get history for jobs metrics."""
+    """Get history for jobs metrics."""
 
-    # Get history for both queued and running jobs
-    current_time = datetime.now()
-
-    # Update and get queued jobs history
-    queued_timestamps, queued_values, _, _ = history.update_and_get(
+    # Get queued jobs history
+    queued_timestamps, queued_values = history.data(
         "github_hetzner_runners_queued_jobs",
-        timestamp=current_time,
         cutoff_minutes=cutoff_minutes,
-        default_value=0,
     )
 
-    # Update and get running jobs history
-    running_timestamps, running_values, _, _ = history.update_and_get(
+    # Get running jobs history
+    running_timestamps, running_values = history.data(
         "github_hetzner_runners_running_jobs",
-        timestamp=current_time,
         cutoff_minutes=cutoff_minutes,
-        default_value=0,
     )
 
     return {

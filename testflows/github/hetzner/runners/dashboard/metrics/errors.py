@@ -18,8 +18,13 @@ from datetime import datetime
 
 from . import get
 from . import history
+from . import tracker
 from ..colors import STREAMLIT_COLORS
 from .. import format
+
+# Register error metrics for tracking
+tracker.track("github_hetzner_runners_scale_up_failures_last_hour")
+tracker.track("github_hetzner_runners_scale_down_failures_last_hour")
 
 
 def scale_up_summary():
@@ -174,7 +179,7 @@ def scale_down_formatted_details():
 
 
 def scale_up_history(cutoff_minutes=60):
-    """Update and get history for scale-up error metrics.
+    """Get history for scale-up error metrics.
 
     Args:
         cutoff_minutes: Number of minutes to keep in history
@@ -182,14 +187,10 @@ def scale_up_history(cutoff_minutes=60):
     Returns:
         dict: Dictionary with scale-up error history data
     """
-    current_time = datetime.now()
-
-    # Update and get scale-up errors history
-    timestamps, values, _, _ = history.update_and_get(
+    # Get scale-up errors history
+    timestamps, values = history.data(
         "github_hetzner_runners_scale_up_failures_last_hour",
-        timestamp=current_time,
         cutoff_minutes=cutoff_minutes,
-        default_value=0,
     )
 
     return {
@@ -201,7 +202,7 @@ def scale_up_history(cutoff_minutes=60):
 
 
 def scale_down_history(cutoff_minutes=60):
-    """Update and get history for scale-down error metrics.
+    """Get history for scale-down error metrics.
 
     Args:
         cutoff_minutes: Number of minutes to keep in history
@@ -209,14 +210,10 @@ def scale_down_history(cutoff_minutes=60):
     Returns:
         dict: Dictionary with scale-down error history data
     """
-    current_time = datetime.now()
-
-    # Update and get scale-down errors history
-    timestamps, values, _, _ = history.update_and_get(
+    # Get scale-down errors history
+    timestamps, values = history.data(
         "github_hetzner_runners_scale_down_failures_last_hour",
-        timestamp=current_time,
         cutoff_minutes=cutoff_minutes,
-        default_value=0,
     )
 
     return {
