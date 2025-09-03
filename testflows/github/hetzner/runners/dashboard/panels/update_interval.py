@@ -14,4 +14,4 @@
 # limitations under the License.
 
 # default dashboard update interval
-update_interval = 5
+update_interval = 10

@@ -21,9 +21,20 @@ import testflows.github.hetzner.runners.dashboard.panels.update_interval as upda
 def render():
     """Render a modern, compact header section with logo, title, and update interval selector."""
 
-    if update_interval.update_interval != st.session_state.update_interval:
-        update_interval.update_interval = st.session_state.update_interval
-        st.rerun()
+    if "update_interval" in st.session_state:
+        # Handle the update interval change
+        selected_interval = st.session_state.update_interval
+        if selected_interval == "Manual Refresh":
+            target_interval = None
+        else:
+            target_interval = selected_interval
+
+        if (
+            update_interval.update_interval != target_interval
+            or selected_interval == "Manual Refresh"
+        ):
+            update_interval.update_interval = target_interval
+            st.rerun()
 
     # Top row: Logo and title
     col1, col2 = st.columns([5, 1])
@@ -41,14 +52,18 @@ def render():
 
     with col2:
         st.selectbox(
-            "Update Interval",
-            options=[5, 10, 15, 30, 60, 300],
+            "Auto Refresh",
+            options=["Manual Refresh", 5, 10, 15, 30, 60, 300],
             format_func=lambda x: (
-                f"{x} seconds"
-                if x < 60
-                else f"{x//60} minute{'s' if x//60 > 1 else ''}"
+                "Manual Refresh"
+                if x == "Manual Refresh"
+                else (
+                    f"{x} seconds"
+                    if x < 60
+                    else f"{x//60} minute{'s' if x//60 > 1 else ''}"
+                )
             ),
-            index=0,
+            index=2,  # Default to 10 seconds instead of "Manual Refresh"
             key="update_interval",
             label_visibility="collapsed",
         )

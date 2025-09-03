@@ -108,12 +108,10 @@ def main():
     config = sys.argv[1]
 
     try:
-        # Set update interval
-        st.session_state.update_interval = update_interval.update_interval
         # Reload panels and get them
         panels = reload_panels()
 
-        @st.fragment(run_every=st.session_state.update_interval)
+        @st.fragment(run_every=update_interval.update_interval)
         def render_page():
             configure_page()
 
