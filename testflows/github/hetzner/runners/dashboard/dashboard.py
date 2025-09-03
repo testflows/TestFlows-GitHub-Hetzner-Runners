@@ -34,6 +34,7 @@ if project_root not in sys.path:
 import testflows.github.hetzner.runners.dashboard.bootstrap as bootstrap
 import testflows.github.hetzner.runners.dashboard.panels.update_interval as update_interval
 import testflows.github.hetzner.runners.dashboard.renderers as renderers
+import testflows.github.hetzner.runners.dashboard.metrics.tracker as tracker
 
 
 def configure_page():
@@ -224,6 +225,10 @@ def start_http_server(
     # Store server container reference on thread for external access
     thread.server_container = server_container
 
+    # Start metric tracking
+    tracker.start_tracking()
+
+    # Start server thread
     thread.start()
 
     return thread

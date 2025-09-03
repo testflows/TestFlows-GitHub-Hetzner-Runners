@@ -25,13 +25,13 @@ metric_history = defaultdict(lambda: {"timestamps": [], "values": []})
 from . import get
 
 
-def update(metric_name, labels, value, timestamp=None, cutoff_minutes=15):
+def update(metric_name, labels, value=None, timestamp=None, cutoff_minutes=15):
     """Update metric history with new value.
 
     Args:
         metric_name: Name of the metric
         labels: Dictionary of labels
-        value: Current value
+        value: Current value (if None, gets automatically from Prometheus)
         timestamp: Current timestamp (defaults to now)
         cutoff_minutes: Number of minutes to keep in history. Defaults to 15 minutes.
 
@@ -40,6 +40,9 @@ def update(metric_name, labels, value, timestamp=None, cutoff_minutes=15):
     """
     if timestamp is None:
         timestamp = datetime.now()
+
+    if value is None:
+        value = get.metric_value(metric_name, labels) or 0
 
     # Only add labels to key if there are any
     if labels:
@@ -72,7 +75,7 @@ def update(metric_name, labels, value, timestamp=None, cutoff_minutes=15):
 def update_for_states(
     metric_name: str,
     states: List[str],
-    values: Dict[str, float],
+    values: Dict[str, float] = None,
     labels: Dict[str, str] = None,
     timestamp: datetime = None,
     cutoff_minutes: int = 15,
@@ -82,13 +85,16 @@ def update_for_states(
     Args:
         metric_name: Name of the metric
         states: List of state values to update
-        values: Dictionary mapping states to their values
+        values: Dictionary mapping states to their values (if None, gets automatically from Prometheus)
         labels: Optional labels to filter by
         timestamp: Current timestamp (defaults to now)
         cutoff_minutes: Number of minutes to keep in history
     """
     if timestamp is None:
         timestamp = datetime.now()
+
+    if values is None:
+        values = get.metric_value_for_states(metric_name, states, labels)
 
     for state in states:
         value = values.get(state, 0)
