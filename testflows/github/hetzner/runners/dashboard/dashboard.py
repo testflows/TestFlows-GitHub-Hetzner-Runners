@@ -68,7 +68,7 @@ def configure_page():
     )
 
 
-def reload_panels():
+def reload_panels(reload: bool = False):
     """Dynamically reload all panel modules and return them as a namespace."""
     panels = SimpleNamespace()
 
@@ -95,7 +95,8 @@ def reload_panels():
 
         # Reload if already loaded, otherwise import
         if module_name in sys.modules:
-            importlib.reload(sys.modules[module_name])
+            if reload:
+                importlib.reload(sys.modules[module_name])
             setattr(panels, name, sys.modules[module_name])
         else:
             setattr(panels, name, importlib.import_module(module_name))
