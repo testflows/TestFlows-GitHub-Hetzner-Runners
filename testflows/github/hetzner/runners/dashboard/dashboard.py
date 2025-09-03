@@ -33,6 +33,7 @@ if project_root not in sys.path:
 # Now try absolute imports
 import testflows.github.hetzner.runners.dashboard.bootstrap as bootstrap
 import testflows.github.hetzner.runners.dashboard.panels.update_interval as update_interval
+import testflows.github.hetzner.runners.dashboard.panels.utils.renderers as renderers
 
 
 def configure_page():
@@ -54,14 +55,16 @@ def configure_page():
     .footer-center {
         text-align: center;
     }
+    div.stButton > button {
+        padding: 5px;
+        border: none;
+        border-bottom: 2px solid lightblue;
+        border-radius: 0;
+    }
     </style>
     """,
         unsafe_allow_html=True,
     )
-
-
-# Auto-refresh is now handled by @st.fragment decorators in individual panels
-# This prevents conflicts and flickering between multiple refresh mechanisms
 
 
 def reload_panels():
@@ -133,12 +136,8 @@ def main():
                 "System Health": panels.system_health.render,
             }
 
-            # Render tabs if we have any
-            if tabbed_panels:
-                tabs = st.tabs(list(tabbed_panels.keys()))
-                for i, (name, panel) in enumerate(tabbed_panels.items()):
-                    with tabs[i]:
-                        panel()
+            # Render tabs with smart fragment-based navigation
+            renderers.render_smart_tabs(tabbed_panels)
 
             # Log panel at the bottom
             panels.log.render(config)

@@ -198,3 +198,47 @@ def render_chart(
         st.altair_chart(chart, use_container_width=True)
     else:
         st.info(no_data_message)
+
+
+def render_smart_tabs(tabbed_panels):
+    """Render tabs using buttons and fragments for clean real-time tab switching."""
+
+    with errors(f"rendering tabs"):
+        tab_names = list(tabbed_panels.keys())
+
+        # Initialize session state for tab selection
+        if "selected_tab_index" not in st.session_state:
+            st.session_state.selected_tab_index = 0
+
+        # Create tab buttons
+        with st.container(horizontal=True, gap=None):
+            for i, tab_name in enumerate(tab_names):
+                # Add color to tab name based on active state
+                tab_name = f":small[{tab_name}]"
+                if i == st.session_state.selected_tab_index:
+                    tab_name = f":red[{tab_name}]"
+                else:
+                    tab_name = f"{tab_name}"
+
+                if st.button(
+                    tab_name,
+                    type="tertiary",
+                    key=f"tab_button_{i}",
+                ):
+                    # Tab button clicked - switch to this tab
+                    st.session_state.selected_tab_index = i
+                    st.rerun()
+
+        # Create the fragment for the selected tab
+        def render_active_tab():
+            """Fragment that renders only the active tab with real-time updates."""
+
+            current_tab_name = tab_names[st.session_state.selected_tab_index]
+            current_panel_func = tabbed_panels[current_tab_name]
+
+            # Render the active tab content
+            with errors(f"rendering {current_tab_name} panel"):
+                current_panel_func()
+
+        # Render the active tab
+        render_active_tab()

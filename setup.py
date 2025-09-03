@@ -61,7 +61,7 @@ setup(
         "requests-cache==1.1.0",
         "PyYAML==6.0.2",
         "prometheus_client==0.19.0",
-        "streamlit==1.48.0",
+        "streamlit==1.49.1",
         "psutil>=5.9.8",
     ],
     extras_require={"dev": []},

@@ -24,15 +24,12 @@ def render():
     if "update_interval" in st.session_state:
         # Handle the update interval change
         selected_interval = st.session_state.update_interval
-        if selected_interval == "Manual Refresh":
+        if selected_interval == "Off":
             target_interval = None
         else:
             target_interval = selected_interval
 
-        if (
-            update_interval.update_interval != target_interval
-            or selected_interval == "Manual Refresh"
-        ):
+        if update_interval.update_interval != target_interval:
             update_interval.update_interval = target_interval
             st.rerun()
 
@@ -51,19 +48,23 @@ def render():
             st.subheader("GitHub Hetzner Runners")
 
     with col2:
-        st.selectbox(
-            "Auto Refresh",
-            options=["Manual Refresh", 5, 10, 15, 30, 60, 300],
-            format_func=lambda x: (
-                "Manual Refresh"
-                if x == "Manual Refresh"
-                else (
-                    f"{x} seconds"
-                    if x < 60
-                    else f"{x//60} minute{'s' if x//60 > 1 else ''}"
-                )
-            ),
-            index=2,  # Default to 10 seconds instead of "Manual Refresh"
-            key="update_interval",
-            label_visibility="collapsed",
-        )
+        with st.container(horizontal=True, gap="small"):
+            if st.button("Refresh", type="secondary", key="refresh"):
+                st.rerun()
+
+            st.selectbox(
+                "Auto Refresh",
+                options=["Off", 5, 10, 15, 30, 60, 300],
+                format_func=lambda x: (
+                    "Off"
+                    if x == "Off"
+                    else (
+                        f"{x} seconds"
+                        if x < 60
+                        else f"{x//60} minute{'s' if x//60 > 1 else ''}"
+                    )
+                ),
+                index=2,  # Default to 10 seconds instead of "Off"
+                key="update_interval",
+                label_visibility="collapsed",
+            )
