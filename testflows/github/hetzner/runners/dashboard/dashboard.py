@@ -14,7 +14,6 @@
 # limitations under the License.
 import os
 import sys
-import time
 import weakref
 import logging
 import threading
@@ -110,9 +109,22 @@ def main():
 
     logger.info("🚀 Streamlit Dashboard Main Function Called")
 
-    config = sys.argv[1]
+    server = sys.argv[1]
+    config = sys.argv[2]
+
+    @st.cache_resource
+    def configure_download_handlers():
+        """Configure download handlers for the server."""
+        server.add_download_handler(
+            endpoint="log",
+            file=config.logger_config["handlers"]["rotating_logfile"]["filename"],
+        )
+        server.add_download_handler(endpoint="config", file=config.config_file)
 
     try:
+        # Configure download handlers
+        configure_download_handlers()
+
         # Reload panels and get them
         panels = reload_panels()
 
@@ -139,13 +151,13 @@ def main():
                 "Scale-down Errors": panels.scale_down_errors.render,
                 "Configuration": functools.partial(panels.info.render, config),
                 "System Health": panels.system_health.render,
+                "Log": functools.partial(panels.log.render, config),
             }
 
             # Render tabs with smart fragment-based navigation
             renderers.render_smart_tabs(tabbed_panels)
 
-            # Log panel at the bottom
-            panels.log.render(config)
+            # Footer panel at the bottom
             panels.footer.render()
 
         render_page()
@@ -183,8 +195,6 @@ def start_http_server(
     Returns:
         threading.Thread: The thread running the dashboard server
     """
-    # Container to store the server instance
-    server_container = {"server": None}
 
     def run_streamlit_in_thread():
         """Run Streamlit using bootstrap.py in the current thread."""
@@ -199,6 +209,7 @@ def start_http_server(
                 "server_headless": True,
                 "browser_gatherUsageStats": False,
                 "logger_level": "info",
+                "server_enableWebsocketCompression": True,
             }
 
             # Load configuration options
@@ -217,17 +228,11 @@ def start_http_server(
                 thread_ref=thread_ref,
             )
 
-            # Store server reference for potential external access
-            server_container["server"] = server
-
         except Exception as e:
             logger.exception(f"Error starting Streamlit dashboard: {e}")
 
     # Start Streamlit in a daemon thread
     thread = threading.Thread(target=run_streamlit_in_thread, daemon=True)
-
-    # Store server container reference on thread for external access
-    thread.server_container = server_container
 
     # Start metric tracking
     tracker.start_tracking()

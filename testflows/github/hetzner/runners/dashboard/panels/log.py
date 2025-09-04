@@ -113,36 +113,7 @@ def create_log_dataframe(formatted_lines):
     return df
 
 
-def create_download_button(config: Config):
-    """Create download button for full log file.
-
-    Args:
-        config: Configuration object containing logger settings
-    """
-    try:
-        rotating_logfile = config.logger_config["handlers"]["rotating_logfile"][
-            "filename"
-        ]
-
-        if os.path.exists(rotating_logfile):
-            with open(rotating_logfile, "r") as f:
-                log_content = f.read()
-
-            st.download_button(
-                label="Download Full Log",
-                data=log_content,
-                file_name="github-hetzner-runners.log",
-                mime="text/plain",
-                use_container_width=False,
-                help="Download the complete log file",
-            )
-        else:
-            st.warning("Log file not found")
-    except Exception as e:
-        st.error(f"Error creating download button: {str(e)}")
-
-
-def render(config: Config):
+def render(config: Config, num_lines: int = 1000):
     """Render the log messages panel.
 
     Args:
@@ -161,7 +132,7 @@ def render(config: Config):
         unsafe_allow_html=True,
     )
 
-    st.header("Log Messages (Last 100 lines)")
+    st.header(f"Log Messages (Last {num_lines} lines)")
 
     if config is None:
         st.warning("Configuration not available")
@@ -178,15 +149,20 @@ def render(config: Config):
 
         # Read last 100 lines from log file
         if os.path.exists(rotating_logfile):
+
+            # Add download button at the top for better visibility
+            st.link_button(
+                "📥 Log File",
+                help="Download full log file",
+                url="/download/log",
+                type="secondary",
+            )
+
             with open(rotating_logfile, "r") as f:
-                lines = f.readlines()[-100:]
+                lines = f.readlines()[-num_lines:]
 
             # Format log lines
             formatted_lines = format_log(lines, columns, delimiter)
-
-            # Add download button at the top for better visibility
-            create_download_button(config)
-            st.markdown("<br>", unsafe_allow_html=True)
 
             # Create log dataframe
             if formatted_lines:
@@ -196,7 +172,7 @@ def render(config: Config):
                 st.dataframe(
                     df,
                     use_container_width=True,
-                    height=400,
+                    height=800,
                     hide_index=True,
                     column_config={
                         "message": st.column_config.TextColumn(

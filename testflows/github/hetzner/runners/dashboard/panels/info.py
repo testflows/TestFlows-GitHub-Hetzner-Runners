@@ -231,17 +231,11 @@ def create_download_config_button(config: Config):
     """
     try:
         if config.config_file and os.path.exists(config.config_file):
-            with open(config.config_file, "r") as f:
-                config_content = f.read()
-
-            st.download_button(
-                label="📄 Download Config",
-                data=config_content,
-                file_name=os.path.basename(config.config_file),
-                mime="text/yaml",
-                use_container_width=False,
+            st.link_button(
+                "📥 Config",
                 help="Download config file",
-                key="download_config_btn",
+                url="/download/config",
+                type="secondary",
             )
         else:
             # Show a disabled button when no config file is available
@@ -250,6 +244,7 @@ def create_download_config_button(config: Config):
                 disabled=True,
                 help="No config file was specified",
                 key="download_config_disabled_btn",
+                type="secondary",
             )
 
     except Exception as e:

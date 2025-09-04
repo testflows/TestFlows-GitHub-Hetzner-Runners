@@ -19,15 +19,19 @@ from __future__ import annotations
 import asyncio
 import os
 import sys
-import threading
 import weakref
 from typing import Any, Final
 
-from streamlit import cli_util, config, env_util, file_util, net_util, secrets
+from streamlit import cli_util, config, env_util, file_util, secrets
 from streamlit.git_util import MIN_GIT_VERSION, GitRepo
 from streamlit.logger import get_logger
 from streamlit.watcher import report_watchdog_availability, watch_file
-from streamlit.web.server import Server, server_address_is_unix_socket, server_util
+from streamlit.web.server import server_address_is_unix_socket, server_util
+from streamlit.web.server import Server as BaseServer
+from streamlit.web.server.server import start_listening
+
+from tornado.web import RequestHandler
+from tornado.routing import Rule, PathMatches
 
 _LOGGER: Final = get_logger(__name__)
 
@@ -39,6 +43,59 @@ MAX_APP_STATIC_FOLDER_SIZE = 1 * 1024 * 1024 * 1024  # 1 GB
 
 
 # Signal handler removed - will be handled by thread lifecycle management
+
+
+def download_handler(file: str):
+    """Return tornado handler for downloading a file."""
+
+    class DownloadHandler(RequestHandler):
+        async def get(self):
+            if not os.path.exists(file):
+                self.set_status(404)
+                self.finish()
+                return
+            self.set_header("Content-Type", "application/octet-stream")
+            self.set_header(
+                "Content-Disposition",
+                f'attachment; filename="{os.path.basename(file)}"',
+            )
+            self.set_header("Content-Length", str(os.path.getsize(file)))
+
+            with open(file, "rb") as f:
+                while True:
+                    chunk = f.read(1024 * 1024 * 10)  # 10 MB
+                    if not chunk:
+                        break
+                    self.write(chunk)
+                    await self.flush()
+            self.finish()
+
+    return DownloadHandler
+
+
+class Server(BaseServer):
+    def add_download_handler(self, endpoint: str, file: str):
+        """Add a download handler for a file."""
+
+        self.app.default_router.rules.insert(
+            0, Rule(PathMatches(f"/download/{endpoint}"), download_handler(file))
+        )
+
+    async def start(self) -> None:
+        """Start the server.
+
+        When this returns, Streamlit is ready to accept new sessions.
+        """
+
+        _LOGGER.debug("Starting server...")
+
+        self.app = self._create_app()
+        start_listening(self.app)
+
+        port = config.get_option("server.port")
+        _LOGGER.debug("Server started on port %s", port)
+
+        await self._runtime.start()
 
 
 def _fix_sys_path(main_script_path: str) -> None:
@@ -253,12 +310,15 @@ def run_in_thread(
     """
     _fix_sys_path(main_script_path)
     _fix_tornado_crash()
-    _fix_sys_argv(main_script_path, args)
     _fix_pydeck_mapbox_api_warning()
     _install_config_watchers(flag_options)
 
     # Create the server. It won't start running yet.
     server = Server(main_script_path, is_hello)
+    # Insert server at the beginning of the args
+    args.insert(0, server)
+
+    _fix_sys_argv(main_script_path, args)
 
     def cleanup_server():
         """Stop the server when thread is about to exit."""
