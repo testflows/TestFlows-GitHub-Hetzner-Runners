@@ -16,16 +16,18 @@ import streamlit as st
 from datetime import datetime
 
 from testflows.github.hetzner.runners import __version__
+from .. import renderers
 
 
 def render():
     """Render the footer section with copyright and version information."""
-    st.markdown(
-        f"""
-        <div style="text-align:center">
-            <p style="margin: 0; font-size: 0.8em; color: #666;">© 2023-{datetime.now().year} Katteli Inc. All rights reserved.</p>
-            <p style="margin: 0; font-size: 0.8em; color: #666;">TestFlows GitHub Hetzner Runners v{__version__}</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+
+    with renderers.errors("rendering footer"):
+        with st.container(border=False, horizontal_alignment="center"):
+            st.caption(
+                f"© 2023-{datetime.now().year} Katteli Inc. All rights reserved.",
+                width="content",
+            )
+            st.caption(
+                f"TestFlows GitHub Hetzner Runners v{__version__}", width="content"
+            )

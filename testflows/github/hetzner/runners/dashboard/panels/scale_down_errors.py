@@ -77,7 +77,8 @@ def render():
     that maintains all the functionality of the original dashboard panel.
     """
     renderers.render_panel(
-        title="Scale-down Errors (Last Hour)",
+        title="Scale-down Errors",
+        title_caption="Last Hour",
         metrics_func=render_scale_down_errors_metrics,
         chart_func=render_scale_down_errors_chart,
         details_func=render_scale_down_errors_details,

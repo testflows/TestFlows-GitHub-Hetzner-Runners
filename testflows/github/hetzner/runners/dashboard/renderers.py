@@ -52,6 +52,7 @@ def render_panel(
     chart_func: Callable = None,
     details_func: Callable = None,
     message: str = "rendering panel",
+    title_caption: str = None,
 ):
     """Render a panel with standardized structure and error handling.
 
@@ -66,6 +67,8 @@ def render_panel(
     with errors(message):
         with st.container(border=True):
             st.header(title)
+            if title_caption:
+                st.caption(title_caption)
 
             # Render metrics if provided
             if metrics_func:

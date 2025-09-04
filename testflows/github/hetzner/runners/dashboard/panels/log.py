@@ -17,6 +17,7 @@ import streamlit as st
 import os
 from ...config import Config
 from ...logger import decode_message
+from .. import renderers
 from ..colors import COLORS
 
 
@@ -119,77 +120,65 @@ def render(config: Config, num_lines: int = 200):
     Args:
         config: Configuration object containing logger settings
     """
-    # Add CSS styling for dataframe
-    st.markdown(
-        """
-    <style>
-    .stDataFrame {
-        font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace !important;
-        font-size: 11px !important;
-    }
-    </style>
-    """,
-        unsafe_allow_html=True,
-    )
 
-    st.header(f"Log Messages (Last {num_lines} lines)")
+    with renderers.errors("rendering log panel"):
+        with st.container(border=True):
+            # Add CSS styling for dataframe
+            st.header(f"Log Messages")
+            st.caption(f"Last {num_lines} lines")
 
-    if config is None:
-        st.warning("Configuration not available")
-        return
+            if config is None:
+                st.warning("Configuration not available")
+                return
 
-    try:
-        logger_format = config.logger_format
-        rotating_logfile = config.logger_config["handlers"]["rotating_logfile"][
-            "filename"
-        ]
+            logger_format = config.logger_format
+            rotating_logfile = config.logger_config["handlers"]["rotating_logfile"][
+                "filename"
+            ]
 
-        columns = logger_format["columns"]
-        delimiter = logger_format["delimiter"]
+            columns = logger_format["columns"]
+            delimiter = logger_format["delimiter"]
 
-        # Read last 100 lines from log file
-        if os.path.exists(rotating_logfile):
+            # Read last 100 lines from log file
+            if os.path.exists(rotating_logfile):
 
-            # Add download button at the top for better visibility
-            st.link_button(
-                "📥 Log File",
-                help="Download full log file",
-                url="/download/log",
-                type="secondary",
-            )
-
-            with open(rotating_logfile, "r") as f:
-                lines = f.readlines()[-num_lines:]
-
-            # Format log lines
-            formatted_lines = format_log(lines, columns, delimiter)
-
-            # Create log dataframe
-            if formatted_lines:
-                df = create_log_dataframe(formatted_lines)
-
-                # Display dataframe with sorting and filtering capabilities
-                st.dataframe(
-                    df,
-                    use_container_width=True,
-                    height=800,
-                    hide_index=True,
-                    column_config={
-                        "message": st.column_config.TextColumn(
-                            "Message", width="large", help="Log message content"
-                        ),
-                        "level": st.column_config.TextColumn(
-                            "Level", width="small", help="Log level"
-                        ),
-                        "datetime": st.column_config.DatetimeColumn(
-                            "DateTime", width="medium", help="Log date and time"
-                        ),
-                    },
+                # Add download button at the top for better visibility
+                st.link_button(
+                    "📥 Log File",
+                    help="Download full log file",
+                    url="/download/log",
+                    type="secondary",
                 )
-            else:
-                st.info("No log messages available")
-        else:
-            st.warning("Log file not found")
 
-    except Exception as e:
-        st.error(f"Error reading log file: {str(e)}")
+                with open(rotating_logfile, "r") as f:
+                    lines = f.readlines()[-num_lines:]
+
+                # Format log lines
+                formatted_lines = format_log(lines, columns, delimiter)
+
+                # Create log dataframe
+                if formatted_lines:
+                    df = create_log_dataframe(formatted_lines)
+
+                    # Display dataframe with sorting and filtering capabilities
+                    st.dataframe(
+                        df,
+                        use_container_width=True,
+                        height=800,
+                        hide_index=True,
+                        column_config={
+                            "message": st.column_config.TextColumn(
+                                "Message", width="large", help="Log message content"
+                            ),
+                            "level": st.column_config.TextColumn(
+                                "Level", width="small", help="Log level"
+                            ),
+                            "datetime": st.column_config.DatetimeColumn(
+                                "DateTime", width="medium", help="Log date and time"
+                            ),
+                        },
+                    )
+                else:
+                    st.info("No log messages available")
+            else:
+                st.warning("Log file not found")

@@ -24,7 +24,7 @@ from .. import chart, renderers
 def render_standby_pool_info(config=None):
     """Render standby pool configuration information."""
     try:
-        st.subheader("Pool Configuration")
+        st.header("Standby Configuration")
 
         if not config or not config.standby_runners:
             st.info("No standby runners configured")
@@ -207,7 +207,9 @@ def render(config=None):
     that maintains all the functionality of the original dashboard panel.
     """
     # Add pool configuration section at the top
-    render_standby_pool_info(config)
+    with renderers.errors("rendering standby pool info"):
+        with st.container(border=True):
+            render_standby_pool_info(config)
 
     renderers.render_panel(
         title="Standby Servers",

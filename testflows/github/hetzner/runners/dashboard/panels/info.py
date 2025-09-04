@@ -18,6 +18,7 @@ import streamlit as st
 import pandas as pd
 
 from ...config import Config
+from .. import renderers
 from ... import __version__
 
 
@@ -260,43 +261,47 @@ def render(config: Config):
     Args:
         config: Configuration object containing system settings
     """
-    st.header("Configuration")
+    with renderers.errors("rendering configuration panel"):
+        with st.container(border=True):
+            st.header("Configuration")
 
-    if config is None:
-        st.warning("Configuration not available")
-        return
+            if config is None:
+                st.warning("Configuration not available")
+                return
 
-    # Add download config button
-    create_download_config_button(config)
+            # Add download config button
+            create_download_config_button(config)
 
-    # Get configuration data directly
-    config_data = get_config_data(config)
+            # Get configuration data directly
+            config_data = get_config_data(config)
 
-    # Create a scrollable container with max height (like original dashboard)
-    with st.container(border=False):
-        # Convert configuration items to separate label and value lists
-        labels = []
-        values_list = []
-        links_list = []
-        for item in config_data:
-            label, formatted_value, link_href = render_config_item(
-                item["label"], item["value"], item.get("link")
-            )
-            labels.append(label)
-            values_list.append(formatted_value)
-            links_list.append(link_href)
+            # Create a scrollable container with max height (like original dashboard)
+            with st.container(border=False):
+                # Convert configuration items to separate label and value lists
+                labels = []
+                values_list = []
+                links_list = []
+                for item in config_data:
+                    label, formatted_value, link_href = render_config_item(
+                        item["label"], item["value"], item.get("link")
+                    )
+                    labels.append(label)
+                    values_list.append(formatted_value)
+                    links_list.append(link_href)
 
-        # Create a dataframe with three columns
-        df = pd.DataFrame({"Name": labels, "Value": values_list, "Link": links_list})
+                # Create a dataframe with three columns
+                df = pd.DataFrame(
+                    {"Name": labels, "Value": values_list, "Link": links_list}
+                )
 
-        # Display the dataframe with column headers, maintaining original order
-        st.dataframe(
-            df,
-            hide_index=True,
-            use_container_width=True,
-            column_config={
-                "Name": st.column_config.TextColumn("Name", width="medium"),
-                "Value": st.column_config.TextColumn("Value", width="large"),
-                "Link": st.column_config.LinkColumn("Link", width="small"),
-            },
-        )
+                # Display the dataframe with column headers, maintaining original order
+                st.dataframe(
+                    df,
+                    hide_index=True,
+                    use_container_width=True,
+                    column_config={
+                        "Name": st.column_config.TextColumn("Name", width="medium"),
+                        "Value": st.column_config.TextColumn("Value", width="large"),
+                        "Link": st.column_config.LinkColumn("Link", width="small"),
+                    },
+                )
