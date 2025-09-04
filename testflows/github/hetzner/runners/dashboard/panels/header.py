@@ -52,7 +52,7 @@ def render(config: Config):
         )
         st.link_button(
             f"**GitHub Hetzner Runners** :small[{__version__}]",
-            url=f"https://github.com/testflows/github-hetzner-runners/releases/tag/v{__version__}",
+            url=f"https://github.com/testflows/testflows-github-hetzner-runners/releases/tag/{__version__}",
             type="secondary",
             width="content",
         )
