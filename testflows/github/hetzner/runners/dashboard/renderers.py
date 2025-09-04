@@ -222,7 +222,7 @@ def render_smart_tabs(tabbed_panels):
                 # Add color to tab name based on active state
                 tab_name = f":small[{tab_name}]"
                 if i == st.session_state.selected_tab_index:
-                    tab_name = f":red[{tab_name}]"
+                    tab_name = f":blue-background[:red[{tab_name}]]"
                 else:
                     tab_name = f"{tab_name}"
 

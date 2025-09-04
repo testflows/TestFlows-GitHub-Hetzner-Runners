@@ -158,7 +158,7 @@ def main():
                 "Scale-down Errors": panels.scale_down_errors.render,
                 "Configuration": functools.partial(panels.info.render, config),
                 "System Health": panels.system_health.render,
-                "Log": functools.partial(panels.log.render, config),
+                "Log Messages": functools.partial(panels.log.render, config),
             }
 
             # Render tabs with smart fragment-based navigation
