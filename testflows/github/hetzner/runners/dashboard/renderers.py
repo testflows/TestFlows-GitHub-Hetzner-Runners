@@ -15,6 +15,7 @@
 
 """Common rendering utilities for dashboard panels."""
 
+import time
 import streamlit as st
 import pandas as pd
 import logging
@@ -201,8 +202,10 @@ def render_chart(
         st.altair_chart(chart, use_container_width=True)
     else:
         st.info(no_data_message)
+    time.sleep(0.1)
 
 
+@st.fragment
 def render_smart_tabs(tabbed_panels):
     """Render tabs using buttons and fragments for clean real-time tab switching."""
 
@@ -230,7 +233,7 @@ def render_smart_tabs(tabbed_panels):
                 ):
                     # Tab button clicked - switch to this tab
                     st.session_state.selected_tab_index = i
-                    st.rerun()
+                    st.rerun(scope="fragment")
 
         # Create the fragment for the selected tab
         def render_active_tab():
@@ -239,8 +242,8 @@ def render_smart_tabs(tabbed_panels):
             current_tab_name = tab_names[st.session_state.selected_tab_index]
             current_panel_func = tabbed_panels[current_tab_name]
 
-            # Render the active tab content
-            with errors(f"rendering {current_tab_name} panel"):
+            # Show loading spinner while rendering the active tab content
+            with st.spinner(f"Loading ..."):
                 current_panel_func()
 
         # Render the active tab
