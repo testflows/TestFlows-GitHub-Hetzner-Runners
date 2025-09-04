@@ -109,8 +109,6 @@ def render():
                 label_visibility="collapsed",
             )
 
-        st.divider()
-
     except Exception as e:
         logger.exception(f"Error fetching metrics: {e}")
         st.error(f"Error fetching metrics: {e}")

@@ -14,11 +14,13 @@
 # limitations under the License.
 import streamlit as st
 
-import testflows.github.hetzner.runners.dashboard.panels.update_interval as update_interval
+from . import update_interval
+from ...config import Config
+from ... import __version__
 
 
 @st.fragment()
-def render():
+def render(config: Config):
     """Render a modern, compact header section with logo, title, and update interval selector."""
 
     if "update_interval" in st.session_state:
@@ -34,21 +36,35 @@ def render():
             st.rerun()
 
     # Top row: Logo and title
-    col1, col2 = st.columns([5, 1])
+    # col1, col2 = st.columns([1, 1], gap="small")
 
-    with col1:
-        logo_col, title_col = st.columns([1, 9], vertical_alignment="center")
-        with logo_col:
-            st.markdown(
-                '<a href="https://testflows.com" target="_blank"><img src="https://raw.githubusercontent.com/testflows/TestFlows-ArtWork/refs/heads/master/images/logo_multicolor.png" width="150" style="cursor: pointer;"></a>',
-                unsafe_allow_html=True,
-            )
+    with st.container(
+        border=False,
+        horizontal=True,
+        gap="small",
+        horizontal_alignment="left",
+        vertical_alignment="bottom",
+    ):
+        st.markdown(
+            '<a href="https://testflows.com" target="_blank"><img src="https://raw.githubusercontent.com/testflows/TestFlows-ArtWork/refs/heads/master/images/logo_multicolor.png" width="100" style="cursor: pointer;"></a>',
+            unsafe_allow_html=True,
+            width="content",
+        )
+        st.link_button(
+            f"**GitHub Hetzner Runners** :small[{__version__}]",
+            url=f"https://github.com/testflows/github-hetzner-runners/releases/tag/v{__version__}",
+            type="secondary",
+            width="content",
+        )
 
-        with title_col:
-            st.subheader("GitHub Hetzner Runners")
+        st.link_button(
+            config.github_repository,
+            url=f"https://github.com/{config.github_repository}",
+            type="secondary",
+            icon="💎",
+        )
 
-    with col2:
-        with st.container(horizontal=True, gap="small"):
+        with st.container(horizontal=True, gap="small", horizontal_alignment="right"):
             if st.button("Refresh", type="secondary", key="refresh"):
                 st.rerun()
 
@@ -67,4 +83,5 @@ def render():
                 index=2,  # Default to 10 seconds instead of "Off"
                 key="update_interval",
                 label_visibility="collapsed",
+                width=200,
             )

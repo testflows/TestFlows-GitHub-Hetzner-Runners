@@ -113,7 +113,7 @@ def create_log_dataframe(formatted_lines):
     return df
 
 
-def render(config: Config, num_lines: int = 1000):
+def render(config: Config, num_lines: int = 200):
     """Render the log messages panel.
 
     Args:

@@ -49,6 +49,13 @@ def configure_page():
     st.markdown(
         """
     <style>
+    .stMainBlockContainer {
+        padding: 1rem 1rem 2rem;
+    }
+    .stAppHeader {
+        height: 2rem !important;
+        min-height: 2rem !important;
+    }
     .stAppDeployButton {
         visibility: hidden;
     }
@@ -136,7 +143,7 @@ def main():
             configure_page()
 
             # Always visible panels (outside tabs)
-            panels.header.render()
+            panels.header.render(config)
             panels.gauges.render()
 
             # Build tabs for panels that should be in tabs
