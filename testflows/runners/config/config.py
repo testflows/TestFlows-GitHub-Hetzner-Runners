@@ -681,8 +681,7 @@ def parse_config(filename: str):
             list,
         ), 'config.logger_config.loggers."testflows.runners".handlers is not a list'
         assert (
-            "stdout"
-            in doc["logger_config"]["loggers"]["testflows.runners"]["handlers"]
+            "stdout" in doc["logger_config"]["loggers"]["testflows.runners"]["handlers"]
         ), 'config.logger_config.loggers."testflows.runners".handlers missing stdout'
 
         assert (
