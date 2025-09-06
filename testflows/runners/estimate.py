@@ -19,13 +19,10 @@ import github
 
 from .actions import Action
 from .config import Config
-from .config import check_prices
 from .streamingyaml import StreamingYAMLWriter
-from .hclient import HClient as Client
-from .utils import get_runner_server_type_and_location
 
 from datetime import timedelta
-from github import Github
+
 from github.Repository import Repository
 from github.WorkflowRun import WorkflowRun
 from github.WorkflowJob import WorkflowJob
@@ -108,70 +105,8 @@ def extend_workflow_run(run: WorkflowRun):
     return run
 
 
-def get_server_price(
-    server_prices: dict[str, dict[str, float]],
-    server_type: str,
-    server_location: str,
-    ipv4_price: float,
-    ipv6_price: float,
-) -> float:
-    """Get server price."""
-    price = None
-    if ipv4_price is None:
-        ipv4_price
-    try:
-        price = server_prices[server_type][server_location] + ipv4_price + ipv6_price
-    except KeyError:
-        pass
-    return price
-
-
-def get_runner_server_price_per_second(
-    server_prices: dict[str, dict[str, float]],
-    runner_name: str,
-    ipv4_price: float,
-    ipv6_price: float,
-) -> float:
-    """Get runner server price per second."""
-
-    price_per_second = None
-
-    server_type, server_location = get_runner_server_type_and_location(runner_name)
-    server_price_per_hour = get_server_price(
-        server_prices, server_type, server_location, ipv4_price, ipv6_price
-    )
-
-    if server_price_per_hour is not None:
-        price_per_second = server_price_per_hour / 3600
-
-    return price_per_second, server_type, server_location
-
-
-def login_and_get_prices(
-    args, config: Config
-) -> tuple[Repository, dict[str, dict[str, float]]]:
-    """Login and get prices."""
-
-    config.check("github_token")
-    config.check("github_repository")
-    config.check("hetzner_token")
-
-    with Action("Logging in to Hetzner Cloud"):
-        client = Client(token=config.hetzner_token)
-
-    with Action("Logging in to GitHub"):
-        github = Github(login_or_token=config.github_token, per_page=100)
-
-    with Action(f"Getting repository {config.github_repository}"):
-        repo: Repository = github.get_repo(config.github_repository)
-
-    with Action("Getting current server prices"):
-        server_prices = check_prices(client)
-
-    return (repo, server_prices)
-
-
 def get_estimate_for_jobs(
+    provider,
     writer: StreamingYAMLWriter,
     jobs: list[WorkflowJob],
     server_prices: dict[str, dict[str, float]],
@@ -210,8 +145,10 @@ def get_estimate_for_jobs(
             "workflow_name": job.raw_data["workflow_name"],
         }
 
-        price, server_type, server_location = get_runner_server_price_per_second(
-            server_prices, runner_name, ipv4_price, ipv6_price
+        price, server_type, server_location = (
+            provider.estimate.get_runner_server_price_per_second(
+                server_prices, runner_name, ipv4_price, ipv6_price
+            )
         )
 
         job_entry["estimate"] = {
@@ -304,6 +241,7 @@ def get_estimate_for_jobs(
 
 
 def workflow_run(
+    provider,
     args,
     config: Config,
     repo: Repository = None,
@@ -320,13 +258,13 @@ def workflow_run(
 
     if workflow_run is None:
         run_id = args.id
-        repo, server_prices = login_and_get_prices(args, config)
+        repo, server_prices = provider.estimate.login_and_get_prices(args, config)
         run_attempt = args.run_attempt
 
     else:
         run_id = workflow_run.id
 
-    with Action(f"Getting jobs for the workflow run id {run_id}") as action:
+    with Action(f"Getting jobs for the workflow run id {run_id}"):
         if workflow_run is None:
             workflow_run: WorkflowRun = repo.get_workflow_run(run_id)
             workflow_run = extend_workflow_run(workflow_run)
@@ -352,7 +290,7 @@ def workflow_run(
             worst_estimate,
             best_estimate,
         ) = get_estimate_for_jobs(
-            jobs_writer, jobs, server_prices, args.ipv4_price, args.ipv6_price
+            provider, jobs_writer, jobs, server_prices, args.ipv4_price, args.ipv6_price
         )
 
         workflow_totals = {}
@@ -395,9 +333,9 @@ def workflow_run(
         list_value_writer.add_value(workflow_totals)
 
 
-def workflow_runs(args, config: Config):
+def workflow_runs(provider, args, config: Config):
     """Estimate cost for different workflow runs."""
-    repo, server_prices = login_and_get_prices(args, config)
+    repo, server_prices = provider.estimate.login_and_get_prices(args, config)
 
     runs_args = {}
     if args.runs_actor:
@@ -415,11 +353,12 @@ def workflow_runs(args, config: Config):
 
     streams = Output(*([sys.stdout] + ([args.output] if args.output else [])))
 
-    with Action(f"Getting workflow runs") as action:
+    with Action(f"Getting workflow runs"):
         for run in repo.get_workflow_runs(**runs_args):
             run = extend_workflow_run(run)
             writer = StreamingYAMLWriter(stream=streams, indent=0)
             workflow_run(
+                provider=provider,
                 args=args,
                 config=config,
                 repo=repo,
@@ -434,17 +373,22 @@ def workflow_runs(args, config: Config):
                 break
 
 
-def workflow_job(args, config: Config):
+def workflow_job(provider, args, config: Config):
     """Estimate cost for a specific workflow job."""
 
-    repo, server_prices = login_and_get_prices(args, config)
+    repo, server_prices = provider.estimate.login_and_get_prices(args, config)
     repo = extend_repository(repo)
     streams = Output(*([sys.stdout] + ([args.output] if args.output else [])))
     writer = StreamingYAMLWriter(stream=streams, indent=0)
 
-    with Action(f"Getting workflow job id {args.id}") as action:
+    with Action(f"Getting workflow job id {args.id}"):
         workflow_job = repo.get_workflow_job(args.id)
 
         get_estimate_for_jobs(
-            writer, [workflow_job], server_prices, args.ipv4_price, args.ipv6_price
+            provider,
+            writer,
+            [workflow_job],
+            server_prices,
+            args.ipv4_price,
+            args.ipv6_price,
         )
