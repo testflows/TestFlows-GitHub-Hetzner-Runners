@@ -16,7 +16,7 @@ import os
 import sys
 import textwrap
 
-NAME = "github-hetzner-runners"
+NAME = "tfs-runners"
 SERVICE = f"/etc/systemd/system/{NAME}.service"
 
 from .actions import Action

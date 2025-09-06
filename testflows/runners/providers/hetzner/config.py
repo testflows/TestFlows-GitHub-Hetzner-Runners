@@ -25,7 +25,7 @@ from hcloud.ssh_keys.domain import SSHKey
 
 from ...hclient import HClient as Client
 from ...actions import Action
-from ...config.config import ImageError, LocationError, ServerTypeError
+from ... import errors
 
 
 def is_enabled(provider_config):
@@ -127,7 +127,7 @@ def check_image(client: Client, image: Image):
             name=image.name, architecture=image.architecture
         )
         if not _image:
-            raise ImageError(
+            raise errors.ImageError(
                 f"image type:'{image.type}' name:'{image.name}' architecture:'{image.architecture}' not found"
             )
         return _image
@@ -142,7 +142,7 @@ def check_image(client: Client, image: Image):
                 if i.description == image.description
             ][0]
         except IndexError:
-            raise ImageError(
+            raise errors.ImageError(
                 f"image type:'{image.type}' name:'{image.description}' architecture:'{image.architecture}' not found"
             )
 
@@ -151,11 +151,11 @@ def check_location(client: Client, location: Location, required=False):
     """Check if location exists."""
     if location is None:
         if required:
-            raise LocationError(f"location is not defined")
+            raise errors.LocationError(f"location is not defined")
         return None
     _location = client.locations.get_by_name(location.name)
     if not _location:
-        raise LocationError(f"location '{location.name}' not found")
+        raise errors.LocationError(f"location '{location.name}' not found")
     return _location
 
 
@@ -163,7 +163,7 @@ def check_server_type(client: Client, server_type: ServerType):
     """Check if server type exists."""
     _type: ServerType = client.server_types.get_by_name(server_type.name)
     if not _type:
-        raise ServerTypeError(f"server type '{server_type.name}' not found")
+        raise errors.ServerTypeError(f"server type '{server_type.name}' not found")
     return _type
 
 

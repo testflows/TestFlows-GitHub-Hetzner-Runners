@@ -21,15 +21,8 @@ from hcloud.ssh_keys.domain import SSHKey
 from hcloud.servers.client import BoundServer
 from hcloud.servers.domain import Server
 from .actions import Action
-from .config import (
-    Config,
-    check_image,
-    check_location,
-    check_server_type,
-    check_ssh_key,
-    write as write_config,
-    read as read_config,
-)
+from .config import Config
+from .config.config import write as write_config, read as read_config
 from . import __version__
 
 from .server import wait_ready, wait_ssh, ssh, scp, ip_address, ssh_tunnel, MockServer

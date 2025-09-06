@@ -25,7 +25,6 @@ from dataclasses import dataclass
 from .actions import Action
 from . import metrics
 from .constants import (
-    server_name_prefix,
     runner_name_prefix,
     standby_runner_name_prefix,
     recycle_server_name_prefix,
@@ -36,9 +35,8 @@ from .scale_up import (
     uid,
     StandbyRunner,
     ScaleUpFailureMessage,
-    get_runner_server_name,
 )
-from .logger import logger
+from .server import get_runner_server_name
 from .server import age
 from .config import Config
 from .hclient import HClient as Client

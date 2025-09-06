@@ -22,13 +22,15 @@ from dataclasses import dataclass
 
 from .actions import Action
 from .request import request
-from .args import image_type
-from .logger import logger
 from . import metrics
-from .config import Config, check_image, check_startup_script, check_setup_script
-from .config import standby_runner as StandbyRunner
+from . import errors
+from .config import Config
+from .config.config import (
+    check_startup_script,
+    check_setup_script,
+    standby_runner as StandbyRunner,
+)
 from .hclient import HClient as Client
-from .utils import get_runner_server_type_and_location
 from .constants import (
     server_name_prefix,
     runner_name_prefix,
@@ -39,7 +41,7 @@ from .constants import (
     github_runner_label,
 )
 
-from .server import wait_ssh, ssh, get_runner_server_name
+from .server import wait_ssh, ssh
 
 from hcloud import APIException
 from hcloud.ssh_keys.domain import SSHKey
@@ -69,26 +71,6 @@ class ScaleUpFailureMessage:
     labels: set[str]
     server_name: str
     exception: Exception
-
-
-class MaxNumberOfServersReached(Exception):
-    """Exception to indicate that scale up service
-    reached maximum number of servers."""
-
-    pass
-
-
-class MaxNumberOfServersForLabelReached(Exception):
-    """Exception to indicate that server can't be created
-    because label-specific limit has been reached."""
-
-    pass
-
-
-class CanceledServerCreation(Exception):
-    """Exception to indicate that server creation was canceled."""
-
-    pass
 
 
 @dataclass
@@ -720,7 +702,7 @@ def create_server(
                         stacklevel=3,
                         server_name=name,
                     ):
-                        raise CanceledServerCreation("Server creation canceled")
+                        raise errors.CanceledServerCreation("Server creation canceled")
 
                 if active_attempt is not None:
                     # only proceed if this is our turn
@@ -1254,7 +1236,7 @@ def scale_up(
                         ):
                             future = worker_pool.submit(
                                 raise_exception,
-                                exc=MaxNumberOfServersReached(
+                                exc=errors.MaxNumberOfServersReached(
                                     f"maximum number of servers reached {total_servers_count}/{max_servers}"
                                 ),
                             )
@@ -1283,7 +1265,7 @@ def scale_up(
                         ):
                             future = worker_pool.submit(
                                 raise_exception,
-                                exc=MaxNumberOfServersForLabelReached(
+                                exc=errors.MaxNumberOfServersForLabelReached(
                                     f"Maximum number of servers for labels {label_set} reached {count}/{max_count}"
                                 ),
                             )
@@ -1645,7 +1627,7 @@ def scale_up(
                                 )
                             )
 
-                        except CanceledServerCreation:
+                        except errors.CanceledServerCreation:
                             pass
 
                         except Exception as exc:
@@ -1665,7 +1647,7 @@ def scale_up(
                                     "timestamp": time.time(),
                                 }
 
-                                if isinstance(exc, MaxNumberOfServersReached):
+                                if isinstance(exc, errors.MaxNumberOfServersReached):
                                     send_failure = True
                                     error_type = "max_servers_reached"
 

@@ -20,7 +20,6 @@ import queue
 import tempfile
 import logging
 import threading
-import logging.config
 import webbrowser
 
 from contextlib import contextmanager
@@ -46,15 +45,9 @@ from testflows.runners.logger import (
 )
 from testflows.runners.config import (
     Config,
-    check_image,
     default_user_config,
 )
-from testflows.runners.config import (
-    check_ssh_key,
-    check_location,
-    check_server_type,
-    check_prices,
-)
+
 from testflows.runners.dashboard import (
     start_http_server as start_dashboard_server,
 )
@@ -64,7 +57,6 @@ import testflows.runners.cloud as cloud
 import testflows.runners.service as service
 import testflows.runners.servers as servers
 import testflows.runners.estimate as estimate
-import testflows.runners.images as images
 import testflows.runners.projects as projects
 import testflows.runners.volumes as volumes
 
@@ -152,11 +144,10 @@ def argparser():
     parser.add_argument(
         "--provider",
         metavar="name",
-        action="append",
-        help="Enable specific provider(s). Supports: hetzner, aws, azure, gcp, scaleway. "
-             "Can be specified multiple times or as comma-separated list. "
-             "Examples: --provider hetzner,aws or --provider hetzner --provider aws. "
-             "If not specified, uses all configured providers (default: hetzner only)"
+        type=args.provider_type,
+        help="Enable specific providers using comma-separated list.\n"
+             "Example: --provider hetzner,aws, default: hetzner only or\n"
+             "all providers specified in the configuration file"
     )
 
     # Add provider-specific arguments
@@ -592,7 +583,7 @@ def argparser():
         "--location",
         metavar="name",
         dest="cloud_deploy_location",
-        type=args.location_type,
+        type=str,
         help="deployment server location",
     )
 
@@ -601,7 +592,7 @@ def argparser():
         "--type",
         metavar="name",
         dest="cloud_deploy_server_type",
-        type=args.server_type,
+        type=str,
         help="deployment server type, default: cpx11",
     )
 
@@ -610,7 +601,7 @@ def argparser():
         "--image",
         metavar="architecture:type:name_or_description",
         dest="cloud_deploy_image",
-        type=args.image_type,
+        type=str,
         help=(
             "deployment server image type and name or description,\n"
             "where the architecture is either: 'x86' or 'arm', \n"
@@ -1218,8 +1209,6 @@ def argparser():
         default=False,
     )
 
-    list_images_parser.set_defaults(func=images.list)
-
     delete_image_parser = images_commands.add_parser(
         "delete",
         help="delete image",
@@ -1235,85 +1224,6 @@ def argparser():
         type=int,
         required=True,
     )
-
-    delete_image_parser.set_defaults(func=images.delete)
-
-    create_snapshot_parser = images_commands.add_parser(
-        "create",
-        help="create snapshot",
-        description=(
-            "Create snapshot by customizing the image using the specified setup script.\n\n"
-            "The snapshot is created from the new server created using the specified image\n"
-            "and is deleted after the snapshot is created. You can specify server type and location."
-        ),
-        formatter_class=RawTextHelpFormatter,
-    )
-
-    create_snapshot_parser.add_argument(
-        "-n",
-        "--name",
-        metavar="name",
-        dest="create_snapshot_name",
-        type=str,
-        required=True,
-        help="snapshot name (required)",
-    )
-
-    create_snapshot_parser.add_argument(
-        "--setup-script",
-        metavar="path",
-        dest="create_snapshot_setup_script",
-        type=args.path_type,
-        help="path to custom setup script that will be executed on the server to customize the default image (required)",
-        required=True,
-    )
-
-    create_snapshot_parser.add_argument(
-        "-l",
-        "--location",
-        metavar="name",
-        dest="create_snapshot_server_location",
-        type=args.location_type,
-        help="server location",
-        default=None,
-    )
-
-    create_snapshot_parser.add_argument(
-        "-t",
-        "--type",
-        metavar="name",
-        dest="create_snapshot_server_type",
-        type=args.server_type,
-        help="server type, default: cpx11",
-        default=args.server_type("cpx11"),
-    )
-
-    create_snapshot_parser.add_argument(
-        "-i",
-        "--image",
-        metavar="architecture:type:name_or_description",
-        dest="create_snapshot_server_image",
-        type=args.image_type,
-        help=(
-            "base server image type and name or description,\n"
-            "where the architecture is either: 'x86' or 'arm', \n"
-            "the type is either: 'system','snapshot','backup','app', \n"
-            "followed by the name, "
-            "default: x86:system:ubuntu-22.04"
-        ),
-        default=args.image_type("x86:system:ubuntu-22.04"),
-    )
-
-    create_snapshot_parser.add_argument(
-        "--server-name",
-        metavar="name",
-        dest="create_snapshot_server_name",
-        type=str,
-        help="server name, default: snapshot-server",
-        default="snapshot-server",
-    )
-
-    create_snapshot_parser.set_defaults(func=images.create_snapshot)
 
     dashboard_parser = commands.add_parser(
         "dashboard",
@@ -1891,8 +1801,10 @@ if __name__ == "__main__":
         if "config_file" in project_config:
             config.config_file = project_config["config_file"]
 
+
     # Update with command line arguments (higher precedence)
-    config.update(arguments)
+    # FIXME: need to fix it
+    #config.update(arguments)
 
     if config.debug:
         Action.debug = True
@@ -1924,7 +1836,8 @@ if __name__ == "__main__":
         #     sys.exit(1)
 
     else:
-        config.check()
+        # FIXME: need to fix it
+        #config.check()
 
         with http_cache():
             with ThreadPoolExecutor(

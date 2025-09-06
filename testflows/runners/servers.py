@@ -25,7 +25,7 @@ from hcloud.servers.domain import Server
 from .actions import Action
 from .config import Config
 from .server import ssh_command, ip_address
-from .scale_up import server_name_prefix, runner_name_prefix, get_volume_name
+from .scale_up import runner_name_prefix, get_volume_name
 from .hclient import HClient as Client
 from .request import request
 from .constants import github_runner_label

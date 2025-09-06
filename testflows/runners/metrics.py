@@ -21,7 +21,6 @@ from datetime import datetime
 from github.WorkflowRun import WorkflowRun
 from github.WorkflowJob import WorkflowJob
 from prometheus_client import Counter, Gauge, Histogram, Info
-from .estimate import get_server_price
 from .constants import standby_server_name_prefix
 from .server import get_runner_server_name
 

@@ -1,4 +1,4 @@
-# Copyright 2023 Katteli Inc.
+# Copyright 2023-2025 Katteli Inc.
 # TestFlows.com Open-Source Software Testing Framework (http://testflows.com)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,10 +15,6 @@
 import os
 import sys
 import argparse
-
-from hcloud.images.domain import Image
-from hcloud.locations.domain import Location
-from hcloud.server_types.domain import ServerType
 
 from argparse import ArgumentTypeError
 
@@ -100,39 +96,6 @@ def count_type(v):
     return v
 
 
-def image_type(v, separator=":"):
-    """Image type argument. Example: x86:system:ubuntu-22.04"""
-    try:
-        image_architecture, image_type, image_name = v.split(separator, 2)
-        assert image_type in ("system", "snapshot", "backup", "app")
-    except:
-        raise ArgumentTypeError(f"invalid image {v}")
-
-    if image_architecture in ("aarch64", "arm64"):
-        # support aarch64, arm64 alias for arm
-        image_architecture = "arm"
-
-    if image_type in ("system", "app"):
-        return Image(type=image_type, architecture=image_architecture, name=image_name)
-    else:
-        # backup or snapshot uses description
-        return Image(
-            type=image_type, architecture=image_architecture, description=image_name
-        )
-
-
-def location_type(v):
-    """Location type argument. Example: ash"""
-    if v is not None:
-        return Location(name=v)
-    return None
-
-
-def server_type(v):
-    """Server type argument. Example: cx22"""
-    return ServerType(name=v)
-
-
 def meta_label_type(v):
     """Meta labels type argument."""
     try:
@@ -143,7 +106,8 @@ def meta_label_type(v):
 
 def config_type(v):
     """Program configuration file type."""
-    from .config import parse_config, default_user_config
+    from .config import default_user_config
+    from .config.parse import parse_config
 
     if v == "__default_user_config__":
         if os.path.exists(default_user_config):
@@ -186,3 +150,33 @@ def max_runners_for_label_type(value: str) -> tuple[set[str], int]:
             f"invalid max runners for label specification: {value}, "
             "expected format: label1,label2:count"
         )
+
+
+def provider_type(value: str) -> list[str]:
+    """Parse provider argument supporting comma-separated values.
+
+    Args:
+        value: Provider string, can be comma-separated (e.g., "hetzner,aws")
+
+    Returns:
+        list[str]: List of valid provider names
+
+    Raises:
+        ArgumentTypeError: If any provider is invalid
+    """
+    valid_providers = {"hetzner", "aws", "azure", "gcp", "scaleway"}
+
+    # Split by comma and strip whitespace
+    providers = [p.strip() for p in value.split(",")]
+    parsed = []
+
+    for provider in providers:
+        if provider in valid_providers:
+            if provider not in parsed:  # Avoid duplicates
+                parsed.append(provider)
+        else:
+            raise ArgumentTypeError(
+                f"Unknown provider '{provider}'. Valid providers: {', '.join(sorted(valid_providers))}"
+            )
+
+    return parsed

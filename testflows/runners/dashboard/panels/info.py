@@ -145,23 +145,6 @@ def get_config_data(config: Config):
             "link": None,
         },
         {
-            "label": "Default Image (--default-image)",
-            "value": (config.default_image.name if config.default_image else ""),
-            "link": None,
-        },
-        {
-            "label": "Default Server Type (--default-server-type)",
-            "value": (
-                config.default_server_type.name if config.default_server_type else ""
-            ),
-            "link": None,
-        },
-        {
-            "label": "Default Location (--default-location)",
-            "value": (config.default_location.name if config.default_location else ""),
-            "link": None,
-        },
-        {
             "label": "Config File (--config)",
             "value": config.config_file or "",
             "link": None,
