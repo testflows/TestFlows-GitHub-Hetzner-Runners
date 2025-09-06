@@ -79,11 +79,6 @@
                                     "type": "string",
                                     "examples": ["${AWS_SECRET_ACCESS_KEY}"]
                                 },
-                                "region": {
-                                    "description": "AWS region",
-                                    "type": "string",
-                                    "examples": ["us-east-1"]
-                                },
                                 "security_group": {
                                     "description": "AWS security group ID",
                                     "type": "string",
@@ -104,9 +99,9 @@
                                     "type": "object",
                                     "properties": {
                                         "image": {
-                                            "description": "Default AMI ID",
+                                            "description": "Default AMI ID or SSM parameter path",
                                             "type": "string",
-                                            "examples": ["ami-0abcdef1234567890"]
+                                            "examples": ["resolve:ssm:/aws/service/canonical/ubuntu/server/22.04/stable/current/amd64/hvm/ebs-gp3/ami-id"]
                                         },
                                         "server_type": {
                                             "description": "Default EC2 instance type",
@@ -136,7 +131,7 @@
                                     }
                                 }
                             },
-                            "required": ["access_key_id", "secret_access_key", "region"]
+                            "required": ["access_key_id", "secret_access_key"]
                         },
                         "azure": {
                             "description": "Azure provider configuration",
@@ -560,6 +555,11 @@
                             "type": "string",
                             "examples": ["github-runners-service"]
                         },
+                        "host": {
+                            "description": "Optional direct host/IP for SSH connection (bypasses API lookup)",
+                            "type": "string",
+                            "examples": ["192.168.1.100", "my-server.example.com"]
+                        },
                         "deploy": {
                             "description": "The cloud deploy command configuration.",
                             "type": "object",
@@ -584,7 +584,7 @@
                                     "type": "string"
                                 }
                             },
-                            "required": ["server_type", "image", "location", "setup_script"]
+                            "required": ["server_type", "image", "setup_script"]
                         }
                     },
                     "required": ["provider", "deploy"]

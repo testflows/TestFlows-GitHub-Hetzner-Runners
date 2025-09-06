@@ -68,6 +68,9 @@ import testflows.github.hetzner.runners.images as images
 import testflows.github.hetzner.runners.projects as projects
 import testflows.github.hetzner.runners.volumes as volumes
 
+# Provider-specific argument validators
+from testflows.github.hetzner.runners.providers import hetzner, aws, azure, gcp, scaleway
+
 from requests_cache import DO_NOT_CACHE, EXPIRE_IMMEDIATELY, install_cache
 from requests_cache.backends.filesystem import FileCache
 
@@ -145,12 +148,27 @@ def argparser():
         help="GitHub repository, default: project config or $GITHUB_REPOSITORY environment variable",
     )
 
+    # Provider selection
     parser.add_argument(
-        "--hetzner-token",
-        metavar="token",
-        type=str,
-        help="Hetzner Cloud token, default: project config or $HETZNER_TOKEN environment variable",
+        "--provider",
+        metavar="name",
+        action="append",
+        help="Enable specific provider(s). Supports: hetzner, aws, azure, gcp, scaleway. "
+             "Can be specified multiple times or as comma-separated list. "
+             "Examples: --provider hetzner,aws or --provider hetzner --provider aws. "
+             "If not specified, uses all configured providers (default: hetzner only)"
     )
+
+    # Add provider-specific arguments
+    hetzner.args.add_arguments(parser)
+
+    aws.args.add_arguments(parser)
+
+    azure.args.add_arguments(parser)
+
+    gcp.args.add_arguments(parser)
+
+    scaleway.args.add_arguments(parser)
 
     parser.add_argument(
         "--ssh-key",
@@ -237,49 +255,6 @@ def argparser():
         help="define runner meta label that will be expanded to a list of given labels",
     )
 
-    parser.add_argument(
-        "--default-image",
-        metavar="architecture:type:name_or_description",
-        type=args.image_type,
-        help=(
-            "default runner server image type and name or description,\n"
-            "where the architecture is either: 'x86' or 'arm' and\n"
-            "the type is either: 'system','snapshot','backup','app',\n"
-            "followed by the name, "
-            "default: x86:system:ubuntu-22.04"
-        ),
-    )
-
-    parser.add_argument(
-        "--default-type",
-        dest="default_server_type",
-        metavar="name",
-        type=args.server_type,
-        help=("default runner server type name, default: cx22"),
-    )
-
-    parser.add_argument(
-        "--default-location",
-        metavar="name",
-        type=args.location_type,
-        help=("default runner server location name, by default not specified"),
-    )
-
-    parser.add_argument(
-        "--default-volume-size",
-        metavar="size",
-        type=args.count_type,
-        help="default runner server volume size in GB, default: 10",
-    )
-
-    parser.add_argument(
-        "--default-volume-location",
-        metavar="name",
-        type=args.location_type,
-        help=(
-            "default runner server volume location name, by default 'nbg1' (must be specified)"
-        ),
-    )
 
     parser.add_argument(
         "-w",
