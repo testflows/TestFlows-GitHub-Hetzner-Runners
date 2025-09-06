@@ -22,12 +22,12 @@ import subprocess
 from datetime import datetime, timezone
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-package = os.path.join("testflows", "github", "runners")
+package = os.path.join("testflows", "runners")
 init_path = os.path.join(current_dir, package, "__init__.py")
 setup_path = os.path.join(current_dir, "setup.py")
 
 parser = argparse.ArgumentParser(
-    description="TestFlows - GitHub Actions Runners using Hetzner Cloud packaging script"
+    description="TestFlows - Autoscaling Runners for GitHub packaging script"
 )
 parser.add_argument(
     "--debug", help="enable debugging", action="store_true", default=False

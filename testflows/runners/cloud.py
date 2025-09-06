@@ -39,8 +39,8 @@ from .service import command_options
 from .hclient import HClient as Client
 
 current_dir = os.path.dirname(__file__)
-deploy_scripts_folder = "/home/ubuntu/.github-runners/scripts/"
-deploy_configs_folder = "/home/ubuntu/.github-runners/"
+deploy_scripts_folder = "/home/ubuntu/.tfs-runners/scripts/"
+deploy_configs_folder = "/home/ubuntu/.tfs-runners/"
 
 
 def get_server(config: Config) -> Server:
@@ -76,7 +76,7 @@ def get_server(config: Config) -> Server:
 
 
 def deploy(args, config: Config, redeploy=False):
-    """Deploy or redeploy github-runners as a service to
+    """Deploy or redeploy tfs-runners as a service to
     a provider's server instance."""
 
     config.check("hetzner_token")
@@ -171,11 +171,11 @@ def deploy(args, config: Config, redeploy=False):
         with Action("Executing setup.sh script"):
             ssh(server, f"bash -s  < {deploy_setup_script}", stacklevel=4)
 
-    with Action(f"Installing github-runners {version}"):
-        command = f"'sudo -u ubuntu pip3 install testflows.github.runners=={version}'"
+    with Action(f"Installing tfs-runners {version}"):
+        command = f"'sudo -u ubuntu pip3 install testflows.runners=={version}'"
 
         if version.strip().lower() == "latest":
-            command = f"'sudo -u ubuntu pip3 install testflows.github.runners'"
+            command = f"'sudo -u ubuntu pip3 install testflows.runners'"
             if redeploy:
                 command.replace("pip3 install", "pip3 install --upgrade")
 
@@ -247,7 +247,7 @@ def install(args, config: Config, server: BoundServer = None):
 
     with Action("Installing service"):
         command = f"\"su - ubuntu -c '"
-        command += "github-runners"
+        command += "tfs-runners"
         command += command_options(
             config,
             github_token=config.github_token,
@@ -260,7 +260,7 @@ def install(args, config: Config, server: BoundServer = None):
 
 
 def upgrade(args, config: Config, server: BoundServer = None):
-    """Upgrade github-runners application on a cloud instance."""
+    """Upgrade tfs-runners application on a cloud instance."""
     if server is None:
         server = get_server(config)
 
@@ -269,17 +269,17 @@ def upgrade(args, config: Config, server: BoundServer = None):
     stop(args, config=config, server=server)
 
     if upgrade_version:
-        with Action(f"Upgrading github-runners to version {upgrade_version}"):
+        with Action(f"Upgrading tfs-runners to version {upgrade_version}"):
             ssh(
                 server,
-                f"'sudo -u ubuntu pip3 install testflows.github.runners=={upgrade_version}'",
+                f"'sudo -u ubuntu pip3 install testflows.runners=={upgrade_version}'",
                 stacklevel=4,
             )
     else:
-        with Action(f"Upgrading github-runners the latest version"):
+        with Action(f"Upgrading tfs-runners the latest version"):
             ssh(
                 server,
-                f"'sudo -u ubuntu pip3 install --upgrade testflows.github.runners'",
+                f"'sudo -u ubuntu pip3 install --upgrade testflows.runners'",
                 stacklevel=4,
             )
 
@@ -287,24 +287,24 @@ def upgrade(args, config: Config, server: BoundServer = None):
 
 
 def uninstall(args, config: Config, server: BoundServer = None):
-    """Uninstall github-runners service from a cloud instance."""
+    """Uninstall tfs-runners service from a cloud instance."""
     if server is None:
         server = get_server(config)
 
     with Action("Uninstalling service"):
-        command = f"\"su - ubuntu -c 'github-runners service uninstall'\""
+        command = f"\"su - ubuntu -c 'tfs-runners service uninstall'\""
         ssh(server, command, stacklevel=4)
 
 
 def delete(args, config: Config, server: BoundServer = None):
-    """Delete github-runners service running
+    """Delete tfs-runners service running
     on cloud instance by stopping the service
     and deleting the server."""
     if server is None:
         server = get_server(config)
 
     with Action("Uninstalling service", ignore_fail=True):
-        command = f"\"su - ubuntu -c 'github-runners service uninstall'\""
+        command = f"\"su - ubuntu -c 'tfs-runners service uninstall'\""
         ssh(server, command, stacklevel=4)
 
     with Action(f"Deleting server {server.name}"):
@@ -317,7 +317,7 @@ def log(args, config: Config, server: BoundServer = None):
         server = get_server(config)
 
     command = (
-        f"\"su - ubuntu -c 'github-runners service log"
+        f"\"su - ubuntu -c 'tfs-runners service log"
         + (" -f" if args.follow else "")
         + (f" -c {args.columns.value}" if args.columns else "")
         + (f" -n {args.lines}" if args.lines else "")
@@ -335,7 +335,7 @@ def download_log(args, config: Config, server: BoundServer = None):
     ip = ip_address(server)
     with Action(f"Downloading log from {server.name} to {args.output}"):
         scp(
-            source=f"root@{ip}:{os.path.join(tempfile.gettempdir(), 'github-runners.log')}",
+            source=f"root@{ip}:{os.path.join(tempfile.gettempdir(), 'tfs-runners.log')}",
             destination=args.output,
         )
 
@@ -345,7 +345,7 @@ def delete_log(args, config: Config, server: BoundServer = None):
     if server is None:
         server = get_server(config)
 
-    command = f"\"su - ubuntu -c 'github-runners service log delete'\""
+    command = f"\"su - ubuntu -c 'tfs-runners service log delete'\""
     ssh(server, command, use_logger=False, stacklevel=4)
 
 
@@ -355,7 +355,7 @@ def status(args, config: Config, server: BoundServer = None):
         server = get_server(config)
 
     with Action("Getting status"):
-        command = f"\"su - ubuntu -c 'github-runners service status'\""
+        command = f"\"su - ubuntu -c 'tfs-runners service status'\""
         ssh(server, command, stacklevel=4)
 
 
@@ -365,7 +365,7 @@ def start(args, config: Config, server: BoundServer = None):
         server = get_server(config)
 
     with Action("Starting service"):
-        command = f"\"su - ubuntu -c 'github-runners service start'\""
+        command = f"\"su - ubuntu -c 'tfs-runners service start'\""
         ssh(server, command, stacklevel=4)
 
 
@@ -375,12 +375,12 @@ def stop(args, config: Config, server: BoundServer = None):
         server = get_server(config)
 
     with Action("Stopping service"):
-        command = f"\"su - ubuntu -c 'github-runners service stop'\""
+        command = f"\"su - ubuntu -c 'tfs-runners service stop'\""
         ssh(server, command, stacklevel=4)
 
 
 def ssh_client(args, config: Config, server: BoundServer = None):
-    """Open ssh client to github-runners service running
+    """Open ssh client to tfs-runners service running
     on Hetzner server instance.
     """
     if server is None:
@@ -390,7 +390,7 @@ def ssh_client(args, config: Config, server: BoundServer = None):
 
 
 def ssh_client_command(args, config: Config, server: BoundServer = None):
-    """Return ssh command to connect to github-runners service running
+    """Return ssh command to connect to tfs-runners service running
     on Hetzner server instance.
     """
     if server is None:

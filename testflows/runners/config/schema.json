@@ -16,7 +16,7 @@
                 "github_repository": {
                     "description": "GitHub repository",
                     "type": "string",
-                    "examples": ["${GITHUB_REPOSITORY}","testflows/testflows-github-runners"]
+                    "examples": ["${GITHUB_REPOSITORY}","testflows/testflows-tfs-runners"]
                 },
                 "providers": {
                     "description": "Multi-provider configurations. Each configured provider is enabled.",
@@ -92,7 +92,7 @@
                                 "key_name": {
                                     "description": "AWS EC2 key pair name",
                                     "type": "string",
-                                    "examples": ["github-runners-keypair"]
+                                    "examples": ["tfs-runners-keypair"]
                                 },
                                 "defaults": {
                                     "description": "Default server specifications for AWS",
@@ -160,7 +160,7 @@
                                 "resource_group": {
                                     "description": "Azure resource group name",
                                     "type": "string",
-                                    "examples": ["github-runners-rg"]
+                                    "examples": ["tfs-runners-rg"]
                                 },
                                 "defaults": {
                                     "description": "Default server specifications for Azure",
@@ -551,9 +551,9 @@
                             "examples": ["hetzner"]
                         },
                         "server_name": {
-                            "description": "The deployment server name, default: github-runners-service.",
+                            "description": "The deployment server name, default: tfs-runners-service.",
                             "type": "string",
-                            "examples": ["github-runners-service"]
+                            "examples": ["tfs-runners-service"]
                         },
                         "host": {
                             "description": "Optional direct host/IP for SSH connection (bypasses API lookup)",

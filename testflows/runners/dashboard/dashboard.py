@@ -30,10 +30,10 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # Now try absolute imports
-import testflows.github.runners.dashboard.bootstrap as bootstrap
-import testflows.github.runners.dashboard.panels.update_interval as update_interval
-import testflows.github.runners.dashboard.renderers as renderers
-import testflows.github.runners.dashboard.metrics.tracker as tracker
+import testflows.runners.dashboard.bootstrap as bootstrap
+import testflows.runners.dashboard.panels.update_interval as update_interval
+import testflows.runners.dashboard.renderers as renderers
+import testflows.runners.dashboard.metrics.tracker as tracker
 
 
 def configure_page():
@@ -97,7 +97,7 @@ def reload_panels(reload: bool = False):
     ]
 
     for name in panel_names:
-        module_name = f"testflows.github.runners.dashboard.panels.{name}"
+        module_name = f"testflows.runners.dashboard.panels.{name}"
 
         # Reload if already loaded, otherwise import
         if module_name in sys.modules:

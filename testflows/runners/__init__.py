@@ -14,7 +14,7 @@
 # limitations under the License.
 __author__ = "Vitaliy Zakaznikov"
 __version__ = "2.0.__VERSION__"
-__name__ = "testflows.github.runners"
+__name__ = "testflows.runners"
 __license__ = f"""
 Copyright 2023-2025 Katteli Inc.
 TestFlows.com Open-Source Software Testing Framework (http://testflows.com)

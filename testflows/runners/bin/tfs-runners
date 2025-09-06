@@ -34,42 +34,42 @@ from github.Repository import Repository
 
 from argparse import ArgumentParser, RawTextHelpFormatter, ArgumentTypeError
 
-from testflows.github.runners import __version__, __license__
-from testflows.github.runners.hclient import HClient as Client
-from testflows.github.runners.actions import Action
-from testflows.github.runners.scale_up import scale_up
-from testflows.github.runners.scale_down import scale_down
-from testflows.github.runners.api_watch import api_watch
-from testflows.github.runners.logger import (
+from testflows.runners import __version__, __license__
+from testflows.runners.hclient import HClient as Client
+from testflows.runners.actions import Action
+from testflows.runners.scale_up import scale_up
+from testflows.runners.scale_down import scale_down
+from testflows.runners.api_watch import api_watch
+from testflows.runners.logger import (
     logger,
     configure as configure_logger,
 )
-from testflows.github.runners.config import (
+from testflows.runners.config import (
     Config,
     check_image,
     default_user_config,
 )
-from testflows.github.runners.config import (
+from testflows.runners.config import (
     check_ssh_key,
     check_location,
     check_server_type,
     check_prices,
 )
-from testflows.github.runners.dashboard import (
+from testflows.runners.dashboard import (
     start_http_server as start_dashboard_server,
 )
 
-import testflows.github.runners.args as args
-import testflows.github.runners.cloud as cloud
-import testflows.github.runners.service as service
-import testflows.github.runners.servers as servers
-import testflows.github.runners.estimate as estimate
-import testflows.github.runners.images as images
-import testflows.github.runners.projects as projects
-import testflows.github.runners.volumes as volumes
+import testflows.runners.args as args
+import testflows.runners.cloud as cloud
+import testflows.runners.service as service
+import testflows.runners.servers as servers
+import testflows.runners.estimate as estimate
+import testflows.runners.images as images
+import testflows.runners.projects as projects
+import testflows.runners.volumes as volumes
 
 # Provider-specific argument validators
-from testflows.github.runners.providers import hetzner, aws, azure, gcp, scaleway
+from testflows.runners.providers import hetzner, aws, azure, gcp, scaleway
 
 from requests_cache import DO_NOT_CACHE, EXPIRE_IMMEDIATELY, install_cache
 from requests_cache.backends.filesystem import FileCache
@@ -86,7 +86,7 @@ description = f"""Auto-scaling GitHub Actions runners service using Hetzner Clou
 
     * Command line arguments (highest precedence)
     * Project configuration (if --project is specified or project is set)
-    * Environment variables ($GITHUB_TOKEN, $GITHUB_REPOSITORY, $HETZNER_TOKEN, $GITHUB_HETZNER_RUNNERS_CONFIG)
+    * Environment variables ($GITHUB_TOKEN, $GITHUB_REPOSITORY, $HETZNER_TOKEN, $RUNNERS_CONFIG)
     * Configuration file (specified via --config or the default user config '{default_user_config}')
     * Default values (lowest precedence)
 """
@@ -96,7 +96,7 @@ def argparser():
     """Command line argument parser."""
 
     parser = ArgumentParser(
-        "github-runners",
+        "tfs-runners",
         description=description,
         formatter_class=RawTextHelpFormatter,
     )
@@ -128,9 +128,9 @@ def argparser():
         metavar="file",
         dest="config_file",
         type=args.config_type,
-        help=f"program yaml configuration file, default: project config or $GITHUB_HETZNER_RUNNERS_CONFIG env var or {default_user_config}",
+        help=f"program yaml configuration file, default: project config or $RUNNERS_CONFIG env var or {default_user_config}",
         default=os.environ.get(
-            "GITHUB_HETZNER_RUNNERS_CONFIG", "__default_user_config__"
+            "RUNNERS_CONFIG", "__default_user_config__"
         ),
     )
 
@@ -807,7 +807,7 @@ def argparser():
         help="upgrade cloud service",
         description=(
             "Upgrade cloud service application.\n\n"
-            "If specific '--version' is specified then the `testflows.github.runners`\n"
+            "If specific '--version' is specified then the `testflows.runners`\n"
             "package is upgraded to the specified version otherwise the version is\n"
             "upgraded to the latest available.\n\n"
             "Note: The service is not re-installed during the package upgrade process.\n"
