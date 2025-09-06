@@ -45,6 +45,12 @@ setup(
         "testflows.github.runners.dashboard",
         "testflows.github.runners.dashboard.panels",
         "testflows.github.runners.dashboard.metrics",
+        "testflows.github.runners.providers",
+        "testflows.github.runners.providers.hetzner",
+        "testflows.github.runners.providers.aws",
+        "testflows.github.runners.providers.azure",
+        "testflows.github.runners.providers.gcp",
+        "testflows.github.runners.providers.scaleway",
     ],
     package_data={
         "testflows.github.runners.config": ["*.json"],
