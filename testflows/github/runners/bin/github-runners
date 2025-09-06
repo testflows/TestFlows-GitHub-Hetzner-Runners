@@ -34,42 +34,42 @@ from github.Repository import Repository
 
 from argparse import ArgumentParser, RawTextHelpFormatter, ArgumentTypeError
 
-from testflows.github.hetzner.runners import __version__, __license__
-from testflows.github.hetzner.runners.hclient import HClient as Client
-from testflows.github.hetzner.runners.actions import Action
-from testflows.github.hetzner.runners.scale_up import scale_up
-from testflows.github.hetzner.runners.scale_down import scale_down
-from testflows.github.hetzner.runners.api_watch import api_watch
-from testflows.github.hetzner.runners.logger import (
+from testflows.github.runners import __version__, __license__
+from testflows.github.runners.hclient import HClient as Client
+from testflows.github.runners.actions import Action
+from testflows.github.runners.scale_up import scale_up
+from testflows.github.runners.scale_down import scale_down
+from testflows.github.runners.api_watch import api_watch
+from testflows.github.runners.logger import (
     logger,
     configure as configure_logger,
 )
-from testflows.github.hetzner.runners.config import (
+from testflows.github.runners.config import (
     Config,
     check_image,
     default_user_config,
 )
-from testflows.github.hetzner.runners.config import (
+from testflows.github.runners.config import (
     check_ssh_key,
     check_location,
     check_server_type,
     check_prices,
 )
-from testflows.github.hetzner.runners.dashboard import (
+from testflows.github.runners.dashboard import (
     start_http_server as start_dashboard_server,
 )
 
-import testflows.github.hetzner.runners.args as args
-import testflows.github.hetzner.runners.cloud as cloud
-import testflows.github.hetzner.runners.service as service
-import testflows.github.hetzner.runners.servers as servers
-import testflows.github.hetzner.runners.estimate as estimate
-import testflows.github.hetzner.runners.images as images
-import testflows.github.hetzner.runners.projects as projects
-import testflows.github.hetzner.runners.volumes as volumes
+import testflows.github.runners.args as args
+import testflows.github.runners.cloud as cloud
+import testflows.github.runners.service as service
+import testflows.github.runners.servers as servers
+import testflows.github.runners.estimate as estimate
+import testflows.github.runners.images as images
+import testflows.github.runners.projects as projects
+import testflows.github.runners.volumes as volumes
 
 # Provider-specific argument validators
-from testflows.github.hetzner.runners.providers import hetzner, aws, azure, gcp, scaleway
+from testflows.github.runners.providers import hetzner, aws, azure, gcp, scaleway
 
 from requests_cache import DO_NOT_CACHE, EXPIRE_IMMEDIATELY, install_cache
 from requests_cache.backends.filesystem import FileCache
@@ -96,7 +96,7 @@ def argparser():
     """Command line argument parser."""
 
     parser = ArgumentParser(
-        "github-hetzner-runners",
+        "github-runners",
         description=description,
         formatter_class=RawTextHelpFormatter,
     )
@@ -807,7 +807,7 @@ def argparser():
         help="upgrade cloud service",
         description=(
             "Upgrade cloud service application.\n\n"
-            "If specific '--version' is specified then the `testflows.github.hetzner.runners`\n"
+            "If specific '--version' is specified then the `testflows.github.runners`\n"
             "package is upgraded to the specified version otherwise the version is\n"
             "upgraded to the latest available.\n\n"
             "Note: The service is not re-installed during the package upgrade process.\n"
@@ -1910,17 +1910,18 @@ if __name__ == "__main__":
             sys.stdout.flush()
 
     if hasattr(arguments, "func"):
-        try:
-            arguments.func(args=arguments, config=config)
-        except KeyboardInterrupt:
-            if config.debug:
-                raise
-        except BaseException as exc:
-            if config.debug:
-                raise
-            if not hasattr(exc, "processed"):
-                logger.critical(f"❗ Error: {exc}")
-            sys.exit(1)
+        raise NotImplementedError("handligh of commands that use arguments.func is not implemented")
+        # try:
+        #     arguments.func(args=arguments, config=config)
+        # except KeyboardInterrupt:
+        #     if config.debug:
+        #         raise
+        # except BaseException as exc:
+        #     if config.debug:
+        #         raise
+        #     if not hasattr(exc, "processed"):
+        #         logger.critical(f"❗ Error: {exc}")
+        #     sys.exit(1)
 
     else:
         config.check()
@@ -1929,4 +1930,6 @@ if __name__ == "__main__":
             with ThreadPoolExecutor(
                 max_workers=config.workers + 3, thread_name_prefix="worker"
             ) as worker_pool:
-                main(config=config, worker_pool=worker_pool)
+                #FIXME: for now don't run main() to debug config parsing and processing
+                #main(config=config, worker_pool=worker_pool)
+                print("Config loaded and checked... exiting")

@@ -15,5 +15,5 @@
 # limitations under the License.
 import subprocess
 
-subprocess.run("pip3 uninstall -y testflows.github.hetzner.runners", shell=True)
+subprocess.run("pip3 uninstall -y testflows.github.runners", shell=True)
 subprocess.run("pip3 install ./dist/*.tar.gz", shell=True)

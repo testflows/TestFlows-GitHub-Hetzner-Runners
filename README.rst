@@ -3,29 +3,29 @@
    :target: https://testflows.com
    :alt: TestFlows Open-source Testing Framework
 
-.. image:: https://img.shields.io/github/v/release/testflows/TestFlows-GitHub-Hetzner-Runners
-   :target: https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/releases
+.. image:: https://img.shields.io/github/v/release/testflows/github-runners
+   :target: https://github.com/testflows/github-runners/releases
    :alt: Latest Release
 
-.. image:: https://img.shields.io/github/contributors/testflows/TestFlows-GitHub-Hetzner-Runners
-   :target: https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/graphs/contributors
+.. image:: https://img.shields.io/github/contributors/testflows/github-runners
+   :target: https://github.com/testflows/github-runners/graphs/contributors
    :alt: Contributors
 
-.. image:: https://img.shields.io/github/issues/testflows/TestFlows-GitHub-Hetzner-Runners
-   :target: https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/issues
+.. image:: https://img.shields.io/github/issues/testflows/github-runners
+   :target: https://github.com/testflows/github-runners/issues
    :alt: Open Issues
 
-.. image:: https://img.shields.io/github/stars/testflows/TestFlows-GitHub-Hetzner-Runners?style=plastic
-   :target: https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/stargazers
+.. image:: https://img.shields.io/github/stars/testflows/github-runners?style=plastic
+   :target: https://github.com/testflows/github-runners/stargazers
    :alt: GitHub stars
 
 ----
 
 
 :PyPi:
-   `Versions <https://pypi.org/project/testflows.github.hetzner.runners/>`_
+   `Versions <https://pypi.org/project/testflows.github.runners/>`_
 :License:
-   `Apache-2.0 <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/blob/main/LICENSE>`_
+   `Apache-2.0 <https://github.com/testflows/github-runners/blob/main/LICENSE>`_
 
 =====================================================================
 🛸 Autoscaling Self-Hosted GitHub Actions Runners on Hetzner Cloud 
@@ -34,7 +34,7 @@
 A simple alternative to Github's `Recommended autoscaling solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_.
 
 :🔍 Tip:
-   See `Wiki <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki>`_ for full documentation.
+   See `Wiki <https://github.com/testflows/github-runners/wiki>`_ for full documentation.
 
 The **github-hetzner-runners** service program starts and monitors queued-up jobs for GitHub Actions workflows.
 When a new job is queued up, it creates a new Hetzner Cloud server instance
@@ -43,7 +43,7 @@ powered off when the job completes, and then powered off servers are
 automatically deleted. Both **x64** (*x86*) and **arm64** (*arm*) runners are supported.
 See `Features <#-features>`_ and `Limitations <#-limitations>`_ for more details.
 
-.. image:: https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/blob/main/docs/images/github_runners.gif
+.. image:: https://github.com/testflows/github-runners/blob/main/docs/images/github_runners.gif
    :align: center
    :alt: TestFlows GitHub Runners in Action
 
@@ -57,7 +57,7 @@ to avoid any cleanup. Server instances are not shared between jobs.
 
 :✋ Note:
    Currently, Hetzner Cloud server instances are billed on an hourly basis. So a job that takes 1 minute will be billed
-   the same way as for a job that takes 59 minutes. Therefore, unless server reuse is enabled using `server recycling <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Recycling-Powered%E2%80%90Off-Servers>`_, 
+   the same way as for a job that takes 59 minutes. Therefore, unless server reuse is enabled using `server recycling <https://github.com/testflows/github-runners/wiki/Recycling-Powered%E2%80%90Off-Servers>`_, 
    the minimal cost for any job is the cost of the server for one hour plus the cost of one public IPv4 address. 
    If server recycling is used, the amortized cost could be close to per-minute billing depending on server utilization.
 
@@ -147,47 +147,47 @@ The following projects are using **github-hetzner-runners** to enable self-hoste
 📝 Table of Contents
 ====================
 
-* `Home <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki>`_
-* `Installation <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Installation>`_
-* `Quick Start <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Quick-Start>`_
-* `Getting Started Tutorial <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Getting-Started-Tutorial>`_
-* `Basic Configuration <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Basic-Configuration>`_
-* `Specifying the Maximum Number of Runners <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-the-Maximum-Number-of-Runners>`_
-* `Specifying the Maximum Number of Runners Used in Workflow a Run <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-the-Maximum-Number-of-Runners-Used-in-Workflow-a-Run>`_
-* `Recycling Powered‐Off Servers <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Recycling-Powered‐Off-Servers>`_
-* `Skipping Jobs <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Skipping-Jobs>`_
-* `Using Custom Label Prefix <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Using-Custom-Label-Prefix>`_
-* `Jobs That Require the Docker Engine <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Jobs-That-Require-the-Docker-Engine>`_
-* `Specifying The Runner Type <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Type>`_
-* `Specifying The Runner Location <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Location>`_
-* `Specifying The Runner Network <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Network>`_
-* `Specifying The Runner Image <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Image>`_
-* `Specifying The Custom Runner Server Setup Script <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Custom-Runner-Server-Setup-Script>`_
-* `Specifying The Custom Runner Server Startup Script <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Custom-Runner-Server-Startup-Script>`_
-* `Disabling Setup or Startup Scripts <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Disabling-Setup-Or-Startup-Scripts>`_
-* `Specifying Standby Runners <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-Standby-Runners>`_
-* `Using Caching Volumes <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Using-Caching-Volumes>`_
-* `Specifying Logger Configuration <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-Logger-Configuration>`_
-* `Listing All Current Servers <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Listing-All-Current-Servers>`_
-* `Opening The SSH Client To The Server <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Opening-The-SSH-Client-To-The-Server>`_
-* `Deleting All Runners and Their Servers <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Deleting-All-Runners-and-Their-Servers>`_
-* `Using a Configuration File <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Using-a-Configuration-File>`_
-* `Using Project Configuration Files <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Using-Project-Configuration-Files>`_
-* `Specifying SSH Key <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-SSH-Key>`_
-* `Specifying Additional SSH Keys <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-Additional-SSH-Keys>`_
-* `Running as a Service <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Running-as-a-Service>`_
-* `Running as a Cloud Service <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Running-as-a-Cloud-Service>`_
-* `Scaling Up Runners <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Scaling-Up-Runners>`_
-* `Scaling Down Runners <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Scaling-Down-Runners>`_
-* `Handling Failing Conditions <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Handling-Failing-Conditions>`_
-* `Meta Labels <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Meta-Labels>`_
-* `Estimating Costs <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Estimating-Costs>`_
-* `Listing Images <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Listing-Images>`_
-* `Deleting Images <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Deleting-Images>`_
-* `Creating Custom Images <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Creating-Custom-Images>`_
-* `Embedded Monitoring Dashboard <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Embedded-Monitoring-Dashboard>`_
-* `Prometheus Metrics <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Prometheus-Metrics>`_
-* `Program Options <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Program-Options>`_
+* `Home <https://github.com/testflows/github-runners/wiki>`_
+* `Installation <https://github.com/testflows/github-runners/wiki/Installation>`_
+* `Quick Start <https://github.com/testflows/github-runners/wiki/Quick-Start>`_
+* `Getting Started Tutorial <https://github.com/testflows/github-runners/wiki/Getting-Started-Tutorial>`_
+* `Basic Configuration <https://github.com/testflows/github-runners/wiki/Basic-Configuration>`_
+* `Specifying the Maximum Number of Runners <https://github.com/testflows/github-runners/wiki/Specifying-the-Maximum-Number-of-Runners>`_
+* `Specifying the Maximum Number of Runners Used in Workflow a Run <https://github.com/testflows/github-runners/wiki/Specifying-the-Maximum-Number-of-Runners-Used-in-Workflow-a-Run>`_
+* `Recycling Powered‐Off Servers <https://github.com/testflows/github-runners/wiki/Recycling-Powered‐Off-Servers>`_
+* `Skipping Jobs <https://github.com/testflows/github-runners/wiki/Skipping-Jobs>`_
+* `Using Custom Label Prefix <https://github.com/testflows/github-runners/wiki/Using-Custom-Label-Prefix>`_
+* `Jobs That Require the Docker Engine <https://github.com/testflows/github-runners/wiki/Jobs-That-Require-the-Docker-Engine>`_
+* `Specifying The Runner Type <https://github.com/testflows/github-runners/wiki/Specifying-The-Runner-Type>`_
+* `Specifying The Runner Location <https://github.com/testflows/github-runners/wiki/Specifying-The-Runner-Location>`_
+* `Specifying The Runner Network <https://github.com/testflows/github-runners/wiki/Specifying-The-Runner-Network>`_
+* `Specifying The Runner Image <https://github.com/testflows/github-runners/wiki/Specifying-The-Runner-Image>`_
+* `Specifying The Custom Runner Server Setup Script <https://github.com/testflows/github-runners/wiki/Specifying-The-Custom-Runner-Server-Setup-Script>`_
+* `Specifying The Custom Runner Server Startup Script <https://github.com/testflows/github-runners/wiki/Specifying-The-Custom-Runner-Server-Startup-Script>`_
+* `Disabling Setup or Startup Scripts <https://github.com/testflows/github-runners/wiki/Disabling-Setup-Or-Startup-Scripts>`_
+* `Specifying Standby Runners <https://github.com/testflows/github-runners/wiki/Specifying-Standby-Runners>`_
+* `Using Caching Volumes <https://github.com/testflows/github-runners/wiki/Using-Caching-Volumes>`_
+* `Specifying Logger Configuration <https://github.com/testflows/github-runners/wiki/Specifying-Logger-Configuration>`_
+* `Listing All Current Servers <https://github.com/testflows/github-runners/wiki/Listing-All-Current-Servers>`_
+* `Opening The SSH Client To The Server <https://github.com/testflows/github-runners/wiki/Opening-The-SSH-Client-To-The-Server>`_
+* `Deleting All Runners and Their Servers <https://github.com/testflows/github-runners/wiki/Deleting-All-Runners-and-Their-Servers>`_
+* `Using a Configuration File <https://github.com/testflows/github-runners/wiki/Using-a-Configuration-File>`_
+* `Using Project Configuration Files <https://github.com/testflows/github-runners/wiki/Using-Project-Configuration-Files>`_
+* `Specifying SSH Key <https://github.com/testflows/github-runners/wiki/Specifying-SSH-Key>`_
+* `Specifying Additional SSH Keys <https://github.com/testflows/github-runners/wiki/Specifying-Additional-SSH-Keys>`_
+* `Running as a Service <https://github.com/testflows/github-runners/wiki/Running-as-a-Service>`_
+* `Running as a Cloud Service <https://github.com/testflows/github-runners/wiki/Running-as-a-Cloud-Service>`_
+* `Scaling Up Runners <https://github.com/testflows/github-runners/wiki/Scaling-Up-Runners>`_
+* `Scaling Down Runners <https://github.com/testflows/github-runners/wiki/Scaling-Down-Runners>`_
+* `Handling Failing Conditions <https://github.com/testflows/github-runners/wiki/Handling-Failing-Conditions>`_
+* `Meta Labels <https://github.com/testflows/github-runners/wiki/Meta-Labels>`_
+* `Estimating Costs <https://github.com/testflows/github-runners/wiki/Estimating-Costs>`_
+* `Listing Images <https://github.com/testflows/github-runners/wiki/Listing-Images>`_
+* `Deleting Images <https://github.com/testflows/github-runners/wiki/Deleting-Images>`_
+* `Creating Custom Images <https://github.com/testflows/github-runners/wiki/Creating-Custom-Images>`_
+* `Embedded Monitoring Dashboard <https://github.com/testflows/github-runners/wiki/Embedded-Monitoring-Dashboard>`_
+* `Prometheus Metrics <https://github.com/testflows/github-runners/wiki/Prometheus-Metrics>`_
+* `Program Options <https://github.com/testflows/github-runners/wiki/Program-Options>`_
 
 ==============
 🔧 Limitations
@@ -217,7 +217,7 @@ The following projects are using **github-hetzner-runners** to enable self-hoste
 
 .. code-block:: bash
 
-   pip3 install testflows.github.hetzner.runners
+   pip3 install testflows.github.runners
 
 Check that the **github-hetzner-runners** utility was installed correctly by executing the **github-hetzner-runners -v** command.
 
@@ -305,11 +305,11 @@ for a GitHub repository and a Hetzner Cloud project that you'll create.
 Installing TestFlows Github Runners
 -----------------------------------
 
-❶ Before we get started, you will need to install **testflows.github.hetzner.runners** Python package. See the `Installation <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Installation>`_ section for more details.
+❶ Before we get started, you will need to install **testflows.github.runners** Python package. See the `Installation <https://github.com/testflows/github-runners/wiki/Installation>`_ section for more details.
 
 .. code-block:: bash
 
-  pip3 install testflows.github.hetzner.runners
+  pip3 install testflows.github.runners
 
 ❷ Check that the **github-hetzner-runners** utility was installed correctly by executing the **github-hetzner-runners -v** command.
 
@@ -417,7 +417,7 @@ You should now have your GitHub repository ready.
 
 See these steps in action:
 
-.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Hetzner-Runners/master/docs/images/github_create_repo_and_token.gif
+.. image:: https://raw.githubusercontent.com/testflows/github-runners/master/docs/images/github_create_repo_and_token.gif
    :align: center
    :width: 790px
    :alt: Creating a GitHub Repository and Token
@@ -442,7 +442,7 @@ You should now have your Hetzner Cloud project ready.
 
 See these steps in action:
 
-.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Hetzner-Runners/master/docs/images/hetzner_create_project_and_token.gif
+.. image:: https://raw.githubusercontent.com/testflows/github-runners/master/docs/images/hetzner_create_project_and_token.gif
    :align: center
    :width: 790px
    :alt: Creating a GitHub Repository and Token
@@ -455,7 +455,7 @@ With the GitHub repository and GitHub and Hetzner Cloud tokens in hand, we can d
 to the Hetzner Cloud instance. This way, the service is not running on your local machine.
 
 During the deployment, we'll create a **github-hetzner-runners** instance in your Hetzner Cloud project on which the service will be running.
-See the `Running as a Cloud Service <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Running-as-a-Cloud-Service>`_ section for details.
+See the `Running as a Cloud Service <https://github.com/testflows/github-runners/wiki/Running-as-a-Cloud-Service>`_ section for details.
 
 ❶ To deploy the service run the **github-hetzner-runners cloud deploy** command and specify your
 GitHub repository, GitHub, and Hetzner Cloud tokens using
@@ -472,7 +472,7 @@ You should now have the cloud service up and running.
 
 See these steps in action:
 
-.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Hetzner-Runners/master/docs/images/cloud_deploy.gif
+.. image:: https://raw.githubusercontent.com/testflows/github-runners/master/docs/images/cloud_deploy.gif
    :align: center
    :width: 625px
    :alt: Deploying Cloud Service
@@ -486,7 +486,7 @@ spins up a new runner to complete any queued-up GitHub Actions jobs in your GitH
 
 See this step in action:
 
-.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Hetzner-Runners/master/docs/images/github_job_completed.gif
+.. image:: https://raw.githubusercontent.com/testflows/github-runners/master/docs/images/github_job_completed.gif
    :align: center
    :width: 790px
    :alt: Waiting For the GitHub Actions Job to Complete
@@ -496,7 +496,7 @@ As you can see, our job was executed and completed using our own self-hosted run
 :✋ Note:
 
    If you run into any issues, you can check the cloud service log using the
-   **github-hetzner-runners cloud log -f** command. For other cloud service commands, see the `Running as a Cloud Service <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Running-as-a-Cloud-Service>`_ section.
+   **github-hetzner-runners cloud log -f** command. For other cloud service commands, see the `Running as a Cloud Service <https://github.com/testflows/github-runners/wiki/Running-as-a-Cloud-Service>`_ section.
 
    .. code-block:: bash
 
@@ -517,19 +517,19 @@ The service supports an embedded monitoring dashboard that provides real-time vi
 * Scale-up error tracking
 * Log messages (last 100 lines) with full log download capability
 
-Below is a demonstration of the `embedded monitoring dashboard <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Embedded-Monitoring-Dashboard>`_ in action, monitoring runners for the `altinity/clickhouse-regression <https://github.com/altinity/clickhouse-regression>`_ project:
+Below is a demonstration of the `embedded monitoring dashboard <https://github.com/testflows/github-runners/wiki/Embedded-Monitoring-Dashboard>`_ in action, monitoring runners for the `altinity/clickhouse-regression <https://github.com/altinity/clickhouse-regression>`_ project:
 
-.. image:: https://raw.githubusercontent.com/testflows/TestFlows-GitHub-Hetzner-Runners/master/docs/images/embedded-monitoring-dashboard.gif
+.. image:: https://raw.githubusercontent.com/testflows/github-runners/master/docs/images/embedded-monitoring-dashboard.gif
    :align: center
    :width: 790px
    :alt: Embedded Monitoring Dashboard
 
-See `Embedded Monitoring Dashboard <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Embedded-Monitoring-Dashboard>`_ for more details.
+See `Embedded Monitoring Dashboard <https://github.com/testflows/github-runners/wiki/Embedded-Monitoring-Dashboard>`_ for more details.
 
 ----
 
-🔍 See `Wiki <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki>`_ for full documentation.
+🔍 See `Wiki <https://github.com/testflows/github-runners/wiki>`_ for full documentation.
 
 Developed and maintained by the `TestFlows <https://testflows.com>`_ team.
 
-.. _Config class: https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/blob/main/testflows/github/hetzner/runners/config.py#L45
+.. _Config class: https://github.com/testflows/github-runners/blob/main/testflows/github/runners/config.py#L45

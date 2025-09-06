@@ -15,7 +15,7 @@
 import streamlit as st
 from datetime import datetime
 
-from testflows.github.hetzner.runners import __version__
+from testflows.github.runners import __version__
 from .. import renderers
 
 
@@ -28,6 +28,4 @@ def render():
                 f"© 2023-{datetime.now().year} Katteli Inc. All rights reserved.",
                 width="content",
             )
-            st.caption(
-                f"TestFlows GitHub Hetzner Runners v{__version__}", width="content"
-            )
+            st.caption(f"TestFlows GitHub Runners v{__version__}", width="content")

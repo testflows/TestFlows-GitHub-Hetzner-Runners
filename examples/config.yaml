@@ -1,7 +1,17 @@
 config:
     github_token: ${GITHUB_TOKEN}
     github_repository: ${GITHUB_REPOSITORY}
-    hetzner_token: ${HETZNER_TOKEN}
+    
+    # Multi-provider configuration
+    providers:
+        hetzner:
+            token: ${HETZNER_TOKEN}
+            defaults:
+                image: "x86:system:ubuntu-22.04"
+                server_type: cpx11
+                #location: ash
+    
+    # Provider-agnostic settings
     ssh_key: "~/.ssh/id_rsa.pub"
     #additional_ssh_keys:
     # - additional_key
@@ -21,9 +31,6 @@ config:
     #    - label
     #    - ...
     delete_random: false
-    default_image: "x86:system:ubuntu-22.04"
-    default_server_type: cpx11
-    #default_location: ash
     workers: 10
     #scripts:
     max_powered_off_time: 60
@@ -35,7 +42,8 @@ config:
     debug: false
     # cloud service deployment configuration
     cloud:
-        server_name: "github-hetzner-runners"
+        provider: hetzner
+        server_name: "github-runners-service"
         deploy:
             server_type: cpx11
             image: "x86:system:ubuntu-22.04"
@@ -54,28 +62,28 @@ config:
         disable_existing_loggers: false
         formatters:
             stdout:
-                class: testflows.github.hetzner.runners.logger.StdoutFormatter
+                class: testflows.github.runners.logger.StdoutFormatter
                 format: "%(asctime)s %(message)s"
                 datefmt: "%H:%M:%S"
             rotating_file:
-                class: testflows.github.hetzner.runners.logger.RotatingFileFormatter
+                class: testflows.github.runners.logger.RotatingFileFormatter
                 format: "%(asctime)s,%(interval)s,%(levelname)s,%(run_id)s,%(job_id)s,%(server_name)s,%(threadName)s,%(funcName)s,%(message)s"
                 datefmt: "%Y-%m-%d,%H:%M:%S"
         handlers:
             stdout:
                 level: INFO
                 formatter: stdout
-                class: testflows.github.hetzner.runners.logger.StdoutHandler
+                class: testflows.github.runners.logger.StdoutHandler
                 stream: "ext://sys.stdout"
             rotating_logfile:
                 level: DEBUG
                 formatter: rotating_file
-                class: testflows.github.hetzner.runners.logger.RotatingFileHandler
-                filename: /tmp/github-hetzner-runners.log
+                class: testflows.github.runners.logger.RotatingFileHandler
+                filename: /tmp/github-runners.log
                 maxBytes: 10485760
                 backupCount: 1
         loggers:
-            testflows.github.hetzner.runners:
+            testflows.github.runners:
                 level: INFO
                 handlers:
                     - stdout

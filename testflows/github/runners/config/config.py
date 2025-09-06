@@ -2,23 +2,14 @@ import os
 import re
 import sys
 import yaml
-import base64
-import hashlib
 import logging
 import logging.config
 import dataclasses
 
 from dataclasses import dataclass
 
-from hcloud.images.domain import Image
-from hcloud.server_types.domain import ServerType
-from hcloud.locations.domain import Location
-from hcloud.ssh_keys.domain import SSHKey
+import testflows.github.runners.args as args
 
-import testflows.github.hetzner.runners.args as args
-
-from ..hclient import HClient as Client
-from ..actions import Action
 from ..logger import default_format as logger_format
 from ..providers import hetzner, aws, azure, gcp, scaleway
 
@@ -27,7 +18,7 @@ current_dir = os.path.dirname(__file__)
 # add support for parsing ${ENV_VAR} in config
 env_pattern = re.compile(r".*?\${(.*?)}.*?")
 
-default_user_config = os.path.expanduser("~/.github-hetzner-runners/config.yaml")
+default_user_config = os.path.expanduser("~/.github-runners/config.yaml")
 
 
 def env_constructor(loader, node):
@@ -678,28 +669,21 @@ def parse_config(filename: str):
             doc["logger_config"].get("loggers") is not None
         ), "config.logger_config.loggers is not defined"
         assert (
-            doc["logger_config"]["loggers"].get("testflows.github.hetzner.runners")
-            is not None
-        ), 'config.logger_config.loggers."testflows.github.hetzner.runners" is not defined'
+            doc["logger_config"]["loggers"].get("testflows.github.runners") is not None
+        ), 'config.logger_config.loggers."testflows.github.runners" is not defined'
         assert (
-            doc["logger_config"]["loggers"]["testflows.github.hetzner.runners"].get(
-                "handlers"
-            )
+            doc["logger_config"]["loggers"]["testflows.github.runners"].get("handlers")
             is not None
-        ), 'config.logger_config.loggers."testflows.github.hetzner.runners".handlers is not defined'
+        ), 'config.logger_config.loggers."testflows.github.runners".handlers is not defined'
 
         assert isinstance(
-            doc["logger_config"]["loggers"]["testflows.github.hetzner.runners"][
-                "handlers"
-            ],
+            doc["logger_config"]["loggers"]["testflows.github.runners"]["handlers"],
             list,
-        ), 'config.logger_config.loggers."testflows.github.hetzner.runners".handlers is not a list'
+        ), 'config.logger_config.loggers."testflows.github.runners".handlers is not a list'
         assert (
             "stdout"
-            in doc["logger_config"]["loggers"]["testflows.github.hetzner.runners"][
-                "handlers"
-            ]
-        ), 'config.logger_config.loggers."testflows.github.hetzner.runners".handlers missing stdout'
+            in doc["logger_config"]["loggers"]["testflows.github.runners"]["handlers"]
+        ), 'config.logger_config.loggers."testflows.github.runners".handlers missing stdout'
 
         assert (
             doc["logger_config"]["handlers"].get("rotating_logfile") is not None

@@ -18,7 +18,7 @@ import logging
 import logging.handlers
 import tempfile
 
-logger = logging.getLogger("testflows.github.hetzner.runners")
+logger = logging.getLogger("testflows.github.runners")
 
 encoded_message_prefix = "✉ "
 
@@ -170,12 +170,12 @@ def configure(config, level=logging.INFO, service_mode=False):
         "disable_existing_loggers": True,  # Disable existing loggers
         "formatters": {
             "stdout": {
-                "class": "testflows.github.hetzner.runners.logger.StdoutFormatter",
+                "class": "testflows.github.runners.logger.StdoutFormatter",
                 "format": "%(asctime)s %(message)s",
                 "datefmt": "%H:%M:%S",
             },
             "rotating_file": {
-                "class": "testflows.github.hetzner.runners.logger.RotatingFileFormatter",
+                "class": "testflows.github.runners.logger.RotatingFileFormatter",
                 "format": (
                     "%(asctime)s,%(interval)s,%(levelname)s,"
                     "%(run_id)s,%(job_id)s,%(server_name)s,"
@@ -188,22 +188,20 @@ def configure(config, level=logging.INFO, service_mode=False):
             "stdout": {
                 "level": level,
                 "formatter": "stdout",
-                "class": "testflows.github.hetzner.runners.logger.StdoutHandler",
+                "class": "testflows.github.runners.logger.StdoutHandler",
                 "stream": "ext://sys.stdout",
             },
             "rotating_logfile": {
                 "level": level,
                 "formatter": "rotating_file",
-                "class": "testflows.github.hetzner.runners.logger.RotatingFileHandler",
-                "filename": os.path.join(
-                    tempfile.gettempdir(), "github-hetzner-runners.log"
-                ),
+                "class": "testflows.github.runners.logger.RotatingFileHandler",
+                "filename": os.path.join(tempfile.gettempdir(), "github-runners.log"),
                 "maxBytes": 52428800,  # 50MB 50*2**20
                 "backupCount": 10,
             },
         },
         "loggers": {
-            "testflows.github.hetzner.runners": {
+            "testflows.github.runners": {
                 "level": level,
                 "propagate": True,
             },
@@ -231,6 +229,6 @@ def configure(config, level=logging.INFO, service_mode=False):
         handler["level"] = level
 
     # Don't override root logger level - keep it CRITICAL to prevent handling
-    logger_config["loggers"]["testflows.github.hetzner.runners"]["level"] = level
+    logger_config["loggers"]["testflows.github.runners"]["level"] = level
 
     logging.config.dictConfig(logger_config)

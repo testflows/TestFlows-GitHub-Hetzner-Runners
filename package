@@ -22,7 +22,7 @@ import subprocess
 from datetime import datetime, timezone
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-package = os.path.join("testflows", "github", "hetzner", "runners")
+package = os.path.join("testflows", "github", "runners")
 init_path = os.path.join(current_dir, package, "__init__.py")
 setup_path = os.path.join(current_dir, "setup.py")
 
