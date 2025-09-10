@@ -27,6 +27,7 @@ runner_states = ["online", "offline"]
 # Register runner metrics for tracking
 tracker.track("github_hetzner_runners_runners_total_count")
 tracker.track("github_hetzner_runners_runners_busy")
+tracker.track("github_hetzner_runners_runners_idle")
 tracker.track("github_hetzner_runners_runners_total", states=runner_states)
 
 # Register individual standby runner status metrics
@@ -105,6 +106,12 @@ def runners_history(cutoff_minutes=15):
         cutoff_minutes=cutoff_minutes,
     )
 
+    # Get idle runners history
+    idle_timestamps, idle_values = history.data(
+        "github_hetzner_runners_runners_idle",
+        cutoff_minutes=cutoff_minutes,
+    )
+
     # Get online runners history
     online_timestamps, online_values = history.data(
         "github_hetzner_runners_runners_total",
@@ -127,6 +134,10 @@ def runners_history(cutoff_minutes=15):
         "busy": {
             "timestamps": busy_timestamps,
             "values": busy_values,
+        },
+        "idle": {
+            "timestamps": idle_timestamps,
+            "values": idle_values,
         },
         "online": {
             "timestamps": online_timestamps,

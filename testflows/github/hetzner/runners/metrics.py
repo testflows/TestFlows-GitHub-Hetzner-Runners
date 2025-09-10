@@ -151,6 +151,7 @@ RUNNERS_TOTAL_COUNT = Gauge(
 )
 
 RUNNERS_BUSY = Gauge("github_hetzner_runners_runners_busy", "Number of busy runners")
+RUNNERS_IDLE = Gauge("github_hetzner_runners_runners_idle", "Number of idle runners")
 
 # Detailed runner metrics
 RUNNER_INFO = Info(
@@ -770,6 +771,7 @@ def update_runners(
 
     total_runners = 0
     busy_runners = 0
+    idle_runners = 0
 
     # Track counts by status
     status_counts = {}
@@ -813,6 +815,8 @@ def update_runners(
 
             if status == "online" and is_busy:
                 busy_runners += 1
+            elif status == "online" and not is_busy:
+                idle_runners += 1
         except AttributeError:
             # Skip runner metrics if runner.id or runner.name is missing
             pass
@@ -820,6 +824,7 @@ def update_runners(
     # Set total counts
     RUNNERS_TOTAL_COUNT.set(total_runners)
     RUNNERS_BUSY.set(busy_runners)
+    RUNNERS_IDLE.set(idle_runners)
 
     # Set counts by status
     for status in ["online", "offline"]:

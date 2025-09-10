@@ -27,6 +27,9 @@ def render_runners_metrics():
     # Get busy runners count
     busy_runners = metrics.get.metric_value("github_hetzner_runners_runners_busy") or 0
 
+    # Get idle runners count
+    idle_runners = metrics.get.metric_value("github_hetzner_runners_runners_idle") or 0
+
     # Build metrics data
     metrics_data = [
         {"label": "Total", "value": runners_summary["total"]},
@@ -39,6 +42,7 @@ def render_runners_metrics():
             "value": runners_summary["by_status"].get("offline", 0),
         },
         {"label": "Busy", "value": int(busy_runners)},
+        {"label": "Idle", "value": int(idle_runners)},
     ]
 
     renderers.render_metrics_columns(metrics_data)
@@ -52,11 +56,12 @@ def render_runners_chart():
     df = metrics.history.dataframe_for_states(states_history)
 
     # Create color mapping for runner states
-    color_domain = ["online", "offline", "busy", "total"]
+    color_domain = ["online", "offline", "busy", "idle", "total"]
     color_range = [
         STREAMLIT_COLORS["success"],  # Green for online
         STREAMLIT_COLORS["error"],  # Red for offline
         STREAMLIT_COLORS["warning"],  # Orange for busy
+        STREAMLIT_COLORS["observation"],  # Purple for idle
         STREAMLIT_COLORS["info"],  # Blue for total
     ]
 

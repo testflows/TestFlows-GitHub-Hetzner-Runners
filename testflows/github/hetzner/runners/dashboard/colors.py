@@ -52,4 +52,5 @@ STREAMLIT_COLORS = {
     "warning": "#FFA500",  # Orange
     "error": "#FF0000",  # Red
     "info": "#00FFFF",  # Cyan
+    "observation": "#9966CC",  # Purple
 }
