@@ -30,7 +30,7 @@ def compute_jobs_by_label_sets(status):
 
     job_labels_map = {}
     for label_info in labels_info:
-        job_key = f"{label_info.get('job_id', '')},{label_info.get('run_id', '')}"
+        job_key = (label_info.get("job_id", ""), label_info.get("run_id", ""))
         if job_key not in job_labels_map:
             job_labels_map[job_key] = []
         job_labels_map[job_key].append(label_info.get("label", ""))
@@ -43,6 +43,49 @@ def compute_jobs_by_label_sets(status):
     return label_set_counts
 
 
+# Helper function to compute average wait/run times by label sets
+def compute_job_times_by_label_sets(status):
+    """Compute average wait/run times by label sets for given status."""
+    if status == "queued":
+        time_metric = "github_hetzner_runners_queued_job_wait_time_seconds"
+        labels_metric = "github_hetzner_runners_queued_job_labels"
+    else:
+        time_metric = "github_hetzner_runners_running_job_time_seconds"
+        labels_metric = "github_hetzner_runners_running_job_labels"
+
+    # Get labels info and group by job
+    labels_info = get.metric_info(labels_metric)
+    job_labels_map = {}
+    for label_info in labels_info:
+        job_key = (label_info.get("job_id", ""), label_info.get("run_id", ""))
+        if job_key not in job_labels_map:
+            job_labels_map[job_key] = []
+        job_labels_map[job_key].append(label_info.get("label", ""))
+
+    # Get time values and group by label set
+    label_set_times = {}
+    for job_key, labels in job_labels_map.items():
+        label_set = ",".join(labels) if labels else "no_labels"
+
+        # Get time value for this job
+        time_value = get.metric_value(
+            time_metric, {"job_id": job_key[0], "run_id": job_key[1]}
+        )
+
+        if time_value is not None:
+            if label_set not in label_set_times:
+                label_set_times[label_set] = []
+            label_set_times[label_set].append(time_value)
+
+    # Calculate averages
+    label_set_averages = {}
+    for label_set, times in label_set_times.items():
+        if times:
+            label_set_averages[label_set] = sum(times) / len(times)
+
+    return label_set_averages
+
+
 # Track queued and running jobs by label sets separately
 tracker.track(
     "github_hetzner_runners_queued_jobs_by_label_sets",
@@ -51,6 +94,16 @@ tracker.track(
 tracker.track(
     "github_hetzner_runners_running_jobs_by_label_sets",
     compute_func=lambda: compute_jobs_by_label_sets("running"),
+)
+
+# Track average wait and run times by label sets
+tracker.track(
+    "github_hetzner_runners_queued_job_wait_times_by_label_sets",
+    compute_func=lambda: compute_job_times_by_label_sets("queued"),
+)
+tracker.track(
+    "github_hetzner_runners_running_job_times_by_label_sets",
+    compute_func=lambda: compute_job_times_by_label_sets("running"),
 )
 
 
@@ -162,6 +215,59 @@ def get_all_historical_label_sets(cutoff_minutes=15):
                     all_label_sets.add(label_set)
 
     return sorted(all_label_sets)
+
+
+def job_times_history_filtered_by_label_sets(
+    time_type="wait", selected_label_sets=None, cutoff_minutes=15
+):
+    """Get job timing history filtered by selected label sets.
+
+    Args:
+        time_type: "wait" for wait times or "run" for run times
+        selected_label_sets: List of label sets to filter by (None or empty = all)
+        cutoff_minutes: Number of minutes to keep in history
+
+    Returns:
+        dict: Dictionary with timing history data
+    """
+    # Get historical timing data
+    metric_name = f"github_hetzner_runners_{'queued_job_wait' if time_type == 'wait' else 'running_job'}_times_by_label_sets"
+    timestamps, timing_data = history.data(metric_name, cutoff_minutes=cutoff_minutes)
+
+    if not timestamps or not timing_data:
+        return {"timestamps": [], "values": []}
+
+    # Convert selected label sets to strings (empty list if None)
+    selected_label_set_strings = []
+    if selected_label_sets:
+        for label_set in selected_label_sets:
+            label_set_string = ",".join(label_set) if label_set else "no_labels"
+            selected_label_set_strings.append(label_set_string)
+
+    # Calculate average for selected label sets at each timestamp
+    values = []
+    for data_point in timing_data:
+        if data_point and isinstance(data_point, dict):
+            if selected_label_set_strings:
+                # Filter by selected label sets
+                total_time = 0
+                total_count = 0
+                for label_set_string in selected_label_set_strings:
+                    if label_set_string in data_point:
+                        total_time += data_point[label_set_string]
+                        total_count += 1
+                avg_time = total_time / total_count if total_count > 0 else 0
+            else:
+                # No filtering, average across all label sets
+                total_time = sum(data_point.values())
+                count = len(data_point)
+                avg_time = total_time / count if count > 0 else 0
+        else:
+            avg_time = 0
+
+        values.append(avg_time)
+
+    return {"timestamps": timestamps, "values": values}
 
 
 def labels_info(is_running=False):

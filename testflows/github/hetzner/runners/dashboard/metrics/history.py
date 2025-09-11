@@ -247,3 +247,25 @@ def dataframe_for_states(
 
     df = pd.DataFrame(all_data)
     return df.sort_values(time_column)
+
+
+def dataframe_for_timing(timing_data, time_column="Time", value_column="Value"):
+    """Create a simple DataFrame from timing data.
+
+    Args:
+        timing_data: Dictionary with 'timestamps' and 'values' keys
+        time_column: Name for the time column
+        value_column: Name for the value column
+
+    Returns:
+        pd.DataFrame: Formatted DataFrame
+    """
+    if not timing_data or not timing_data.get("timestamps"):
+        return pd.DataFrame({time_column: pd.to_datetime([]), value_column: []})
+
+    return pd.DataFrame(
+        {
+            time_column: pd.to_datetime(timing_data["timestamps"]),
+            value_column: timing_data["values"],
+        }
+    )
