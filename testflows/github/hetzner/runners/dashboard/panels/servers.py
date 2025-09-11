@@ -63,11 +63,12 @@ def render_servers_chart():
 
     def create_chart():
         return chart.create_time_series_chart(
+            chart_id="servers",
             df=df,
+            group_by="Status",
             y_title="Number of Servers",
-            color_column="Status",
-            color_domain=color_domain,
-            color_range=color_range,
+            names=color_domain,
+            colors=color_range,
             y_type="count",
         )
 
@@ -125,11 +126,12 @@ def render_health_chart():
 
     def create_health_chart():
         return chart.create_time_series_chart(
+            chart_id="servers_health",
             df=df,
+            group_by="Status",
             y_title="Health Metrics",
-            color_column="Status",
-            color_domain=health_color_domain,
-            color_range=health_color_range,
+            names=health_color_domain,
+            colors=health_color_range,
             y_type="count",
         )
 

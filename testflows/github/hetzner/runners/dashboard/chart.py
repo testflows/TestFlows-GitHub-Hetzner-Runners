@@ -17,17 +17,19 @@
 
 import altair as alt
 import pandas as pd
+import streamlit as st
 
 
 def create_time_series_chart(
+    chart_id,
     df,
+    group_by,
     x_column="Time",
     y_column="Count",
-    color_column=None,
     title="Time Series Chart",
     y_title=None,
-    color_domain=None,
-    color_range=None,
+    names=None,
+    colors=None,
     height=300,
     time_window_minutes=15,
     y_type="count",
@@ -35,14 +37,15 @@ def create_time_series_chart(
     """Create a standardized time series chart using Altair.
 
     Args:
+        chart_id: Unique identifier for the chart (required for state management)
         df: Pandas DataFrame with time series data
         x_column: Column name for x-axis (time) or index name if time is in index
         y_column: Column name for y-axis (values)
-        color_column: Column name for color encoding (optional)
+        group_by: Column name for grouping data into multiple series (required)
         title: Chart title (defaults to "Time Series Chart")
         y_title: Y-axis title (defaults to y_column)
-        color_domain: List of color domain values
-        color_range: List of color range values
+        names: List of series names in the column (optional)
+        colors: List of colors for each series name (optional)
         height: Chart height in pixels
         time_window_minutes: Time window to display in minutes
         y_type: Type of y-axis data ("count" for integers, "price" for floats)
@@ -80,8 +83,7 @@ def create_time_series_chart(
     else:  # count
         y_max = max(max_value * 1.1, 1)  # At least 1 for count visibility
 
-    # Base chart configuration
-    chart = alt.Chart(window_df).mark_line()
+    # Chart will be created later based on filtered data
 
     # X-axis encoding
     x_encoding = alt.X(
@@ -119,32 +121,92 @@ def create_time_series_chart(
         ),
     ]
 
-    # Add color encoding if specified
-    if color_column and color_domain and color_range:
-        color_encoding = alt.Color(
-            f"{color_column}:N",
-            scale=alt.Scale(domain=color_domain, range=color_range),
-            legend=alt.Legend(title=f"{color_column.title()}"),
-        )
-        tooltip.append(alt.Tooltip(f"{color_column}:N", title=color_column.title()))
+    # Initialize legend visibility state - ensure all series start as visible
+    if f"{chart_id}_legend_visibility" not in st.session_state:
+        st.session_state[f"{chart_id}_legend_visibility"] = {}
 
-        chart = chart.encode(
-            x=x_encoding,
-            y=y_encoding,
-            color=color_encoding,
-            tooltip=tooltip,
-        )
+    # Initialize all names as visible if not already set
+    if names:
+        for name in names:
+            if name not in st.session_state[f"{chart_id}_legend_visibility"]:
+                st.session_state[f"{chart_id}_legend_visibility"][name] = True
+
+    # Create series visibility controls
+    create_series_selector(names, chart_id)
+
+    # Filter data based on series visibility
+    visible_names = [
+        name
+        for name, visible in st.session_state[f"{chart_id}_legend_visibility"].items()
+        if visible
+    ]
+
+    if names and visible_names:
+        filtered_df = window_df[window_df[group_by].isin(visible_names)].copy()
+    elif names and not visible_names:
+        filtered_df = window_df.iloc[:0].copy()  # Empty chart if no names visible
     else:
-        chart = chart.encode(
-            x=x_encoding,
-            y=y_encoding,
-            tooltip=tooltip,
-        )
+        filtered_df = window_df  # No series names, show all data
 
-    # Configure and return chart
-    return chart.configure_axis(
-        grid=True, gridColor="lightgray", gridOpacity=0.5
-    ).properties(
-        width="container",
-        height=height,
+    # Build chart encoding
+    chart_encoding = {
+        "x": x_encoding,
+        "y": y_encoding,
+        "tooltip": tooltip,
+    }
+
+    # Add color encoding if we have multiple series
+    if names:
+        color_encoding = alt.Color(
+            f"{group_by}:N", scale=alt.Scale(domain=names, range=colors)
+        )
+        chart_encoding["color"] = color_encoding
+        tooltip.append(alt.Tooltip(f"{group_by}:N", title=group_by.title()))
+
+    # Create chart once
+    chart = alt.Chart(filtered_df).mark_line().encode(**chart_encoding)
+
+    # Configure chart with no zoom/pan interactions
+    final_chart = (
+        chart.configure_axis(grid=True, gridColor="lightgray", gridOpacity=0.5)
+        .properties(
+            width="container",
+            height=height,
+        )
+        .resolve_scale(color="independent")
     )
+
+    return final_chart
+
+
+def create_series_selector(names, chart_id):
+    """Create series visibility selector checkboxes."""
+
+    # Only create selector if we have more than one name to select
+    if len(names) < 1:
+        return
+
+    # Create horizontal container with series selector checkboxes
+    with st.container(
+        border=False, horizontal=True, gap="small", horizontal_alignment="right"
+    ):
+
+        for name in names:
+            # Check current visibility state
+            is_visible = st.session_state[f"{chart_id}_legend_visibility"].get(
+                name, True
+            )
+
+            checkbox_key = f"{chart_id}_legend_{name}"
+
+            new_state = st.checkbox(
+                name[0].capitalize() + name[1:],
+                value=is_visible,
+                key=checkbox_key,
+                width="content",
+            )
+
+            # Update session state if changed
+            if new_state != is_visible:
+                st.session_state[f"{chart_id}_legend_visibility"][name] = new_state
+                st.rerun()

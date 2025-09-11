@@ -41,11 +41,12 @@ def render_scale_down_errors_chart():
 
     def create_chart():
         return chart.create_time_series_chart(
+            chart_id="scale_down_errors",
             df=df,
+            group_by="Status",
             y_title="Number of Errors",
-            color_column="Status",
-            color_domain=["Scale-down Errors"],
-            color_range=[STREAMLIT_COLORS["error"]],
+            names=["Scale-down Errors"],
+            colors=[STREAMLIT_COLORS["error"]],
             y_type="count",
         )
 

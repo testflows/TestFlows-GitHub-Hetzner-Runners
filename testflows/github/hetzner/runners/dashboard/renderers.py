@@ -184,6 +184,7 @@ def render_details_dataframe(
     )
 
 
+@st.fragment
 def render_chart(
     chart_func,
     no_data_message="No data available yet. The chart will appear once data is collected.",

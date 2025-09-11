@@ -81,12 +81,13 @@ def render_cost_chart():
 
     def create_chart():
         return chart.create_time_series_chart(
+            chart_id="cost",
             df=df,
+            group_by="Type",
             y_column="Cost (€/h)",
             y_title="Cost (€/h)",
-            color_column="Type",
-            color_domain=color_domain,
-            color_range=color_range,
+            names=color_domain,
+            colors=color_range,
             y_type="price",
         )
 

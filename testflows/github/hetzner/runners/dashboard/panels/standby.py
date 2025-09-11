@@ -93,11 +93,12 @@ def render_standby_servers_chart():
 
     def create_chart():
         return chart.create_time_series_chart(
+            chart_id="standby_servers",
             df=df,
+            group_by="Status",
             y_title="Number of Standby Servers",
-            color_column="Status",
-            color_domain=color_domain,
-            color_range=color_range,
+            names=color_domain,
+            colors=color_range,
             y_type="count",
         )
 
@@ -168,11 +169,12 @@ def render_standby_runners_chart():
 
     def create_chart():
         return chart.create_time_series_chart(
+            chart_id="standby_runners",
             df=df,
+            group_by="Status",
             y_title="Number of Standby Runners",
-            color_column="Status",
-            color_domain=color_domain,
-            color_range=color_range,
+            names=color_domain,
+            colors=color_range,
             y_type="count",
         )
 
