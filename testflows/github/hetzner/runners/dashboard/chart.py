@@ -180,33 +180,28 @@ def create_time_series_chart(
 
 
 def create_series_selector(names, chart_id):
-    """Create series visibility selector checkboxes."""
+    """Create series visibility selector pills."""
 
     # Only create selector if we have more than one name to select
     if len(names) < 1:
         return
 
-    # Create horizontal container with series selector checkboxes
-    with st.container(
-        border=False, horizontal=True, gap="small", horizontal_alignment="right"
-    ):
+    # Create pills selector - this is our single source of truth
+    pills_key = f"{chart_id}_legend_pills"
+    selected_names = st.pills(
+        "Currently selected",
+        options=[name[0].capitalize() + name[1:] for name in names],
+        default=[
+            name[0].capitalize() + name[1:] for name in names
+        ],  # All selected by default
+        key=pills_key,
+        selection_mode="multi",
+        width="content",
+    )
 
-        for name in names:
-            # Check current visibility state
-            is_visible = st.session_state[f"{chart_id}_legend_visibility"].get(
-                name, True
-            )
-
-            checkbox_key = f"{chart_id}_legend_{name}"
-
-            new_state = st.checkbox(
-                name[0].capitalize() + name[1:],
-                value=is_visible,
-                key=checkbox_key,
-                width="content",
-            )
-
-            # Update session state if changed
-            if new_state != is_visible:
-                st.session_state[f"{chart_id}_legend_visibility"][name] = new_state
-                st.rerun()
+    # Update session state to match pill selection
+    for name in names:
+        capitalized_name = name[0].capitalize() + name[1:]
+        st.session_state[f"{chart_id}_legend_visibility"][name] = (
+            capitalized_name in selected_names
+        )

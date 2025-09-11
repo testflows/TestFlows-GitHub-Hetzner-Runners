@@ -23,6 +23,37 @@ tracker.track("github_hetzner_runners_queued_jobs")
 tracker.track("github_hetzner_runners_running_jobs")
 
 
+# Helper function to compute job counts by label sets
+def compute_jobs_by_label_sets(status):
+    """Compute job counts by label sets for given status."""
+    labels_info = get.metric_info(f"github_hetzner_runners_{status}_job_labels")
+
+    job_labels_map = {}
+    for label_info in labels_info:
+        job_key = f"{label_info.get('job_id', '')},{label_info.get('run_id', '')}"
+        if job_key not in job_labels_map:
+            job_labels_map[job_key] = []
+        job_labels_map[job_key].append(label_info.get("label", ""))
+
+    label_set_counts = {}
+    for job_key, labels in job_labels_map.items():
+        label_set = ",".join(labels) if labels else "no_labels"
+        label_set_counts[label_set] = label_set_counts.get(label_set, 0) + 1
+
+    return label_set_counts
+
+
+# Track queued and running jobs by label sets separately
+tracker.track(
+    "github_hetzner_runners_queued_jobs_by_label_sets",
+    compute_func=lambda: compute_jobs_by_label_sets("queued"),
+)
+tracker.track(
+    "github_hetzner_runners_running_jobs_by_label_sets",
+    compute_func=lambda: compute_jobs_by_label_sets("running"),
+)
+
+
 def summary():
     """Get jobs summary data.
 
@@ -64,6 +95,73 @@ def jobs_history(cutoff_minutes=15):
             "values": running_values,
         },
     }
+
+
+def get_historical_label_set_data(cutoff_minutes=15):
+    """Helper function to get historical label set data for both statuses."""
+    data = {}
+    for status in ["queued", "running"]:
+        timestamps, label_set_data = history.data(
+            f"github_hetzner_runners_{status}_jobs_by_label_sets",
+            cutoff_minutes=cutoff_minutes,
+        )
+        data[status] = (timestamps, label_set_data)
+    return data
+
+
+def jobs_history_filtered_by_label_sets(selected_label_sets=None, cutoff_minutes=15):
+    """Get jobs history filtered by selected label sets."""
+    if not selected_label_sets:
+        return jobs_history(cutoff_minutes)
+
+    # Convert selected label sets to strings
+    selected_label_set_strings = []
+    for label_set in selected_label_sets:
+        label_set_string = ",".join(label_set) if label_set else "no_labels"
+        selected_label_set_strings.append(label_set_string)
+
+    result = {
+        "queued": {"timestamps": [], "values": []},
+        "running": {"timestamps": [], "values": []},
+    }
+
+    historical_data = get_historical_label_set_data(cutoff_minutes)
+
+    for status in ["queued", "running"]:
+        timestamps, label_set_data = historical_data[status]
+
+        if not timestamps:
+            continue
+
+        # Sum up counts for selected label sets at each timestamp
+        values = []
+        for data_point in label_set_data:
+            total_count = 0
+            for label_set_string in selected_label_set_strings:
+                total_count += data_point.get(label_set_string, 0)
+            values.append(total_count)
+
+        result[status] = {"timestamps": timestamps, "values": values}
+
+    return result
+
+
+def get_all_historical_label_sets(cutoff_minutes=15):
+    """Get all unique label sets that have appeared in historical data."""
+    all_label_sets = set()
+
+    historical_data = get_historical_label_set_data(cutoff_minutes)
+
+    for status in ["queued", "running"]:
+        _, label_set_data = historical_data[status]
+
+        for data_point in label_set_data:
+            for label_set_string in data_point.keys():
+                if label_set_string != "no_labels":
+                    label_set = tuple(label_set_string.split(","))
+                    all_label_sets.add(label_set)
+
+    return sorted(all_label_sets)
 
 
 def labels_info(is_running=False):

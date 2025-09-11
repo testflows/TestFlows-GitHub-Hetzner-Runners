@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import streamlit as st
 from .. import metrics
 from ..colors import STREAMLIT_COLORS
 from .. import chart, renderers
@@ -34,11 +35,40 @@ def render_jobs_metrics():
     renderers.render_metrics_columns(metrics_data)
 
 
+@st.fragment
 def render_jobs_chart():
-    """Render the jobs chart."""
+    """Render the jobs chart with optional label set filtering."""
 
-    # Get jobs history and create dataframe
-    states_history = metrics.jobs.jobs_history()
+    # Get all unique label sets from historical data for filtering
+    all_label_sets = metrics.jobs.get_all_historical_label_sets()
+
+    # Convert to list and format for display
+    label_set_options = []
+    label_set_map = {}
+    for label_set in sorted(all_label_sets):
+        display_name = ", ".join(label_set)
+        label_set_options.append(display_name)
+        label_set_map[display_name] = list(label_set)
+
+    # Add label set filter selector
+    selected_label_sets = None
+    if label_set_options:
+        selected_display_names = st.multiselect(
+            "Filter by labels (leave empty to show all):",
+            label_set_options,
+            default=[],
+            key="jobs_chart_labels_filter",
+        )
+
+        if selected_display_names:
+            selected_label_sets = [
+                label_set_map[name] for name in selected_display_names
+            ]
+
+    # Get jobs history filtered by selected label sets
+    states_history = metrics.jobs.jobs_history_filtered_by_label_sets(
+        selected_label_sets=selected_label_sets if selected_label_sets else None
+    )
     df = metrics.history.dataframe_for_states(states_history)
 
     # Create color mapping for job states
