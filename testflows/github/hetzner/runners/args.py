@@ -23,6 +23,7 @@ from hcloud.server_types.domain import ServerType
 from argparse import ArgumentTypeError
 
 from traceback import print_exception
+from .ordered_set import OrderedSet as set
 
 file_type = argparse.FileType
 

@@ -20,6 +20,7 @@ import testflows.github.hetzner.runners.args as args
 from ..hclient import HClient as Client
 from ..actions import Action
 from ..logger import default_format as logger_format
+from ..ordered_set import OrderedSet as set
 
 current_dir = os.path.dirname(__file__)
 

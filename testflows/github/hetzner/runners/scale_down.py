@@ -42,6 +42,7 @@ from .logger import logger
 from .server import age
 from .config import Config
 from .hclient import HClient as Client
+from .ordered_set import OrderedSet as set
 
 from github import Github
 from github.Repository import Repository

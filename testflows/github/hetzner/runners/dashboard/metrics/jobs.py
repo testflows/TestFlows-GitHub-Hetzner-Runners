@@ -17,6 +17,7 @@ from . import get
 from . import history
 from . import tracker
 from .. import format
+from ...ordered_set import OrderedSet as set
 
 # Register job metrics for tracking
 tracker.track("github_hetzner_runners_queued_jobs")

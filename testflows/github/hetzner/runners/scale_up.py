@@ -40,6 +40,7 @@ from .constants import (
 )
 
 from .server import wait_ssh, ssh, get_runner_server_name
+from .ordered_set import OrderedSet as set
 
 from hcloud import APIException
 from hcloud.ssh_keys.domain import SSHKey
