@@ -23,6 +23,7 @@ from github.WorkflowJob import WorkflowJob
 from prometheus_client import Counter, Gauge, Histogram, Info
 from .estimate import get_server_price
 from .constants import standby_server_name_prefix
+from .constants import recycle_server_name_prefix
 from .server import get_runner_server_name
 
 
@@ -255,6 +256,24 @@ UNUSED_RUNNER_INFO = Gauge(
         "status",
         "created",
     ],
+)
+
+# Recycled servers metrics
+RECYCLED_SERVERS_TOTAL = Gauge(
+    "github_hetzner_runners_recycled_servers_total",
+    "Total number of recycled servers",
+    ["server_type", "location"],
+)
+
+RECYCLED_SERVERS_TOTAL_COUNT = Gauge(
+    "github_hetzner_runners_recycled_servers_total_count",
+    "Total number of recycled servers across all types and locations",
+)
+
+RECYCLED_SERVER_INFO = Gauge(
+    "github_hetzner_runners_recycled_server",
+    "Recycled server information including age in seconds",
+    ["server_id", "server_name", "server_type", "location", "status", "created"],
 )
 
 # Runner pool metrics
@@ -1197,6 +1216,55 @@ def update_unused_runners(unused_runners_dict):
     # Set counts by type and location
     for (server_type, location), count in unused_counts.items():
         UNUSED_RUNNERS_TOTAL.labels(server_type=server_type, location=location).set(
+            count
+        )
+
+
+def update_recycled_servers(servers):
+    """Update recycled server metrics.
+
+    Args:
+        servers: List of server objects to check for recycled servers
+    """
+    # Clear existing recycled server metrics
+    RECYCLED_SERVERS_TOTAL._metrics.clear()
+    RECYCLED_SERVER_INFO._metrics.clear()
+    RECYCLED_SERVERS_TOTAL_COUNT.set(0)
+
+    total_recycled_servers = 0
+    recycled_counts = {}
+    current_time = time.time()
+
+    for server in servers:
+        # Check if this is a recycled server by name prefix
+        if server.name.startswith(recycle_server_name_prefix):
+            server_type = server.server_type.name
+            location = server.datacenter.location.name
+            key = (server_type, location)
+
+            # Count by type and location
+            recycled_counts[key] = recycled_counts.get(key, 0) + 1
+            total_recycled_servers += 1
+
+            # Track recycled server age
+            server_age = (
+                current_time - server.created.timestamp() if server.created else 0
+            )
+            RECYCLED_SERVER_INFO.labels(
+                server_id=str(server.id),
+                server_name=server.name,
+                server_type=server_type,
+                location=location,
+                status=server.status,
+                created=server.created.isoformat() if server.created else "",
+            ).set(server_age)
+
+    # Set total count
+    RECYCLED_SERVERS_TOTAL_COUNT.set(total_recycled_servers)
+
+    # Set counts by type and location
+    for (server_type, location), count in recycled_counts.items():
+        RECYCLED_SERVERS_TOTAL.labels(server_type=server_type, location=location).set(
             count
         )
 

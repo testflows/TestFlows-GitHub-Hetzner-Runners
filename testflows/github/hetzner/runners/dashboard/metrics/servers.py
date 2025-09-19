@@ -28,7 +28,7 @@ states = ["running", "off", "initializing", "ready", "busy"]
 tracker.track("github_hetzner_runners_servers_total", states=states)
 tracker.track("github_hetzner_runners_zombie_servers_total_count")
 tracker.track("github_hetzner_runners_unused_runners_total_count")
-tracker.track("github_hetzner_runners_recycled_servers_total")
+tracker.track("github_hetzner_runners_recycled_servers_total_count")
 # Register individual standby server status metrics
 for status in states:
     tracker.track(
@@ -157,7 +157,9 @@ def recycled_total_count():
     Returns:
         int: Number of recycled servers, or 0 if metric not available
     """
-    return int(recycled_summary()["total"] or 0)
+    return int(
+        get.metric_value("github_hetzner_runners_recycled_servers_total_count") or 0
+    )
 
 
 def labels_info():
@@ -402,7 +404,7 @@ def health_history(cutoff_minutes=15):
 
     # Get recycled servers total count history
     recycled_timestamps, recycled_values = history.data(
-        "github_hetzner_runners_recycled_servers_total",
+        "github_hetzner_runners_recycled_servers_total_count",
         cutoff_minutes=cutoff_minutes,
     )
     health_metrics["recycled"] = {
