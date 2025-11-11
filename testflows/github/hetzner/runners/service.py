@@ -21,6 +21,7 @@ SERVICE = f"/etc/systemd/system/{NAME}.service"
 
 from .actions import Action
 from .logger import decode_message
+from .config import config_vars
 
 
 def command_options(
@@ -115,8 +116,14 @@ def install(args, config):
             f"Environment=GITHUB_TOKEN={config.github_token}\n"
             f"Environment=GITHUB_REPOSITORY={config.github_repository}\n"
             f"Environment=HETZNER_TOKEN={config.hetzner_token}\n"
-            f"ExecStart={binary}"
         )
+        # add all other environment variables used inside the config file
+        for var, value in config_vars.items():
+            if var in ["GITHUB_TOKEN", "GITHUB_REPOSITORY", "HETZNER_TOKEN"]:
+                continue
+            contents += f"Environment={var}={value}\n"
+
+        contents += f"ExecStart={binary}"
         contents += f" --ssh-key {config.ssh_key}"
         contents += command_options(config)
         contents += "\n" "[Install]\n" "WantedBy=multi-user.target\n"

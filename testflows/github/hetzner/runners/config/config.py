@@ -29,6 +29,9 @@ env_pattern = re.compile(r".*?\${(.*?)}.*?")
 
 default_user_config = os.path.expanduser("~/.github-hetzner-runners/config.yaml")
 
+# store all the environment variables used inside the config file
+config_vars = {}
+
 
 def env_constructor(loader, node):
     value = loader.construct_scalar(node)
@@ -39,6 +42,7 @@ def env_constructor(loader, node):
                 False
             ), f"environment variable ${group} used in the config is not defined"
         value = value.replace(f"${{{group}}}", env_value)
+        config_vars[group] = env_value
     return value
 
 
