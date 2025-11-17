@@ -413,8 +413,8 @@ def parse_config(filename: str):
 
     if doc.get("scripts") is not None:
         try:
-            doc["scripts"] = path(doc["scripts"])
-        except Exception as e:
+            doc["scripts"] = check_scripts(doc["scripts"])
+        except ConfigError as e:
             assert False, f"config.scripts: {e}"
 
     if doc.get("max_powered_off_time") is not None:
@@ -789,3 +789,13 @@ def check_startup_script(script: str):
     if not os.path.exists(script):
         raise StartupScriptError(f"invalid startup script path '{script}'")
     return script
+
+
+def check_scripts(scripts_path: str):
+    """Check if scripts path is valid."""
+    if not scripts_path:
+        return scripts_path
+    scripts_path = path(scripts_path)
+    if not os.path.isdir(scripts_path):
+        raise ConfigError(f"scripts path '{scripts_path}' is not a directory")
+    return scripts_path
