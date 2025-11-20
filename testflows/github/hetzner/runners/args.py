@@ -87,7 +87,8 @@ def path_type(v, check_exists=True):
     try:
         v = os.path.abspath(os.path.expanduser(v))
         if check_exists:
-            os.path.exists(v)
+            if not os.path.exists(v):
+                raise FileNotFoundError(f"path not found '{v}'")
     except Exception as e:
         raise ArgumentTypeError(str(e))
     return v
