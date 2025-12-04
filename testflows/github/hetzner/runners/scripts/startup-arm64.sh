@@ -1,4 +1,9 @@
 set -x
+
+# Create hostedtoolcache directory for GitHub Actions (required by setup-ruby, setup-python, etc.)
+sudo mkdir -p /opt/hostedtoolcache
+sudo chown ubuntu:ubuntu /opt/hostedtoolcache
+
 echo "Install runner"
 cd /home/ubuntu
 
