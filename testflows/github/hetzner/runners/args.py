@@ -82,13 +82,10 @@ def switch_type(v):
     raise ArgumentTypeError(f"invalid value {v}")
 
 
-def path_type(v, check_exists=True):
+def path_type(v):
     """Path argument type."""
     try:
         v = os.path.abspath(os.path.expanduser(v))
-        if check_exists:
-            if not os.path.exists(v):
-                raise FileNotFoundError(f"path not found '{v}'")
     except Exception as e:
         raise ArgumentTypeError(str(e))
     return v

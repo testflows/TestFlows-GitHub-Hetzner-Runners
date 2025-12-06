@@ -66,6 +66,10 @@ class StartupScriptError(Exception):
     pass
 
 
+class ScriptsError(Exception):
+    pass
+
+
 class ServerTypeError(Exception):
     pass
 
@@ -270,7 +274,7 @@ def parse_config(filename: str):
 
     if doc.get("ssh_key") is not None:
         assert isinstance(doc["ssh_key"], str), "config.ssh_key: is not a string"
-        doc["ssh_key"] = path(doc["ssh_key"], check_exists=False)
+        doc["ssh_key"] = path(doc["ssh_key"])
 
     if doc.get("additional_ssh_keys") is not None:
         assert isinstance(
@@ -775,6 +779,13 @@ def check_prices(client: Client):
         }
         for t in server_types
     }
+
+
+def check_scripts(scripts: str):
+    """Check if scripts directory exists."""
+    if not os.path.exists(scripts):
+        raise ScriptsError(f"invalid scripts directory '{scripts}'")
+    return scripts
 
 
 def check_setup_script(script: str):
