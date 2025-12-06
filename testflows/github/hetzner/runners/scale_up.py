@@ -562,6 +562,16 @@ def filtered_run_jobs(workflow_runs: list[WorkflowRun], with_label: list[str]):
     return run_jobs
 
 
+def filtered_servers(servers: list[RunnerServer], with_label: list[str]):
+    """Filter servers to select only servers that match with_label criteria."""
+    filtered_servers = []
+    for server in servers:
+        labels = server.labels
+        if job_matches_labels(labels, with_label) is True:
+            filtered_servers.append(server)
+    return filtered_servers
+
+
 def check_max_servers_for_label_reached(
     max_servers_for_label, job_labels, servers, futures=None
 ):
@@ -1353,6 +1363,7 @@ def scale_up(
 
                 futures: list[Future] = []
                 workflow_runs = []
+                runs_jobs = []
                 servers = []
                 runners = []
 
@@ -1364,40 +1375,47 @@ def scale_up(
                         repo.get_workflow_runs(status="in_progress")
                     )
                     # Update job metrics using only queued or in progress runs that match with_label criteria
-                    metrics.update_jobs(
-                        filtered_run_jobs(queued_runs + in_progress_runs, with_label)
+                    runs_jobs = filtered_run_jobs(
+                        queued_runs + in_progress_runs, with_label
                     )
+                    metrics.update_jobs(runs_jobs)
                     # For job processing, we'll use only queued runs
                     workflow_runs = queued_runs
 
                 with Action(
                     "Getting list of servers", level=logging.DEBUG, interval=interval
                 ):
-                    servers = [
-                        RunnerServer(
-                            name=server.name,
-                            server_status=server.status,
-                            labels=set(
-                                [
-                                    value.lower()
-                                    for name, value in server.labels.items()
-                                    if name.startswith("github-hetzner-runner-label")
-                                ]
-                            ),
-                            server_type=server.server_type,
-                            server_location=server.datacenter.location,
-                            server_volumes=[
-                                Volume(
-                                    name=get_volume_name(volume.name), size=volume.size
-                                )
-                                for volume in server.volumes
-                            ],
-                            server=server,
-                        )
-                        for server in client.servers.get_all(
-                            label_selector=f"{github_runner_label}=active"
-                        )
-                    ]
+                    servers = filtered_servers(
+                        [
+                            RunnerServer(
+                                name=server.name,
+                                server_status=server.status,
+                                labels=set(
+                                    [
+                                        value.lower()
+                                        for name, value in server.labels.items()
+                                        if name.startswith(
+                                            "github-hetzner-runner-label"
+                                        )
+                                    ]
+                                ),
+                                server_type=server.server_type,
+                                server_location=server.datacenter.location,
+                                server_volumes=[
+                                    Volume(
+                                        name=get_volume_name(volume.name),
+                                        size=volume.size,
+                                    )
+                                    for volume in server.volumes
+                                ],
+                                server=server,
+                            )
+                            for server in client.servers.get_all(
+                                label_selector=f"{github_runner_label}=active"
+                            )
+                        ],
+                        with_label,
+                    )
 
                 with Action(
                     "Getting list of available volumes",
@@ -1427,11 +1445,14 @@ def scale_up(
                     level=logging.DEBUG,
                     interval=interval,
                 ):
+                    filtered_runners = []
                     for runner in runners:
                         for server in servers:
                             if runner.name.startswith(server.name):
                                 if runner.status == "online":
                                     server.status = "busy" if runner.busy else "ready"
+                                filtered_runners.append(runner)
+                    runners = filtered_runners
 
                 # Update all metrics
                 metrics.update_servers(servers, server_prices)
@@ -1470,7 +1491,9 @@ def scale_up(
                                 ):
                                     continue
 
-                            for job in run.jobs():
+                            for job_run, job in runs_jobs:
+                                if job_run.id != run.id:
+                                    continue
                                 if terminate.is_set():
                                     raise StopIteration("terminating")
 
