@@ -96,7 +96,7 @@ class standby_runner:
 
 @dataclass
 class deploy_:
-    server_type: ServerType = server_type("cpx11")
+    server_type: ServerType = server_type("cx23")
     image: Image = image("x86:system:ubuntu-22.04")
     location: Location = None
     setup_script: str = os.path.join(current_dir, "..", "scripts", "deploy", "setup.sh")
@@ -128,7 +128,7 @@ class Config:
     max_runners_for_label: list[tuple[set[str], int]] = None
     max_runners_in_workflow_run: int = None
     default_image: Image = image("x86:system:ubuntu-22.04")
-    default_server_type: ServerType = server_type("cx22")
+    default_server_type: ServerType = server_type("cx23")
     default_location: Location = None
     default_volume_location: Location = location("nbg1")
     default_volume_size: int = 10

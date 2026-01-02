@@ -255,7 +255,7 @@ def argparser():
         dest="default_server_type",
         metavar="name",
         type=args.server_type,
-        help=("default runner server type name, default: cx22"),
+        help=("default runner server type name, default: cx23"),
     )
 
     parser.add_argument(
@@ -627,7 +627,7 @@ def argparser():
         metavar="name",
         dest="cloud_deploy_server_type",
         type=args.server_type,
-        help="deployment server type, default: cpx11",
+        help="deployment server type, default: cx23",
     )
 
     deploy_cloud_parser.add_argument(
@@ -1309,8 +1309,8 @@ def argparser():
         metavar="name",
         dest="create_snapshot_server_type",
         type=args.server_type,
-        help="server type, default: cpx11",
-        default=args.server_type("cpx11"),
+        help="server type, default: cx23",
+        default=args.server_type("cx23"),
     )
 
     create_snapshot_parser.add_argument(

@@ -22,7 +22,7 @@ config:
     #    - ...
     delete_random: false
     default_image: "x86:system:ubuntu-22.04"
-    default_server_type: cpx11
+    default_server_type: cx23
     #default_location: ash
     workers: 10
     #scripts:
@@ -37,7 +37,7 @@ config:
     cloud:
         server_name: "github-hetzner-runners"
         deploy:
-            server_type: cpx11
+            server_type: cx23
             image: "x86:system:ubuntu-22.04"
             #location:
             #setup_script:
