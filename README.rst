@@ -366,13 +366,13 @@ For me, my GitHub repository is:
    vzakaznikov/demo-testflows-github-hetzner-runners
 
 ❷ Now, create an example GitHub Actions workflow as described in the `Quickstart for GitHub Actions <https://docs.github.com/en/actions/quickstart>`_ article.
-Note that we need to modify the example YAML configuration and specify that our job will run on a runner with the **self-hosted** and the **type-cpx21**
+Note that we need to modify the example YAML configuration and specify that our job will run on a runner with the **self-hosted** and the **type-cpx22**
 labels.
 
 .. code-block:: yaml
 
      Explore-GitHub-Actions:
-       runs-on: [self-hosted, type-cpx21]
+       runs-on: [self-hosted, type-cpx22]
 
 So, the complete *demo.yml* that uses a self-hosted runner is as follows:
 
@@ -385,7 +385,7 @@ So, the complete *demo.yml* that uses a self-hosted runner is as follows:
       on: [push]
       jobs:
         Explore-GitHub-Actions:
-          runs-on: [self-hosted, type-cpx21]
+          runs-on: [self-hosted, type-cpx22]
           steps:
             - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
             - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"

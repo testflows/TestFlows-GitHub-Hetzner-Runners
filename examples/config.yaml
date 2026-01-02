@@ -45,7 +45,7 @@ config:
     standby_runners:
         - labels:
             - self-hosted
-            - type-cpx21
+            - type-cpx22
           count: 3
           replenish_immediately: true
     # logging module config
