@@ -161,6 +161,7 @@ def main():
                 "Log Messages": functools.partial(panels.log.render, config),
             }
 
+            st.session_state.tab_panels = tabbed_panels
             # Render tabs with smart fragment-based navigation
             renderers.render_smart_tabs(tabbed_panels)
 

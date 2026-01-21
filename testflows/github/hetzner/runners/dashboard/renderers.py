@@ -47,6 +47,24 @@ def errors(name: str, _logger: logging.Logger = None):
         st.error(error_msg)
 
 
+def switch_to_tab(tab_name: str) -> bool:
+    """Switch to a specific tab by name.
+
+    Args:
+        tab_name: Name of the tab to switch to (e.g., "Configuration")
+
+    Returns:
+        True if the tab was found and switched to, False otherwise.
+    """
+    tab_panels = st.session_state.get("tab_panels", {})
+    tab_names = list(tab_panels.keys())
+    if tab_name in tab_names:
+        st.session_state.selected_tab_index = tab_names.index(tab_name)
+        st.rerun()
+        return True
+    return False
+
+
 def render_panel(
     title: str,
     metrics_func: Callable = None,

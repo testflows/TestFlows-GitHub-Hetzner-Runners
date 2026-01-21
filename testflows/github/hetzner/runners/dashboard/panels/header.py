@@ -64,6 +64,12 @@ def render(config: Config):
             icon="💎",
         )
 
+        if config.with_label:
+            pills = " ".join(
+                f":green-background[{label}]" for label in config.with_label
+            )
+            st.markdown(pills, width="content")
+
         with st.container(horizontal=True, gap="small", horizontal_alignment="right"):
             if st.button("Refresh", type="secondary", key="refresh"):
                 st.rerun()
