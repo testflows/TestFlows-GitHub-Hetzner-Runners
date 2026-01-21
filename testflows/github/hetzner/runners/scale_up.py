@@ -551,7 +551,16 @@ def filtered_run_jobs(workflow_runs: list[WorkflowRun], with_label: list[str]):
     """Filter jobs to select only queued or in progress and match with_label criteria."""
     run_jobs = []
     for run in workflow_runs:
-        for job in run.jobs():
+        try:
+            jobs = list(run.jobs())
+        except Exception as exc:
+            # Log and skip API calls that fail (e.g., GitHub 502)
+            logger.warning(
+                f"Skipping workflow run {run.id}, failed to fetch jobs: {exc}"
+            )
+            continue
+
+        for job in jobs:
             if job.status == "completed":
                 continue
             if not (job.status == "in_progress" or job.status == "queued"):
