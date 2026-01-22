@@ -902,7 +902,7 @@ def count_available_runners(runners: list[SelfHostedActionsRunner], labels: set[
 
     for runner in runners:
         if runner.status == "online":
-            runner_labels = set([label["name"].lower() for label in runner.labels()])
+            runner_labels = set([label["name"].lower() for label in runner.labels])
             if labels.issubset(runner_labels):
                 if not runner.busy:
                     count += 1
@@ -1546,7 +1546,7 @@ def scale_up(
                                                     label["name"].lower()
                                                     for label in repo.get_self_hosted_runner(
                                                         job.raw_data["runner_id"]
-                                                    ).labels()
+                                                    ).labels
                                                 ]
                                             )
 

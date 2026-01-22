@@ -132,7 +132,7 @@ def list(args, config: Config):
                 indent = " " * 17
                 print(f"{indent}labels:", file=sys.stdout)
                 labels = []
-                for label in runner.labels():
+                for label in runner.labels:
                     value = str(label["name"]).lower()
                     if len(value) > 64:
                         value = value[:64] + "..."

@@ -411,7 +411,7 @@ def scale_down(
                                         set(
                                             [
                                                 label["name"].lower()
-                                                for label in runner.labels()
+                                                for label in runner.labels
                                             ]
                                         )
                                     ):
