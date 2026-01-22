@@ -55,13 +55,13 @@ setup(
     scripts=["testflows/github/hetzner/runners/bin/github-hetzner-runners"],
     zip_safe=False,
     install_requires=[
-        "PyGithub==1.59.0",
+        "PyGithub==2.8.1",
         "hcloud==2.3.0",
-        "requests-cache==1.1.0",
-        "PyYAML==6.0.2",
-        "prometheus_client==0.19.0",
+        "requests-cache==1.2.1",
+        "PyYAML==6.0.3",
+        "prometheus_client==0.24.1",
         "streamlit==1.49.1",
-        "psutil>=5.9.8",
+        "psutil>=7.2.1",
     ],
     extras_require={"dev": []},
 )

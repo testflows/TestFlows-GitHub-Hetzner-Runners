@@ -51,7 +51,7 @@ from hcloud.servers.domain import Server, ServerCreatePublicNetwork
 from hcloud.images.domain import Image
 from hcloud.helpers.labels import LabelValidator
 
-from github import Github
+from github import Auth, Github
 from github.Repository import Repository
 from github.WorkflowRun import WorkflowRun
 from github.SelfHostedActionsRunner import SelfHostedActionsRunner
@@ -1338,7 +1338,7 @@ def scale_up(
                 futures.append(future)
 
     with Action("Logging in to GitHub"):
-        github = Github(login_or_token=github_token, per_page=100)
+        github = Github(auth=Auth.Token(github_token), per_page=100)
 
     with Action(f"Getting repository {github_repository}"):
         repo: Repository = github.get_repo(github_repository)

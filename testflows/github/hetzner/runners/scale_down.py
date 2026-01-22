@@ -44,7 +44,7 @@ from .config import Config
 from .hclient import HClient as Client
 from .ordered_set import OrderedSet as set
 
-from github import Github
+from github import Auth, Github
 from github.Repository import Repository
 from github.SelfHostedActionsRunner import SelfHostedActionsRunner
 
@@ -284,7 +284,7 @@ def scale_down(
         client = Client(token=hetzner_token)
 
     with Action("Logging in to GitHub"):
-        github = Github(login_or_token=github_token, per_page=100)
+        github = Github(auth=Auth.Token(github_token), per_page=100)
 
     with Action(f"Getting repository {github_repository}"):
         repo: Repository = github.get_repo(github_repository)

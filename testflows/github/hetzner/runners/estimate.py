@@ -25,7 +25,7 @@ from .hclient import HClient as Client
 from .utils import get_runner_server_type_and_location
 
 from datetime import timedelta
-from github import Github
+from github import Auth, Github
 from github.Repository import Repository
 from github.WorkflowRun import WorkflowRun
 from github.WorkflowJob import WorkflowJob
@@ -160,7 +160,7 @@ def login_and_get_prices(
         client = Client(token=config.hetzner_token)
 
     with Action("Logging in to GitHub"):
-        github = Github(login_or_token=config.github_token, per_page=100)
+        github = Github(auth=Auth.Token(config.github_token), per_page=100)
 
     with Action(f"Getting repository {config.github_repository}"):
         repo: Repository = github.get_repo(config.github_repository)

@@ -15,7 +15,7 @@
 import time
 
 from threading import Event
-from github import Github
+from github import Auth, Github
 
 from .actions import Action
 from . import metrics
@@ -25,7 +25,7 @@ def api_watch(terminate: Event, github_token: str, interval: int = 60):
     """Watch API calls consumption."""
 
     with Action("Logging in to GitHub"):
-        github = Github(login_or_token=github_token)
+        github = Github(auth=Auth.Token(github_token))
 
     with Action("Checking current API calls consumption rate"):
         calls, total = github.rate_limiting
@@ -44,8 +44,9 @@ def api_watch(terminate: Event, github_token: str, interval: int = 60):
 
         if i >= interval:
             with Action("Logging in to GitHub"):
-                github = Github(login_or_token=github_token)
-                github.get_rate_limit
+                github = Github(auth=Auth.Token(github_token))
+                github.get_rate_limit()
+
             with Action("Checking current API calls consumption rate"):
                 current, total = github.rate_limiting
                 next_resettime = github.rate_limiting_resettime

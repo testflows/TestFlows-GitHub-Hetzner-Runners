@@ -15,7 +15,7 @@
 import os
 import sys
 
-from github import Github
+from github import Auth, Github
 from github.Repository import Repository
 from github.SelfHostedActionsRunner import SelfHostedActionsRunner
 
@@ -57,7 +57,7 @@ def list(args, config: Config):
         client = Client(token=config.hetzner_token)
 
     with Action("Logging in to GitHub"):
-        github = Github(login_or_token=config.github_token)
+        github = Github(auth=Auth.Token(config.github_token))
 
     with Action(f"Getting repository {config.github_repository}"):
         repo: Repository = github.get_repo(config.github_repository)
@@ -207,7 +207,7 @@ def delete(args, config: Config):
         client = Client(token=config.hetzner_token)
 
     with Action("Logging in to GitHub"):
-        github = Github(login_or_token=config.github_token)
+        github = Github(auth=Auth.Token(config.github_token))
 
     with Action(f"Getting repository {config.github_repository}"):
         repo: Repository = github.get_repo(config.github_repository)

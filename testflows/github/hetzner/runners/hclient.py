@@ -12,5 +12,9 @@ class HClient(Client):
         poll_interval=1,
     ):
         super().__init__(
-            token, api_endpoint, project_name, project_version, poll_interval
+            token=token,
+            api_endpoint=api_endpoint,
+            application_name=project_name,
+            application_version=project_version,
+            poll_interval=poll_interval,
         )
