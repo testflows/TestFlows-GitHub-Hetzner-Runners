@@ -510,7 +510,7 @@ def expand_meta_label(
         expanded_labels.append(label)
         if label.startswith(label_prefix):
             raw_label = label.split(label_prefix, 1)[-1] if label_prefix else label
-            if raw_label in meta_label:
+            if label in meta_label:
                 expanded_labels += list(meta_label[label])
             for composite_label in composite_labels:
                 if raw_label.startswith(composite_label):
