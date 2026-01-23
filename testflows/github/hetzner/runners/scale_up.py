@@ -1392,8 +1392,9 @@ def scale_up(
                         queued_runs + in_progress_runs, with_label, action=action
                     )
                     metrics.update_jobs(runs_jobs)
-                    # For job processing, we'll use only queued runs
-                    workflow_runs = queued_runs
+                    # For job processing, we'll use both queued and in_progress runs
+                    # to ensure stolen runner detection works for all cases
+                    workflow_runs = queued_runs + in_progress_runs
 
                 with Action(
                     "Getting list of servers", level=logging.DEBUG, interval=interval
@@ -1537,7 +1538,7 @@ def scale_up(
                                             continue
 
                                     if job.status == "in_progress":
-                                        # skip jobs that were assigned to some other runners
+                                        # skip jobs running on external runners (not managed by this service)
                                         if not job.raw_data["runner_name"].startswith(
                                             runner_name_prefix
                                         ):
