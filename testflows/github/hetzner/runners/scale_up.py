@@ -55,6 +55,7 @@ from github import Auth, Github
 from github.Repository import Repository
 from github.WorkflowRun import WorkflowRun
 from github.SelfHostedActionsRunner import SelfHostedActionsRunner
+from github.GithubException import GithubException
 
 from concurrent.futures import ThreadPoolExecutor, Future
 
@@ -547,11 +548,23 @@ def job_matches_labels(job_labels, with_label):
     return True
 
 
-def filtered_run_jobs(workflow_runs: list[WorkflowRun], with_label: list[str]):
+def filtered_run_jobs(
+    workflow_runs: list[WorkflowRun], with_label: list[str], action: Action
+):
     """Filter jobs to select only queued or in progress and match with_label criteria."""
     run_jobs = []
     for run in workflow_runs:
-        for job in run.jobs():
+        try:
+            jobs = list(run.jobs())
+        except GithubException as exc:
+            # Log and skip API calls that fail (e.g., GitHub 502)
+            action.note(
+                f"WARNING:Skipping workflow run {run.id}, failed to fetch jobs: {exc}",
+                level=logging.WARNING,
+            )
+            continue
+
+        for job in jobs:
             if job.status == "completed":
                 continue
             if not (job.status == "in_progress" or job.status == "queued"):
@@ -1369,14 +1382,14 @@ def scale_up(
 
                 with Action(
                     "Getting workflow runs", level=logging.DEBUG, interval=interval
-                ):
+                ) as action:
                     queued_runs = list(repo.get_workflow_runs(status="queued"))
                     in_progress_runs = list(
                         repo.get_workflow_runs(status="in_progress")
                     )
                     # Update job metrics using only queued or in progress runs that match with_label criteria
                     runs_jobs = filtered_run_jobs(
-                        queued_runs + in_progress_runs, with_label
+                        queued_runs + in_progress_runs, with_label, action=action
                     )
                     metrics.update_jobs(runs_jobs)
                     # For job processing, we'll use only queued runs
