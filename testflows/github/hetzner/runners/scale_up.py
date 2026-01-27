@@ -57,6 +57,8 @@ from github.WorkflowRun import WorkflowRun
 from github.SelfHostedActionsRunner import SelfHostedActionsRunner
 from github.GithubException import GithubException
 
+from requests.exceptions import RetryError as RequestsRetryError
+
 from concurrent.futures import ThreadPoolExecutor, Future
 
 # Lock to access the volumes list
@@ -556,11 +558,10 @@ def filtered_run_jobs(
     for run in workflow_runs:
         try:
             jobs = list(run.jobs())
-        except GithubException as exc:
-            # Log and skip API calls that fail (e.g., GitHub 502)
+        except (GithubException, RequestsRetryError) as exc:
+            # Log and skip API calls that fail (e.g., GitHub 502, timeout, retry errors)
             action.note(
-                f"WARNING:Skipping workflow run {run.id}, failed to fetch jobs: {exc}",
-                level=logging.WARNING,
+                f"WARNING:Skipping workflow run {run.id}, failed to fetch jobs: {exc}"
             )
             continue
 
@@ -893,9 +894,17 @@ def recycle_server(
         server.labels = server_labels
 
     with Action(f"Rebuilding recycled server {server.name} image", server_name=name):
-        server.rebuild(image=server_image).action.wait_until_finished(
-            max_retries=timeout
-        )
+        try:
+            server.rebuild(image=server_image).action.wait_until_finished(
+                max_retries=timeout
+            )
+        except APIException as exc:
+            # Re-raise with context since Hetzner's server_error has message=None
+            raise APIException(
+                code=exc.code,
+                message=f"error while rebuilding recycled server {server.name}: {exc.message}",
+                details=getattr(exc, "details", None),
+            ) from exc
 
     setup_worker_pool.submit(
         server_setup,
