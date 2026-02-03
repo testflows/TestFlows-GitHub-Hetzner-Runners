@@ -122,6 +122,7 @@ class Config:
     label_prefix: str = ""
     meta_label: dict[str, set[str]] = None
     recycle: bool = True
+    recycle_grace_period: int = 1800
     end_of_life: int = 50
     delete_random: bool = False
     max_runners: int = 10
@@ -323,6 +324,11 @@ def parse_config(filename: str):
 
     if doc.get("recycle") is not None:
         assert isinstance(doc["recycle"], bool), "config.recycle: is not a boolean"
+
+    if doc.get("recycle_grace_period") is not None:
+        v = doc["recycle_grace_period"]
+        assert isinstance(v, int), "config.recycle_grace_period: is not integer"
+        assert v >= 0, "config.recycle_grace_period: must be >= 0"
 
     if doc.get("end_of_life") is not None:
         v = doc["end_of_life"]

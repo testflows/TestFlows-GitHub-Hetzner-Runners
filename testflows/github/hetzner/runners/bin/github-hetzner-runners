@@ -197,6 +197,16 @@ def argparser():
     )
 
     parser.add_argument(
+        "--recycle-grace-period",
+        metavar="sec",
+        type=args.count_type,
+        help=(
+            "minimum time in seconds a server must be in recycled state before it can be\n"
+            "deleted at end-of-life, default: 1800 (30 minutes)"
+        ),
+    )
+
+    parser.add_argument(
         "--delete-random",
         action="store_true",
         help=(
