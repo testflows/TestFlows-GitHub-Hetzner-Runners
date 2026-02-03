@@ -207,17 +207,16 @@ def recycle_server(
 
     When recycle mode is active, servers are marked for recycling instead of being
     deleted immediately. A recycle timestamp label is set when the server is first
-    marked for recycling. At end-of-life, the server is only deleted if it has been
-    recycled for at least recycle_grace_period seconds. If the recycle timestamp label
-    is missing, the server is treated as having been recycled at epoch 0 (i.e., it
-    will be deleted immediately at end-of-life).
+    marked for recycling. At end-of-life, the server is only deleted if it was
+    previously marked for recycling and has been in recycled state for at least
+    recycle_grace_period seconds.
 
     Args:
         reason: The reason for recycling (e.g., "powered_off", "zombie", "unused_runner")
         server: The server to recycle
         ssh_key: The SSH key to verify ownership
         end_of_life: Minutes after which server reaches end-of-life
-        recycle_grace_period: Minimum seconds server must be recycled before deletion
+        recycle_grace_period: Minimum seconds server must be in recycled state before deletion
     """
     days, hours, minutes, _ = age(server=server)
 
@@ -250,36 +249,37 @@ def recycle_server(
                 return
 
     if minutes >= end_of_life:
-        # Check recycle timestamp to ensure server has been recycled for at least
-        # recycle_grace_period seconds before deleting. If the label is missing,
-        # treat it as timestamp 0 (delete immediately).
-        recycle_ts = int(server.labels.get(recycle_timestamp_label, 0))
-        time_since_recycle = int(time.time()) - recycle_ts
+        # Only enforce grace period for servers already marked for recycling by name.
+        # If a recycled server is missing the timestamp label, treat it as timestamp 0.
+        if server.name.startswith(recycle_server_name_prefix):
+            recycle_ts = int(server.labels.get(recycle_timestamp_label, 0))
+            time_since_recycle = int(time.time()) - recycle_ts
 
-        if time_since_recycle >= recycle_grace_period:
-            with Action(
-                f"Try deleting {reason} server {server.name} "
-                f"used {days}d{hours}h{minutes}m "
-                f"as it is end of life and recycled for {time_since_recycle}s",
-                stacklevel=3,
-                ignore_fail=True,
-                server_name=server.name,
-            ):
-                try:
-                    delete_server(server, action=f"delete_{reason}_end_of_life")
-                finally:
+            if time_since_recycle >= recycle_grace_period:
+                with Action(
+                    f"Try deleting {reason} server {server.name} "
+                    f"used {days}d{hours}h{minutes}m "
+                    f"as it is end of life and recycled for {time_since_recycle}s",
+                    stacklevel=3,
+                    ignore_fail=True,
+                    server_name=server.name,
+                ):
+                    try:
+                        delete_server(server, action=f"delete_{reason}_end_of_life")
+                    finally:
+                        return
+            else:
+                with Action(
+                    f"Skipping deletion of {reason} server {server.name} "
+                    f"used {days}d{hours}h{minutes}m "
+                    f"as it has only been recycled for {time_since_recycle}s "
+                    f"(need {recycle_grace_period}s)",
+                    stacklevel=3,
+                    level=logging.DEBUG,
+                    server_name=server.name,
+                ):
                     return
-        else:
-            with Action(
-                f"Skipping deletion of {reason} server {server.name} "
-                f"used {days}d{hours}h{minutes}m "
-                f"as it has only been recycled for {time_since_recycle}s "
-                f"(need {recycle_grace_period}s)",
-                stacklevel=3,
-                level=logging.DEBUG,
-                server_name=server.name,
-            ):
-                return
+        # Not marked for recycling yet - fall through to mark it now
 
     if not server.name.startswith(recycle_server_name_prefix):
         with Action(
