@@ -37,6 +37,7 @@ from .constants import (
     recycle_server_name_prefix,
     server_ssh_key_label,
     github_runner_label,
+    recycle_timestamp_label,
 )
 
 from .server import wait_ssh, ssh, get_runner_server_name
@@ -871,27 +872,39 @@ def recycle_server(
     ssh_key: SSHKey,
     timeout=60,
 ):
-    """Create specified number of server instances."""
+    """Repurpose a recycled server as an active runner.
+
+    When recycling a server, we merge existing labels with the new runner labels
+    to preserve any critical labels. The recycle timestamp label is removed since
+    the server is now active again.
+    """
     client = Client(token=hetzner_token, poll_interval=1)
-
-    server_labels = {
-        f"github-hetzner-runner-label-{i}": value for i, value in enumerate(labels)
-    }
-    server_labels[server_ssh_key_label] = ssh_key.name
-    server_labels[github_runner_label] = "active"
-
-    with Action(f"Validating server {name} labels", server_name=name):
-        valid, error_msg = LabelValidator.validate_verbose(labels=server_labels)
-        if not valid:
-            raise ValueError(f"invalid server labels {server_labels}: {error_msg}")
 
     with Action(f"Get recyclable server {server_name}", server_name=name):
         server: BoundServer = client.servers.get_by_name(name=server_name)
 
+    # Start with existing labels and merge in the new runner labels
+    # This preserves any labels that aren't explicitly being replaced
+    merged_labels = dict(server.labels) if server.labels else {}
+
+    # Set the new runner labels
+    for i, value in enumerate(labels):
+        merged_labels[f"github-hetzner-runner-label-{i}"] = value
+    merged_labels[server_ssh_key_label] = ssh_key.name
+    merged_labels[github_runner_label] = "active"
+
+    # Remove recycle timestamp label since server is now active
+    merged_labels.pop(recycle_timestamp_label, None)
+
+    with Action(f"Validating server {name} labels", server_name=name):
+        valid, error_msg = LabelValidator.validate_verbose(labels=merged_labels)
+        if not valid:
+            raise ValueError(f"invalid server labels {merged_labels}: {error_msg}")
+
     with Action(f"Recycling server {server_name} to make {name}", server_name=name):
-        server = server.update(name=name, labels=server_labels)
+        server = server.update(name=name, labels=merged_labels)
         server.name = name
-        server.labels = server_labels
+        server.labels = merged_labels
 
     with Action(f"Rebuilding recycled server {server.name} image", server_name=name):
         try:

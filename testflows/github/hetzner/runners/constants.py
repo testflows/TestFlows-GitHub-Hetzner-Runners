@@ -9,3 +9,5 @@ recycle_server_name_prefix = f"{server_name_prefix}recycle-"
 server_ssh_key_label = "github-hetzner-runner-ssh-key"
 # Server runner label
 github_runner_label = "github-hetzner-runner"
+# Recycle timestamp label (stores epoch seconds when server was marked for recycling)
+recycle_timestamp_label = "github-hetzner-recycle-timestamp"

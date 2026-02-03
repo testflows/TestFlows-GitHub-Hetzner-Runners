@@ -31,6 +31,7 @@ from .constants import (
     recycle_server_name_prefix,
     server_ssh_key_label,
     github_runner_label,
+    recycle_timestamp_label,
 )
 from .scale_up import (
     uid,
@@ -196,7 +197,13 @@ def delete_recyclable_server(
 
 
 def recycle_server(reason: str, server: BoundServer, ssh_key: SSHKey, end_of_life: int):
-    """Recycle server."""
+    """Recycle server.
+
+    A recycle timestamp label is set when the server is first marked for recycling.
+    At end-of-life, the server is only deleted if it has been recycled for at least 30 minutes (1800 seconds).
+    If the recycle timestamp label is missing, the server is treated as having been recycled at epoch 0
+    (i.e., it will be deleted immediately at end-of-life).
+    """
     days, hours, minutes, _ = age(server=server)
 
     if not server_ssh_key_label in server.labels:
@@ -228,17 +235,35 @@ def recycle_server(reason: str, server: BoundServer, ssh_key: SSHKey, end_of_lif
                 return
 
     if minutes >= end_of_life:
-        with Action(
-            f"Try deleting {reason} server {server.name} "
-            f"used {days}d{hours}h{minutes}m "
-            "as it is end of life",
-            stacklevel=3,
-            ignore_fail=True,
-            server_name=server.name,
-        ):
-            try:
-                delete_server(server, action=f"delete_{reason}_end_of_life")
-            finally:
+        # Check recycle timestamp to ensure server has been recycled for at least 30 minutes
+        # before deleting. If the label is missing, treat it as timestamp 0 (delete immediately).
+        recycle_grace_period = 1800  # 30 minutes in seconds
+        recycle_ts = int(server.labels.get(recycle_timestamp_label, 0))
+        time_since_recycle = int(time.time()) - recycle_ts
+
+        if time_since_recycle >= recycle_grace_period:
+            with Action(
+                f"Try deleting {reason} server {server.name} "
+                f"used {days}d{hours}h{minutes}m "
+                f"as it is end of life and recycled for {time_since_recycle}s",
+                stacklevel=3,
+                ignore_fail=True,
+                server_name=server.name,
+            ):
+                try:
+                    delete_server(server, action=f"delete_{reason}_end_of_life")
+                finally:
+                    return
+        else:
+            with Action(
+                f"Skipping deletion of {reason} server {server.name} "
+                f"used {days}d{hours}h{minutes}m "
+                f"as it has only been recycled for {time_since_recycle}s "
+                f"(need {recycle_grace_period}s)",
+                stacklevel=3,
+                level=logging.DEBUG,
+                server_name=server.name,
+            ):
                 return
 
     if not server.name.startswith(recycle_server_name_prefix):
@@ -251,7 +276,13 @@ def recycle_server(reason: str, server: BoundServer, ssh_key: SSHKey, end_of_lif
             server_name=server.name,
         ):
             server.power_off()
-            server.update(name=f"{recycle_server_name_prefix}{uid()}")
+            # Merge existing labels with new recycle timestamp label
+            updated_labels = dict(server.labels)
+            updated_labels[recycle_timestamp_label] = str(int(time.time()))
+            server.update(
+                name=f"{recycle_server_name_prefix}{uid()}",
+                labels=updated_labels,
+            )
 
 
 def scale_down(
