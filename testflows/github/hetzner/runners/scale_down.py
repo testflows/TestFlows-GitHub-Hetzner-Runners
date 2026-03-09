@@ -146,6 +146,7 @@ def delete_recyclable_server(
     server_name,
     recyclable_servers: list[BoundServer],
     server_prices: dict[str, dict[str, float]],
+    recycle_grace_period: int | None = None,
     stack_level=2,
 ):
     """Deleting recycle server either randomly or the cheapest if server prices are available.
@@ -154,6 +155,47 @@ def delete_recyclable_server(
     :param recyclable_servers: list of recyclable servers
     :param server_prices: dictionary of server prices
     """
+    if not recyclable_servers:
+        return
+
+    if recycle_grace_period and recycle_grace_period > 0:
+        now_ts = int(time.time())
+        eligible_servers: list[BoundServer] = []
+        for server in recyclable_servers:
+            recycle_ts_raw = server.labels.get(recycle_timestamp_label)
+            try:
+                recycle_ts = int(recycle_ts_raw)
+            except (TypeError, ValueError):
+                recycle_ts = 0
+
+            if recycle_ts <= 0:
+                with Action(
+                    f"Setting recycle timestamp for {server.name} before deletion",
+                    stacklevel=stack_level + 1,
+                    level=logging.DEBUG,
+                    server_name=server_name,
+                ):
+                    updated_labels = dict(server.labels)
+                    updated_labels[recycle_timestamp_label] = str(now_ts)
+                    server.update(labels=updated_labels)
+                continue
+
+            time_since_recycle = now_ts - recycle_ts
+            if time_since_recycle < recycle_grace_period:
+                with Action(
+                    f"Skipping recyclable server {server.name} deletion "
+                    f"as it has only been recycled for {time_since_recycle}s "
+                    f"(need {recycle_grace_period}s)",
+                    stacklevel=stack_level + 1,
+                    level=logging.DEBUG,
+                    server_name=server_name,
+                ):
+                    continue
+
+            eligible_servers.append(server)
+
+        recyclable_servers = eligible_servers
+
     if not recyclable_servers:
         return
 
@@ -252,7 +294,24 @@ def recycle_server(
         # Only enforce grace period for servers already marked for recycling by name.
         # If a recycled server is missing the timestamp label, treat it as timestamp 0.
         if server.name.startswith(recycle_server_name_prefix):
-            recycle_ts = int(server.labels.get(recycle_timestamp_label, 0))
+            recycle_ts_raw = server.labels.get(recycle_timestamp_label)
+            try:
+                recycle_ts = int(recycle_ts_raw)
+            except (TypeError, ValueError):
+                recycle_ts = 0
+
+            if recycle_ts <= 0:
+                with Action(
+                    f"Setting recycle timestamp for {reason} server {server.name} "
+                    f"used {days}d{hours}h{minutes}m",
+                    stacklevel=3,
+                    level=logging.DEBUG,
+                    server_name=server.name,
+                ):
+                    updated_labels = dict(server.labels)
+                    updated_labels[recycle_timestamp_label] = str(int(time.time()))
+                    server.update(labels=updated_labels)
+                return
             time_since_recycle = int(time.time()) - recycle_ts
 
             if time_since_recycle >= recycle_grace_period:
@@ -770,6 +829,7 @@ def scale_down(
                                             recyclable_servers.values()
                                         ),
                                         server_prices=server_prices,
+                                        recycle_grace_period=recycle_grace_period,
                                         stack_level=3,
                                         server_name=server_name,
                                     )
