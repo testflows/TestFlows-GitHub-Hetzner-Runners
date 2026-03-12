@@ -88,6 +88,11 @@ def get_config_data(config: Config):
             "link": None,
         },
         {
+            "label": "Recycle Grace Period (seconds) (--recycle-grace-period)",
+            "value": config.recycle_grace_period,
+            "link": None,
+        },
+        {
             "label": "End of Life (--end-of-life)",
             "value": config.end_of_life,
             "link": None,
