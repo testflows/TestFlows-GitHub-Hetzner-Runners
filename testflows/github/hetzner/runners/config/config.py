@@ -122,7 +122,7 @@ class Config:
     label_prefix: str = ""
     meta_label: dict[str, set[str]] = None
     recycle: bool = True
-    recycle_grace_period: int = 1800
+    recycle_grace_period: int = 1200
     end_of_life: int = 50
     delete_random: bool = False
     max_runners: int = 10

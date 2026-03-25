@@ -66,7 +66,7 @@
                     "examples": [true, false]
                 },
                 "recycle_grace_period": {
-                    "description": "Minimum time in seconds a server must be in recycled state before it can be deleted at end-of-life, default: 1800 (30 minutes).",
+                    "description": "Minimum time in seconds a server must be in recycled state before it can be deleted at end-of-life, default: 1200 (20 minutes).",
                     "type": "integer",
                     "examples": [
                         1800,
