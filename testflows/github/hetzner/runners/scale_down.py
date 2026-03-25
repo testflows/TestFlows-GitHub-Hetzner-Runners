@@ -31,6 +31,7 @@ from .constants import (
     recycle_server_name_prefix,
     server_ssh_key_label,
     github_runner_label,
+    recycle_timestamp_label,
 )
 from .scale_up import (
     uid,
@@ -145,6 +146,7 @@ def delete_recyclable_server(
     server_name,
     recyclable_servers: list[BoundServer],
     server_prices: dict[str, dict[str, float]],
+    recycle_grace_period: int | None = None,
     stack_level=2,
 ):
     """Deleting recycle server either randomly or the cheapest if server prices are available.
@@ -153,6 +155,47 @@ def delete_recyclable_server(
     :param recyclable_servers: list of recyclable servers
     :param server_prices: dictionary of server prices
     """
+    if not recyclable_servers:
+        return
+
+    if recycle_grace_period and recycle_grace_period > 0:
+        now_ts = int(time.time())
+        eligible_servers: list[BoundServer] = []
+        for server in recyclable_servers:
+            recycle_ts_raw = server.labels.get(recycle_timestamp_label)
+            try:
+                recycle_ts = int(recycle_ts_raw)
+            except (TypeError, ValueError):
+                recycle_ts = 0
+
+            if recycle_ts <= 0:
+                with Action(
+                    f"Setting recycle timestamp for {server.name} before deletion",
+                    stacklevel=stack_level + 1,
+                    level=logging.DEBUG,
+                    server_name=server_name,
+                ):
+                    updated_labels = dict(server.labels)
+                    updated_labels[recycle_timestamp_label] = str(now_ts)
+                    server.update(labels=updated_labels)
+                continue
+
+            time_since_recycle = now_ts - recycle_ts
+            if time_since_recycle < recycle_grace_period:
+                with Action(
+                    f"Skipping recyclable server {server.name} deletion "
+                    f"as it has only been recycled for {time_since_recycle}s "
+                    f"(need {recycle_grace_period}s)",
+                    stacklevel=stack_level + 1,
+                    level=logging.DEBUG,
+                    server_name=server_name,
+                ):
+                    continue
+
+            eligible_servers.append(server)
+
+        recyclable_servers = eligible_servers
+
     if not recyclable_servers:
         return
 
@@ -195,8 +238,28 @@ def delete_recyclable_server(
     return recyclable_server.name
 
 
-def recycle_server(reason: str, server: BoundServer, ssh_key: SSHKey, end_of_life: int):
-    """Recycle server."""
+def recycle_server(
+    reason: str,
+    server: BoundServer,
+    ssh_key: SSHKey,
+    end_of_life: int,
+    recycle_grace_period: int,
+):
+    """Recycle server.
+
+    When recycle mode is active, servers are marked for recycling instead of being
+    deleted immediately. A recycle timestamp label is set when the server is first
+    marked for recycling. At end-of-life, the server is only deleted if it was
+    previously marked for recycling and has been in recycled state for at least
+    recycle_grace_period seconds.
+
+    Args:
+        reason: The reason for recycling (e.g., "powered_off", "zombie", "unused_runner")
+        server: The server to recycle
+        ssh_key: The SSH key to verify ownership
+        end_of_life: Minutes after which server reaches end-of-life
+        recycle_grace_period: Minimum seconds server must be in recycled state before deletion
+    """
     days, hours, minutes, _ = age(server=server)
 
     if not server_ssh_key_label in server.labels:
@@ -228,18 +291,54 @@ def recycle_server(reason: str, server: BoundServer, ssh_key: SSHKey, end_of_lif
                 return
 
     if minutes >= end_of_life:
-        with Action(
-            f"Try deleting {reason} server {server.name} "
-            f"used {days}d{hours}h{minutes}m "
-            "as it is end of life",
-            stacklevel=3,
-            ignore_fail=True,
-            server_name=server.name,
-        ):
+        # Only enforce grace period for servers already marked for recycling by name.
+        # If a recycled server is missing the timestamp label, treat it as timestamp 0.
+        if server.name.startswith(recycle_server_name_prefix):
+            recycle_ts_raw = server.labels.get(recycle_timestamp_label)
             try:
-                delete_server(server, action=f"delete_{reason}_end_of_life")
-            finally:
+                recycle_ts = int(recycle_ts_raw)
+            except (TypeError, ValueError):
+                recycle_ts = 0
+
+            if recycle_ts <= 0:
+                with Action(
+                    f"Setting recycle timestamp for {reason} server {server.name} "
+                    f"used {days}d{hours}h{minutes}m",
+                    stacklevel=3,
+                    level=logging.DEBUG,
+                    server_name=server.name,
+                ):
+                    updated_labels = dict(server.labels)
+                    updated_labels[recycle_timestamp_label] = str(int(time.time()))
+                    server.update(labels=updated_labels)
                 return
+            time_since_recycle = int(time.time()) - recycle_ts
+
+            if time_since_recycle >= recycle_grace_period:
+                with Action(
+                    f"Try deleting {reason} server {server.name} "
+                    f"used {days}d{hours}h{minutes}m "
+                    f"as it is end of life and recycled for {time_since_recycle}s",
+                    stacklevel=3,
+                    ignore_fail=True,
+                    server_name=server.name,
+                ):
+                    try:
+                        delete_server(server, action=f"delete_{reason}_end_of_life")
+                    finally:
+                        return
+            else:
+                with Action(
+                    f"Skipping deletion of {reason} server {server.name} "
+                    f"used {days}d{hours}h{minutes}m "
+                    f"as it has only been recycled for {time_since_recycle}s "
+                    f"(need {recycle_grace_period}s)",
+                    stacklevel=3,
+                    level=logging.DEBUG,
+                    server_name=server.name,
+                ):
+                    return
+        # Not marked for recycling yet - fall through to mark it now
 
     if not server.name.startswith(recycle_server_name_prefix):
         with Action(
@@ -251,7 +350,13 @@ def recycle_server(reason: str, server: BoundServer, ssh_key: SSHKey, end_of_lif
             server_name=server.name,
         ):
             server.power_off()
-            server.update(name=f"{recycle_server_name_prefix}{uid()}")
+            # Merge existing labels with new recycle timestamp label
+            updated_labels = dict(server.labels)
+            updated_labels[recycle_timestamp_label] = str(int(time.time()))
+            server.update(
+                name=f"{recycle_server_name_prefix}{uid()}",
+                labels=updated_labels,
+            )
 
 
 def scale_down(
@@ -269,6 +374,7 @@ def scale_down(
     github_token: str = config.github_token
     github_repository: str = config.github_repository
     recycle: bool = config.recycle
+    recycle_grace_period: int = config.recycle_grace_period
     end_of_life: int = config.end_of_life
     max_powered_off_time: int = config.max_powered_off_time
     max_unused_runner_time: int = config.max_unused_runner_time
@@ -512,6 +618,7 @@ def scale_down(
                                     server=powered_off_server.server,
                                     ssh_key=ssh_key,
                                     end_of_life=end_of_life,
+                                    recycle_grace_period=recycle_grace_period,
                                 )
                             else:
                                 with Action(
@@ -558,6 +665,7 @@ def scale_down(
                                     server=zombie_server.server,
                                     ssh_key=ssh_key,
                                     end_of_life=end_of_life,
+                                    recycle_grace_period=recycle_grace_period,
                                 )
                             else:
                                 with Action(
@@ -616,6 +724,7 @@ def scale_down(
                                         server=runner_server,
                                         ssh_key=ssh_key,
                                         end_of_life=end_of_life,
+                                        recycle_grace_period=recycle_grace_period,
                                     )
                                 else:
                                     with Action(
@@ -658,6 +767,7 @@ def scale_down(
                         server=recyclable_server,
                         ssh_key=ssh_key,
                         end_of_life=end_of_life,
+                        recycle_grace_period=recycle_grace_period,
                     )
                     recyclable_servers.pop(server_name)
 
@@ -719,6 +829,7 @@ def scale_down(
                                             recyclable_servers.values()
                                         ),
                                         server_prices=server_prices,
+                                        recycle_grace_period=recycle_grace_period,
                                         stack_level=3,
                                         server_name=server_name,
                                     )
