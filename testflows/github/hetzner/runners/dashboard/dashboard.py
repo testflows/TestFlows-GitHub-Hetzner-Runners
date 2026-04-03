@@ -23,7 +23,6 @@ from types import SimpleNamespace
 
 import streamlit as st
 
-
 # Add the project root to sys.path
 project_root = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")
 if project_root not in sys.path:

@@ -58,7 +58,7 @@ class ScaleUpFailure:
     """Scale up server failure."""
 
     time: float
-    labels: set[str]
+    labels: list[str]
     server_name: str
     exception: Exception
     count: int
@@ -787,7 +787,7 @@ def scale_down(
                     forget_reason = ""
                     forget_failure = False
                     for labels in servers_labels.values():
-                        if scaleup_failure.labels.issubset(labels):
+                        if set(scaleup_failure.labels).issubset(labels):
                             forget_reason = " at least one server could match labels"
                             forget_failure = True
 

@@ -19,7 +19,6 @@ import yaml
 import glob
 import time
 
-
 PROJECTS_BASE_DIR = os.path.expanduser("~/.github-hetzner-runners")
 CURRENT_PROJECT_FILE_PREFIX = ".current-project-"
 SECURE_PERMISSIONS = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR

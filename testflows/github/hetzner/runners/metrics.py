@@ -26,7 +26,6 @@ from .constants import standby_server_name_prefix
 from .constants import recycle_server_name_prefix
 from .server import get_runner_server_name
 
-
 # Server metrics
 SERVERS_TOTAL = Gauge(
     "github_hetzner_runners_servers_total",

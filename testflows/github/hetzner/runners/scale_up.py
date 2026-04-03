@@ -71,7 +71,7 @@ class ScaleUpFailureMessage:
     """Scale up server failure."""
 
     time: float
-    labels: set[str]
+    labels: list[str]
     server_name: str
     exception: Exception
 
@@ -261,7 +261,7 @@ def server_setup(
         )
 
 
-def get_server_types(labels: set[str], default: ServerType, label_prefix: str = ""):
+def get_server_types(labels: list[str], default: ServerType, label_prefix: str = ""):
     """Get server types for the specified job."""
     server_types: list[ServerType] = []
 
@@ -287,7 +287,7 @@ def get_server_types(labels: set[str], default: ServerType, label_prefix: str = 
 
 
 def get_server_locations(
-    labels: set[str], default: Location = None, label_prefix: str = ""
+    labels: list[str], default: Location = None, label_prefix: str = ""
 ):
     """Get preferred server locations for the specified job.
 
@@ -318,7 +318,7 @@ def get_server_locations(
 
 
 def get_server_image(
-    client: Client, labels: set[str], default: Image, label_prefix: str = ""
+    client: Client, labels: list[str], default: Image, label_prefix: str = ""
 ):
     """Get preferred server image for the specified job."""
     server_image: Image = None
@@ -366,7 +366,7 @@ def parse_volume_size(size_str: str, default: int):
     return abs(size)
 
 
-def get_server_volumes(labels: set[str], default: int = 10, label_prefix: str = ""):
+def get_server_volumes(labels: list[str], default: int = 10, label_prefix: str = ""):
     """Get volumes for the specified job.
 
     Args:
@@ -412,7 +412,7 @@ def get_server_arch(server_type: ServerType):
 
 
 def get_setup_script(
-    scripts: str, labels: set[str], default: str = "setup.sh", label_prefix: str = ""
+    scripts: str, labels: list[str], default: str = "setup.sh", label_prefix: str = ""
 ):
     """Get setup script."""
     script = None
@@ -438,7 +438,7 @@ def get_setup_script(
 def get_startup_script(
     scripts: str,
     server_type: ServerType,
-    labels: set[str],
+    labels: list[str],
     default: str = "startup-{arch}.sh",
     label_prefix: str = "",
 ):
@@ -468,7 +468,7 @@ def get_startup_script(
     return script
 
 
-def get_server_net_config(labels: set[str], label_prefix: str = ""):
+def get_server_net_config(labels: list[str], label_prefix: str = ""):
     """Get server network configuration."""
 
     if label_prefix and not label_prefix.endswith("-"):
@@ -499,7 +499,7 @@ def get_server_net_config(labels: set[str], label_prefix: str = ""):
 
 
 def expand_meta_label(
-    meta_label: dict[str, set[str]], labels, label_prefix: str = ""
+    meta_label: dict[str, set[str]], labels: list[str], label_prefix: str = ""
 ):
     """Expand any meta labels."""
     expanded_labels = []
@@ -714,7 +714,7 @@ def get_server_bound_volumes(
 def create_server(
     hetzner_token: str,
     setup_worker_pool: ThreadPoolExecutor,
-    labels: set[str],
+    labels: list[str],
     name: str,
     server_type: ServerType,
     server_location: Location,
@@ -862,7 +862,7 @@ def recycle_server(
     server_volumes: list[Volume],
     hetzner_token: str,
     setup_worker_pool: ThreadPoolExecutor,
-    labels: set[str],
+    labels: list[str],
     name: str,
     server_image: Image,
     startup_script: str,
@@ -931,7 +931,7 @@ def recycle_server(
     )
 
 
-def count_available_runners(runners: list[SelfHostedActionsRunner], labels):
+def count_available_runners(runners: list[SelfHostedActionsRunner], labels: list[str]):
     """Return number of available runners that match labels (subset)."""
     count = 0
     label_set = set(labels)
@@ -946,7 +946,7 @@ def count_available_runners(runners: list[SelfHostedActionsRunner], labels):
     return count
 
 
-def count_available(servers: list[RunnerServer], labels):
+def count_available(servers: list[RunnerServer], labels: list[str]):
     """Return number of available servers that match labels (subset)."""
     count = 0
     label_set = set(labels)
@@ -961,7 +961,7 @@ def count_available(servers: list[RunnerServer], labels):
     return count
 
 
-def count_present(servers: list[RunnerServer], labels):
+def count_present(servers: list[RunnerServer], labels: list[str]):
     """Return number of present servers that match labels (subset)."""
     count = 0
     label_set = set(labels)
@@ -1150,7 +1150,7 @@ def scale_up(
 
     def create_runner_server(
         name: str,
-        labels: set[str],
+        labels: list[str],
         setup_worker_pool: ThreadPoolExecutor,
         futures: list[Future],
         servers: list[RunnerServer],
@@ -1580,13 +1580,13 @@ def scale_up(
                                             server_name=server_name,
                                             interval=interval,
                                         ):
-                                            labels = set(
-                                                [
+                                            labels = list(
+                                                dict.fromkeys(
                                                     label["name"].lower()
                                                     for label in repo.get_self_hosted_runner(
                                                         job.raw_data["runner_id"]
                                                     ).labels
-                                                ]
+                                                )
                                             )
 
                                     if max_servers_in_workflow_run is not None:
@@ -1704,7 +1704,7 @@ def scale_up(
                                     server_location=future.server_location,
                                     server_volumes=future.server_volumes,
                                     server_status=future.server_volumes,
-                                    labels=future.server_labels,
+                                    labels=set(future.server_labels),
                                 )
                             )
 
