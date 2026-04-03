@@ -499,7 +499,7 @@ def get_server_net_config(labels: set[str], label_prefix: str = ""):
 
 
 def expand_meta_label(
-    meta_label: dict[str, set[str]], labels: set[str], label_prefix: str = ""
+    meta_label: dict[str, set[str]], labels, label_prefix: str = ""
 ):
     """Expand any meta labels."""
     expanded_labels = []
@@ -526,7 +526,7 @@ def expand_meta_label(
                             f"{label_prefix}{composite_label}{composite_value}"
                         )
 
-    return set(expanded_labels)
+    return list(dict.fromkeys(expanded_labels))
 
 
 def raise_exception(exc):
@@ -536,7 +536,7 @@ def raise_exception(exc):
 
 def get_job_labels(job):
     """Get job labels."""
-    return set([label.lower() for label in job.raw_data["labels"]])
+    return list(dict.fromkeys(label.lower() for label in job.raw_data["labels"]))
 
 
 def job_matches_labels(job_labels, with_label):
@@ -931,42 +931,45 @@ def recycle_server(
     )
 
 
-def count_available_runners(runners: list[SelfHostedActionsRunner], labels: set[str]):
+def count_available_runners(runners: list[SelfHostedActionsRunner], labels):
     """Return number of available runners that match labels (subset)."""
     count = 0
+    label_set = set(labels)
 
     for runner in runners:
         if runner.status == "online":
             runner_labels = set([label["name"].lower() for label in runner.labels])
-            if labels.issubset(runner_labels):
+            if label_set.issubset(runner_labels):
                 if not runner.busy:
                     count += 1
 
     return count
 
 
-def count_available(servers: list[RunnerServer], labels: set[str]):
+def count_available(servers: list[RunnerServer], labels):
     """Return number of available servers that match labels (subset)."""
     count = 0
+    label_set = set(labels)
 
     for runner_server in servers:
         if runner_server.server_status == Server.STATUS_OFF:
             continue
-        if labels.issubset(runner_server.labels):
+        if label_set.issubset(runner_server.labels):
             if runner_server.status in ("initializing", "ready"):
                 count += 1
 
     return count
 
 
-def count_present(servers: list[RunnerServer], labels: set[str]):
+def count_present(servers: list[RunnerServer], labels):
     """Return number of present servers that match labels (subset)."""
     count = 0
+    label_set = set(labels)
 
     for runner_server in servers:
         if runner_server.server_status == Server.STATUS_OFF:
             continue
-        if labels.issubset(runner_server.labels):
+        if label_set.issubset(runner_server.labels):
             count += 1
 
     return count
@@ -1646,7 +1649,7 @@ def scale_up(
                     try:
                         with Action("Checking standby runner pool", interval=interval):
                             for standby_runner in standby_runners:
-                                labels = set(standby_runner.labels)
+                                labels = list(dict.fromkeys(standby_runner.labels))
                                 replenish_immediately = (
                                     standby_runner.replenish_immediately
                                 )
