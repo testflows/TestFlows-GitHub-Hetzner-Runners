@@ -1,0 +1,1984 @@
+#!/usr/bin/env python3
+# Copyright 2023 Katteli Inc.
+# TestFlows.com Open-Source Software Testing Framework (http://testflows.com)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0`
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import os
+import sys
+import time
+import queue
+import tempfile
+import logging
+import threading
+import logging.config
+import webbrowser
+
+from contextlib import contextmanager
+from concurrent.futures import ThreadPoolExecutor, Future
+from prometheus_client import start_http_server as start_prometheus_server
+
+from hcloud.ssh_keys.domain import SSHKey
+
+from github import Auth, Github
+from github.Repository import Repository
+
+from argparse import ArgumentParser, RawTextHelpFormatter, ArgumentTypeError
+
+from testflows.runners import __version__, __license__
+from testflows.runners.hclient import HClient as Client
+from testflows.runners.actions import Action
+from testflows.runners.scale_up import scale_up
+from testflows.runners.scale_down import scale_down
+from testflows.runners.api_watch import api_watch
+from testflows.runners.logger import (
+    logger,
+    configure as configure_logger,
+)
+from testflows.runners.config import (
+    Config,
+    check_image,
+    default_user_config,
+)
+from testflows.runners.config import (
+    check_ssh_key,
+    check_location,
+    check_server_type,
+    check_prices,
+)
+from testflows.runners.dashboard import (
+    start_http_server as start_dashboard_server,
+)
+
+import testflows.runners.args as args
+import testflows.runners.cloud as cloud
+import testflows.runners.service as service
+import testflows.runners.servers as servers
+import testflows.runners.estimate as estimate
+import testflows.runners.images as images
+import testflows.runners.projects as projects
+import testflows.runners.volumes as volumes
+
+# Provider-specific argument validators
+from testflows.runners.providers import hetzner, aws, azure, gcp, scaleway
+
+from requests_cache import DO_NOT_CACHE, EXPIRE_IMMEDIATELY, install_cache
+from requests_cache.backends.filesystem import FileCache
+
+description = f"""Auto-scaling GitHub Actions runners service using Hetzner Cloud.
+
+    Service that starts and monitors queued up GitHub Actions workflows.
+    When a new job is queued up, it creates new Hetzner Cloud server instance
+    that provides an ephemeral GitHub Actions runner. Server is automatically
+    powered off when job completes and then powered off servers are
+    automatically deleted.
+
+    Configuration can be specified through:
+
+    * Command line arguments (highest precedence)
+    * Project configuration (if --project is specified or project is set)
+    * Environment variables ($GITHUB_TOKEN, $GITHUB_REPOSITORY, $HETZNER_TOKEN, $RUNNERS_CONFIG)
+    * Configuration file (specified via --config or the default user config '{default_user_config}')
+    * Default values (lowest precedence)
+"""
+
+
+def argparser():
+    """Command line argument parser."""
+
+    parser = ArgumentParser(
+        "tfs-runners",
+        description=description,
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    parser.add_argument("-v", "--version", action="version", version=f"{__version__}")
+
+    parser.add_argument(
+        "--license",
+        action="version",
+        help="show program's license and exit",
+        version=f"{__license__}",
+    )
+
+    parser.add_argument(
+        "-p",
+        "--project",
+        metavar="name",
+        type=str,
+        help=(
+            "project name to use for configuration (values from project config have "
+            "lower precedence than command line arguments),\n"
+            "default: currently set project or None"
+        ),
+    )
+
+    parser.add_argument(
+        "-c",
+        "--config",
+        metavar="file",
+        dest="config_file",
+        type=args.config_type,
+        help=f"program yaml configuration file, default: project config or $RUNNERS_CONFIG env var or {default_user_config}",
+        default=os.environ.get(
+            "RUNNERS_CONFIG", "__default_user_config__"
+        ),
+    )
+
+    parser.add_argument(
+        "--github-token",
+        metavar="token",
+        type=str,
+        help="GitHub token, default: project config or $GITHUB_TOKEN environment variable",
+    )
+
+    parser.add_argument(
+        "--github-repository",
+        metavar="name",
+        type=str,
+        help="GitHub repository, default: project config or $GITHUB_REPOSITORY environment variable",
+    )
+
+    # Provider selection
+    parser.add_argument(
+        "--provider",
+        metavar="name",
+        type=args.provider_type,
+        help="Enable specific providers using comma-separated list.\n"
+             "Example: --provider hetzner,aws, default: hetzner only or\n"
+             "all providers specified in the configuration file"
+    )
+
+    # Add provider-specific arguments
+    hetzner.args.add_arguments(parser)
+
+    aws.args.add_arguments(parser)
+
+    azure.args.add_arguments(parser)
+
+    gcp.args.add_arguments(parser)
+
+    scaleway.args.add_arguments(parser)
+
+    parser.add_argument(
+        "--ssh-key",
+        metavar="path",
+        type=str,
+        help="path to public SSH key, default: ~/.ssh/id_rsa.pub",
+    )
+
+    parser.add_argument(
+        "-m",
+        "--max-runners",
+        metavar="count",
+        type=args.count_type,
+        help="maximum number of active runners, default: 10",
+    )
+
+    parser.add_argument(
+        "--max-runners-for-label",
+        metavar="label1,label2:count",
+        type=args.max_runners_for_label_type,
+        action="append",
+        help=(
+            "maximum number of runners for specific label combination,\n"
+            "can be specified multiple times, example: windows,gpu:3"
+        ),
+    )
+
+    parser.add_argument(
+        "-r",
+        "--recycle",
+        metavar="on|off",
+        type=args.switch_type,
+        help="turn on recycling of powered off servers, either 'on' or 'off', default: on",
+    )
+
+    parser.add_argument(
+        "--end-of-life",
+        metavar="minutes",
+        type=args.end_of_life_type,
+        help=(
+            "number of minutes in 1 hour (60 minutes) period after which a recyclable server\n"
+            "is considered to have reached its end of life and thus is deleted, default: 50"
+        ),
+    )
+
+    parser.add_argument(
+        "--recycle-grace-period",
+        metavar="sec",
+        type=args.count_type,
+        help=(
+            "minimum time in seconds a server must be in recycled state before it can be\n"
+            "deleted at end-of-life, default: 1200 (20 minutes)"
+        ),
+    )
+
+    parser.add_argument(
+        "--delete-random",
+        action="store_true",
+        help=(
+            "delete random recyclable server when maximum number of servers is reached, by default uses server prices"
+        ),
+    )
+
+    parser.add_argument(
+        "--max-runners-in-workflow-run",
+        metavar="count",
+        type=args.count_type,
+        help="maximum number of runners allowed to be created for a single workflow run, default: not set",
+    )
+
+    parser.add_argument(
+        "--with-label",
+        metavar="label --with-label ...",
+        type=str,
+        action="append",
+        help=(
+            "only create runners for jobs that have the specified label, default: self-hosted"
+        ),
+    )
+
+    parser.add_argument(
+        "--label-prefix",
+        metavar="prefix",
+        type=str,
+        help="support type, image, location, setup, and startup job labels with the specified prefix",
+    )
+
+    parser.add_argument(
+        "--meta-label",
+        metavar="name label,... --meta-label",
+        type=str,
+        action="append",
+        nargs=2,
+        help="define runner meta label that will be expanded to a list of given labels",
+    )
+
+    parser.add_argument(
+        "--default-image",
+        metavar="architecture:type:name_or_description",
+        type=args.image_type,
+        help=(
+            "default runner server image type and name or description,\n"
+            "where the architecture is either: 'x86' or 'arm' and\n"
+            "the type is either: 'system','snapshot','backup','app',\n"
+            "followed by the name, "
+            "default: x86:system:ubuntu-22.04"
+        ),
+    )
+
+    parser.add_argument(
+        "--default-type",
+        dest="default_server_type",
+        metavar="name",
+        type=args.server_type,
+        help=("default runner server type name, default: cx23"),
+    )
+
+    parser.add_argument(
+        "--default-location",
+        metavar="name",
+        type=args.location_type,
+        help=("default runner server location name, by default not specified"),
+    )
+
+    parser.add_argument(
+        "--default-volume-size",
+        metavar="size",
+        type=args.count_type,
+        help="default runner server volume size in GB, default: 10",
+    )
+
+    parser.add_argument(
+        "--default-volume-location",
+        metavar="name",
+        type=args.location_type,
+        help=(
+            "default runner server volume location name, by default 'nbg1' (must be specified)"
+        ),
+    )
+
+    parser.add_argument(
+        "-w",
+        "--workers",
+        metavar="count",
+        type=args.count_type,
+        help="number of concurrent workers, default: 10",
+    )
+
+    parser.add_argument(
+        "--scripts",
+        metavar="path",
+        type=args.path_type,
+        help="path to the folder that contains custom server scripts",
+    )
+
+    parser.add_argument(
+        "--max-powered-off-time",
+        metavar="sec",
+        type=args.count_type,
+        help="maximum time after which a powered off server is recycled or deleted, default: 60 sec",
+    )
+
+    parser.add_argument(
+        "--max-unused-runner-time",
+        metavar="sec",
+        type=args.count_type,
+        help="maximum time after which an unused runner is removed and its server deleted, default: 120 sec",
+    )
+
+    parser.add_argument(
+        "--max-runner-registration-time",
+        metavar="sec",
+        type=args.count_type,
+        help="maximum time after which the server will be deleted if it fails to register a runner, default: 120 sec",
+    )
+
+    parser.add_argument(
+        "--max-server-ready-time",
+        metavar="sec",
+        type=args.count_type,
+        help="maximum time to wait for the server to be in the running state, default: 120 sec",
+    )
+
+    parser.add_argument(
+        "--scale-up-interval",
+        metavar="sec",
+        type=args.count_type,
+        help="scale up service interval, default: 60 sec",
+    )
+
+    parser.add_argument(
+        "--scale-down-interval",
+        metavar="sec",
+        type=args.count_type,
+        help="scale down service interval, default: 60 sec",
+    )
+
+    parser.add_argument(
+        "--metrics-port",
+        metavar="port",
+        type=args.count_type,
+        help="port for the prometheus metrics server, default: 9090",
+    )
+
+    parser.add_argument(
+        "--metrics-host",
+        metavar="host",
+        type=str,
+        help="host address to bind the prometheus metrics server to, default: 127.0.0.1",
+    )
+
+    parser.add_argument(
+        "--dashboard-port",
+        metavar="port",
+        type=args.count_type,
+        help="port for the dashboard server, default: 8090",
+    )
+
+    parser.add_argument(
+        "--dashboard-host",
+        metavar="host",
+        type=str,
+        help="host address to bind the dashboard server to, default: 127.0.0.1",
+    )
+
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="enable debugging mode, default: False",
+        default=None,
+    )
+
+    parser.add_argument(
+        "--service-mode",
+        action="store_true",
+        help="enable service mode, default: False",
+    )
+
+    parser.add_argument(
+        "--embedded-mode",
+        action="store_true",
+        help="enable embedded mode, default: False",
+    )
+
+    commands = parser.add_subparsers(
+        title="commands", metavar="command", description=None, help=None
+    )
+
+    delete_parser = commands.add_parser(
+        "delete",
+        help="delete servers",
+        description=(
+            f"Delete servers and their runners.\n\n"
+            "Note that the cloud service server will not be deleted. If you do have one, use\n"
+            "the 'cloud delete' command to delete it."
+        ),
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    delete_parser.add_argument(
+        "-n",
+        "--name",
+        metavar="name",
+        action="append",
+        dest="delete_name",
+        help="delete all servers starting with the name",
+        type=str,
+    )
+
+    delete_parser.add_argument(
+        "-s",
+        "--server",
+        metavar="name",
+        action="append",
+        dest="delete_server_name",
+        help="delete by server name",
+        type=str,
+    )
+
+    delete_parser.add_argument(
+        "--id",
+        metavar="id",
+        action="append",
+        dest="delete_id",
+        help="delete by server id",
+        type=int,
+    )
+
+    delete_parser.add_argument(
+        "--all",
+        dest="delete_all",
+        action="store_true",
+        help="delete all servers",
+    )
+
+    delete_parser.set_defaults(func=servers.delete)
+
+    list_parser = commands.add_parser(
+        "list",
+        help="list servers",
+        description="List servers.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    list_parser.add_argument(
+        "-n",
+        "--name",
+        metavar="name",
+        action="append",
+        dest="list_name",
+        help="list all servers starting with the name",
+        type=str,
+    )
+
+    list_parser.add_argument(
+        "-s",
+        "--server",
+        metavar="name",
+        action="append",
+        dest="list_server_name",
+        help="list by server name",
+        type=str,
+    )
+
+    list_parser.add_argument(
+        "--id",
+        metavar="id",
+        action="append",
+        dest="list_id",
+        help="list by server id",
+        type=int,
+    )
+
+    list_parser.add_argument(
+        "--all",
+        dest="list_all",
+        action="store_true",
+        help="list all servers (default if no other option is specified)",
+    )
+
+    list_parser.add_argument(
+        "--no-labels",
+        action="store_true",
+        help="do not print labels",
+    )
+
+    list_parser.add_argument(
+        "--no-volumes",
+        action="store_true",
+        help="do not print volumes",
+    )
+
+    list_parser.set_defaults(func=servers.list)
+
+    ssh_client_parser = commands.add_parser(
+        "ssh",
+        help="ssh to a server",
+        description="Open SSH client to a server.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    ssh_client_parser.add_argument(
+        "name",
+        help="name of the server",
+        type=str,
+    )
+
+    ssh_client_parser.set_defaults(func=servers.ssh_client)
+
+    ssh_client_commands = ssh_client_parser.add_subparsers(
+        title="commands", metavar="command", description=None, help=None
+    )
+
+    ssh_client_command_parser = ssh_client_commands.add_parser(
+        "command",
+        help="print ssh command to the server",
+        description="Get SSH command to connect to the server.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    ssh_client_command_parser.set_defaults(func=servers.ssh_client_command)
+
+    cloud_parser = commands.add_parser(
+        "cloud",
+        help="manage cloud service",
+        description="Deploying and running application as a service on a cloud instance.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    cloud_parser.add_argument(
+        "-n",
+        "--name",
+        metavar="server",
+        dest="cloud_server_name",
+        type=str,
+        help="deployment server name, default: tfs-runners",
+    )
+
+    cloud_parser.add_argument(
+        "--host",
+        metavar="host",
+        dest="cloud_host",
+        type=str,
+        help=(
+            "host (IP or hostname) of the cloud service server to connect to directly via SSH,\n"
+            "bypassing IP lookup by name using the Hetzner API"
+        ),
+    )
+
+    cloud_commands = cloud_parser.add_subparsers(
+        title="commands", metavar="command", description=None, help=None
+    )
+
+    cloud_commands.required = True
+
+    dashboard_cloud_parser = cloud_commands.add_parser(
+        "dashboard",
+        help="open cloud service dashboard",
+        description="Open the dashboard through SSH tunnel to cloud service.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    dashboard_cloud_parser.add_argument(
+        "--local-port",
+        metavar="port",
+        type=args.count_type,
+        help="local port for SSH tunnel, default: 7090",
+        default=7090,
+    )
+
+    dashboard_cloud_parser.add_argument(
+        "--remote-port",
+        metavar="port",
+        type=args.count_type,
+        help="remote dashboard port, default: --dashboard-port",
+    )
+
+    dashboard_cloud_parser.add_argument(
+        "--timeout",
+        metavar="seconds",
+        type=args.count_type,
+        help="timeout for establishing SSH tunnel, default: 30 seconds",
+        default=30,
+    )
+
+    dashboard_cloud_parser.set_defaults(func=cloud.cloud_dashboard)
+
+    deploy_cloud_parser = cloud_commands.add_parser(
+        "deploy",
+        help="deploy cloud service",
+        description="Deploy application as a service to a new server instance.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    deploy_cloud_parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="force deployment if already exist",
+    )
+
+    deploy_cloud_parser.add_argument(
+        "--version",
+        metavar="number|latest",
+        type=str,
+        help=(
+            f"service package version to deploy, either version number or 'latest',\n"
+            f"default: this version {__version__}"
+        ),
+    )
+
+    deploy_cloud_parser.add_argument(
+        "-l",
+        "--location",
+        metavar="name",
+        dest="cloud_deploy_location",
+        type=args.location_type,
+        help="deployment server location",
+    )
+
+    deploy_cloud_parser.add_argument(
+        "-t",
+        "--type",
+        metavar="name",
+        dest="cloud_deploy_server_type",
+        type=args.server_type,
+        help="deployment server type, default: cx23",
+    )
+
+    deploy_cloud_parser.add_argument(
+        "-i",
+        "--image",
+        metavar="architecture:type:name_or_description",
+        dest="cloud_deploy_image",
+        type=args.image_type,
+        help=(
+            "deployment server image type and name or description,\n"
+            "where the architecture is either: 'x86' or 'arm', \n"
+            "the type is either: 'system','snapshot','backup','app', \n"
+            "followed by the name, "
+            "default: x86:system:ubuntu-22.04"
+        ),
+    )
+
+    deploy_cloud_parser.add_argument(
+        "--setup-script",
+        metavar="path",
+        dest="cloud_deploy_setup_script",
+        type=args.path_type,
+        help="path to custom deployment server setup script",
+    )
+
+    deploy_cloud_parser.set_defaults(func=cloud.deploy)
+
+    redeploy_cloud_parser = cloud_commands.add_parser(
+        "redeploy",
+        help="redeploy on the same cloud service server",
+        description="Redeploy application as a service on the existing server instance.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    redeploy_cloud_parser.add_argument(
+        "--version",
+        metavar="number|latest",
+        type=str,
+        help=(
+            f"service package version to deploy, either version number or 'latest',\n"
+            f"default: this version {__version__}"
+        ),
+    )
+
+    redeploy_cloud_parser.set_defaults(func=cloud.redeploy)
+
+    log_cloud_parser = cloud_commands.add_parser(
+        "log",
+        help="get cloud service log",
+        description="Get cloud service log.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    log_cloud_parser.add_argument(
+        "-f",
+        "--follow",
+        action="store_true",
+        help="follow the log journal",
+    )
+
+    log_cloud_parser.add_argument(
+        "-n",
+        "--lines",
+        metavar="[+]number",
+        type=args.lines_type,
+        help=(
+            "output the last number of lines, with --follow the default is 10,\n"
+            "use '+' before the number to output log starting with the line number"
+        ),
+    )
+
+    log_cloud_parser.add_argument(
+        "-c",
+        "--columns",
+        metavar="name[:width][,...]",
+        type=args.columns_type,
+        help="comma separated list of columns to include and their optional width",
+    )
+
+    log_cloud_parser.add_argument(
+        "--raw",
+        action="store_true",
+        help="output raw log",
+    )
+
+    log_cloud_parser.set_defaults(func=cloud.log)
+
+    log_cloud_commands = log_cloud_parser.add_subparsers(
+        title="commands", metavar="command", description=None, help=None
+    )
+
+    delete_log_cloud_parser = log_cloud_commands.add_parser(
+        "delete",
+        help="delete log",
+        description="Delete cloud service log.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    delete_log_cloud_parser.set_defaults(func=cloud.delete_log)
+
+    download_log_cloud_parser = log_cloud_commands.add_parser(
+        "download",
+        help="download log",
+        description="Download cloud service log.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    download_log_cloud_parser.add_argument(
+        "-o",
+        "--output",
+        metavar="path",
+        type=str,
+        help="output file name, default: tfs-runners.log",
+        default="tfs-runners.log",
+    )
+
+    download_log_cloud_parser.set_defaults(func=cloud.download_log)
+
+    status_cloud_parser = cloud_commands.add_parser(
+        "status",
+        help="get cloud service status",
+        description="Get cloud service status.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    status_cloud_parser.set_defaults(func=cloud.status)
+
+    start_cloud_parser = cloud_commands.add_parser(
+        "start",
+        help="start cloud service ",
+        description="Start cloud service.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    start_cloud_parser.set_defaults(func=cloud.start)
+
+    stop_cloud_parser = cloud_commands.add_parser(
+        "stop",
+        help="stop cloud service",
+        description="Stop cloud service.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    stop_cloud_parser.set_defaults(func=cloud.stop)
+
+    ssh_cloud_parser = cloud_commands.add_parser(
+        "ssh",
+        help="ssh to cloud service",
+        description="Open SSH client to cloud service.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    ssh_cloud_parser.set_defaults(func=cloud.ssh_client)
+
+    ssh_cloud_commands = ssh_cloud_parser.add_subparsers(
+        title="commands", metavar="command", description=None, help=None
+    )
+
+    ssh_client_command_cloud_parser = ssh_cloud_commands.add_parser(
+        "command",
+        help="print ssh command to cloud service",
+        description="Get SSH command to connect to cloud service.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    ssh_client_command_cloud_parser.set_defaults(func=cloud.ssh_client_command)
+
+    install_cloud_parser = cloud_commands.add_parser(
+        "install",
+        help="install cloud service",
+        description=(
+            "Install cloud service.\n\n"
+            "The `tfs-runners <options> service install` command will be executed on the cloud server instance.\n\n"
+            "Note: Just like with the `tfs-runners <options> service install` command,\n"
+            "      the options that are passed to the `tfs-runners <options> cloud install` command\n"
+            "      will be the same options with which the service will be executed."
+        ),
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    install_cloud_parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="force service install",
+        default=False,
+    )
+
+    install_cloud_parser.set_defaults(func=cloud.install)
+
+    uninstall_cloud_parser = cloud_commands.add_parser(
+        "uninstall",
+        help="uninstall cloud service",
+        description="Uninstall cloud service.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    uninstall_cloud_parser.set_defaults(func=cloud.uninstall)
+
+    upgrade_cloud_parser = cloud_commands.add_parser(
+        "upgrade",
+        help="upgrade cloud service",
+        description=(
+            "Upgrade cloud service application.\n\n"
+            "If specific '--version' is specified then the `testflows.runners`\n"
+            "package is upgraded to the specified version otherwise the version is\n"
+            "upgraded to the latest available.\n\n"
+            "Note: The service is not re-installed during the package upgrade process.\n"
+            "      Instead, it is stopped before the upgrade and then started back up\n"
+            "      after the package upgrade is complete."
+        ),
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    upgrade_cloud_parser.add_argument(
+        "--version",
+        type=str,
+        metavar="version",
+        dest="upgrade_version",
+        help="package version, default: the latest",
+    )
+
+    upgrade_cloud_parser.set_defaults(func=cloud.upgrade)
+
+    delete_cloud_parser = cloud_commands.add_parser(
+        "delete",
+        help="delete cloud service",
+        description=(
+            "Delete cloud service.\n\n"
+            "Deletes `tfs-runners` service running on the cloud server instance\n"
+            "by first stopping the service and then deleting the server."
+        ),
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    delete_cloud_parser.set_defaults(func=cloud.delete)
+
+    service_parser = commands.add_parser(
+        "service",
+        help="manage service",
+        description="Service commands.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    service_commands = service_parser.add_subparsers(
+        title="commands", metavar="command", description=None, help=None
+    )
+
+    service_commands.required = True
+
+    install_service_parser = service_commands.add_parser(
+        "install",
+        help="install",
+        description=(
+            "Install service.\n\n"
+            "The `/etc/systemd/system/tfs-runners.service` file will be created and service will be started.\n\n"
+            "Note: The options that are passed to the `tfs-runners <options> service install` command\n"
+            "      will be the same options with which the service will be executed."
+        ),
+        formatter_class=RawTextHelpFormatter,
+    )
+    install_service_parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="force service install",
+        default=False,
+    )
+    install_service_parser.set_defaults(func=service.install)
+
+    uninstall_service_parser = service_commands.add_parser(
+        "uninstall",
+        help="uninstall",
+        description="Uninstall service.",
+        formatter_class=RawTextHelpFormatter,
+    )
+    uninstall_service_parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="force service uninstall",
+        default=False,
+    )
+    uninstall_service_parser.set_defaults(func=service.uninstall)
+
+    start_service_parser = service_commands.add_parser(
+        "start",
+        help="start",
+        description="Start service.",
+        formatter_class=RawTextHelpFormatter,
+    )
+    start_service_parser.set_defaults(func=service.start)
+
+    stop_service_parser = service_commands.add_parser(
+        "stop",
+        help="stop",
+        description="Stop service.",
+        formatter_class=RawTextHelpFormatter,
+    )
+    stop_service_parser.set_defaults(func=service.stop)
+
+    status_service_parser = service_commands.add_parser(
+        "status",
+        help="status",
+        description="Get service status.",
+        formatter_class=RawTextHelpFormatter,
+    )
+    status_service_parser.set_defaults(func=service.status)
+
+    log_service_parser = service_commands.add_parser(
+        "log",
+        help="log",
+        description="Get service log.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    log_service_parser.add_argument(
+        "-c",
+        "--columns",
+        metavar="name[:width][,...]",
+        type=args.columns_type,
+        help="comma separated list of columns to include and their optional width",
+    )
+
+    log_service_parser.add_argument(
+        "-f",
+        "--follow",
+        action="store_true",
+        help="follow the log",
+    )
+
+    log_service_parser.add_argument(
+        "-n",
+        "--lines",
+        metavar="[+]number",
+        type=args.lines_type,
+        help=(
+            "output the last number of lines, with --follow the default is 10,\n"
+            "use '+' before the number to output log starting with the line number"
+        ),
+    )
+
+    log_service_parser.add_argument(
+        "--raw",
+        action="store_true",
+        help="output raw log",
+    )
+
+    log_service_parser.set_defaults(func=service.log)
+
+    log_service_commands = log_service_parser.add_subparsers(
+        title="commands", metavar="command", description=None, help=None
+    )
+
+    format_log_service_parser = log_service_commands.add_parser(
+        "format",
+        help="format log",
+        description="Format raw service log.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    format_log_service_parser.add_argument(
+        "input",
+        type=args.file_type(bufsize=1),
+        help="input log file, use '-' for stdout",
+    )
+
+    format_log_service_parser.set_defaults(func=service.format_log)
+
+    delete_log_service_parser = log_service_commands.add_parser(
+        "delete",
+        help="delete log",
+        description="Delete service log.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    delete_log_service_parser.set_defaults(func=service.delete_log)
+
+    estimate_parser = commands.add_parser(
+        "estimate",
+        help="cost estimator",
+        description="Estimate costs for workflow job, run or runs.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    estimate_parser.add_argument(
+        "-o",
+        "--output",
+        dest="output",
+        metavar="path",
+        type=args.file_type(mode="w"),
+        help="save estimate into the given file using the YAML format",
+    )
+
+    estimate_parser.add_argument(
+        "--ipv4",
+        metavar="price",
+        dest="ipv4_price",
+        help="IPv4 price per hour, default: 0.0008",
+        type=float,
+        default=0.0008,
+    )
+
+    estimate_parser.add_argument(
+        "--ipv6",
+        metavar="price",
+        dest="ipv6_price",
+        help="IPv6 price per hour, default: 0.0000",
+        type=float,
+        default=0.0000,
+    )
+
+    estimate_parser_commands = estimate_parser.add_subparsers(
+        title="commands", metavar="command", description=None, help=None
+    )
+
+    estimate_parser_commands.required = True
+
+    estimate_run_parser = estimate_parser_commands.add_parser(
+        "run",
+        help="run cost estimator",
+        description="Estimate costs for a specific workflow run.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    estimate_run_parser.add_argument("id", help="run id", type=int)
+    estimate_run_parser.add_argument(
+        "--attempt",
+        metavar="number",
+        dest="run_attempt",
+        help="attempt number",
+        type=int,
+    )
+
+    estimate_run_parser.set_defaults(func=estimate.workflow_run)
+
+    estimate_job_parser = estimate_parser_commands.add_parser(
+        "job",
+        help="job cost estimator",
+        description="Estimate costs for a specific workflow job.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    estimate_job_parser.add_argument("id", help="job id", type=int)
+
+    estimate_job_parser.set_defaults(func=estimate.workflow_job)
+
+    estimate_runs_parser = estimate_parser_commands.add_parser(
+        "runs",
+        help="runs cost estimator",
+        description="Estimate costs for workflow runs.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    estimate_runs_parser.add_argument(
+        "--actor",
+        metavar="name",
+        dest="runs_actor",
+        help="actor name",
+        type=str,
+    )
+
+    estimate_runs_parser.add_argument(
+        "--branch",
+        metavar="name",
+        dest="runs_branch",
+        help="branch name",
+        type=str,
+    )
+
+    estimate_runs_parser.add_argument(
+        "--event",
+        metavar="name",
+        dest="runs_event",
+        help="event name",
+        type=str,
+    )
+
+    estimate_runs_parser.add_argument(
+        "--status",
+        dest="runs_status",
+        help="status value",
+        choices=[
+            "queued",
+            "in_progress",
+            "completed",
+            "success",
+            "failure",
+            "neutral",
+            "cancelled",
+            "skipped",
+            "timed_out",
+            "action_required",
+        ],
+        type=str,
+    )
+
+    estimate_runs_parser.add_argument(
+        "--exclude-pull-requests",
+        dest="runs_exclude_pull_requests",
+        action="store_true",
+        help="exclude pull requests",
+        default=False,
+    )
+
+    estimate_runs_parser.add_argument(
+        "--head-sha",
+        metavar="value",
+        dest="runs_head_sha",
+        help="head SHA value",
+        type=str,
+    )
+
+    estimate_runs_parser.set_defaults(func=estimate.workflow_runs)
+
+    images_parser = commands.add_parser(
+        "images",
+        help="manage images",
+        description="Images commands.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    images_commands = images_parser.add_subparsers(
+        title="commands", metavar="command", description=None, help=None
+    )
+
+    images_commands.required = True
+
+    list_images_parser = images_commands.add_parser(
+        "list",
+        help="list images",
+        description="List images.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    list_images_parser.add_argument(
+        "--name",
+        metavar="name",
+        dest="list_images_name",
+        type=str,
+        help="can be used to filter images by their name (optional)",
+    )
+
+    list_images_parser.add_argument(
+        "--label",
+        metavar="selector",
+        dest="list_images_label_selector",
+        action="append",
+        help="can be used to filter servers by labels (optional)",
+    )
+
+    list_images_parser.add_argument(
+        "--bound-to",
+        metavar="id",
+        dest="list_images_bound_to",
+        action="append",
+        help="server id linked to the image. Only available for images of type backup (optional)",
+    )
+
+    list_images_parser.add_argument(
+        "--type",
+        metavar="type",
+        dest="list_images_type",
+        action="append",
+        help="choices: 'system', 'snapshot', 'backup', 'app' (optional)",
+        choices=["system", "snapshot", "backup", "app"],
+    )
+
+    list_images_parser.add_argument(
+        "--arch",
+        metavar="architecture",
+        dest="list_images_architecture",
+        action="append",
+        help="choices: 'x86' or 'arm' (optional)",
+        choices=["x86", "arm"],
+    )
+
+    list_images_parser.add_argument(
+        "--status",
+        metavar="status",
+        dest="list_images_status",
+        action="append",
+        help="can be used to filter images by their status (optional)",
+    )
+
+    list_images_parser.add_argument(
+        "--sort",
+        metavar="sort",
+        dest="list_images_sort",
+        action="append",
+        choices=[
+            "id",
+            "id:asc",
+            "id:desc",
+            "name",
+            "name:asc",
+            "name:desc",
+            "created",
+            "created:asc",
+            "created:desc",
+        ],
+        help=(
+            "sort by 'id', 'name', 'created',\n"
+            "you can add one of ':asc', ':desc' to modify sort order, ':asc' is default (optional)"
+        ),
+    )
+
+    list_images_parser.add_argument(
+        "--include-deprecated",
+        dest="list_images_include_deprecated",
+        action="store_true",
+        help="include deprecated images in the response, default: False",
+        default=False,
+    )
+
+    list_images_parser.set_defaults(func=images.list)
+
+    delete_image_parser = images_commands.add_parser(
+        "delete",
+        help="delete image",
+        description="Delete image.\n\nOnly images of type snapshot and backup can be deleted.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    delete_image_parser.add_argument(
+        "--id",
+        metavar="id",
+        dest="delete_image_id",
+        help="image id",
+        type=int,
+        required=True,
+    )
+
+    delete_image_parser.set_defaults(func=images.delete)
+
+    create_snapshot_parser = images_commands.add_parser(
+        "create",
+        help="create snapshot",
+        description=(
+            "Create snapshot by customizing the image using the specified setup script.\n\n"
+            "The snapshot is created from the new server created using the specified image\n"
+            "and is deleted after the snapshot is created. You can specify server type and location."
+        ),
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    create_snapshot_parser.add_argument(
+        "-n",
+        "--name",
+        metavar="name",
+        dest="create_snapshot_name",
+        type=str,
+        required=True,
+        help="snapshot name (required)",
+    )
+
+    create_snapshot_parser.add_argument(
+        "--setup-script",
+        metavar="path",
+        dest="create_snapshot_setup_script",
+        type=args.path_type,
+        help="path to custom setup script that will be executed on the server to customize the default image (required)",
+        required=True,
+    )
+
+    create_snapshot_parser.add_argument(
+        "-l",
+        "--location",
+        metavar="name",
+        dest="create_snapshot_server_location",
+        type=args.location_type,
+        help="server location",
+        default=None,
+    )
+
+    create_snapshot_parser.add_argument(
+        "-t",
+        "--type",
+        metavar="name",
+        dest="create_snapshot_server_type",
+        type=args.server_type,
+        help="server type, default: cx23",
+        default=args.server_type("cx23"),
+    )
+
+    create_snapshot_parser.add_argument(
+        "-i",
+        "--image",
+        metavar="architecture:type:name_or_description",
+        dest="create_snapshot_server_image",
+        type=args.image_type,
+        help=(
+            "base server image type and name or description,\n"
+            "where the architecture is either: 'x86' or 'arm', \n"
+            "the type is either: 'system','snapshot','backup','app', \n"
+            "followed by the name, "
+            "default: x86:system:ubuntu-22.04"
+        ),
+        default=args.image_type("x86:system:ubuntu-22.04"),
+    )
+
+    create_snapshot_parser.add_argument(
+        "--server-name",
+        metavar="name",
+        dest="create_snapshot_server_name",
+        type=str,
+        help="server name, default: snapshot-server",
+        default="snapshot-server",
+    )
+
+    create_snapshot_parser.set_defaults(func=images.create_snapshot)
+
+    dashboard_parser = commands.add_parser(
+        "dashboard",
+        help="open dashboard",
+        description="Open the dashboard in a web browser.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    dashboard_parser.set_defaults(func=dashboard)
+
+    # Projects subcommand
+    projects_parser = commands.add_parser(
+        "projects",
+        help="manage projects",
+        description="Manage project configurations.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    projects_subparsers = projects_parser.add_subparsers(
+        title="commands", metavar="command", description=None, help=None
+    )
+
+    projects_subparsers.required = True
+
+    # Projects list subcommand
+    projects_list_parser = projects_subparsers.add_parser(
+        "list",
+        help="list all projects",
+        description="List all available projects and their configurations.",
+        formatter_class=RawTextHelpFormatter,
+    )
+    projects_list_parser.add_argument(
+        "--show-tokens",
+        action="store_true",
+        help="show full tokens instead of masking them",
+    )
+    projects_list_parser.set_defaults(func=projects.list)
+
+    # Projects add subcommand
+    projects_add_parser = projects_subparsers.add_parser(
+        "add",
+        help="add a new project",
+        description="Add a new project with specified configuration.",
+        formatter_class=RawTextHelpFormatter,
+    )
+    projects_add_parser.add_argument("name", type=str, help="project name")
+    projects_add_parser.add_argument(
+        "--hetzner-token", metavar="token", type=str, help="Hetzner Cloud token"
+    )
+    projects_add_parser.add_argument(
+        "--github-token", metavar="token", type=str, help="GitHub token"
+    )
+    projects_add_parser.add_argument(
+        "--github-repository", metavar="repository", type=str, help="GitHub repository"
+    )
+    projects_add_parser.add_argument(
+        "--config", metavar="file", type=args.path_type, help="configuration file"
+    )
+    projects_add_parser.set_defaults(func=projects.add)
+
+    # Projects update subcommand
+    projects_update_parser = projects_subparsers.add_parser(
+        "update",
+        help="update a project",
+        description="Update an existing project's configuration.",
+        formatter_class=RawTextHelpFormatter,
+    )
+    projects_update_parser.add_argument("name", type=str, help="project name")
+    projects_update_parser.add_argument(
+        "--hetzner-token", metavar="token", type=str, help="Hetzner Cloud token"
+    )
+    projects_update_parser.add_argument(
+        "--github-token", metavar="token", type=str, help="GitHub token"
+    )
+    projects_update_parser.add_argument(
+        "--github-repository", metavar="repository", type=str, help="GitHub repository"
+    )
+    projects_update_parser.add_argument(
+        "--config", metavar="file", type=args.path_type, help="configuration file"
+    )
+    projects_update_parser.set_defaults(func=projects.update)
+
+    # Projects delete subcommand
+    projects_delete_parser = projects_subparsers.add_parser(
+        "delete",
+        help="delete a project",
+        description="Delete an existing project and its configuration.",
+        formatter_class=RawTextHelpFormatter,
+    )
+    projects_delete_parser.add_argument("name", type=str, help="project name")
+    projects_delete_parser.set_defaults(func=projects.delete)
+
+    # Projects set subcommand
+    projects_set_parser = projects_subparsers.add_parser(
+        "set",
+        help="set current project",
+        description="Set the current project to use for configuration.",
+        formatter_class=RawTextHelpFormatter,
+    )
+    projects_set_parser.add_argument("name", type=str, help="project name")
+    projects_set_parser.set_defaults(func=projects.set_current)
+
+    # Projects unset subcommand
+    projects_unset_parser = projects_subparsers.add_parser(
+        "unset",
+        help="unset current project",
+        description="Remove the current project setting.",
+        formatter_class=RawTextHelpFormatter,
+    )
+    projects_unset_parser.set_defaults(func=projects.unset_current)
+
+    # Volumes subcommand
+    volumes_parser = commands.add_parser(
+        "volumes",
+        help="manage volumes",
+        description="Manage volumes.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    volumes_commands = volumes_parser.add_subparsers(
+        title="commands", metavar="command", description=None, help=None
+    )
+
+    volumes_commands.required = True
+
+    # Volumes list subcommand
+    volumes_list_parser = volumes_commands.add_parser(
+        "list",
+        help="list volumes",
+        description="List volumes.",
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    volumes_list_parser.add_argument(
+        "-n",
+        "--name",
+        metavar="name",
+        action="append",
+        dest="list_volumes_name",
+        help="list all volumes matching name",
+        type=str,
+    )
+
+    volumes_list_parser.add_argument(
+        "-v",
+        "--volume",
+        metavar="name",
+        action="append",
+        dest="list_volumes_volume_name",
+        help="list by volume name",
+        type=str,
+    )
+
+    volumes_list_parser.add_argument(
+        "--id",
+        metavar="id",
+        action="append",
+        dest="list_volumes_id",
+        help="list by volume id",
+        type=int,
+    )
+
+    volumes_list_parser.add_argument(
+        "--all",
+        dest="list_volumes_all",
+        action="store_true",
+        help="list all volumes (default if no other options are provided)",
+    )
+
+    volumes_list_parser.set_defaults(func=volumes.list)
+
+    # Volumes delete subcommand
+    volumes_delete_parser = volumes_commands.add_parser(
+        "delete",
+        help="delete volumes",
+        description=(f"Delete volumes."),
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    volumes_delete_parser.add_argument(
+        "-n",
+        "--name",
+        metavar="name",
+        action="append",
+        dest="delete_volumes_name",
+        help="delete all volumes matching name",
+        type=str,
+    )
+
+    volumes_delete_parser.add_argument(
+        "-v",
+        "--volume",
+        metavar="name",
+        action="append",
+        dest="delete_volumes_volume_name",
+        help="delete by volume name",
+        type=str,
+    )
+
+    volumes_delete_parser.add_argument(
+        "--id",
+        metavar="id",
+        action="append",
+        dest="delete_volumes_id",
+        help="delete by volume id",
+        type=int,
+    )
+
+    volumes_delete_parser.add_argument(
+        "--all",
+        dest="delete_volumes_all",
+        action="store_true",
+        help="delete all volumes",
+    )
+
+    volumes_delete_parser.add_argument(
+        "-f",
+        "--force",
+        dest="delete_volumes_force",
+        action="store_true",
+        help="force delete volumes even if they are attached to a server",
+    )
+
+    volumes_delete_parser.set_defaults(func=volumes.delete)
+
+    # Volumes resize subcommand
+    volumes_resize_parser = volumes_commands.add_parser(
+        "resize",
+        help="resize volumes",
+        description=(f"Resize volumes."),
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    volumes_resize_parser.add_argument(
+        "-n",
+        "--name",
+        metavar="name",
+        action="append",
+        dest="resize_volumes_name",
+        help="resize all volumes matching name",
+        type=str,
+    )
+
+    volumes_resize_parser.add_argument(
+        "-v",
+        "--volume",
+        metavar="name",
+        action="append",
+        dest="resize_volumes_volume_name",
+        help="resize by volume name",
+        type=str,
+    )
+
+    volumes_resize_parser.add_argument(
+        "--id",
+        metavar="id",
+        action="append",
+        dest="resize_volumes_id",
+        help="resize by volume id",
+        type=int,
+    )
+
+    volumes_resize_parser.add_argument(
+        "--all",
+        dest="resize_volumes_all",
+        action="store_true",
+        help="resize all volumes",
+    )
+
+    volumes_resize_parser.add_argument(
+        "size",
+        metavar="size",
+        help="resize to size in GB",
+        type=int,
+    )
+
+    volumes_resize_parser.set_defaults(func=volumes.resize)
+
+    # Volumes deactivate subcommand
+    volumes_deactivate_parser = volumes_commands.add_parser(
+        "deactivate",
+        help="deactivate volumes",
+        description=(
+            f"Deactivate volumes. "
+            "This will prevent the volume to be attached to a new server."
+        ),
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    volumes_deactivate_parser.add_argument(
+        "-n",
+        "--name",
+        metavar="name",
+        action="append",
+        dest="volumes_name",
+        help="deactivate all volumes matching name",
+        type=str,
+    )
+
+    volumes_deactivate_parser.add_argument(
+        "-v",
+        "--volume",
+        metavar="name",
+        action="append",
+        dest="volumes_volume_name",
+        help="deactivate by volume name",
+        type=str,
+    )
+
+    volumes_deactivate_parser.add_argument(
+        "--id",
+        metavar="id",
+        action="append",
+        dest="volumes_id",
+        help="deactivate by volume id",
+        type=int,
+    )
+
+    volumes_deactivate_parser.add_argument(
+        "--all",
+        dest="volumes_all",
+        action="store_true",
+        help="deactivate all volumes",
+    )
+
+    volumes_deactivate_parser.set_defaults(func=volumes.deactivate)
+
+    # Volumes activate subcommand
+    volumes_activate_parser = volumes_commands.add_parser(
+        "activate",
+        help="activate volumes",
+        description=(
+            f"Activate volumes."
+            "This will allow the volume to be attached to a new server."
+        ),
+        formatter_class=RawTextHelpFormatter,
+    )
+
+    volumes_activate_parser.add_argument(
+        "-n",
+        "--name",
+        metavar="name",
+        action="append",
+        dest="volumes_name",
+        help="activate all volumes matching name",
+        type=str,
+    )
+
+    volumes_activate_parser.add_argument(
+        "-v",
+        "--volume",
+        metavar="name",
+        action="append",
+        dest="volumes_volume_name",
+        help="activate by volume name",
+        type=str,
+    )
+
+    volumes_activate_parser.add_argument(
+        "--id",
+        metavar="id",
+        action="append",
+        dest="volumes_id",
+        help="activate by volume id",
+        type=int,
+    )
+
+    volumes_activate_parser.add_argument(
+        "--all",
+        dest="volumes_all",
+        action="store_true",
+        help="activate all volumes",
+    )
+
+    volumes_activate_parser.set_defaults(func=volumes.activate)
+
+    return parser
+
+
+@contextmanager
+def http_cache():
+    """Enable caching of HTTP requests to GitHub api."""
+    with tempfile.TemporaryDirectory() as tempdir:
+        name = os.path.join(tempdir, "http_cache")
+
+        with Action(f"Enabling HTTP cache at {name}"):
+            pass
+
+        install_cache(
+            name=name,
+            backend=FileCache(name),
+            cache_control=True,
+            urls_expire_after={
+                "*.github.com": EXPIRE_IMMEDIATELY,
+                "*.hetzner.cloud": EXPIRE_IMMEDIATELY,
+                "*": DO_NOT_CACHE,
+            },
+        )
+
+        yield
+
+
+def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
+    """Auto-scale runners service."""
+    ssh_keys: list[SSHKey] = []
+    terminate = threading.Event()
+    mailbox = queue.Queue(maxsize=0)
+    rotating_logfile = config.logger_config["handlers"]["rotating_logfile"]["filename"]
+
+    try:
+        with Action(f"Writing log messages to {rotating_logfile}"):
+            pass
+
+        with Action("Logging in to Hetzner Cloud"):
+            client = Client(token=config.hetzner_token)
+
+        with Action(
+            f"Starting prometheus metrics server on port {config.metrics_port}"
+        ):
+            start_prometheus_server(port=config.metrics_port, addr=config.metrics_host)
+
+        with Action(f"Starting dashboard server on port {config.dashboard_port}"):
+            start_dashboard_server(
+                port=config.dashboard_port, host=config.dashboard_host, config=config
+            )
+
+        with Action("Logging in to GitHub"):
+            github = Github(auth=Auth.Token(config.github_token), per_page=100)
+
+        with Action(f"Getting repository {config.github_repository}"):
+            repo: Repository = github.get_repo(config.github_repository)
+
+        with Action("Checking if default image exists"):
+            config.default_image = check_image(client, config.default_image)
+
+        with Action("Checking if default location exists"):
+            config.default_location = check_location(client, config.default_location)
+
+        with Action("Checking if default volume location exists"):
+            config.default_volume_location = check_location(
+                client, config.default_volume_location, required=True
+            )
+
+        with Action("Checking if default server type exists"):
+            config.default_server_type = check_server_type(
+                client, config.default_server_type
+            )
+
+        if not config.delete_random:
+            with Action("Getting server prices"):
+                config.server_prices = check_prices(client)
+
+        with Action(f"Checking if SSH key exists"):
+            ssh_keys.append(check_ssh_key(client, config.ssh_key))
+
+            if config.additional_ssh_keys:
+                for key in config.additional_ssh_keys:
+                    ssh_keys.append(check_ssh_key(client, key, is_file=False))
+
+        try:
+            with Action("Creating scale up service"):
+                scale_up_service: Future = worker_pool.submit(
+                    scale_up,
+                    terminate=terminate,
+                    mailbox=mailbox,
+                    ssh_keys=ssh_keys,
+                    worker_pool=worker_pool,
+                    config=config,
+                )
+
+            with Action("Creating scale down service"):
+                scale_down_service: Future = worker_pool.submit(
+                    scale_down,
+                    ssh_key=ssh_keys[0],
+                    terminate=terminate,
+                    mailbox=mailbox,
+                    config=config,
+                )
+
+            with Action("Creating GitHub API calls watch service"):
+                api_watch_service: Future = worker_pool.submit(
+                    api_watch,
+                    terminate=terminate,
+                    github_token=config.github_token,
+                )
+
+            while True:
+                time.sleep(1)
+
+                if scale_up_service.done():
+                    raise RuntimeError("scale-up service exited")
+
+                if scale_down_service.done():
+                    raise RuntimeError("scale-down service exited")
+
+                if api_watch_service.done():
+                    raise RuntimeError("GitHub API calls watch service exited")
+
+        except BaseException:
+            with Action("Requesting all services to terminate"):
+                terminate.set()
+            raise
+
+        finally:
+            with Action("Waiting for scale up service to terminate", ignore_fail=True):
+                scale_down_service.result(timeout=terminate_timeout)
+
+            with Action(
+                "Waiting for scale down service to terminate", ignore_fail=True
+            ):
+                scale_up_service.result(timeout=terminate_timeout)
+
+            with Action(
+                "Waiting for GitHub API calls watch service to terminate",
+                ignore_fail=True,
+            ):
+                api_watch_service.result(timeout=terminate_timeout)
+
+    except KeyboardInterrupt as exc:
+        msg = "❗ KeyboardInterrupt"
+        if config.debug:
+            logger.exception(f"{msg}\n{exc}")
+        else:
+            logger.error(msg)
+        sys.exit(1)
+
+    except Exception as exc:
+        msg = f"❗ Error: {type(exc).__name__} {exc}"
+        if config.debug:
+            logger.exception(f"{msg}\n{exc}")
+        else:
+            logger.error(msg)
+        sys.exit(1)
+
+
+def dashboard(args, config):
+    """Open the dashboard in a web browser."""
+    with Action("Opening dashboard in web browser"):
+        url = f"http://{config.dashboard_host}:{config.dashboard_port}?app=1"
+        webbrowser.open(url)
+
+
+if __name__ == "__main__":
+    parser = argparser()
+    arguments = parser.parse_args()
+
+    logging_level = logging.INFO
+
+    if arguments.config_file:
+        config = arguments.config_file
+    else:
+        config = Config()
+
+    if arguments.meta_label:
+        try:
+            arguments.meta_label = args.meta_label_type(arguments.meta_label)
+        except ArgumentTypeError as e:
+            parser.error(str(e))
+
+    # Get project configuration if specified
+    project_name = arguments.project
+    if project_name is None:
+        project_name = projects.get_current_project()
+
+    project_config = projects.get_project_config(project_name) if project_name else {}
+
+    # Update config with project values first (lower precedence)
+    if project_config:
+        if "github_token" in project_config:
+            config.github_token = project_config["github_token"]
+        if "hetzner_token" in project_config:
+            config.hetzner_token = project_config["hetzner_token"]
+        if "github_repository" in project_config:
+            config.github_repository = project_config["github_repository"]
+        if "config_file" in project_config:
+            config.config_file = project_config["config_file"]
+
+    # Update with command line arguments (higher precedence)
+    config.update(arguments)
+
+    if config.debug:
+        Action.debug = True
+        logging_level = logging.DEBUG
+
+    configure_logger(
+        config=config,
+        level=logging_level,
+        service_mode=config.service_mode,
+    )
+
+    if config.config_file is not None:
+        if not config.embedded_mode:
+            sys.stdout.write(f"Using config file: {config.config_file}\n")
+            sys.stdout.flush()
+
+    if hasattr(arguments, "func"):
+        try:
+            arguments.func(args=arguments, config=config)
+        except KeyboardInterrupt:
+            if config.debug:
+                raise
+        except BaseException as exc:
+            if config.debug:
+                raise
+            if not hasattr(exc, "processed"):
+                logger.critical(f"❗ Error: {exc}")
+            sys.exit(1)
+
+    else:
+        config.check()
+
+        with http_cache():
+            with ThreadPoolExecutor(
+                max_workers=config.workers + 3, thread_name_prefix="worker"
+            ) as worker_pool:
+                main(config=config, worker_pool=worker_pool)
