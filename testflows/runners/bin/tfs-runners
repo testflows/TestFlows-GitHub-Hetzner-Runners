@@ -39,6 +39,7 @@ from testflows.runners.hclient import HClient as Client
 from testflows.runners.actions import Action
 from testflows.runners.scale_up import scale_up
 from testflows.runners.scale_down import scale_down
+from testflows.runners.providers.hetzner.provider import HetznerCloudProvider
 from testflows.runners.api_watch import api_watch
 from testflows.runners.logger import (
     logger,
@@ -1818,6 +1819,11 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
             with Action("Getting server prices"):
                 config.server_prices = check_prices(client)
 
+        with Action("Constructing Hetzner Cloud provider"):
+            hetzner_provider = HetznerCloudProvider(
+                token=config.hetzner_token, ssh_key_path=config.ssh_key
+            )
+
         with Action(f"Checking if SSH key exists"):
             ssh_keys.append(check_ssh_key(client, config.ssh_key))
 
@@ -1834,6 +1840,7 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
                     ssh_keys=ssh_keys,
                     worker_pool=worker_pool,
                     config=config,
+                    provider=hetzner_provider,
                 )
 
             with Action("Creating scale down service"):
@@ -1843,6 +1850,7 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
                     terminate=terminate,
                     mailbox=mailbox,
                     config=config,
+                    provider=hetzner_provider,
                 )
 
             with Action("Creating GitHub API calls watch service"):

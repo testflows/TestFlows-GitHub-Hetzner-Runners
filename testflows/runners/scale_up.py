@@ -25,10 +25,10 @@ from .request import request
 from .args import image_type
 from .logger import logger
 from . import metrics
-from .config import Config, check_image, check_startup_script, check_setup_script
+from .config import Config, check_startup_script, check_setup_script
 from .config import standby_runner as StandbyRunner
-from .hclient import HClient as Client
 from .utils import get_runner_server_type_and_location
+from .cloud_provider import CloudProvider, ProviderServer
 from .constants import (
     server_name_prefix,
     runner_name_prefix,
@@ -113,7 +113,7 @@ class RunnerServer:
     server_volumes: list[Volume] = None
     server_status: str = Server.STATUS_STARTING
     status: str = "initializing"  # busy, ready
-    server: BoundServer = None
+    server: ProviderServer = None
 
     def __post_init__(self):
         if self.server_volumes is None:
@@ -318,7 +318,7 @@ def get_server_locations(
 
 
 def get_server_image(
-    client: Client, labels: list[str], default: Image, label_prefix: str = ""
+    provider: CloudProvider, labels: list[str], default: Image, label_prefix: str = ""
 ):
     """Get preferred server image for the specified job."""
     server_image: Image = None
@@ -331,8 +331,7 @@ def get_server_image(
     for label in labels:
         label = label.lower()
         if label.startswith(label_prefix):
-            server_image = check_image(
-                client,
+            server_image = provider.get_image(
                 image_type(label.split(label_prefix, 1)[-1].lower(), separator="-"),
             )
 
@@ -620,7 +619,7 @@ def check_max_servers_for_label_reached(
 
 def get_server_bound_volumes(
     action: Action,
-    client: Client,
+    provider: CloudProvider,
     server_image: Image,
     server_location: Location,
     server_volumes: list[Volume],
@@ -680,7 +679,7 @@ def get_server_bound_volumes(
             f"Creating new volume {server_volume.name} in {server_location.name} with size {server_volume.size}GB"
         )
 
-        response = client.volumes.create(
+        response = provider._client.volumes.create(
             name=f"{server_volume.name}-{server_image.architecture}-{server_image.os_flavor}-{server_image.os_version}-{uid()}",
             size=server_volume.size,
             location=server_location,
@@ -712,7 +711,7 @@ def get_server_bound_volumes(
 
 
 def create_server(
-    hetzner_token: str,
+    provider: CloudProvider,
     setup_worker_pool: ThreadPoolExecutor,
     labels: list[str],
     name: str,
@@ -756,7 +755,6 @@ def create_server(
                     # another attempt can proceed next time
                     active_attempt[0] += 1
 
-                client = Client(token=hetzner_token)
                 server_labels = {
                     f"github-hetzner-runner-label-{i}": value
                     for i, value in enumerate(labels)
@@ -790,7 +788,7 @@ def create_server(
                             ) as action:
                                 server_bound_volumes = get_server_bound_volumes(
                                     action,
-                                    client,
+                                    provider,
                                     server_image,
                                     server_location,
                                     server_volumes,
@@ -802,7 +800,7 @@ def create_server(
                             stacklevel=3,
                             server_name=name,
                         ):
-                            response = client.servers.create(
+                            provider_server = provider.create_server(
                                 name=name,
                                 server_type=server_type,
                                 location=server_location,
@@ -813,7 +811,7 @@ def create_server(
                                 labels=server_labels,
                                 public_net=server_net_config,
                             )
-                            server: BoundServer = response.server
+                            server: BoundServer = provider_server._native
                             server.volumes = server_bound_volumes
 
                             for volume in server_bound_volumes:
@@ -847,7 +845,7 @@ def create_server(
 
     setup_worker_pool.submit(
         server_setup,
-        server=response.server,
+        server=server,
         setup_script=setup_script,
         startup_script=startup_script,
         github_token=github_token,
@@ -860,7 +858,7 @@ def create_server(
 def recycle_server(
     server_name: str,
     server_volumes: list[Volume],
-    hetzner_token: str,
+    provider: CloudProvider,
     setup_worker_pool: ThreadPoolExecutor,
     labels: list[str],
     name: str,
@@ -878,10 +876,9 @@ def recycle_server(
     to preserve any critical labels. The recycle timestamp label is removed since
     the server is now active again.
     """
-    client = Client(token=hetzner_token, poll_interval=1)
-
     with Action(f"Get recyclable server {server_name}", server_name=name):
-        server: BoundServer = client.servers.get_by_name(name=server_name)
+        provider_server = provider.get_server(name=server_name)
+        server: BoundServer = provider_server._native
 
     # Start with existing labels and merge in the new runner labels
     # This preserves any labels that aren't explicitly being replaced
@@ -1035,16 +1032,18 @@ def recyclable_server_match(
     if server_location and server.server_location.name != server_location.name:
         return False
 
-    if server_net_config.enable_ipv4 and server.server.public_net.ipv4 is None:
+    native = server.server._native
+
+    if server_net_config.enable_ipv4 and native.public_net.ipv4 is None:
         return False
 
-    if not server_net_config.enable_ipv4 and server.server.public_net.ipv4 is not None:
+    if not server_net_config.enable_ipv4 and native.public_net.ipv4 is not None:
         return False
 
-    if server_net_config.enable_ipv6 and server.server.public_net.ipv6 is None:
+    if server_net_config.enable_ipv6 and native.public_net.ipv6 is None:
         return False
 
-    if not server_net_config.enable_ipv6 and server.server.public_net.ipv6 is not None:
+    if not server_net_config.enable_ipv6 and native.public_net.ipv6 is not None:
         return False
 
     if set([v.name for v in server_volumes]) != set(
@@ -1052,7 +1051,7 @@ def recyclable_server_match(
     ):
         return False
 
-    return ssh_key.name == server.server.labels.get(server_ssh_key_label)
+    return ssh_key.name == native.labels.get(server_ssh_key_label)
 
 
 def set_future_attributes(
@@ -1120,11 +1119,11 @@ def scale_up(
     worker_pool: ThreadPoolExecutor,
     ssh_keys: list[SSHKey],
     config: Config,
+    provider: CloudProvider = None,
 ):
     """Scale up service."""
     github_token: str = config.github_token
     github_repository: str = config.github_repository
-    hetzner_token: str = config.hetzner_token
     default_server_type: ServerType = config.default_server_type
     default_volume_size: int = config.default_volume_size
     default_volume_location: Location = config.default_volume_location
@@ -1145,8 +1144,9 @@ def scale_up(
     server_prices: dict[str, dict[str, float]] = config.server_prices
     interval: int = -1
 
-    with Action("Logging in to Hetzner Cloud"):
-        client = Client(token=hetzner_token)
+    if provider is None:
+        from .providers.hetzner.provider import HetznerCloudProvider
+        provider = HetznerCloudProvider(token=config.hetzner_token)
 
     def create_runner_server(
         name: str,
@@ -1185,7 +1185,7 @@ def scale_up(
                     default_volume_location,
                 ]
         server_image = get_server_image(
-            client=client,
+            provider=provider,
             labels=labels,
             default=default_image,
             label_prefix=label_prefix,
@@ -1199,7 +1199,7 @@ def scale_up(
             labels=labels, label_prefix=label_prefix
         )
 
-        if recycle:
+        if recycle and provider.supports_recycling:
             for server_type in server_types:
                 for server_location in server_locations:
                     startup_script = get_startup_script(
@@ -1241,7 +1241,7 @@ def scale_up(
                                     recycle_server,
                                     server_name=server.name,
                                     server_volumes=server.server_volumes,
-                                    hetzner_token=hetzner_token,
+                                    provider=provider,
                                     setup_worker_pool=setup_worker_pool,
                                     labels=labels,
                                     name=name,
@@ -1349,7 +1349,7 @@ def scale_up(
 
                 future = worker_pool.submit(
                     create_server,
-                    hetzner_token=hetzner_token,
+                    provider=provider,
                     setup_worker_pool=setup_worker_pool,
                     labels=labels,
                     name=name,
@@ -1427,31 +1427,29 @@ def scale_up(
                     servers = filtered_servers(
                         [
                             RunnerServer(
-                                name=server.name,
-                                server_status=server.status,
+                                name=ps.name,
+                                server_status=ps._native.status,
                                 labels=set(
                                     [
                                         value.lower()
-                                        for name, value in server.labels.items()
+                                        for name, value in ps._native.labels.items()
                                         if name.startswith(
                                             "github-hetzner-runner-label"
                                         )
                                     ]
                                 ),
-                                server_type=server.server_type,
-                                server_location=server.datacenter.location,
+                                server_type=ps._native.server_type,
+                                server_location=ps._native.datacenter.location,
                                 server_volumes=[
                                     Volume(
                                         name=get_volume_name(volume.name),
                                         size=volume.size,
                                     )
-                                    for volume in server.volumes
+                                    for volume in ps._native.volumes
                                 ],
-                                server=server,
+                                server=ps,
                             )
-                            for server in client.servers.get_all(
-                                label_selector=f"{github_runner_label}=active"
-                            )
+                            for ps in provider.list_runner_servers()
                         ],
                         with_label,
                     )
@@ -1462,7 +1460,7 @@ def scale_up(
                     interval=interval,
                 ):
                     # Get all volumes for metrics tracking
-                    all_volumes = client.volumes.get_all(
+                    all_volumes = provider._client.volumes.get_all(
                         label_selector="github-hetzner-runner-volume=active",
                     )
                     # Filter to only available volumes for server attachment logic

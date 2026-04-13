@@ -54,7 +54,8 @@ providers:
 Providers use tags/labels internally to identify and track runner servers. This is an implementation detail of each provider — the shared scaling logic does not construct tag names or dicts directly.
 
 The `CloudProvider` interface exposes:
-- A generic metadata API: `get_server_tag`, `set_server_tag`, `list_servers_with_tag` — provider normalises keys/values to its own format and character restrictions
+- A generic metadata API: `get_server_tag(server, key)`, `set_server_tags(server, tags)` — provider normalises keys/values to its own format and character restrictions
+- `list_servers(label_selector)` — filtered server listing
 - `list_runner_servers()` — provider-managed; each provider uses its own tag names to identify servers it manages
 
 Tag keys used by shared code must be lowercase alphanumeric and hyphens only (the most restrictive common subset across known providers). Hetzner's existing tag names (e.g. `github-hetzner-runner`) are preserved as-is inside `HetznerCloudProvider` — no migration, no breakage for existing deployments.
@@ -91,9 +92,9 @@ The `cloud deploy` command (which provisions the runner service itself onto a cl
 
 - [ ] Define `CloudProvider` abstract base class in `cloud_provider.py`
   - Server lifecycle: create/delete/get/list/list_runner_servers
-  - Metadata: get_server_tag/set_server_tag/list_servers_with_tag
-  - Resource discovery: list available types, locations, images
-  - SSH keys: create/delete/get
+  - Metadata: get_server_tag/set_server_tags
+  - Resource discovery: get_server_type/get_location/get_image
+  - SSH keys: get_or_create_ssh_key
   - Volumes: define interface methods (stubs only for now)
   - Properties: `name`, `supports_recycling`
 - [ ] Implement `HetznerCloudProvider` in `providers/hetzner/provider.py` by extracting Hetzner-specific code from `scale_up.py`, `scale_down.py`, and `hclient.py`
