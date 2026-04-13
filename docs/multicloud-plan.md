@@ -96,7 +96,7 @@ The `cloud deploy` command (which provisions the runner service itself onto a cl
   - SSH keys: create/delete/get
   - Volumes: define interface methods (stubs only for now)
   - Properties: `name`, `supports_recycling`
-- [ ] Implement `HetznerCloudProvider` in `providers/hetzner.py` by extracting Hetzner-specific code from `scale_up.py`, `scale_down.py`, and `hclient.py`
+- [ ] Implement `HetznerCloudProvider` in `providers/hetzner/provider.py` by extracting Hetzner-specific code from `scale_up.py`, `scale_down.py`, and `hclient.py`
 - [ ] Inject provider into `scale_up` and `scale_down` (replace direct `client` usage)
 - [ ] Write tests for the `CloudProvider` interface against `HetznerCloudProvider` (with a mock Hetzner backend)
 - [ ] Verify all existing behaviour unchanged
@@ -117,7 +117,7 @@ The `cloud deploy` command (which provisions the runner service itself onto a cl
 
 ### Phase 4 — AWS implementation
 
-- [ ] Implement `AWSCloudProvider` in `providers/aws.py`
+- [ ] Implement `AWSCloudProvider` in `providers/aws/provider.py`
   - EC2 instance lifecycle (create/delete/get/list)
   - Tag-based server identification
   - AMI image resolution (`image-ami-{id}` label format)
@@ -127,14 +127,25 @@ The `cloud deploy` command (which provisions the runner service itself onto a cl
 - [ ] Run the shared provider test suite against `AWSCloudProvider`
 - [ ] Validate end-to-end with a real AWS account
 
-### Phase 5 — Polish
+### Phase 5 — Config validation library (deferred)
+
+Consider migrating `config/parse.py` to Pydantic v2. Currently ~453 lines of manual validation; a Pydantic `BaseModel` Config would reduce this by ~60%. The cost is that Config must change from a dataclass to a `BaseModel`, touching every construction site.
+
+**Do this after Phase 2**, once the dual-representation issue (flat `default_image`/`default_server_type` fields alongside `providers.X.defaults`) is resolved and Config has a stable final shape. Migrating before that means migrating twice.
+
+- [ ] Migrate `Config` to Pydantic `BaseModel`
+- [ ] Replace `parse.py` validation boilerplate with field annotations and `@field_validator`s
+- [ ] Preserve `config.field_name: error message` error format via custom error handling
+- [ ] Provider-specific config parsing moves to `providers/X/config.py` as Pydantic sub-models
+
+### Phase 6 — Polish
 
 - [ ] Update meta-label examples in config/docs to show multi-provider patterns
 - [ ] Update `servers` CLI command to list across providers
 - [ ] Update dashboard to show provider per runner
 - [ ] Update `README.rst` and `docs/requirements.md`
 - [ ] Document `cloud deploy` as Hetzner-only
-- [ ] Binary/package naming decision (see Open Questions)
+- [ ] Binary/package naming decision
 
 ---
 
