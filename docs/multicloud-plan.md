@@ -87,34 +87,34 @@ The `cloud deploy` command (which provisions the runner service itself onto a cl
 
 ## Implementation Phases
 
-### Phase 1 — Abstract interface + Hetzner refactor
+### Phase 1 — Abstract interface + Hetzner refactor ✓
 *No new functionality. Existing behaviour must be identical after this phase.*
 
-- [ ] Define `CloudProvider` abstract base class in `cloud_provider.py`
+- [x] Define `CloudProvider` abstract base class in `cloud_provider.py`
   - Server lifecycle: create/delete/get/list/list_runner_servers
   - Metadata: get_server_tag/set_server_tags
   - Resource discovery: get_server_type/get_location/get_image
   - SSH keys: get_or_create_ssh_key
   - Volumes: define interface methods (stubs only for now)
   - Properties: `name`, `supports_recycling`
-- [ ] Implement `HetznerCloudProvider` in `providers/hetzner/provider.py` by extracting Hetzner-specific code from `scale_up.py`, `scale_down.py`, and `hclient.py`
-- [ ] Inject provider into `scale_up` and `scale_down` (replace direct `client` usage)
-- [ ] Write tests for the `CloudProvider` interface against `HetznerCloudProvider` (with a mock Hetzner backend)
-- [ ] Verify all existing behaviour unchanged
+- [x] Implement `HetznerCloudProvider` in `providers/hetzner/provider.py` by extracting Hetzner-specific code from `scale_up.py`, `scale_down.py`, and `hclient.py`
+- [x] Inject provider into `scale_up` and `scale_down` (replace direct `client` usage)
+- [x] Write tests for the `CloudProvider` interface against `HetznerCloudProvider` (with a mock Hetzner backend)
+- [x] Verify all existing behaviour unchanged
 
-### Phase 2 — Config changes
+### Phase 2 — Config changes ✓
 
-- [ ] Add `providers:` section to config schema
-- [ ] Support backwards-compatible `hetzner_token` flat format (warn on use, still works)
-- [ ] Provider factory: construct and return the right `CloudProvider` instance(s) from config
+- [x] Add `providers:` section to config schema
+- [x] Support backwards-compatible `hetzner_token` flat format (warn on use, still works)
+- [x] Provider factory: construct and return the right `CloudProvider` instance(s) from config
 
-### Phase 3 — Provider type resolution
+### Phase 3 — Provider type resolution ✓
 
-- [ ] When `scale_up` iterates server types, resolve which provider to use for each type name
-- [ ] Query each active provider: "do you have a type named X?" — use the first match
-- [ ] Handle the case where no provider recognises a type name (clear error message)
-- [ ] Update `get_server_types`, `get_server_locations`, `get_server_image` to operate on abstract provider types
-- [ ] Map `in-` labels to provider locations: Hetzner interprets as DC location (e.g. `nbg1`), AWS interprets as AZ (e.g. `us-east-1a`). AZ-level placement ensures future EBS volume support works without revisiting the label system.
+- [x] When `scale_up` iterates server types, resolve which provider to use for each type name
+- [x] Query each active provider: "do you have a type named X?" — use the first match
+- [x] Handle the case where no provider recognises a type name (clear error message)
+- [x] Update `get_server_types`, `get_server_locations`, `get_server_image` to operate on abstract provider types
+- [x] Map `in-` labels to provider locations: Hetzner interprets as DC location (e.g. `nbg1`), AWS interprets as AZ (e.g. `us-east-1a`). AZ-level placement ensures future EBS volume support works without revisiting the label system.
 
 ### Phase 4 — AWS implementation
 
