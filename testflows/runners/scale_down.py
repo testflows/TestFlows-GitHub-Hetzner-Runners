@@ -415,11 +415,12 @@ def scale_down(
             with Action(
                 "Getting list of servers", level=logging.DEBUG, interval=interval
             ):
-                servers: list[BoundServer] = [
-                    ps._native
-                    for p in providers
-                    for ps in p.list_runner_servers()
-                ]
+                server_providers: dict[str, CloudProvider] = {}
+                servers: list[BoundServer] = []
+                for _lp in providers:
+                    for _ps in _lp.list_runner_servers():
+                        servers.append(_ps._native)
+                        server_providers[_ps.name] = _lp
 
             with Action(
                 "Getting runner labels for each server",
@@ -443,15 +444,16 @@ def scale_down(
             ):
                 runners: list[SelfHostedActionsRunner] = repo.get_self_hosted_runners()
 
-            if recycle and any(p.supports_recycling for p in providers):
-                with Action(
-                    "Looking for recyclable servers",
-                    level=logging.DEBUG,
-                    interval=interval,
-                ):
-                    for server in servers:
-                        if server.status == server.STATUS_OFF:
-                            if server.name.startswith(recycle_server_name_prefix):
+            with Action(
+                "Looking for recyclable servers",
+                level=logging.DEBUG,
+                interval=interval,
+            ):
+                for server in servers:
+                    if server.status == server.STATUS_OFF:
+                        if server.name.startswith(recycle_server_name_prefix):
+                            _sp = server_providers.get(server.name)
+                            if recycle and _sp is not None and _sp.supports_recycling:
                                 if server.name not in recyclable_servers:
                                     recyclable_servers[server.name] = server
 
@@ -618,7 +620,8 @@ def scale_down(
                             current_interval - powered_off_server.time
                             > max_powered_off_time
                         ):
-                            if recycle and any(p.supports_recycling for p in providers):
+                            _sp = server_providers.get(powered_off_server.server.name)
+                            if recycle and _sp is not None and _sp.supports_recycling:
                                 recycle_server(
                                     reason="powered_off",
                                     server=powered_off_server.server,
@@ -665,7 +668,8 @@ def scale_down(
                             current_interval - zombie_server.time
                             > max_runner_registration_time
                         ):
-                            if recycle and any(p.supports_recycling for p in providers):
+                            _sp = server_providers.get(zombie_server.server.name)
+                            if recycle and _sp is not None and _sp.supports_recycling:
                                 recycle_server(
                                     reason="zombie",
                                     server=zombie_server.server,
@@ -729,7 +733,7 @@ def scale_down(
                                         break
 
                             if runner_server is not None:
-                                if recycle and any(p.supports_recycling for p in providers):
+                                if recycle and _p.supports_recycling:
                                     recycle_server(
                                         reason="unused_runner",
                                         server=runner_server,

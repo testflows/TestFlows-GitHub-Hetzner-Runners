@@ -22,7 +22,6 @@ import pytest
 from unittest.mock import MagicMock
 
 from hcloud.server_types.domain import ServerType
-from hcloud.locations.domain import Location
 
 from testflows.runners.scale_up import (
     _resolve_provider,
@@ -135,33 +134,37 @@ class TestGetServerTypes:
 class TestGetServerLocations:
     def test_single_location_label(self):
         result = get_server_locations(["in-nbg1"])
-        assert len(result) == 1
-        assert result[0].name == "nbg1"
+        assert result == ["nbg1"]
 
     def test_multiple_location_labels(self):
         result = get_server_locations(["in-nbg1", "in-fsn1"])
-        assert [loc.name for loc in result] == ["nbg1", "fsn1"]
+        assert result == ["nbg1", "fsn1"]
 
     def test_falls_back_to_default_when_no_in_label(self):
-        default = Location(name="hel1")
-        result = get_server_locations(["self-hosted"], default=default)
-        assert result == [default]
+        result = get_server_locations(["self-hosted"], default="hel1")
+        assert result == ["hel1"]
 
     def test_default_none_when_no_label(self):
         result = get_server_locations(["self-hosted"])
         assert result == [None]
 
-    def test_composite_location_labels_are_skipped(self):
+    def test_aws_az_style_location(self):
+        """AWS AZ names like us-east-1a contain dashes and must not be dropped."""
+        result = get_server_locations(["in-us-east-1a"])
+        assert result == ["us-east-1a"]
+
+    def test_hetzner_location_with_dash_passthrough(self):
+        """A location name that contains a dash is returned as-is."""
         result = get_server_locations(["in-nbg1-fsn1"])
-        assert result == [None]
+        assert result == ["nbg1-fsn1"]
 
     def test_label_prefix(self):
         result = get_server_locations(["myprefix-in-nbg1"], label_prefix="myprefix")
-        assert result[0].name == "nbg1"
+        assert result == ["nbg1"]
 
     def test_case_insensitive(self):
         result = get_server_locations(["IN-NBG1"])
-        assert result[0].name == "nbg1"
+        assert result == ["nbg1"]
 
 
 # ---------------------------------------------------------------------------
@@ -356,7 +359,7 @@ class TestResolveProvider:
         if supports_type:
             p.get_server_type.return_value = MagicMock(name="cx22")
         else:
-            p.get_server_type.side_effect = Exception("unknown type")
+            p.get_server_type.side_effect = ServerTypeError("unknown type")
         return p
 
     def _make_server_type(self, name="cx22"):
@@ -405,6 +408,14 @@ class TestResolveProvider:
         st = self._make_server_type("cx22")
         with pytest.raises(ServerTypeError):
             _resolve_provider(st, [])
+
+    def test_non_server_type_error_propagates(self):
+        """Auth/network errors must not be swallowed as 'type unsupported'."""
+        p = MagicMock()
+        p.get_server_type.side_effect = ConnectionError("network failure")
+        st = self._make_server_type("cx22")
+        with pytest.raises(ConnectionError):
+            _resolve_provider(st, [p])
 
     def test_server_type_without_name_attr_uses_str(self):
         provider = MagicMock()

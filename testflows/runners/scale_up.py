@@ -288,14 +288,18 @@ def get_server_types(labels: list[str], default: ServerType, label_prefix: str =
 
 
 def get_server_locations(
-    labels: list[str], default: Location = None, label_prefix: str = ""
-):
-    """Get preferred server locations for the specified job.
+    labels: list[str], default: "str | None" = None, label_prefix: str = ""
+) -> "list[str | None]":
+    """Get preferred server location names for the specified job.
 
-    By default, location is set to `None` to avoid server type mismatching
+    Returns plain location name strings so that each provider can interpret
+    them via its own ``get_location`` method (e.g. Hetzner DC name ``nbg1``,
+    AWS AZ ``us-east-1a``).
+
+    By default, location is set to ``None`` to avoid server type mismatching
     the location as some server types are not available at some locations.
     """
-    server_locations: list[Location] = []
+    server_locations: list[str | None] = []
 
     if label_prefix and not label_prefix.endswith("-"):
         label_prefix += "-"
@@ -306,11 +310,7 @@ def get_server_locations(
         label = label.lower()
         if label.startswith(label_prefix):
             server_location_name = label.split(label_prefix, 1)[-1].lower()
-            if "-" in server_location_name:
-                # skip composite label
-                continue
-            server_location = Location(name=server_location_name)
-            server_locations.append(server_location)
+            server_locations.append(server_location_name)
 
     if not server_locations:
         server_locations = [default]
@@ -538,7 +538,7 @@ def _resolve_provider(server_type: ServerType, providers: list) -> tuple:
     for p in providers:
         try:
             return p, p.get_server_type(name)
-        except Exception:
+        except ServerTypeError:
             continue
     raise ServerTypeError(f"no configured provider supports server type '{name}'")
 
@@ -1141,8 +1141,12 @@ def scale_up(
     github_repository: str = config.github_repository
     default_server_type: ServerType = config.default_server_type
     default_volume_size: int = config.default_volume_size
-    default_volume_location: Location = config.default_volume_location
-    default_location: Location = config.default_location
+    default_volume_location: str | None = (
+        config.default_volume_location.name if config.default_volume_location else None
+    )
+    default_location: str | None = (
+        config.default_location.name if config.default_location else None
+    )
     default_image: Image = config.default_image
     interval_period: int = config.scale_up_interval
     max_servers: int = config.max_runners
@@ -1228,7 +1232,8 @@ def scale_up(
             for resolved_provider, validated_type, server_image in resolved:
                 if not resolved_provider.supports_recycling:
                     continue
-                for server_location in server_locations:
+                for loc_name in server_locations:
+                    server_location = resolved_provider.get_location(loc_name)
                     startup_script = get_startup_script(
                         scripts=scripts,
                         server_type=validated_type,
@@ -1237,7 +1242,7 @@ def scale_up(
                     )
 
                     with Action(
-                        f"Trying to create recycled server {name} of {validated_type} in {'None' if not server_location else server_location.name} with volumes {server_volumes}",
+                        f"Trying to create recycled server {name} of {validated_type} in {loc_name or 'None'} with volumes {server_volumes}",
                         stacklevel=3,
                         level=logging.DEBUG,
                         server_name=name,
@@ -1301,7 +1306,8 @@ def scale_up(
                                     pass
 
         for resolved_provider, validated_type, server_image in resolved:
-            for server_location in server_locations:
+            for loc_name in server_locations:
+                server_location = resolved_provider.get_location(loc_name)
                 # pre-increment the attempt number that starts from 0
                 create_server_attempt += 1
 
@@ -1313,7 +1319,7 @@ def scale_up(
                 )
 
                 with Action(
-                    f"Trying to create new server {name} of {validated_type} in {'None' if not server_location else server_location.name} with volumes {server_volumes}",
+                    f"Trying to create new server {name} of {validated_type} in {loc_name or 'None'} with volumes {server_volumes}",
                     stacklevel=3,
                     level=logging.DEBUG,
                     server_name=name,
