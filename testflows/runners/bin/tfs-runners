@@ -1832,7 +1832,7 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
                     ssh_keys=ssh_keys,
                     worker_pool=worker_pool,
                     config=config,
-                    provider=hetzner_provider,
+                    providers=providers,
                 )
 
             with Action("Creating scale down service"):
@@ -1842,7 +1842,7 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
                     terminate=terminate,
                     mailbox=mailbox,
                     config=config,
-                    provider=hetzner_provider,
+                    providers=providers,
                 )
 
             with Action("Creating GitHub API calls watch service"):

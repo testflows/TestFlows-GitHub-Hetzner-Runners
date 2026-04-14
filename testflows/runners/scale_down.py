@@ -364,7 +364,7 @@ def scale_down(
     mailbox: queue.Queue,
     ssh_key: SSHKey,
     config: Config,
-    provider: CloudProvider = None,
+    providers: list[CloudProvider] = None,
 ):
     """Scale down service by deleting any powered off server,
     any server that has unused runner, or any server that failed to register its
@@ -389,9 +389,9 @@ def scale_down(
     scaleup_failures: dict[str, ScaleUpFailure] = {}
     interval: int = -1
 
-    if provider is None:
+    if providers is None:
         from .providers.hetzner.provider import HetznerCloudProvider
-        provider = HetznerCloudProvider(token=config.hetzner_token)
+        providers = [HetznerCloudProvider(token=config.hetzner_token)]
 
     with Action("Logging in to GitHub"):
         github = Github(auth=Auth.Token(github_token), per_page=100)
@@ -416,7 +416,9 @@ def scale_down(
                 "Getting list of servers", level=logging.DEBUG, interval=interval
             ):
                 servers: list[BoundServer] = [
-                    ps._native for ps in provider.list_runner_servers()
+                    ps._native
+                    for p in providers
+                    for ps in p.list_runner_servers()
                 ]
 
             with Action(
@@ -441,7 +443,7 @@ def scale_down(
             ):
                 runners: list[SelfHostedActionsRunner] = repo.get_self_hosted_runners()
 
-            if recycle and provider.supports_recycling:
+            if recycle and any(p.supports_recycling for p in providers):
                 with Action(
                     "Looking for recyclable servers",
                     level=logging.DEBUG,
@@ -616,7 +618,7 @@ def scale_down(
                             current_interval - powered_off_server.time
                             > max_powered_off_time
                         ):
-                            if recycle and provider.supports_recycling:
+                            if recycle and any(p.supports_recycling for p in providers):
                                 recycle_server(
                                     reason="powered_off",
                                     server=powered_off_server.server,
@@ -663,7 +665,7 @@ def scale_down(
                             current_interval - zombie_server.time
                             > max_runner_registration_time
                         ):
-                            if recycle and provider.supports_recycling:
+                            if recycle and any(p.supports_recycling for p in providers):
                                 recycle_server(
                                     reason="zombie",
                                     server=zombie_server.server,
@@ -717,13 +719,17 @@ def scale_down(
                                 server_name=get_runner_server_name(runner_name),
                                 interval=interval,
                             ):
-                                ps = provider.get_server(
-                                    get_runner_server_name(runner_name)
-                                )
-                                runner_server = ps._native if ps is not None else None
+                                runner_server = None
+                                for _p in providers:
+                                    _ps = _p.get_server(
+                                        get_runner_server_name(runner_name)
+                                    )
+                                    if _ps is not None:
+                                        runner_server = _ps._native
+                                        break
 
                             if runner_server is not None:
-                                if recycle and provider.supports_recycling:
+                                if recycle and any(p.supports_recycling for p in providers):
                                     recycle_server(
                                         reason="unused_runner",
                                         server=runner_server,

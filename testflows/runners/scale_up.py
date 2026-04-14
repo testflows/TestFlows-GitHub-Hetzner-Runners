@@ -29,6 +29,7 @@ from .config import Config, check_startup_script, check_setup_script
 from .config import standby_runner as StandbyRunner
 from .utils import get_runner_server_type_and_location
 from .cloud_provider import CloudProvider, ProviderServer
+from .errors import ServerTypeError
 from .constants import (
     server_name_prefix,
     runner_name_prefix,
@@ -526,6 +527,20 @@ def expand_meta_label(
                         )
 
     return list(dict.fromkeys(expanded_labels))
+
+
+def _resolve_provider(server_type: ServerType, providers: list) -> tuple:
+    """Return (provider, validated_server_type) for the first provider that supports the type.
+
+    Tries each provider in order. Raises ServerTypeError if none recognises the type.
+    """
+    name = server_type.name if hasattr(server_type, "name") else str(server_type)
+    for p in providers:
+        try:
+            return p, p.get_server_type(name)
+        except Exception:
+            continue
+    raise ServerTypeError(f"no configured provider supports server type '{name}'")
 
 
 def raise_exception(exc):
@@ -1119,7 +1134,7 @@ def scale_up(
     worker_pool: ThreadPoolExecutor,
     ssh_keys: list[SSHKey],
     config: Config,
-    provider: CloudProvider = None,
+    providers: list[CloudProvider] = None,
 ):
     """Scale up service."""
     github_token: str = config.github_token
@@ -1144,9 +1159,9 @@ def scale_up(
     server_prices: dict[str, dict[str, float]] = config.server_prices
     interval: int = -1
 
-    if provider is None:
+    if providers is None:
         from .providers.hetzner.provider import HetznerCloudProvider
-        provider = HetznerCloudProvider(token=config.hetzner_token)
+        providers = [HetznerCloudProvider(token=config.hetzner_token)]
 
     def create_runner_server(
         name: str,
@@ -1184,12 +1199,6 @@ def scale_up(
                 server_locations = [
                     default_volume_location,
                 ]
-        server_image = get_server_image(
-            provider=provider,
-            labels=labels,
-            default=default_image,
-            label_prefix=label_prefix,
-        )
         setup_script = get_setup_script(
             scripts=scripts,
             labels=labels,
@@ -1199,18 +1208,36 @@ def scale_up(
             labels=labels, label_prefix=label_prefix
         )
 
-        if recycle and provider.supports_recycling:
-            for server_type in server_types:
+        # Resolve provider and validate type for each requested server type.
+        # get_server_image is called per type since image specs are provider-specific.
+        resolved = [
+            (
+                rp,
+                vt,
+                get_server_image(
+                    provider=rp,
+                    labels=labels,
+                    default=default_image,
+                    label_prefix=label_prefix,
+                ),
+            )
+            for rp, vt in (_resolve_provider(st, providers) for st in server_types)
+        ]
+
+        if recycle:
+            for resolved_provider, validated_type, server_image in resolved:
+                if not resolved_provider.supports_recycling:
+                    continue
                 for server_location in server_locations:
                     startup_script = get_startup_script(
                         scripts=scripts,
-                        server_type=server_type,
+                        server_type=validated_type,
                         labels=labels,
                         label_prefix=label_prefix,
                     )
 
                     with Action(
-                        f"Trying to create recycled server {name} of {server_type} in {'None' if not server_location else server_location.name} with volumes {server_volumes}",
+                        f"Trying to create recycled server {name} of {validated_type} in {'None' if not server_location else server_location.name} with volumes {server_volumes}",
                         stacklevel=3,
                         level=logging.DEBUG,
                         server_name=name,
@@ -1231,7 +1258,7 @@ def scale_up(
 
                             if recyclable_server_match(
                                 server=server,
-                                server_type=server_type,
+                                server_type=validated_type,
                                 server_location=server_location,
                                 server_volumes=server_volumes,
                                 server_net_config=server_net_config,
@@ -1241,7 +1268,7 @@ def scale_up(
                                     recycle_server,
                                     server_name=server.name,
                                     server_volumes=server.server_volumes,
-                                    provider=provider,
+                                    provider=resolved_provider,
                                     setup_worker_pool=setup_worker_pool,
                                     labels=labels,
                                     name=name,
@@ -1256,7 +1283,7 @@ def scale_up(
                                 set_future_attributes(
                                     future,
                                     name,
-                                    server_type,
+                                    validated_type,
                                     server_location,
                                     server_volumes,
                                     labels,
@@ -1273,20 +1300,20 @@ def scale_up(
                                 ):
                                     pass
 
-        for server_type in server_types:
+        for resolved_provider, validated_type, server_image in resolved:
             for server_location in server_locations:
                 # pre-increment the attempt number that starts from 0
                 create_server_attempt += 1
 
                 startup_script = get_startup_script(
                     scripts=scripts,
-                    server_type=server_type,
+                    server_type=validated_type,
                     labels=labels,
                     label_prefix=label_prefix,
                 )
 
                 with Action(
-                    f"Trying to create new server {name} of {server_type} in {'None' if not server_location else server_location.name} with volumes {server_volumes}",
+                    f"Trying to create new server {name} of {validated_type} in {'None' if not server_location else server_location.name} with volumes {server_volumes}",
                     stacklevel=3,
                     level=logging.DEBUG,
                     server_name=name,
@@ -1310,7 +1337,7 @@ def scale_up(
                             set_future_attributes(
                                 future,
                                 name,
-                                server_type,
+                                validated_type,
                                 server_location,
                                 server_volumes,
                                 labels,
@@ -1339,7 +1366,7 @@ def scale_up(
                             set_future_attributes(
                                 future,
                                 name,
-                                server_type,
+                                validated_type,
                                 server_location,
                                 server_volumes,
                                 labels,
@@ -1349,11 +1376,11 @@ def scale_up(
 
                 future = worker_pool.submit(
                     create_server,
-                    provider=provider,
+                    provider=resolved_provider,
                     setup_worker_pool=setup_worker_pool,
                     labels=labels,
                     name=name,
-                    server_type=server_type,
+                    server_type=validated_type,
                     server_location=server_location,
                     server_volumes=server_volumes,
                     server_image=server_image,
@@ -1371,7 +1398,7 @@ def scale_up(
                     attempt=create_server_attempt,
                 )
                 set_future_attributes(
-                    future, name, server_type, server_location, server_volumes, labels
+                    future, name, validated_type, server_location, server_volumes, labels
                 )
                 futures.append(future)
 
@@ -1449,7 +1476,8 @@ def scale_up(
                                 ],
                                 server=ps,
                             )
-                            for ps in provider.list_runner_servers()
+                            for p in providers
+                            for ps in p.list_runner_servers()
                         ],
                         with_label,
                     )

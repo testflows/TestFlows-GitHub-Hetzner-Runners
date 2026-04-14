@@ -25,6 +25,7 @@ from hcloud.server_types.domain import ServerType
 from hcloud.locations.domain import Location
 
 from testflows.runners.scale_up import (
+    _resolve_provider,
     expand_meta_label,
     get_server_arch,
     get_server_locations,
@@ -34,6 +35,7 @@ from testflows.runners.scale_up import (
     get_server_volumes,
     parse_volume_size,
 )
+from testflows.runners.errors import ServerTypeError
 
 
 # ---------------------------------------------------------------------------
@@ -339,3 +341,74 @@ class TestGetServerImage:
 
         provider.get_image.assert_called_once()
         assert result is img
+
+
+# ---------------------------------------------------------------------------
+# _resolve_provider
+# ---------------------------------------------------------------------------
+
+
+class TestResolveProvider:
+    """Tests for _resolve_provider(server_type, providers)."""
+
+    def _make_provider(self, supports_type=True):
+        p = MagicMock()
+        if supports_type:
+            p.get_server_type.return_value = MagicMock(name="cx22")
+        else:
+            p.get_server_type.side_effect = Exception("unknown type")
+        return p
+
+    def _make_server_type(self, name="cx22"):
+        st = MagicMock()
+        st.name = name
+        return st
+
+    def test_single_provider_match(self):
+        provider = self._make_provider(supports_type=True)
+        st = self._make_server_type("cx22")
+        resolved_p, resolved_st = _resolve_provider(st, [provider])
+        assert resolved_p is provider
+        provider.get_server_type.assert_called_once_with("cx22")
+
+    def test_returns_validated_server_type(self):
+        validated = MagicMock()
+        provider = MagicMock()
+        provider.get_server_type.return_value = validated
+        st = self._make_server_type("cx22")
+        _, resolved_st = _resolve_provider(st, [provider])
+        assert resolved_st is validated
+
+    def test_first_matching_provider_wins(self):
+        p1 = self._make_provider(supports_type=True)
+        p2 = self._make_provider(supports_type=True)
+        st = self._make_server_type("cx22")
+        resolved_p, _ = _resolve_provider(st, [p1, p2])
+        assert resolved_p is p1
+        p2.get_server_type.assert_not_called()
+
+    def test_skips_provider_that_raises(self):
+        p1 = self._make_provider(supports_type=False)
+        p2 = self._make_provider(supports_type=True)
+        st = self._make_server_type("cx22")
+        resolved_p, _ = _resolve_provider(st, [p1, p2])
+        assert resolved_p is p2
+
+    def test_raises_server_type_error_when_no_match(self):
+        p1 = self._make_provider(supports_type=False)
+        p2 = self._make_provider(supports_type=False)
+        st = self._make_server_type("unknown-type")
+        with pytest.raises(ServerTypeError, match="unknown-type"):
+            _resolve_provider(st, [p1, p2])
+
+    def test_raises_when_providers_empty(self):
+        st = self._make_server_type("cx22")
+        with pytest.raises(ServerTypeError):
+            _resolve_provider(st, [])
+
+    def test_server_type_without_name_attr_uses_str(self):
+        provider = MagicMock()
+        provider.get_server_type.return_value = MagicMock()
+        # plain string has no .name attribute
+        _resolve_provider("cx22", [provider])
+        provider.get_server_type.assert_called_once_with("cx22")
