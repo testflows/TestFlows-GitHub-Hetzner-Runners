@@ -1,0 +1,67 @@
+# Copyright 2025 Katteli Inc.
+# TestFlows.com Open-Source Software Testing Framework (http://testflows.com)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Provider factory: construct CloudProvider instances from Config."""
+
+import dataclasses
+import logging
+
+from .config import Config, hetzner_provider as HetznerProviderConfig
+from ..cloud_provider import CloudProvider
+
+logger = logging.getLogger("testflows.runners")
+
+
+def provider_factory(config: Config) -> list[CloudProvider]:
+    """Construct and return all configured CloudProvider instances.
+
+    Handles the backwards-compatible ``hetzner_token`` flat field: if it is
+    set and no ``providers.hetzner.token`` has been supplied, the token is
+    synced into ``config.providers.hetzner`` with a deprecation warning.
+
+    Args:
+        config: Populated Config object.
+
+    Returns:
+        List of CloudProvider instances in configuration order.
+    """
+    from ..providers.hetzner.provider import HetznerCloudProvider
+
+    # Backwards compat: hetzner_token → providers.hetzner.token
+    if config.hetzner_token:
+        if config.providers.hetzner is None or not config.providers.hetzner.token:
+            logger.warning(
+                "hetzner_token is deprecated; use providers.hetzner.token instead"
+            )
+            if config.providers.hetzner is None:
+                config.providers.hetzner = HetznerProviderConfig(
+                    token=config.hetzner_token
+                )
+            else:
+                config.providers.hetzner = dataclasses.replace(
+                    config.providers.hetzner, token=config.hetzner_token
+                )
+
+    providers: list[CloudProvider] = []
+
+    if config.providers.hetzner and config.providers.hetzner.token:
+        providers.append(
+            HetznerCloudProvider(
+                token=config.providers.hetzner.token,
+                ssh_key_path=config.ssh_key,
+            )
+        )
+
+    return providers

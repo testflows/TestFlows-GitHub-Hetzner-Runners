@@ -286,6 +286,9 @@ class Config:
         if self.logger_format is None:
             self.logger_format = logger_format
 
+        if self.providers is None:
+            self.providers = provider_list()
+
     def update(self, args):
         """Update configuration file using command line arguments."""
         for attr in vars(self):
@@ -328,7 +331,27 @@ class Config:
         """Check mandatory configuration parameters."""
 
         if not parameters:
-            parameters = ["github_token", "github_repository", "hetzner_token"]
+            # Check GitHub credentials.
+            for name in ("github_token", "github_repository"):
+                if not getattr(self, name):
+                    print(
+                        f"argument error: --{name.lower().replace('_','-')} is not defined",
+                        file=sys.stderr,
+                    )
+                    sys.exit(1)
+            # Check that at least one provider is configured.
+            has_provider = self.hetzner_token or (
+                self.providers.hetzner is not None
+                and bool(self.providers.hetzner.token)
+            )
+            if not has_provider:
+                print(
+                    "argument error: no cloud provider configured; "
+                    "set --hetzner-token or add providers.hetzner.token to config file",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            return
 
         for name in parameters:
             value = getattr(self, name)

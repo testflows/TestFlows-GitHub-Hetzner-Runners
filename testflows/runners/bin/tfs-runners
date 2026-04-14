@@ -27,19 +27,15 @@ from contextlib import contextmanager
 from concurrent.futures import ThreadPoolExecutor, Future
 from prometheus_client import start_http_server as start_prometheus_server
 
-from hcloud.ssh_keys.domain import SSHKey
-
 from github import Auth, Github
 from github.Repository import Repository
 
 from argparse import ArgumentParser, RawTextHelpFormatter, ArgumentTypeError
 
 from testflows.runners import __version__, __license__
-from testflows.runners.hclient import HClient as Client
 from testflows.runners.actions import Action
 from testflows.runners.scale_up import scale_up
 from testflows.runners.scale_down import scale_down
-from testflows.runners.providers.hetzner.provider import HetznerCloudProvider
 from testflows.runners.api_watch import api_watch
 from testflows.runners.logger import (
     logger,
@@ -47,14 +43,8 @@ from testflows.runners.logger import (
 )
 from testflows.runners.config import (
     Config,
-    check_image,
     default_user_config,
-)
-from testflows.runners.config import (
-    check_ssh_key,
-    check_location,
-    check_server_type,
-    check_prices,
+    provider_factory,
 )
 from testflows.runners.dashboard import (
     start_http_server as start_dashboard_server,
@@ -1771,7 +1761,7 @@ def http_cache():
 
 def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
     """Auto-scale runners service."""
-    ssh_keys: list[SSHKey] = []
+    ssh_keys = []
     terminate = threading.Event()
     mailbox = queue.Queue(maxsize=0)
     rotating_logfile = config.logger_config["handlers"]["rotating_logfile"]["filename"]
@@ -1779,9 +1769,6 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
     try:
         with Action(f"Writing log messages to {rotating_logfile}"):
             pass
-
-        with Action("Logging in to Hetzner Cloud"):
-            client = Client(token=config.hetzner_token)
 
         with Action(
             f"Starting prometheus metrics server on port {config.metrics_port}"
@@ -1799,37 +1786,42 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
         with Action(f"Getting repository {config.github_repository}"):
             repo: Repository = github.get_repo(config.github_repository)
 
+        with Action("Constructing cloud providers"):
+            providers = provider_factory(config)
+            hetzner_provider = next(p for p in providers if p.name == "hetzner")
+
         with Action("Checking if default image exists"):
-            config.default_image = check_image(client, config.default_image)
+            config.default_image = hetzner_provider.get_image(config.default_image)
 
         with Action("Checking if default location exists"):
-            config.default_location = check_location(client, config.default_location)
+            config.default_location = hetzner_provider.get_location(
+                config.default_location
+            )
 
         with Action("Checking if default volume location exists"):
-            config.default_volume_location = check_location(
-                client, config.default_volume_location, required=True
+            config.default_volume_location = hetzner_provider.get_location(
+                config.default_volume_location, required=True
             )
 
         with Action("Checking if default server type exists"):
-            config.default_server_type = check_server_type(
-                client, config.default_server_type
+            config.default_server_type = hetzner_provider.get_server_type(
+                config.default_server_type
             )
 
         if not config.delete_random:
             with Action("Getting server prices"):
-                config.server_prices = check_prices(client)
-
-        with Action("Constructing Hetzner Cloud provider"):
-            hetzner_provider = HetznerCloudProvider(
-                token=config.hetzner_token, ssh_key_path=config.ssh_key
-            )
+                config.server_prices = hetzner_provider.get_prices()
 
         with Action(f"Checking if SSH key exists"):
-            ssh_keys.append(check_ssh_key(client, config.ssh_key))
+            ssh_keys.append(
+                hetzner_provider.get_or_create_ssh_key(config.ssh_key, is_file=True)
+            )
 
             if config.additional_ssh_keys:
                 for key in config.additional_ssh_keys:
-                    ssh_keys.append(check_ssh_key(client, key, is_file=False))
+                    ssh_keys.append(
+                        hetzner_provider.get_or_create_ssh_key(key, is_file=False)
+                    )
 
         try:
             with Action("Creating scale up service"):

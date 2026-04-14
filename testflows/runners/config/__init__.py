@@ -27,6 +27,7 @@ from .config import read, write
 from .config import default_user_config
 from .config import config_vars
 from .parse import parse_config
+from .factory import provider_factory
 
 __all__ = [
     "Config",
@@ -44,4 +45,5 @@ __all__ = [
     "default_user_config",
     "config_vars",
     "parse_config",
+    "provider_factory",
 ]
