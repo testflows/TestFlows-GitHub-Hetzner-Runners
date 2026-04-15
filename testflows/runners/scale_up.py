@@ -694,7 +694,7 @@ def get_server_bound_volumes(
             f"Creating new volume {server_volume.name} in {server_location.name} with size {server_volume.size}GB"
         )
 
-        response = provider._client.volumes.create(
+        new_pv = provider.create_volume(
             name=f"{server_volume.name}-{server_image.architecture}-{server_image.os_flavor}-{server_image.os_version}-{uid()}",
             size=server_volume.size,
             location=server_location,
@@ -707,18 +707,16 @@ def get_server_bound_volumes(
             format="ext4",
             automount=False,
         )
-        new_volume = response.volume
-        response.action.wait_until_finished()
-        new_volume.reload()
+        new_volume = new_pv._native
 
         assert (
-            new_volume.status == "available"
-        ), f"Newly created volume {new_volume.name} in {new_volume.location.name} is not available ({new_volume.status})"
+            new_pv.status == "available"
+        ), f"Newly created volume {new_volume.name} in {new_pv.location} is not available ({new_pv.status})"
 
         volumes.append(new_volume)
 
         action.note(
-            f"Adding newly created volume {new_volume.name} in {new_volume.location.name} that matches {server_volume.name}"
+            f"Adding newly created volume {new_volume.name} in {new_pv.location} that matches {server_volume.name}"
         )
         server_bound_volumes.append(new_volume)
 
@@ -774,7 +772,8 @@ def create_server(
                     f"github-hetzner-runner-label-{i}": value
                     for i, value in enumerate(labels)
                 }
-                server_labels[server_ssh_key_label] = ssh_keys[0].name
+                if ssh_keys:
+                    server_labels[server_ssh_key_label] = ssh_keys[0].name
                 server_labels[github_runner_label] = "active"
 
                 with Action(
@@ -902,7 +901,8 @@ def recycle_server(
     # Set the new runner labels
     for i, value in enumerate(labels):
         merged_labels[f"github-hetzner-runner-label-{i}"] = value
-    merged_labels[server_ssh_key_label] = ssh_key.name
+    if ssh_key is not None:
+        merged_labels[server_ssh_key_label] = ssh_key.name
     merged_labels[github_runner_label] = "active"
 
     # Remove recycle timestamp label since server is now active
@@ -1066,6 +1066,8 @@ def recyclable_server_match(
     ):
         return False
 
+    if ssh_key is None:
+        return False
     return ssh_key.name == native.labels.get(server_ssh_key_label)
 
 
@@ -1269,7 +1271,7 @@ def scale_up(
                                 ),
                                 server_volumes=server_volumes,
                                 server_net_config=server_net_config,
-                                ssh_key=ssh_keys[0],
+                                ssh_key=ssh_keys[0] if ssh_keys else None,
                             ):
                                 future = worker_pool.submit(
                                     recycle_server,
@@ -1284,7 +1286,7 @@ def scale_up(
                                     setup_script=setup_script,
                                     github_token=github_token,
                                     github_repository=github_repository,
-                                    ssh_key=ssh_keys[0],
+                                    ssh_key=ssh_keys[0] if ssh_keys else None,
                                     timeout=max_server_ready_time,
                                 )
                                 set_future_attributes(

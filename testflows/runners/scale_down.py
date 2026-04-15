@@ -270,7 +270,7 @@ def recycle_server(
             finally:
                 return
 
-    if server.labels[server_ssh_key_label] != ssh_key.name:
+    if ssh_key is None or server.labels[server_ssh_key_label] != ssh_key.name:
         with Action(
             f"Try deleting {reason} server {server.name} "
             f"used {days}d{hours}h{minutes}m "
