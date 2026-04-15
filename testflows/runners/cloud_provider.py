@@ -144,6 +144,19 @@ class CloudProvider(ABC):
         """
 
     # ---------------------------------------------------------------------------
+    # Runner label helpers
+    # ---------------------------------------------------------------------------
+
+    @abstractmethod
+    def get_runner_labels(self, server: ProviderServer) -> set:
+        """Return the set of job labels attached to a runner server.
+
+        Each provider stores runner labels in its own tag/key scheme.  This
+        method hides that scheme and returns a plain set of lowercase label
+        value strings (e.g. ``{"self-hosted", "linux", "arm64"}``).
+        """
+
+    # ---------------------------------------------------------------------------
     # Tag / label operations
     # ---------------------------------------------------------------------------
 

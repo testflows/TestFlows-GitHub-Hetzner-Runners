@@ -42,7 +42,7 @@ from .scale_up import (
 from .logger import logger
 from .server import age
 from .config import Config
-from .cloud_provider import CloudProvider
+from .cloud_provider import CloudProvider, ProviderServer
 from .ordered_set import OrderedSet as set
 
 from github import Auth, Github
@@ -80,7 +80,7 @@ class PoweredOffServer:
     """Powered off server."""
 
     time: float
-    server: BoundServer
+    server: ProviderServer
     observed_interval: float
 
 
@@ -89,7 +89,7 @@ class ZombieServer:
     """Zombie server."""
 
     time: float
-    server: BoundServer
+    server: ProviderServer
     observed_interval: float
 
 
@@ -102,38 +102,32 @@ class UnusedRunner:
     observed_interval: float
 
 
-def delete_server(server: BoundServer, action: str = "delete"):
+def delete_server(
+    server: ProviderServer, provider: CloudProvider, action: str = "delete"
+):
     """Delete server and record any failures.
 
     Args:
-        server: The server to delete
-        action: The action being performed (e.g., "powered_off_delete", "zombie_delete", "unused_delete")
+        server: The ProviderServer to delete.
+        provider: The CloudProvider that owns the server.
+        action: The action label for failure metrics.
     """
     try:
-        server.delete()
+        provider.delete_server(server)
     except Exception as e:
-        # Record scale down failure
-        server_labels = set(
-            [
-                value.lower()
-                for name, value in server.labels.items()
-                if name.startswith("github-hetzner-runner-label")
-            ]
-        )
-
         error_details = {
             "error": str(e),
-            "server_type": server.server_type.name,
-            "location": server.datacenter.location.name,
-            "labels": ",".join(server_labels),
+            "server_type": server.server_type,
+            "location": server.location,
+            "labels": ",".join(provider.get_runner_labels(server)),
             "timestamp": time.time(),
         }
 
         metrics.record_scale_down_failure(
             error_type=f"{action}_failed",
             server_name=server.name,
-            server_type=server.server_type.name,
-            server_location=server.datacenter.location.name,
+            server_type=server.server_type,
+            server_location=server.location,
             error_details=error_details,
         )
 
@@ -233,7 +227,7 @@ def delete_recyclable_server(
         ignore_fail=True,
         server_name=server_name,
     ):
-        delete_server(recyclable_server, action="delete_recyclable")
+        recyclable_server.delete()
 
     return recyclable_server.name
 
@@ -272,7 +266,7 @@ def recycle_server(
             server_name=server.name,
         ):
             try:
-                delete_server(server, action=f"delete_{reason}_no_ssh_key")
+                server.delete()
             finally:
                 return
 
@@ -286,7 +280,7 @@ def recycle_server(
             server_name=server.name,
         ):
             try:
-                delete_server(server, action=f"delete_{reason}_wrong_ssh_key")
+                server.delete()
             finally:
                 return
 
@@ -324,7 +318,7 @@ def recycle_server(
                     server_name=server.name,
                 ):
                     try:
-                        delete_server(server, action=f"delete_{reason}_end_of_life")
+                        server.delete()
                     finally:
                         return
             else:
@@ -416,10 +410,10 @@ def scale_down(
                 "Getting list of servers", level=logging.DEBUG, interval=interval
             ):
                 server_providers: dict[str, CloudProvider] = {}
-                servers: list[BoundServer] = []
+                servers: list[ProviderServer] = []
                 for _lp in providers:
                     for _ps in _lp.list_runner_servers():
-                        servers.append(_ps._native)
+                        servers.append(_ps)
                         server_providers[_ps.name] = _lp
 
             with Action(
@@ -428,13 +422,10 @@ def scale_down(
                 interval=interval,
             ):
                 servers_labels = {}
-                for server in servers:
-                    servers_labels[server.name] = set(
-                        [
-                            value.lower()
-                            for name, value in server.labels.items()
-                            if name.startswith("github-hetzner-runner-label")
-                        ]
+                for ps in servers:
+                    _sp = server_providers.get(ps.name)
+                    servers_labels[ps.name] = (
+                        _sp.get_runner_labels(ps) if _sp is not None else set()
                     )
 
             with Action(
@@ -449,64 +440,64 @@ def scale_down(
                 level=logging.DEBUG,
                 interval=interval,
             ):
-                for server in servers:
-                    if server.status == server.STATUS_OFF:
-                        if server.name.startswith(recycle_server_name_prefix):
-                            _sp = server_providers.get(server.name)
+                for ps in servers:
+                    if ps.status == CloudProvider.STATUS_OFF:
+                        if ps.name.startswith(recycle_server_name_prefix):
+                            _sp = server_providers.get(ps.name)
                             if recycle and _sp is not None and _sp.supports_recycling:
-                                if server.name not in recyclable_servers:
-                                    recyclable_servers[server.name] = server
+                                if ps.name not in recyclable_servers:
+                                    recyclable_servers[ps.name] = ps._native
 
             with Action(
                 "Looking for powered off or zombie servers",
                 level=logging.DEBUG,
                 interval=interval,
             ):
-                for server in servers:
-                    if server.status == server.STATUS_OFF:
-                        if not server.name.startswith(recycle_server_name_prefix):
-                            if server.name not in powered_off_servers:
+                for ps in servers:
+                    if ps.status == CloudProvider.STATUS_OFF:
+                        if not ps.name.startswith(recycle_server_name_prefix):
+                            if ps.name not in powered_off_servers:
                                 with Action(
-                                    f"Found new powered off server {server.name}",
-                                    server_name=server.name,
+                                    f"Found new powered off server {ps.name}",
+                                    server_name=ps.name,
                                     interval=interval,
                                 ):
-                                    powered_off_servers[server.name] = PoweredOffServer(
+                                    powered_off_servers[ps.name] = PoweredOffServer(
                                         time=current_interval,
-                                        server=server,
+                                        server=ps,
                                         observed_interval=current_interval,
                                     )
-                            powered_off_servers[server.name].server = server
-                            powered_off_servers[server.name].observed_interval = (
+                            powered_off_servers[ps.name].server = ps
+                            powered_off_servers[ps.name].observed_interval = (
                                 current_interval
                             )
 
-                    elif server.status == server.STATUS_RUNNING:
+                    elif ps.status == CloudProvider.STATUS_RUNNING:
                         if not any(
                             [
                                 runner.name
                                 for runner in runners
-                                if runner.name.startswith(server.name)
+                                if runner.name.startswith(ps.name)
                             ]
                         ):
-                            if server.name not in zombie_servers:
+                            if ps.name not in zombie_servers:
                                 with Action(
-                                    f"Found new potential zombie server {server.name}",
-                                    server_name=server.name,
+                                    f"Found new potential zombie server {ps.name}",
+                                    server_name=ps.name,
                                     interval=interval,
                                 ):
-                                    zombie_servers[server.name] = ZombieServer(
+                                    zombie_servers[ps.name] = ZombieServer(
                                         time=current_interval,
-                                        server=server,
+                                        server=ps,
                                         observed_interval=current_interval,
                                     )
-                            zombie_servers[server.name].server = server
-                            zombie_servers[server.name].observed_interval = (
+                            zombie_servers[ps.name].server = ps
+                            zombie_servers[ps.name].observed_interval = (
                                 current_interval
                             )
 
                         else:
-                            zombie_servers.pop(server.name, None)
+                            zombie_servers.pop(ps.name, None)
 
             with Action(
                 "Looking for unused runners", level=logging.DEBUG, interval=interval
@@ -624,7 +615,7 @@ def scale_down(
                             if recycle and _sp is not None and _sp.supports_recycling:
                                 recycle_server(
                                     reason="powered_off",
-                                    server=powered_off_server.server,
+                                    server=powered_off_server.server._native,
                                     ssh_key=ssh_key,
                                     end_of_life=end_of_life,
                                     recycle_grace_period=recycle_grace_period,
@@ -637,12 +628,13 @@ def scale_down(
                                     interval=interval,
                                 ) as action:
                                     metrics.record_server_deletion(
-                                        server_type=powered_off_server.server.server_type.name,
-                                        location=powered_off_server.server.datacenter.location.name,
+                                        server_type=powered_off_server.server.server_type,
+                                        location=powered_off_server.server.location,
                                         reason="powered_off",
                                     )
                                     delete_server(
                                         powered_off_server.server,
+                                        _sp,
                                         action="delete_powered_off",
                                     )
                             powered_off_servers.pop(server_name)
@@ -672,7 +664,7 @@ def scale_down(
                             if recycle and _sp is not None and _sp.supports_recycling:
                                 recycle_server(
                                     reason="zombie",
-                                    server=zombie_server.server,
+                                    server=zombie_server.server._native,
                                     ssh_key=ssh_key,
                                     end_of_life=end_of_life,
                                     recycle_grace_period=recycle_grace_period,
@@ -685,12 +677,12 @@ def scale_down(
                                     interval=interval,
                                 ) as action:
                                     metrics.record_server_deletion(
-                                        server_type=zombie_server.server.server_type.name,
-                                        location=zombie_server.server.datacenter.location.name,
+                                        server_type=zombie_server.server.server_type,
+                                        location=zombie_server.server.location,
                                         reason="zombie",
                                     )
                                     delete_server(
-                                        zombie_server.server, action="delete_zombie"
+                                        zombie_server.server, _sp, action="delete_zombie"
                                     )
                             zombie_servers.pop(server_name)
 
@@ -715,7 +707,8 @@ def scale_down(
                             current_interval - unused_runner.time
                             > max_unused_runner_time
                         ):
-                            runner_server = None
+                            runner_server: ProviderServer | None = None
+                            runner_server_provider: CloudProvider | None = None
 
                             with Action(
                                 f"Try to find server for the runner {runner_name}",
@@ -723,20 +716,20 @@ def scale_down(
                                 server_name=get_runner_server_name(runner_name),
                                 interval=interval,
                             ):
-                                runner_server = None
                                 for _p in providers:
                                     _ps = _p.get_server(
                                         get_runner_server_name(runner_name)
                                     )
                                     if _ps is not None:
-                                        runner_server = _ps._native
+                                        runner_server = _ps
+                                        runner_server_provider = _p
                                         break
 
                             if runner_server is not None:
-                                if recycle and _p.supports_recycling:
+                                if recycle and runner_server_provider.supports_recycling:
                                     recycle_server(
                                         reason="unused_runner",
-                                        server=runner_server,
+                                        server=runner_server._native,
                                         ssh_key=ssh_key,
                                         end_of_life=end_of_life,
                                         recycle_grace_period=recycle_grace_period,
@@ -749,12 +742,14 @@ def scale_down(
                                         interval=interval,
                                     ):
                                         metrics.record_server_deletion(
-                                            server_type=runner_server.server_type.name,
-                                            location=runner_server.datacenter.location.name,
+                                            server_type=runner_server.server_type,
+                                            location=runner_server.location,
                                             reason="unused",
                                         )
                                         delete_server(
-                                            runner_server, action="delete_unused"
+                                            runner_server,
+                                            runner_server_provider,
+                                            action="delete_unused",
                                         )
                                 runner_server = None
 

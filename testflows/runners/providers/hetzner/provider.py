@@ -208,6 +208,22 @@ class HetznerCloudProvider(CloudProvider):
         return self.list_servers(label_selector=f"{github_runner_label}=active")
 
     # ---------------------------------------------------------------------------
+    # Runner label helpers
+    # ---------------------------------------------------------------------------
+
+    def get_runner_labels(self, server: ProviderServer) -> set:
+        """Return the job labels attached to this runner server.
+
+        Hetzner stores each label value under a numbered key with the prefix
+        ``github-hetzner-runner-label``.  This extracts just the values.
+        """
+        return {
+            value.lower()
+            for key, value in server.labels.items()
+            if key.startswith("github-hetzner-runner-label")
+        }
+
+    # ---------------------------------------------------------------------------
     # Tag / label operations
     # ---------------------------------------------------------------------------
 
