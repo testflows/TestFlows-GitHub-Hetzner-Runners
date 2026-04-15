@@ -22,6 +22,18 @@ from typing import Any
 
 
 @dataclass
+class ProviderServerType:
+    """Provider-agnostic server type descriptor."""
+
+    name: str
+    # Underlying provider object (e.g. hcloud ServerType). Internal use only.
+    _native: Any = field(default=None, repr=False)
+
+    def __str__(self) -> str:
+        return self.name
+
+
+@dataclass
 class ProviderVolume:
     """Provider-agnostic volume descriptor."""
 
@@ -191,11 +203,15 @@ class CloudProvider(ABC):
     # ---------------------------------------------------------------------------
 
     @abstractmethod
-    def get_server_type(self, name: str) -> Any:
-        """Validate and return the provider server-type object for *name*.
+    def get_server_type(self, name: str) -> "ProviderServerType":
+        """Validate and return a ProviderServerType for *name*.
 
         Raises an appropriate error if the type does not exist.
         """
+
+    @abstractmethod
+    def get_server_arch(self, server_type: "ProviderServerType") -> str:
+        """Return the CPU architecture for *server_type* (``'x64'`` or ``'arm64'``)."""
 
     @abstractmethod
     def get_location(self, name: str, required: bool = False) -> Any:

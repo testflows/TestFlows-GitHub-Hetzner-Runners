@@ -28,7 +28,7 @@ from . import metrics
 from .config import Config, check_startup_script, check_setup_script
 from .config import standby_runner as StandbyRunner
 from .utils import get_runner_server_type_and_location
-from .cloud_provider import CloudProvider, ProviderServer
+from .cloud_provider import CloudProvider, ProviderServer, ProviderServerType
 from .errors import ServerTypeError
 from .constants import (
     server_name_prefix,
@@ -262,9 +262,13 @@ def server_setup(
         )
 
 
-def get_server_types(labels: list[str], default: ServerType, label_prefix: str = ""):
-    """Get server types for the specified job."""
-    server_types: list[ServerType] = []
+def get_server_types(labels: list[str], default, label_prefix: str = "") -> list[str]:
+    """Get server type names for the specified job.
+
+    Returns plain type name strings so that each provider can interpret them
+    via its own ``get_server_type`` method.
+    """
+    server_types: list[str] = []
 
     if label_prefix and not label_prefix.endswith("-"):
         label_prefix += "-"
@@ -278,11 +282,12 @@ def get_server_types(labels: list[str], default: ServerType, label_prefix: str =
             if "-" in server_type_name:
                 # skip composite label
                 continue
-            server_type = ServerType(name=server_type_name)
-            server_types.append(server_type)
+            server_types.append(server_type_name)
 
     if not server_types:
-        server_types = [default]
+        # default may be a plain string or a validated provider type object
+        # (e.g. a hcloud ServerType stored back into config during startup).
+        server_types = [default.name if hasattr(default, "name") else default]
 
     return server_types
 
@@ -400,17 +405,6 @@ def get_server_volumes(labels: list[str], default: int = 10, label_prefix: str =
     return list(volumes.values())
 
 
-def get_server_arch(server_type: ServerType):
-    """Get server architecture base on the requested server type.
-    ARM64 servers type names start with "CA" prefix.
-
-    For example, CAX11, CAX21, CAX31, and CAX41
-    """
-    if server_type.name.lower().startswith("ca"):
-        return "arm64"
-    return "x64"
-
-
 def get_setup_script(
     scripts: str, labels: list[str], default: str = "setup.sh", label_prefix: str = ""
 ):
@@ -437,18 +431,20 @@ def get_setup_script(
 
 def get_startup_script(
     scripts: str,
-    server_type: ServerType,
+    provider: CloudProvider,
+    server_type: ProviderServerType,
     labels: list[str],
     default: str = "startup-{arch}.sh",
     label_prefix: str = "",
 ):
-    """Get startup script based on the requested server type.
-    ARM64 servers type names start with "CA" prefix.
+    """Get startup script for the requested server type.
 
-    For example, CAX11, CAX21, CAX31, and CAX41
+    The provider determines the CPU architecture so each implementation can
+    apply its own type-name convention (Hetzner: ``cax`` prefix; AWS: ``t4g``
+    prefix; etc.).
     """
     script = None
-    default = default.format(arch=get_server_arch(server_type))
+    default = default.format(arch=provider.get_server_arch(server_type))
 
     if label_prefix and not label_prefix.endswith("-"):
         label_prefix += "-"
@@ -529,18 +525,19 @@ def expand_meta_label(
     return list(dict.fromkeys(expanded_labels))
 
 
-def _resolve_provider(server_type: ServerType, providers: list) -> tuple:
-    """Return (provider, validated_server_type) for the first provider that supports the type.
+def _resolve_provider(
+    type_name: str, providers: list
+) -> "tuple[CloudProvider, ProviderServerType]":
+    """Return (provider, ProviderServerType) for the first provider that supports the type.
 
     Tries each provider in order. Raises ServerTypeError if none recognises the type.
     """
-    name = server_type.name if hasattr(server_type, "name") else str(server_type)
     for p in providers:
         try:
-            return p, p.get_server_type(name)
+            return p, p.get_server_type(type_name)
         except ServerTypeError:
             continue
-    raise ServerTypeError(f"no configured provider supports server type '{name}'")
+    raise ServerTypeError(f"no configured provider supports server type '{type_name}'")
 
 
 def raise_exception(exc):
@@ -1216,35 +1213,39 @@ def scale_up(
 
         # Resolve provider and validate type for each requested server type.
         # get_server_image is called per type since image specs are provider-specific.
-        resolved = [
-            (
-                rp,
-                vt,
-                get_server_image(
-                    provider=rp,
-                    labels=labels,
-                    default=default_image,
-                    label_prefix=label_prefix,
-                ),
+        resolved = []
+        for type_name in server_types:
+            rp, vt = _resolve_provider(type_name, providers)
+            resolved.append(
+                (
+                    type_name,
+                    rp,
+                    vt,
+                    get_server_image(
+                        provider=rp,
+                        labels=labels,
+                        default=default_image,
+                        label_prefix=label_prefix,
+                    ),
+                )
             )
-            for rp, vt in (_resolve_provider(st, providers) for st in server_types)
-        ]
 
         if recycle:
-            for resolved_provider, validated_type, server_image in resolved:
+            for type_name, resolved_provider, validated_type, server_image in resolved:
                 if not resolved_provider.supports_recycling:
                     continue
                 for loc_name in server_locations:
                     server_location = resolved_provider.get_location(loc_name)
                     startup_script = get_startup_script(
                         scripts=scripts,
+                        provider=resolved_provider,
                         server_type=validated_type,
                         labels=labels,
                         label_prefix=label_prefix,
                     )
 
                     with Action(
-                        f"Trying to create recycled server {name} of {validated_type} in {loc_name or 'None'} with volumes {server_volumes}",
+                        f"Trying to create recycled server {name} of {type_name} in {loc_name or 'None'} with volumes {server_volumes}",
                         stacklevel=3,
                         level=logging.DEBUG,
                         server_name=name,
@@ -1265,7 +1266,7 @@ def scale_up(
 
                             if recyclable_server_match(
                                 server=server,
-                                server_type=validated_type.name,
+                                server_type=type_name,
                                 server_location=(
                                     server_location.name if server_location else None
                                 ),
@@ -1309,7 +1310,7 @@ def scale_up(
                                 ):
                                     pass
 
-        for resolved_provider, validated_type, server_image in resolved:
+        for type_name, resolved_provider, validated_type, server_image in resolved:
             for loc_name in server_locations:
                 server_location = resolved_provider.get_location(loc_name)
                 # pre-increment the attempt number that starts from 0
@@ -1317,13 +1318,13 @@ def scale_up(
 
                 startup_script = get_startup_script(
                     scripts=scripts,
-                    server_type=validated_type,
+                    server_type=type_name,
                     labels=labels,
                     label_prefix=label_prefix,
                 )
 
                 with Action(
-                    f"Trying to create new server {name} of {validated_type} in {loc_name or 'None'} with volumes {server_volumes}",
+                    f"Trying to create new server {name} of {type_name} in {loc_name or 'None'} with volumes {server_volumes}",
                     stacklevel=3,
                     level=logging.DEBUG,
                     server_name=name,

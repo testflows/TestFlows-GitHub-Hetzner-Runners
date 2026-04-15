@@ -27,7 +27,7 @@ from hcloud.locations.domain import Location
 
 from ...hclient import HClient
 from ...actions import Action
-from ...cloud_provider import CloudProvider, ProviderServer, ProviderVolume
+from ...cloud_provider import CloudProvider, ProviderServer, ProviderServerType, ProviderVolume
 from . import config as hetzner_config
 from ...constants import github_runner_label
 
@@ -129,7 +129,7 @@ class HetznerCloudProvider(CloudProvider):
     def create_server(
         self,
         name: str,
-        server_type,
+        server_type: ProviderServerType,
         location,
         image,
         ssh_keys: list,
@@ -141,7 +141,9 @@ class HetznerCloudProvider(CloudProvider):
         """Create a server and return a ProviderServer wrapping the BoundServer."""
         response = self._client.servers.create(
             name=name,
-            server_type=server_type,
+            # Unwrap ProviderServerType; accept raw ServerType for callers that
+            # haven't migrated yet (e.g. recycle_server in scale_up.py).
+            server_type=server_type._native if isinstance(server_type, ProviderServerType) else server_type,
             location=location,
             image=image,
             ssh_keys=ssh_keys,
@@ -289,15 +291,26 @@ class HetznerCloudProvider(CloudProvider):
     # Resource discovery
     # ---------------------------------------------------------------------------
 
-    def get_server_type(self, name) -> ServerType:
-        """Validate and return the hcloud ServerType for *name*.
+    def get_server_type(self, name) -> ProviderServerType:
+        """Validate and return a ProviderServerType for *name*.
 
-        Accepts either a ``ServerType`` object or a plain string name.
+        Accepts either a plain string name or a ``ServerType`` object.
         Delegates to the existing ``check_server_type`` helper.
         """
-        if isinstance(name, ServerType):
-            return hetzner_config.check_server_type(self._client, name)
-        return hetzner_config.check_server_type(self._client, ServerType(name=name))
+        # Accept a raw ServerType object for backwards compatibility with startup
+        # validation code that stores the validated hcloud object back into config.
+        native_name = name.name if isinstance(name, ServerType) else name
+        native = hetzner_config.check_server_type(self._client, ServerType(name=native_name))
+        return ProviderServerType(name=native.name, _native=native)
+
+    def get_server_arch(self, server_type: ProviderServerType) -> str:
+        """Return the CPU architecture for *server_type*.
+
+        Hetzner ARM64 types use the ``cax`` prefix (CAX11, CAX21, CAX31, CAX41).
+        """
+        if server_type.name.lower().startswith("ca"):
+            return "arm64"
+        return "x64"
 
     def get_location(self, name, required: bool = False) -> "Location | None":
         """Validate and return the hcloud Location for *name*.
