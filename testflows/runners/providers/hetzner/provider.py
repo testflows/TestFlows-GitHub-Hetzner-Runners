@@ -104,17 +104,21 @@ class HetznerCloudProvider(CloudProvider):
     validation helpers in providers/hetzner/config.py.
     """
 
-    def __init__(self, token: str, ssh_key_path: str = None):
+    def __init__(self, token: str, ssh_key_path: str = None, default_image=None):
         """Initialise the provider.
 
         Args:
             token: Hetzner Cloud API token.
             ssh_key_path: Optional path to a public SSH key file.  When
                 supplied, ``get_or_create_ssh_key`` can accept ``is_file=True``.
+            default_image: Default image to use when no ``image-`` label is
+                present.  Accepts a validated hcloud ``Image`` object (from
+                ``config.default_image``) or a raw spec string.
         """
         self._token = token
         self._ssh_key_path = ssh_key_path
         self._client = HClient(token=token)
+        self._default_image = default_image
 
     # ---------------------------------------------------------------------------
     # Identity
@@ -384,9 +388,17 @@ class HetznerCloudProvider(CloudProvider):
     def get_image(self, image_spec) -> Image:
         """Validate and return the hcloud Image for *image_spec*.
 
-        Accepts an ``hcloud.images.domain.Image`` descriptor.
-        Delegates to ``check_image``.
+        Accepts either:
+        - An ``hcloud.images.domain.Image`` descriptor (existing validated object)
+        - A raw spec string in ``arch:type:name`` (colon-separated) or
+          ``arch-type-name`` (hyphen-separated) format, e.g.
+          ``"x86:system:ubuntu-22.04"`` or ``"x86-system-ubuntu-22.04"``.
         """
+        if isinstance(image_spec, str):
+            from ...args import image_type as _parse_hetzner_image
+
+            sep = ":" if ":" in image_spec else "-"
+            image_spec = _parse_hetzner_image(image_spec, separator=sep)
         return hetzner_config.check_image(self._client, image_spec)
 
     # ---------------------------------------------------------------------------

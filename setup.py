@@ -69,5 +69,8 @@ setup(
         "streamlit==1.49.1",
         "psutil>=7.2.1",
     ],
-    extras_require={"dev": []},
+    extras_require={
+        "aws": ["boto3>=1.34"],
+        "dev": [],
+    },
 )

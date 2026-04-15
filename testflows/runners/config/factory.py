@@ -18,7 +18,7 @@
 import dataclasses
 import logging
 
-from .config import Config, hetzner_provider as HetznerProviderConfig
+from .config import Config, hetzner_provider as HetznerProviderConfig, aws_provider as AWSProviderConfig
 from ..cloud_provider import CloudProvider
 
 logger = logging.getLogger("testflows.runners")
@@ -61,6 +61,23 @@ def provider_factory(config: Config) -> list[CloudProvider]:
             HetznerCloudProvider(
                 token=config.providers.hetzner.token,
                 ssh_key_path=config.ssh_key,
+            )
+        )
+
+    aws_cfg = config.providers.aws
+    if aws_cfg and aws_cfg.access_key_id and aws_cfg.secret_access_key:
+        from ..providers.aws.provider import AWSCloudProvider, _az_to_region
+
+        location = aws_cfg.defaults.location or "us-east-1a"
+        region = _az_to_region(location)
+        providers.append(
+            AWSCloudProvider(
+                access_key_id=aws_cfg.access_key_id,
+                secret_access_key=aws_cfg.secret_access_key,
+                region=region,
+                security_group=aws_cfg.security_group,
+                subnet=aws_cfg.subnet,
+                default_image_spec=aws_cfg.defaults.image,
             )
         )
 

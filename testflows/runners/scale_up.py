@@ -22,7 +22,7 @@ from dataclasses import dataclass
 
 from .actions import Action
 from .request import request
-from .args import image_type
+
 from .logger import logger
 from . import metrics
 from .config import Config, check_startup_script, check_setup_script
@@ -50,7 +50,7 @@ from hcloud.server_types.domain import ServerType
 from hcloud.locations.domain import Location
 from hcloud.servers.client import BoundServer, BoundVolume
 from hcloud.servers.domain import Server, ServerCreatePublicNetwork
-from hcloud.images.domain import Image
+
 
 from github import Auth, Github
 from github.Repository import Repository
@@ -323,10 +323,10 @@ def get_server_locations(
 
 
 def get_server_image(
-    provider: CloudProvider, labels: list[str], default: Image, label_prefix: str = ""
+    provider: CloudProvider, labels: list[str], default, label_prefix: str = ""
 ):
     """Get preferred server image for the specified job."""
-    server_image: Image = None
+    server_image = None
 
     if label_prefix and not label_prefix.endswith("-"):
         label_prefix += "-"
@@ -336,9 +336,7 @@ def get_server_image(
     for label in labels:
         label = label.lower()
         if label.startswith(label_prefix):
-            server_image = provider.get_image(
-                image_type(label.split(label_prefix, 1)[-1].lower(), separator="-"),
-            )
+            server_image = provider.get_image(label.split(label_prefix, 1)[-1].lower())
 
     if server_image is None:
         server_image = default
@@ -631,7 +629,7 @@ def check_max_servers_for_label_reached(
 def get_server_bound_volumes(
     action: Action,
     provider: CloudProvider,
-    server_image: Image,
+    server_image,
     server_location: Location,
     server_volumes: list[Volume],
     volumes: list[BoundVolume],
@@ -860,7 +858,7 @@ def recycle_server(
     setup_worker_pool: ThreadPoolExecutor,
     labels: list[str],
     name: str,
-    server_image: Image,
+    server_image,
     startup_script: str,
     setup_script: str,
     github_token: str,
@@ -1119,7 +1117,7 @@ def scale_up(
     default_location: str | None = (
         config.default_location.name if config.default_location else None
     )
-    default_image: Image = config.default_image
+    default_image = config.default_image
     interval_period: int = config.scale_up_interval
     max_servers: int = config.max_runners
     max_servers_for_label: list[tuple[set[str], int]] = config.max_runners_for_label
@@ -1189,6 +1187,9 @@ def scale_up(
         resolved = []
         for type_name in server_types:
             rp, vt = _resolve_provider(type_name, providers)
+            provider_default_image = (
+                rp.default_image if rp.default_image is not None else default_image
+            )
             resolved.append(
                 (
                     type_name,
@@ -1197,7 +1198,7 @@ def scale_up(
                     get_server_image(
                         provider=rp,
                         labels=labels,
-                        default=default_image,
+                        default=provider_default_image,
                         label_prefix=label_prefix,
                     ),
                 )

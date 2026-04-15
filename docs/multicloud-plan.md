@@ -118,14 +118,17 @@ The `cloud deploy` command (which provisions the runner service itself onto a cl
 
 ### Phase 4 — AWS implementation
 
-- [ ] Implement `AWSCloudProvider` in `providers/aws/provider.py`
+- [x] Implement `AWSCloudProvider` in `providers/aws/provider.py`
   - EC2 instance lifecycle (create/delete/get/list)
   - Tag-based server identification
-  - AMI image resolution (`image-ami-{id}` label format)
+  - AMI image resolution (`ami-{id}` or `resolve:ssm:{path}` label format)
   - EC2 key pair management
   - No recycling (`supports_recycling = False`)
   - Volumes: `NotImplementedError` stubs
-- [ ] Run the shared provider test suite against `AWSCloudProvider`
+- [x] Wire AWS into `config/factory.py` (region derived from AZ)
+- [x] Fix `get_server_image` to pass raw string to `provider.get_image()` (provider owns parsing)
+- [x] Fix resolved loop to use `rp.default_image` per provider with `config.default_image` fallback
+- [x] Run the shared provider test suite against `AWSCloudProvider` (66 tests, all passing)
 - [ ] Validate end-to-end with a real AWS account
 
 ### Phase 5 — Config validation library (deferred)

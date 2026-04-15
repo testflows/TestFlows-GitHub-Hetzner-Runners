@@ -91,6 +91,16 @@ class CloudProvider(ABC):
     # ---------------------------------------------------------------------------
 
     @property
+    def default_image(self) -> Any:
+        """Default image spec for this provider (set in __init__, None if not configured).
+
+        Used by scale_up when no ``image-`` label is present on the job.  Each
+        provider stores its own native format (e.g. a validated hcloud Image for
+        Hetzner, an AMI ID string for AWS).
+        """
+        return getattr(self, "_default_image", None)
+
+    @property
     @abstractmethod
     def name(self) -> str:
         """Human-readable provider name, e.g. 'hetzner' or 'aws'."""
