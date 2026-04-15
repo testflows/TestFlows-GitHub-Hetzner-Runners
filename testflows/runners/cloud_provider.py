@@ -43,6 +43,8 @@ class ProviderVolume:
     location: str
     labels: dict[str, str]
     status: str = ""
+    # Block device path on the server (e.g. /dev/disk/by-id/...). Provider-specific.
+    linux_device: str = ""
     # Underlying provider object. Internal use only.
     _native: Any = field(default=None, repr=False)
 
@@ -61,6 +63,7 @@ class ProviderServer:
     location: str
     created: datetime
     volumes: list["ProviderVolume"] = field(default_factory=list)
+    public_ipv6: str | None = None
     # Underlying provider object (e.g. hcloud BoundServer). Internal use only.
     _native: Any = field(default=None, repr=False)
 
@@ -196,6 +199,45 @@ class CloudProvider(ABC):
 
         Returns the provider key object (e.g. hcloud SSHKey) whose name/id can
         be used when creating servers.
+        """
+
+    # ---------------------------------------------------------------------------
+    # Server metadata helpers
+    # ---------------------------------------------------------------------------
+
+    @abstractmethod
+    def build_server_labels(
+        self, runner_labels: list[str], ssh_key_name: str = None
+    ) -> dict[str, str]:
+        """Return the tag/label dict to apply to a new (or recycled) runner server.
+
+        The provider owns its own tag key naming scheme (e.g. Hetzner uses
+        ``github-hetzner-runner-label-{i}``).  The returned dict should include
+        both the per-label entries and the ``github_runner_label = "active"``
+        marker used for server discovery.
+        """
+
+    @abstractmethod
+    def build_volume_labels(
+        self, arch: str, os_flavor: str, os_version: str
+    ) -> dict[str, str]:
+        """Return the tag/label dict to apply to a new runner volume."""
+
+    @abstractmethod
+    def validate_labels(self, labels: dict[str, str]) -> "tuple[bool, str]":
+        """Validate that *labels* satisfy provider-specific constraints.
+
+        Returns ``(True, "")`` if valid, ``(False, error_message)`` otherwise.
+        """
+
+    @abstractmethod
+    def update_server(
+        self, server: "ProviderServer", name: str, labels: dict[str, str]
+    ) -> "ProviderServer":
+        """Rename *server* and replace its labels atomically.
+
+        Updates ``server.name`` and ``server.labels`` in-place and returns the
+        same (updated) ProviderServer for convenience.
         """
 
     # ---------------------------------------------------------------------------

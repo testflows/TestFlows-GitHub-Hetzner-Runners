@@ -51,7 +51,6 @@ from hcloud.locations.domain import Location
 from hcloud.servers.client import BoundServer, BoundVolume
 from hcloud.servers.domain import Server, ServerCreatePublicNetwork
 from hcloud.images.domain import Image
-from hcloud.helpers.labels import LabelValidator
 
 from github import Auth, Github
 from github.Repository import Repository
@@ -143,7 +142,7 @@ def get_runner_server_type_and_location(runner_name: str):
 
 
 def server_setup(
-    server: BoundServer,
+    server: ProviderServer,
     setup_script: str,
     startup_script: str,
     github_token: str,
@@ -255,8 +254,8 @@ def server_setup(
             f"GITHUB_RUNNER_GROUP=Default "
             f'GITHUB_RUNNER_LABELS="{runner_labels}" '
             f'SERVER_ID="{server.id}" '
-            f'SERVER_TYPE_NAME="{server.server_type.name}" '
-            f'SERVER_LOCATION_NAME="{server.datacenter.location.name}" '
+            f'SERVER_TYPE_NAME="{server.server_type}" '
+            f'SERVER_LOCATION_NAME="{server.location}" '
             f"bash -s' < {startup_script}",
             stacklevel=5,
         )
@@ -695,12 +694,11 @@ def get_server_bound_volumes(
             name=f"{server_volume.name}-{server_image.architecture}-{server_image.os_flavor}-{server_image.os_version}-{uid()}",
             size=server_volume.size,
             location=server_location,
-            labels={
-                "github-hetzner-runner-volume": "active",
-                "github-hetzner-runner-arch": server_image.architecture,
-                "github-hetzner-runner-os": server_image.os_flavor,
-                "github-hetzner-runner-os-version": server_image.os_version,
-            },
+            labels=provider.build_volume_labels(
+                server_image.architecture,
+                server_image.os_flavor,
+                server_image.os_version,
+            ),
             format="ext4",
             automount=False,
         )
@@ -725,17 +723,17 @@ def create_server(
     setup_worker_pool: ThreadPoolExecutor,
     labels: list[str],
     name: str,
-    server_type: ServerType,
-    server_location: Location,
+    server_type: ProviderServerType,
+    server_location,
     server_volumes: list[Volume],
-    server_image: Image,
-    server_net_config: ServerCreatePublicNetwork,
+    server_image,
+    server_net_config,
     startup_script: str,
     setup_script: str,
     github_token: str,
     github_repository: str,
-    ssh_keys: list[SSHKey],
-    volumes: list[BoundVolume],
+    ssh_keys: list,
+    volumes: list,
     timeout: float = 60,
     canceled: threading.Event = None,
     semaphore: threading.Semaphore = None,
@@ -765,13 +763,9 @@ def create_server(
                     # another attempt can proceed next time
                     active_attempt[0] += 1
 
-                server_labels = {
-                    f"github-hetzner-runner-label-{i}": value
-                    for i, value in enumerate(labels)
-                }
-                if ssh_keys:
-                    server_labels[server_ssh_key_label] = ssh_keys[0].name
-                server_labels[github_runner_label] = "active"
+                server_labels = provider.build_server_labels(
+                    labels, ssh_keys[0].name if ssh_keys else None
+                )
 
                 with Action(
                     f"Validating server {name} labels {labels} of {server_type} in {'None' if not server_location else server_location.name}",
@@ -779,9 +773,7 @@ def create_server(
                     stacklevel=3,
                     server_name=name,
                 ):
-                    valid, error_msg = LabelValidator.validate_verbose(
-                        labels=server_labels
-                    )
+                    valid, error_msg = provider.validate_labels(server_labels)
                     if not valid:
                         raise ValueError(
                             f"invalid server labels {server_labels}: {error_msg}"
@@ -822,11 +814,6 @@ def create_server(
                                 labels=server_labels,
                                 public_net=server_net_config,
                             )
-                            server: BoundServer = provider_server._native
-                            server.volumes = server_bound_volumes
-
-                            for volume in server_bound_volumes:
-                                volume.server = server
 
                     except Exception as e:
                         for volume in server_bound_volumes:
@@ -856,7 +843,7 @@ def create_server(
 
     setup_worker_pool.submit(
         server_setup,
-        server=server,
+        server=provider_server,
         setup_script=setup_script,
         startup_script=startup_script,
         github_token=github_token,
@@ -889,48 +876,34 @@ def recycle_server(
     """
     with Action(f"Get recyclable server {server_name}", server_name=name):
         provider_server = provider.get_server(name=server_name)
-        server: BoundServer = provider_server._native
 
-    # Start with existing labels and merge in the new runner labels
-    # This preserves any labels that aren't explicitly being replaced
-    merged_labels = dict(server.labels) if server.labels else {}
+    # Start with existing labels and merge in the new runner labels.
+    # This preserves any labels that aren't explicitly being replaced.
+    merged_labels = dict(provider_server.labels)
+    runner_labels = provider.build_server_labels(
+        labels, ssh_key.name if ssh_key is not None else None
+    )
+    merged_labels.update(runner_labels)
 
-    # Set the new runner labels
-    for i, value in enumerate(labels):
-        merged_labels[f"github-hetzner-runner-label-{i}"] = value
-    if ssh_key is not None:
-        merged_labels[server_ssh_key_label] = ssh_key.name
-    merged_labels[github_runner_label] = "active"
-
-    # Remove recycle timestamp label since server is now active
+    # Remove recycle timestamp label since server is now active.
     merged_labels.pop(recycle_timestamp_label, None)
 
     with Action(f"Validating server {name} labels", server_name=name):
-        valid, error_msg = LabelValidator.validate_verbose(labels=merged_labels)
+        valid, error_msg = provider.validate_labels(merged_labels)
         if not valid:
             raise ValueError(f"invalid server labels {merged_labels}: {error_msg}")
 
     with Action(f"Recycling server {server_name} to make {name}", server_name=name):
-        server = server.update(name=name, labels=merged_labels)
-        server.name = name
-        server.labels = merged_labels
+        provider.update_server(provider_server, name=name, labels=merged_labels)
 
-    with Action(f"Rebuilding recycled server {server.name} image", server_name=name):
-        try:
-            server.rebuild(image=server_image).action.wait_until_finished(
-                max_retries=timeout
-            )
-        except APIException as exc:
-            # Re-raise with context since Hetzner's server_error has message=None
-            raise APIException(
-                code=exc.code,
-                message=f"error while rebuilding recycled server {server.name}: {exc.message}",
-                details=getattr(exc, "details", None),
-            ) from exc
+    with Action(
+        f"Rebuilding recycled server {provider_server.name} image", server_name=name
+    ):
+        provider.rebuild_server(provider_server, server_image)
 
     setup_worker_pool.submit(
         server_setup,
-        server=server,
+        server=provider_server,
         setup_script=setup_script,
         startup_script=startup_script,
         github_token=github_token,
@@ -1318,7 +1291,8 @@ def scale_up(
 
                 startup_script = get_startup_script(
                     scripts=scripts,
-                    server_type=type_name,
+                    provider=resolved_provider,
+                    server_type=validated_type,
                     labels=labels,
                     label_prefix=label_prefix,
                 )

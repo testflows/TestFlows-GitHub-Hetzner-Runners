@@ -51,6 +51,10 @@ def _server_to_provider(server: BoundServer) -> ProviderServer:
     if server.public_net and server.public_net.ipv4:
         ipv4 = server.public_net.ipv4.ip
 
+    ipv6 = None
+    if server.public_net and server.public_net.primary_ipv6:
+        ipv6 = server.public_net.primary_ipv6.ip
+
     # Private IPv4: take the first private network IP if present.
     private_ipv4 = None
     if server.private_net:
@@ -65,6 +69,7 @@ def _server_to_provider(server: BoundServer) -> ProviderServer:
         status=_STATUS_MAP.get(server.status, CloudProvider.STATUS_UNKNOWN),
         public_ipv4=ipv4,
         private_ipv4=private_ipv4,
+        public_ipv6=ipv6,
         labels=dict(server.labels) if server.labels else {},
         server_type=server.server_type.name if server.server_type else "",
         location=(
@@ -87,6 +92,7 @@ def _volume_to_provider(volume: BoundVolume) -> ProviderVolume:
         location=volume.location.name if volume.location else "",
         labels=dict(volume.labels) if volume.labels else {},
         status=volume.status if volume.status else "",
+        linux_device=volume.linux_device or "",
         _native=volume,
     )
 
@@ -226,6 +232,57 @@ class HetznerCloudProvider(CloudProvider):
             for key, value in server.labels.items()
             if key.startswith("github-hetzner-runner-label")
         }
+
+    # ---------------------------------------------------------------------------
+    # Server metadata helpers
+    # ---------------------------------------------------------------------------
+
+    def build_server_labels(
+        self, runner_labels: list[str], ssh_key_name: str = None
+    ) -> dict[str, str]:
+        """Return Hetzner tag dict for a runner server.
+
+        Each runner label is stored under a numbered ``github-hetzner-runner-label-{i}``
+        key so it satisfies Hetzner's label value constraints.
+        """
+        from ...constants import server_ssh_key_label, github_runner_label
+
+        labels = {
+            f"github-hetzner-runner-label-{i}": value
+            for i, value in enumerate(runner_labels)
+        }
+        if ssh_key_name:
+            labels[server_ssh_key_label] = ssh_key_name
+        labels[github_runner_label] = "active"
+        return labels
+
+    def build_volume_labels(
+        self, arch: str, os_flavor: str, os_version: str
+    ) -> dict[str, str]:
+        """Return Hetzner tag dict for a runner volume."""
+        return {
+            "github-hetzner-runner-volume": "active",
+            "github-hetzner-runner-arch": arch,
+            "github-hetzner-runner-os": os_flavor,
+            "github-hetzner-runner-os-version": os_version,
+        }
+
+    def validate_labels(self, labels: dict[str, str]) -> "tuple[bool, str]":
+        """Validate labels against Hetzner's label constraints."""
+        from hcloud.helpers.labels import LabelValidator
+
+        return LabelValidator.validate_verbose(labels=labels)
+
+    def update_server(
+        self, server: ProviderServer, name: str, labels: dict[str, str]
+    ) -> ProviderServer:
+        """Rename the server and replace its labels atomically."""
+        native: BoundServer = server._native
+        native.update(name=name, labels=labels)
+        # Keep ProviderServer in sync with the updated native state.
+        server.name = name
+        server.labels = labels
+        return server
 
     # ---------------------------------------------------------------------------
     # Tag / label operations

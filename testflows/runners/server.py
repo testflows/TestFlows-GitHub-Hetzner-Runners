@@ -91,8 +91,19 @@ def age(server: Server):
     return ServerAge(days=days, hours=hours, minutes=minutes, seconds=seconds)
 
 
-def ip_address(server: Server):
+def ip_address(server):
     """Return IPv4 (default) or IPv6 address of the server."""
+    from .cloud_provider import ProviderServer
+
+    if isinstance(server, ProviderServer):
+        if server.public_ipv4 is not None:
+            return server.public_ipv4
+        if server.public_ipv6 is not None:
+            return ipaddress.IPv6Network(
+                server.public_ipv6, strict=False
+            ).network_address + 1
+        raise ValueError(f"Server {server.name} has no public IPv4 or IPv6 address")
+    # Legacy path: hcloud Server / MockServer objects.
     if server.public_net.primary_ipv4 is not None:
         return server.public_net.primary_ipv4.ip
     return (
@@ -103,7 +114,7 @@ def ip_address(server: Server):
     )
 
 
-def wait_ssh(server: Server, timeout: float):
+def wait_ssh(server, timeout: float):
     """Wait until SSH connection is ready."""
     ip = ip_address(server=server)
 
@@ -127,13 +138,13 @@ def wait_ssh(server: Server, timeout: float):
             time.sleep(5)
 
 
-def ssh_command(server: Server, options: str = ""):
+def ssh_command(server, options: str = ""):
     """Return ssh command."""
     ip = ip_address(server=server)
     return f'ssh -q -o "StrictHostKeyChecking no" -o "UserKnownHostsFile=/dev/null" {options}{" " if options else ""}root@{ip}'
 
 
-def ssh(server: Server, cmd: str, *args, stacklevel=3, **kwargs):
+def ssh(server, cmd: str, *args, stacklevel=3, **kwargs):
     """Execute command over SSH."""
     return shell(
         f"{ssh_command(server=server)} {cmd}",
