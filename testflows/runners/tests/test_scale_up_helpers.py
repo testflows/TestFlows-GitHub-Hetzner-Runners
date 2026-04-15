@@ -18,10 +18,7 @@
 import pytest
 from unittest.mock import MagicMock
 
-from hcloud.servers.domain import Server
-from hcloud.server_types.domain import ServerType
-from hcloud.locations.domain import Location
-
+from testflows.runners.cloud_provider import CloudProvider
 from testflows.runners.scale_up import (
     RunnerServer,
     check_max_servers_for_label_reached,
@@ -49,7 +46,7 @@ RUNNER_PREFIX = runner_name_prefix  # "github-hetzner-runner-"
 
 def _runner_server(
     labels=None,
-    server_status=Server.STATUS_RUNNING,
+    server_status=CloudProvider.STATUS_RUNNING,
     status="ready",
     server_type_name="cx22",
     server_location_name="nbg1",
@@ -57,17 +54,13 @@ def _runner_server(
     native=None,
 ):
     """Build a minimal RunnerServer for tests."""
-    st = MagicMock(spec=ServerType)
-    st.name = server_type_name
-    loc = MagicMock(spec=Location)
-    loc.name = server_location_name
     ps = MagicMock()  # ProviderServer
     ps._native = native or MagicMock()
     return RunnerServer(
         name=f"{RUNNER_PREFIX}run1-0-{server_type_name}-{server_location_name}",
         labels=set(labels or []),
-        server_type=st,
-        server_location=loc,
+        server_type=server_type_name,
+        server_location=server_location_name,
         server_volumes=server_volumes or [],
         server_status=server_status,
         status=status,
@@ -259,7 +252,7 @@ class TestCountAvailable:
         assert count_available([s], ["linux"]) == 0
 
     def test_powered_off_server_not_counted(self):
-        s = _runner_server(labels=["linux"], server_status=Server.STATUS_OFF)
+        s = _runner_server(labels=["linux"], server_status=CloudProvider.STATUS_OFF)
         assert count_available([s], ["linux"]) == 0
 
     def test_label_mismatch_not_counted(self):
@@ -276,7 +269,7 @@ class TestCountPresent:
         assert count_present([s], ["linux"]) == 1
 
     def test_powered_off_not_counted(self):
-        s = _runner_server(labels=["linux"], server_status=Server.STATUS_OFF)
+        s = _runner_server(labels=["linux"], server_status=CloudProvider.STATUS_OFF)
         assert count_present([s], ["linux"]) == 0
 
     def test_any_non_off_status_counted(self):
@@ -439,23 +432,13 @@ class TestRecyclableServerMatch:
         k.name = name
         return k
 
-    def _server_type(self, name="cx22"):
-        st = MagicMock(spec=ServerType)
-        st.name = name
-        return st
-
-    def _location(self, name="nbg1"):
-        loc = MagicMock(spec=Location)
-        loc.name = name
-        return loc
-
     def test_full_match(self):
         server = self._make_server()
         assert (
             recyclable_server_match(
                 server=server,
-                server_type=self._server_type("cx22"),
-                server_location=self._location("nbg1"),
+                server_type="cx22",
+                server_location="nbg1",
                 server_volumes=[],
                 server_net_config=self._net(ipv4=True, ipv6=False),
                 ssh_key=self._ssh_key("mykey"),
@@ -468,8 +451,8 @@ class TestRecyclableServerMatch:
         assert (
             recyclable_server_match(
                 server=server,
-                server_type=self._server_type("cx32"),
-                server_location=self._location("nbg1"),
+                server_type="cx32",
+                server_location="nbg1",
                 server_volumes=[],
                 server_net_config=self._net(),
                 ssh_key=self._ssh_key("mykey"),
@@ -482,8 +465,8 @@ class TestRecyclableServerMatch:
         assert (
             recyclable_server_match(
                 server=server,
-                server_type=self._server_type("cx22"),
-                server_location=self._location("fsn1"),
+                server_type="cx22",
+                server_location="fsn1",
                 server_volumes=[],
                 server_net_config=self._net(),
                 ssh_key=self._ssh_key("mykey"),
@@ -496,7 +479,7 @@ class TestRecyclableServerMatch:
         assert (
             recyclable_server_match(
                 server=server,
-                server_type=self._server_type("cx22"),
+                server_type="cx22",
                 server_location=None,
                 server_volumes=[],
                 server_net_config=self._net(),
@@ -510,8 +493,8 @@ class TestRecyclableServerMatch:
         assert (
             recyclable_server_match(
                 server=server,
-                server_type=self._server_type("cx22"),
-                server_location=self._location("nbg1"),
+                server_type="cx22",
+                server_location="nbg1",
                 server_volumes=[self._vol("other")],
                 server_net_config=self._net(),
                 ssh_key=self._ssh_key("mykey"),
@@ -524,8 +507,8 @@ class TestRecyclableServerMatch:
         assert (
             recyclable_server_match(
                 server=server,
-                server_type=self._server_type("cx22"),
-                server_location=self._location("nbg1"),
+                server_type="cx22",
+                server_location="nbg1",
                 server_volumes=[],
                 server_net_config=self._net(ipv4=True),
                 ssh_key=self._ssh_key("mykey"),
@@ -538,8 +521,8 @@ class TestRecyclableServerMatch:
         assert (
             recyclable_server_match(
                 server=server,
-                server_type=self._server_type("cx22"),
-                server_location=self._location("nbg1"),
+                server_type="cx22",
+                server_location="nbg1",
                 server_volumes=[],
                 server_net_config=self._net(ipv4=False),
                 ssh_key=self._ssh_key("mykey"),
@@ -552,8 +535,8 @@ class TestRecyclableServerMatch:
         assert (
             recyclable_server_match(
                 server=server,
-                server_type=self._server_type("cx22"),
-                server_location=self._location("nbg1"),
+                server_type="cx22",
+                server_location="nbg1",
                 server_volumes=[],
                 server_net_config=self._net(ipv4=True, ipv6=True),
                 ssh_key=self._ssh_key("mykey"),
@@ -566,8 +549,8 @@ class TestRecyclableServerMatch:
         assert (
             recyclable_server_match(
                 server=server,
-                server_type=self._server_type("cx22"),
-                server_location=self._location("nbg1"),
+                server_type="cx22",
+                server_location="nbg1",
                 server_volumes=[],
                 server_net_config=self._net(ipv4=True, ipv6=False),
                 ssh_key=self._ssh_key("mykey"),
@@ -580,8 +563,8 @@ class TestRecyclableServerMatch:
         assert (
             recyclable_server_match(
                 server=server,
-                server_type=self._server_type("cx22"),
-                server_location=self._location("nbg1"),
+                server_type="cx22",
+                server_location="nbg1",
                 server_volumes=[],
                 server_net_config=self._net(),
                 ssh_key=self._ssh_key("newkey"),

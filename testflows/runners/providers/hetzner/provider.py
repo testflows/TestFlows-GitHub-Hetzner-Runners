@@ -73,6 +73,7 @@ def _server_to_provider(server: BoundServer) -> ProviderServer:
             else ""
         ),
         created=server.created,
+        volumes=[_volume_to_provider(v) for v in (server.volumes or [])],
         _native=server,
     )
 
@@ -85,6 +86,7 @@ def _volume_to_provider(volume: BoundVolume) -> ProviderVolume:
         size=volume.size,
         location=volume.location.name if volume.location else "",
         labels=dict(volume.labels) if volume.labels else {},
+        status=volume.status if volume.status else "",
         _native=volume,
     )
 
@@ -357,7 +359,11 @@ class HetznerCloudProvider(CloudProvider):
         return _volume_to_provider(bound)
 
     def list_volumes(self, label_selector: str = None) -> list[ProviderVolume]:
-        """List Hetzner volumes, optionally filtered by label selector."""
+        """List Hetzner volumes, optionally filtered by label selector.
+
+        Overrides the base-class stub so Hetzner volumes can be retrieved
+        without accessing ``_client`` directly from generic paths.
+        """
         vols = self._client.volumes.get_all(label_selector=label_selector)
         return [_volume_to_provider(v) for v in vols]
 

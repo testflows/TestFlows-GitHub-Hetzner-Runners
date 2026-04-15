@@ -706,7 +706,9 @@ def update_volumes(volumes, price=0.044):
                 "name": volume.name,
                 "size": str(volume.size),
                 "location": (
-                    getattr(volume.location, "name", "unknown")
+                    volume.location
+                    if isinstance(volume.location, str)
+                    else getattr(volume.location, "name", "unknown")
                     if hasattr(volume, "location") and volume.location
                     else "unknown"
                 ),

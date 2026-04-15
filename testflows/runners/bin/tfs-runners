@@ -1788,40 +1788,43 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
 
         with Action("Constructing cloud providers"):
             providers = provider_factory(config)
-            hetzner_provider = next(p for p in providers if p.name == "hetzner")
-
-        with Action("Checking if default image exists"):
-            config.default_image = hetzner_provider.get_image(config.default_image)
-
-        with Action("Checking if default location exists"):
-            config.default_location = hetzner_provider.get_location(
-                config.default_location
+            hetzner_provider = next(
+                (p for p in providers if p.name == "hetzner"), None
             )
 
-        with Action("Checking if default volume location exists"):
-            config.default_volume_location = hetzner_provider.get_location(
-                config.default_volume_location, required=True
-            )
+        if hetzner_provider is not None:
+            with Action("Checking if default image exists"):
+                config.default_image = hetzner_provider.get_image(config.default_image)
 
-        with Action("Checking if default server type exists"):
-            config.default_server_type = hetzner_provider.get_server_type(
-                config.default_server_type
-            )
+            with Action("Checking if default location exists"):
+                config.default_location = hetzner_provider.get_location(
+                    config.default_location
+                )
 
-        if not config.delete_random:
-            with Action("Getting server prices"):
-                config.server_prices = hetzner_provider.get_prices()
+            with Action("Checking if default volume location exists"):
+                config.default_volume_location = hetzner_provider.get_location(
+                    config.default_volume_location, required=True
+                )
 
-        with Action(f"Checking if SSH key exists"):
-            ssh_keys.append(
-                hetzner_provider.get_or_create_ssh_key(config.ssh_key, is_file=True)
-            )
+            with Action("Checking if default server type exists"):
+                config.default_server_type = hetzner_provider.get_server_type(
+                    config.default_server_type
+                )
 
-            if config.additional_ssh_keys:
-                for key in config.additional_ssh_keys:
-                    ssh_keys.append(
-                        hetzner_provider.get_or_create_ssh_key(key, is_file=False)
-                    )
+            if not config.delete_random:
+                with Action("Getting server prices"):
+                    config.server_prices = hetzner_provider.get_prices()
+
+            with Action(f"Checking if SSH key exists"):
+                ssh_keys.append(
+                    hetzner_provider.get_or_create_ssh_key(config.ssh_key, is_file=True)
+                )
+
+                if config.additional_ssh_keys:
+                    for key in config.additional_ssh_keys:
+                        ssh_keys.append(
+                            hetzner_provider.get_or_create_ssh_key(key, is_file=False)
+                        )
 
         try:
             with Action("Creating scale up service"):

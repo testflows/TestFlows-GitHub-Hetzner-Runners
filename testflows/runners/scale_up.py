@@ -109,10 +109,10 @@ class Volume:
 class RunnerServer:
     name: str
     labels: set[str]
-    server_type: ServerType
-    server_location: Location
+    server_type: str
+    server_location: str
     server_volumes: list[Volume] = None
-    server_status: str = Server.STATUS_STARTING
+    server_status: str = CloudProvider.STATUS_STARTING
     status: str = "initializing"  # busy, ready
     server: ProviderServer = None
 
@@ -964,7 +964,7 @@ def count_available(servers: list[RunnerServer], labels: list[str]):
     label_set = set(labels)
 
     for runner_server in servers:
-        if runner_server.server_status == Server.STATUS_OFF:
+        if runner_server.server_status == CloudProvider.STATUS_OFF:
             continue
         if label_set.issubset(runner_server.labels):
             if runner_server.status in ("initializing", "ready"):
@@ -979,7 +979,7 @@ def count_present(servers: list[RunnerServer], labels: list[str]):
     label_set = set(labels)
 
     for runner_server in servers:
-        if runner_server.server_status == Server.STATUS_OFF:
+        if runner_server.server_status == CloudProvider.STATUS_OFF:
             continue
         if label_set.issubset(runner_server.labels):
             count += 1
@@ -1033,18 +1033,18 @@ def max_servers_in_workflow_run_reached(
 
 def recyclable_server_match(
     server: RunnerServer,
-    server_type: ServerType,
-    server_location: Location,
+    server_type: str,
+    server_location: "str | None",
     server_volumes: list[Volume],
     server_net_config: ServerCreatePublicNetwork,
     ssh_key: SSHKey,
 ):
     """Check if a recyclable server matches for the specified
     server type, location, and ssh key."""
-    if server.server_type.name != server_type.name:
+    if server.server_type != server_type:
         return False
 
-    if server_location and server.server_location.name != server_location.name:
+    if server_location and server.server_location != server_location:
         return False
 
     native = server.server._native
@@ -1263,8 +1263,10 @@ def scale_up(
 
                             if recyclable_server_match(
                                 server=server,
-                                server_type=validated_type,
-                                server_location=server_location,
+                                server_type=validated_type.name,
+                                server_location=(
+                                    server_location.name if server_location else None
+                                ),
                                 server_volumes=server_volumes,
                                 server_net_config=server_net_config,
                                 ssh_key=ssh_keys[0],
@@ -1461,24 +1463,16 @@ def scale_up(
                         [
                             RunnerServer(
                                 name=ps.name,
-                                server_status=ps._native.status,
-                                labels=set(
-                                    [
-                                        value.lower()
-                                        for name, value in ps._native.labels.items()
-                                        if name.startswith(
-                                            "github-hetzner-runner-label"
-                                        )
-                                    ]
-                                ),
-                                server_type=ps._native.server_type,
-                                server_location=ps._native.datacenter.location,
+                                server_status=ps.status,
+                                labels=p.get_runner_labels(ps),
+                                server_type=ps.server_type,
+                                server_location=ps.location,
                                 server_volumes=[
                                     Volume(
-                                        name=get_volume_name(volume.name),
-                                        size=volume.size,
+                                        name=get_volume_name(v.name),
+                                        size=v.size,
                                     )
-                                    for volume in ps._native.volumes
+                                    for v in ps.volumes
                                 ],
                                 server=ps,
                             )
@@ -1493,12 +1487,22 @@ def scale_up(
                     level=logging.DEBUG,
                     interval=interval,
                 ):
-                    # Get all volumes for metrics tracking
-                    all_volumes = provider._client.volumes.get_all(
-                        label_selector="github-hetzner-runner-volume=active",
-                    )
-                    # Filter to only available volumes for server attachment logic
-                    volumes = [v for v in all_volumes if v.status == "available"]
+                    # Fan out across all providers; skip those that don't support volumes.
+                    all_volumes = []
+                    for _p in providers:
+                        try:
+                            all_volumes.extend(
+                                _p.list_volumes(
+                                    label_selector="github-hetzner-runner-volume=active"
+                                )
+                            )
+                        except NotImplementedError:
+                            pass
+                    # Filter to only available volumes for server attachment logic.
+                    # Pass native objects so get_server_bound_volumes can resize/attach.
+                    volumes = [
+                        v._native for v in all_volumes if v.status == "available"
+                    ]
 
                 with Action(
                     "Getting list of self-hosted runners",

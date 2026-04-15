@@ -22,6 +22,20 @@ from typing import Any
 
 
 @dataclass
+class ProviderVolume:
+    """Provider-agnostic volume descriptor."""
+
+    id: Any
+    name: str
+    size: int
+    location: str
+    labels: dict[str, str]
+    status: str = ""
+    # Underlying provider object. Internal use only.
+    _native: Any = field(default=None, repr=False)
+
+
+@dataclass
 class ProviderServer:
     """Provider-agnostic server descriptor."""
 
@@ -34,20 +48,8 @@ class ProviderServer:
     server_type: str
     location: str
     created: datetime
+    volumes: list["ProviderVolume"] = field(default_factory=list)
     # Underlying provider object (e.g. hcloud BoundServer). Internal use only.
-    _native: Any = field(default=None, repr=False)
-
-
-@dataclass
-class ProviderVolume:
-    """Provider-agnostic volume descriptor."""
-
-    id: Any
-    name: str
-    size: int
-    location: str
-    labels: dict[str, str]
-    # Underlying provider object. Internal use only.
     _native: Any = field(default=None, repr=False)
 
 
