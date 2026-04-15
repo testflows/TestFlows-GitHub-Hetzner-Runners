@@ -92,7 +92,7 @@ def _volume_to_provider(volume: BoundVolume) -> ProviderVolume:
         location=volume.location.name if volume.location else "",
         labels=dict(volume.labels) if volume.labels else {},
         status=volume.status if volume.status else "",
-        linux_device=volume.linux_device or "",
+        device_path=volume.linux_device or "",
         _native=volume,
     )
 

@@ -44,7 +44,7 @@ class ProviderVolume:
     labels: dict[str, str]
     status: str = ""
     # Block device path on the server (e.g. /dev/disk/by-id/...). Provider-specific.
-    linux_device: str = ""
+    device_path: str = ""
     # Underlying provider object. Internal use only.
     _native: Any = field(default=None, repr=False)
 

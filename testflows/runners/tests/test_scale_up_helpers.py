@@ -63,7 +63,7 @@ def _runner_server(
         server_location=server_location_name,
         server_volumes=server_volumes or [],
         server_status=server_status,
-        status=status,
+        runner_status=status,
         server=ps,
     )
 

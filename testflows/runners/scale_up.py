@@ -112,7 +112,7 @@ class RunnerServer:
     server_location: str
     server_volumes: list[Volume] = None
     server_status: str = CloudProvider.STATUS_STARTING
-    status: str = "initializing"  # busy, ready
+    runner_status: str = "initializing"  # busy, ready
     server: ProviderServer = None
 
     def __post_init__(self):
@@ -185,12 +185,12 @@ def server_setup(
                 server,
                 (
                     f"'sudo mkdir /mnt/{volume_name} "
-                    f"&& sudo umount {volume.linux_device} 2>/dev/null || true"
-                    f"&& sudo e2fsck -f -y {volume.linux_device} || true "
-                    f"&& sudo e2fsck -f -y {volume.linux_device} "
-                    f"&& sudo resize2fs {volume.linux_device} "
-                    f"&& sudo mount -o discard,defaults {volume.linux_device} /mnt/{volume_name} "
-                    f'&& sudo echo "{volume.name},{volume.id},{volume.size}GB,/mnt/{volume_name},{volume.linux_device},$(df -h /mnt/{volume_name} | awk "NR==2 {{print \\$3\\",\\"\\$4\\",\\"\\$5}}")" >> /etc/hetzner-volumes\''
+                    f"&& sudo umount {volume.device_path} 2>/dev/null || true"
+                    f"&& sudo e2fsck -f -y {volume.device_path} || true "
+                    f"&& sudo e2fsck -f -y {volume.device_path} "
+                    f"&& sudo resize2fs {volume.device_path} "
+                    f"&& sudo mount -o discard,defaults {volume.device_path} /mnt/{volume_name} "
+                    f'&& sudo echo "{volume.name},{volume.id},{volume.size}GB,/mnt/{volume_name},{volume.device_path},$(df -h /mnt/{volume_name} | awk "NR==2 {{print \\$3\\",\\"\\$4\\",\\"\\$5}}")" >> /etc/hetzner-volumes\''
                 ),
                 stacklevel=5,
             )
@@ -937,7 +937,7 @@ def count_available(servers: list[RunnerServer], labels: list[str]):
         if runner_server.server_status == CloudProvider.STATUS_OFF:
             continue
         if label_set.issubset(runner_server.labels):
-            if runner_server.status in ("initializing", "ready"):
+            if runner_server.runner_status in ("initializing", "ready"):
                 count += 1
 
     return count
@@ -1502,7 +1502,7 @@ def scale_up(
                         for server in servers:
                             if runner.name.startswith(server.name):
                                 if runner.status == "online":
-                                    server.status = "busy" if runner.busy else "ready"
+                                    server.runner_status = "busy" if runner.busy else "ready"
                                 filtered_runners.append(runner)
                     runners = filtered_runners
 
