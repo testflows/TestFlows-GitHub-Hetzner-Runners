@@ -140,8 +140,11 @@ def wait_ssh(server, timeout: float):
 
 def ssh_command(server, options: str = ""):
     """Return ssh command."""
+    from .cloud_provider import ProviderServer
+
     ip = ip_address(server=server)
-    return f'ssh -q -o "StrictHostKeyChecking no" -o "UserKnownHostsFile=/dev/null" {options}{" " if options else ""}root@{ip}'
+    user = server.ssh_user if isinstance(server, ProviderServer) else "root"
+    return f'ssh -q -o "StrictHostKeyChecking no" -o "UserKnownHostsFile=/dev/null" {options}{" " if options else ""}{user}@{ip}'
 
 
 def ssh(server, cmd: str, *args, stacklevel=3, **kwargs):

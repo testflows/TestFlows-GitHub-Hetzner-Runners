@@ -228,10 +228,14 @@ def server_setup(
                         stacklevel=5,
                     )
 
+    # When the SSH user is not root (e.g. 'ubuntu' on AWS), setup.sh and other
+    # privileged operations must be prefixed with 'sudo'.
+    sudo = "sudo " if server.ssh_user != "root" else ""
+
     with Action("Executing setup.sh script", server_name=server.name):
         ssh(
             server,
-            f'CACHE_DIR="/mnt/{cache_volume_name}" bash -s  < {setup_script}',
+            f'{sudo}env CACHE_DIR="/mnt/{cache_volume_name}" bash -s  < {setup_script}',
             stacklevel=5,
         )
 
@@ -245,9 +249,15 @@ def server_setup(
             )
 
     with Action("Executing startup.sh script", server_name=server.name):
+        # When the SSH user is not root, drop 'sudo -u ubuntu' — we are already
+        # the target user.  When root (Hetzner), keep the original 'sudo -u ubuntu'.
+        if server.ssh_user == "root":
+            run_as = "sudo -u ubuntu "
+        else:
+            run_as = ""
         ssh(
             server,
-            f"'sudo -u ubuntu "
+            f"'{run_as}"
             f'CACHE_DIR="/mnt/{cache_volume_name}" '
             f'GITHUB_REPOSITORY="{github_repository}" '
             f'GITHUB_RUNNER_TOKEN="{GITHUB_RUNNER_TOKEN}" '

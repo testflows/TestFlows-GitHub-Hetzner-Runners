@@ -113,6 +113,7 @@ class aws_provider:
     security_group: str = None
     subnet: str = None
     key_name: str = None
+    ssh_user: str = "ubuntu"
     defaults: provider_defaults = dataclasses.field(
         default_factory=lambda: provider_defaults(
             image="resolve:ssm:/aws/service/canonical/ubuntu/server/22.04/stable/current/amd64/hvm/ebs-gp3/ami-id",

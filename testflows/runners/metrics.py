@@ -610,7 +610,7 @@ def update_servers(servers, server_prices=None, ipv4_price=0.0008, ipv6_price=0.
                     if nested_getattr(server, "server", "created")
                     else ""
                 ),
-                "cost_hourly": str(total_cost) if total_cost is not None else None,
+                "cost_hourly": str(total_cost) if total_cost is not None else "",
                 "cost_currency": "EUR",
             }
 

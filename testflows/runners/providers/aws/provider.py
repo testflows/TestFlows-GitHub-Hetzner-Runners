@@ -61,7 +61,7 @@ def _tags_to_dict(tags) -> dict:
     return {t["Key"]: t["Value"] for t in (tags or [])}
 
 
-def _instance_to_provider(instance: dict) -> ProviderServer:
+def _instance_to_provider(instance: dict, ssh_user: str = "ubuntu") -> ProviderServer:
     """Convert a boto3 EC2 instance dict to a ProviderServer."""
     tags = _tags_to_dict(instance.get("Tags"))
     name = tags.get("Name", instance["InstanceId"])
@@ -89,6 +89,7 @@ def _instance_to_provider(instance: dict) -> ProviderServer:
         location=instance.get("Placement", {}).get("AvailabilityZone", ""),
         created=instance.get("LaunchTime") or datetime.now(timezone.utc),
         volumes=[],
+        ssh_user=ssh_user,
         _native=instance,
     )
 
@@ -118,6 +119,7 @@ class AWSCloudProvider(CloudProvider):
         subnet: str = None,
         default_image_spec: str = None,
         default_location_spec: str = None,
+        ssh_user: str = "ubuntu",
     ):
         """Initialise the provider.
 
@@ -145,6 +147,7 @@ class AWSCloudProvider(CloudProvider):
         self._subnet = subnet
         self._default_image = default_image_spec
         self._default_location = default_location_spec
+        self._ssh_user = ssh_user
 
     # ---------------------------------------------------------------------------
     # Identity
@@ -211,7 +214,16 @@ class AWSCloudProvider(CloudProvider):
             kwargs["Placement"] = {"AvailabilityZone": location}
 
         response = self._ec2.run_instances(**kwargs)
-        return _instance_to_provider(response["Instances"][0])
+        instance_id = response["Instances"][0]["InstanceId"]
+
+        # RunInstances returns the instance before IP assignment completes.
+        # Wait for "running" state, then re-describe to capture PublicIpAddress.
+        waiter = self._ec2.get_waiter("instance_running")
+        waiter.wait(InstanceIds=[instance_id])
+
+        describe = self._ec2.describe_instances(InstanceIds=[instance_id])
+        instance = describe["Reservations"][0]["Instances"][0]
+        return _instance_to_provider(instance, ssh_user=self._ssh_user)
 
     def delete_server(self, server: ProviderServer) -> None:
         self._ec2.terminate_instances(InstanceIds=[server.id])
@@ -225,7 +237,7 @@ class AWSCloudProvider(CloudProvider):
         )
         for reservation in response.get("Reservations", []):
             for instance in reservation.get("Instances", []):
-                return _instance_to_provider(instance)
+                return _instance_to_provider(instance, ssh_user=self._ssh_user)
         return None
 
     def list_servers(self, label_selector: str = None) -> list[ProviderServer]:
@@ -244,7 +256,7 @@ class AWSCloudProvider(CloudProvider):
         servers = []
         for reservation in response.get("Reservations", []):
             for instance in reservation.get("Instances", []):
-                servers.append(_instance_to_provider(instance))
+                servers.append(_instance_to_provider(instance, ssh_user=self._ssh_user))
         return servers
 
     def power_off_server(self, server: ProviderServer) -> None:

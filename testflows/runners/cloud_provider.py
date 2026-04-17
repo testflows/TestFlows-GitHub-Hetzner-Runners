@@ -64,6 +64,9 @@ class ProviderServer:
     created: datetime
     volumes: list["ProviderVolume"] = field(default_factory=list)
     public_ipv6: str | None = None
+    # SSH login user for this server. Defaults to 'root' (Hetzner); override
+    # for providers whose AMIs use a different default user (e.g. 'ubuntu' on AWS).
+    ssh_user: str = "root"
     # Underlying provider object (e.g. hcloud BoundServer). Internal use only.
     _native: Any = field(default=None, repr=False)
 

@@ -280,9 +280,16 @@ class TestGetServer:
 
 
 class TestCreateServer:
+    def _setup_create(self, mock_ec2, instance):
+        """Wire run_instances + waiter + re-describe for create_server."""
+        mock_ec2.run_instances.return_value = {"Instances": [instance]}
+        mock_ec2.describe_instances.return_value = {
+            "Reservations": [{"Instances": [instance]}]
+        }
+
     def test_calls_run_instances_with_correct_args(self, provider, mock_ec2):
         instance = _make_instance()
-        mock_ec2.run_instances.return_value = {"Instances": [instance]}
+        self._setup_create(mock_ec2, instance)
 
         server_type = ProviderServerType(name="t3.medium")
         ssh_key = AWSKeyPair(name="my-key-pair")
@@ -312,8 +319,31 @@ class TestCreateServer:
 
         assert isinstance(result, ProviderServer)
 
+    def test_waits_for_running_state_before_returning(self, provider, mock_ec2):
+        """create_server must wait for the instance to reach running state so
+        that the re-describe can capture the public IP address."""
+        instance = _make_instance(public_ip="54.1.2.3")
+        self._setup_create(mock_ec2, instance)
+
+        result = provider.create_server(
+            name="test",
+            server_type=ProviderServerType(name="t3.micro"),
+            location=None,
+            image="ami-abc",
+            ssh_keys=[],
+            labels={},
+        )
+
+        mock_ec2.get_waiter.assert_called_once_with("instance_running")
+        waiter = mock_ec2.get_waiter.return_value
+        waiter.wait.assert_called_once()
+        # The re-describe should have been called to fetch the public IP.
+        mock_ec2.describe_instances.assert_called()
+        assert result.public_ipv4 == "54.1.2.3"
+
     def test_no_ssh_key_skips_key_name(self, provider, mock_ec2):
-        mock_ec2.run_instances.return_value = {"Instances": [_make_instance()]}
+        instance = _make_instance()
+        self._setup_create(mock_ec2, instance)
         provider.create_server(
             name="test",
             server_type=ProviderServerType(name="t3.micro"),
