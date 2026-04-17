@@ -85,6 +85,7 @@ def provider_factory(config: Config) -> list[CloudProvider]:
                 security_group=aws_cfg.security_group,
                 subnet=aws_cfg.subnet,
                 default_image_spec=aws_cfg.defaults.image,
+                default_location_spec=aws_cfg.defaults.location,
             )
         )
 

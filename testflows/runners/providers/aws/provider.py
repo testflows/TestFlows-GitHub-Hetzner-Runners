@@ -117,6 +117,7 @@ class AWSCloudProvider(CloudProvider):
         security_group: str = None,
         subnet: str = None,
         default_image_spec: str = None,
+        default_location_spec: str = None,
     ):
         """Initialise the provider.
 
@@ -128,6 +129,8 @@ class AWSCloudProvider(CloudProvider):
             subnet: Subnet ID to launch instances into.
             default_image_spec: Default AMI ID or SSM parameter path used when
                 no ``image-`` label is present on the job.
+            default_location_spec: Default availability zone (e.g. ``us-east-1a``)
+                used when no ``in-`` label is present on the job.
         """
         import boto3
 
@@ -141,6 +144,7 @@ class AWSCloudProvider(CloudProvider):
         self._security_group = security_group
         self._subnet = subnet
         self._default_image = default_image_spec
+        self._default_location = default_location_spec
 
     # ---------------------------------------------------------------------------
     # Identity
@@ -188,10 +192,21 @@ class AWSCloudProvider(CloudProvider):
         }
         if ssh_keys:
             kwargs["KeyName"] = ssh_keys[0].name
-        if self._security_group:
-            kwargs["SecurityGroupIds"] = [self._security_group]
         if self._subnet:
-            kwargs["SubnetId"] = self._subnet
+            # Use NetworkInterfaces to explicitly request a public IP.
+            # SubnetId and SecurityGroupIds must live inside the interface
+            # spec when NetworkInterfaces is used — they cannot be top-level.
+            iface = {
+                "DeviceIndex": 0,
+                "SubnetId": self._subnet,
+                "AssociatePublicIpAddress": True,
+            }
+            if self._security_group:
+                iface["Groups"] = [self._security_group]
+            kwargs["NetworkInterfaces"] = [iface]
+        else:
+            if self._security_group:
+                kwargs["SecurityGroupIds"] = [self._security_group]
         if location:
             kwargs["Placement"] = {"AvailabilityZone": location}
 

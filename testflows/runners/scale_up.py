@@ -522,6 +522,14 @@ def expand_meta_label(
     return list(dict.fromkeys(expanded_labels))
 
 
+def _loc_name(location) -> "str | None":
+    """Return the name string for a location regardless of whether it is a
+    provider Location object (with a .name attribute) or already a plain string."""
+    if location is None:
+        return None
+    return location.name if hasattr(location, "name") else str(location)
+
+
 def _resolve_provider(
     type_name: str, providers: list
 ) -> "tuple[CloudProvider, ProviderServerType]":
@@ -746,7 +754,7 @@ def create_server(
             try:
                 if canceled is not None and canceled.is_set():
                     with Action(
-                        f"Server creation for {name} with labels {labels} of {server_type} in {'None' if not server_location else server_location.name} canceled",
+                        f"Server creation for {name} with labels {labels} of {server_type} in {_loc_name(server_location) or 'None'} canceled",
                         level=logging.DEBUG,
                         stacklevel=3,
                         server_name=name,
@@ -766,7 +774,7 @@ def create_server(
                 )
 
                 with Action(
-                    f"Validating server {name} labels {labels} of {server_type} in {'None' if not server_location else server_location.name}",
+                    f"Validating server {name} labels {labels} of {server_type} in {_loc_name(server_location) or 'None'}",
                     level=logging.DEBUG,
                     stacklevel=3,
                     server_name=name,
@@ -782,7 +790,7 @@ def create_server(
                     try:
                         if server_volumes:
                             with Action(
-                                f"Preparing volumes for server {name} with labels {labels} of {server_type} in {'None' if not server_location else server_location.name}",
+                                f"Preparing volumes for server {name} with labels {labels} of {server_type} in {_loc_name(server_location) or 'None'}",
                                 level=logging.DEBUG,
                                 stacklevel=3,
                                 server_name=name,
@@ -797,7 +805,7 @@ def create_server(
                                 )
 
                         with Action(
-                            f"Creating server {name} with labels {labels} of {server_type} in {'None' if not server_location else server_location.name}",
+                            f"Creating server {name} with labels {labels} of {server_type} in {_loc_name(server_location) or 'None'}",
                             stacklevel=3,
                             server_name=name,
                         ):
@@ -821,12 +829,12 @@ def create_server(
 
                 metrics.record_server_creation(
                     server_type=server_type.name,
-                    location=server_location.name if server_location else None,
+                    location=_loc_name(server_location),
                     creation_time=time.time() - start_time,
                 )
 
                 with Action(
-                    f"Successfully created server {name} with labels {labels} of {server_type} in {'None' if not server_location else server_location.name}, canceling other attempts",
+                    f"Successfully created server {name} with labels {labels} of {server_type} in {_loc_name(server_location) or 'None'}, canceling other attempts",
                     level=logging.DEBUG,
                     stacklevel=3,
                     server_name=name,
@@ -1210,7 +1218,8 @@ def scale_up(
                     continue
                 provider_ssh_keys = ssh_keys.get(resolved_provider.name, [])
                 for loc_name in server_locations:
-                    server_location = resolved_provider.get_location(loc_name)
+                    effective_loc = loc_name if loc_name is not None else resolved_provider.default_location
+                    server_location = resolved_provider.get_location(effective_loc)
                     startup_script = get_startup_script(
                         scripts=scripts,
                         provider=resolved_provider,
@@ -1243,7 +1252,7 @@ def scale_up(
                                 server=server,
                                 server_type=type_name,
                                 server_location=(
-                                    server_location.name if server_location else None
+                                    _loc_name(server_location)
                                 ),
                                 server_volumes=server_volumes,
                                 server_net_config=server_net_config,
@@ -1288,7 +1297,8 @@ def scale_up(
         for type_name, resolved_provider, validated_type, server_image in resolved:
             provider_ssh_keys = ssh_keys.get(resolved_provider.name, [])
             for loc_name in server_locations:
-                server_location = resolved_provider.get_location(loc_name)
+                effective_loc = loc_name if loc_name is not None else resolved_provider.default_location
+                server_location = resolved_provider.get_location(effective_loc)
                 # pre-increment the attempt number that starts from 0
                 create_server_attempt += 1
 
@@ -1736,9 +1746,7 @@ def scale_up(
                                     "error": str(exc),
                                     "server_type": future.server_type.name,
                                     "location": (
-                                        future.server_location.name
-                                        if future.server_location
-                                        else ""
+                                        _loc_name(future.server_location) or ""
                                     ),
                                     "labels": ",".join(future.server_labels),
                                     "timestamp": time.time(),
@@ -1759,9 +1767,7 @@ def scale_up(
                                     server_name=future.server_name,
                                     server_type=future.server_type.name,
                                     server_location=(
-                                        future.server_location.name
-                                        if future.server_location
-                                        else ""
+                                        _loc_name(future.server_location) or ""
                                     ),
                                     error_details=error_details,
                                 )

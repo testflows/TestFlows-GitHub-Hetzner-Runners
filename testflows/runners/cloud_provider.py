@@ -101,6 +101,16 @@ class CloudProvider(ABC):
         return getattr(self, "_default_image", None)
 
     @property
+    def default_location(self) -> Any:
+        """Default location spec for this provider (set in __init__, None if not configured).
+
+        Used by scale_up when no ``in-`` label is present on the job.  The
+        format is provider-specific (e.g. an hcloud Location for Hetzner, an
+        availability-zone string for AWS).
+        """
+        return getattr(self, "_default_location", None)
+
+    @property
     @abstractmethod
     def name(self) -> str:
         """Human-readable provider name, e.g. 'hetzner' or 'aws'."""

@@ -300,9 +300,15 @@ class TestCreateServer:
         assert call_kwargs["ImageId"] == "ami-12345"
         assert call_kwargs["InstanceType"] == "t3.medium"
         assert call_kwargs["KeyName"] == "my-key-pair"
-        assert call_kwargs["SecurityGroupIds"] == ["sg-12345"]
-        assert call_kwargs["SubnetId"] == "subnet-12345"
         assert call_kwargs["Placement"] == {"AvailabilityZone": "us-east-1a"}
+        # When a subnet is configured, subnet and security group go into
+        # NetworkInterfaces so AssociatePublicIpAddress can be set.
+        iface = call_kwargs["NetworkInterfaces"][0]
+        assert iface["SubnetId"] == "subnet-12345"
+        assert iface["Groups"] == ["sg-12345"]
+        assert iface["AssociatePublicIpAddress"] is True
+        assert "SubnetId" not in call_kwargs
+        assert "SecurityGroupIds" not in call_kwargs
 
         assert isinstance(result, ProviderServer)
 
