@@ -40,19 +40,26 @@ def provider_factory(config: Config) -> list[CloudProvider]:
     from ..providers.hetzner.provider import HetznerCloudProvider
 
     # Backwards compat: hetzner_token → providers.hetzner.token
+    # Only auto-wire if the user has not configured any provider via the new
+    # providers block. If they have (e.g. providers.aws), the env var
+    # HETZNER_TOKEN is ambient noise and should not silently create a provider.
     if config.hetzner_token:
         if config.providers.hetzner is None or not config.providers.hetzner.token:
-            logger.warning(
-                "hetzner_token is deprecated; use providers.hetzner.token instead"
+            has_explicit_provider = config.providers.aws is not None and bool(
+                config.providers.aws.access_key_id
             )
-            if config.providers.hetzner is None:
-                config.providers.hetzner = HetznerProviderConfig(
-                    token=config.hetzner_token
+            if not has_explicit_provider:
+                logger.warning(
+                    "hetzner_token is deprecated; use providers.hetzner.token instead"
                 )
-            else:
-                config.providers.hetzner = dataclasses.replace(
-                    config.providers.hetzner, token=config.hetzner_token
-                )
+                if config.providers.hetzner is None:
+                    config.providers.hetzner = HetznerProviderConfig(
+                        token=config.hetzner_token
+                    )
+                else:
+                    config.providers.hetzner = dataclasses.replace(
+                        config.providers.hetzner, token=config.hetzner_token
+                    )
 
     providers: list[CloudProvider] = []
 

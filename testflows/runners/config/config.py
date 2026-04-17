@@ -340,14 +340,19 @@ class Config:
                     )
                     sys.exit(1)
             # Check that at least one provider is configured.
-            has_provider = self.hetzner_token or (
+            has_hetzner = self.hetzner_token or (
                 self.providers.hetzner is not None
                 and bool(self.providers.hetzner.token)
             )
-            if not has_provider:
+            has_aws = (
+                self.providers.aws is not None
+                and bool(self.providers.aws.access_key_id)
+                and bool(self.providers.aws.secret_access_key)
+            )
+            if not (has_hetzner or has_aws):
                 print(
                     "argument error: no cloud provider configured; "
-                    "set --hetzner-token or add providers.hetzner.token to config file",
+                    "set --hetzner-token or add providers.hetzner.token / providers.aws credentials to config file",
                     file=sys.stderr,
                 )
                 sys.exit(1)
