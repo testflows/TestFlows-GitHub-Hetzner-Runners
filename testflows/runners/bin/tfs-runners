@@ -1761,7 +1761,7 @@ def http_cache():
 
 def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
     """Auto-scale runners service."""
-    ssh_keys = []
+    ssh_keys: dict = {}
     terminate = threading.Event()
     mailbox = queue.Queue(maxsize=0)
     rotating_logfile = config.logger_config["handlers"]["rotating_logfile"]["filename"]
@@ -1815,16 +1815,12 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
                 with Action("Getting server prices"):
                     config.server_prices = hetzner_provider.get_prices()
 
-            with Action(f"Checking if SSH key exists"):
-                ssh_keys.append(
-                    hetzner_provider.get_or_create_ssh_key(config.ssh_key, is_file=True)
-                )
-
-                if config.additional_ssh_keys:
-                    for key in config.additional_ssh_keys:
-                        ssh_keys.append(
-                            hetzner_provider.get_or_create_ssh_key(key, is_file=False)
-                        )
+        for p in providers:
+            with Action(f"Checking if SSH key exists ({p.name})"):
+                p_keys = [p.get_or_create_ssh_key(config.ssh_key, is_file=True)]
+                for key in (config.additional_ssh_keys or []):
+                    p_keys.append(p.get_or_create_ssh_key(key, is_file=False))
+                ssh_keys[p.name] = p_keys
 
         try:
             with Action("Creating scale up service"):
@@ -1841,7 +1837,7 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
             with Action("Creating scale down service"):
                 scale_down_service: Future = worker_pool.submit(
                     scale_down,
-                    ssh_key=ssh_keys[0] if ssh_keys else None,
+                    ssh_key=ssh_keys["hetzner"][0] if ssh_keys.get("hetzner") else None,
                     terminate=terminate,
                     mailbox=mailbox,
                     config=config,

@@ -1102,7 +1102,7 @@ def scale_up(
     terminate: threading.Event,
     mailbox: queue.Queue,
     worker_pool: ThreadPoolExecutor,
-    ssh_keys: list[SSHKey],
+    ssh_keys: dict[str, list],
     config: Config,
     providers: list[CloudProvider] = None,
 ):
@@ -1208,6 +1208,7 @@ def scale_up(
             for type_name, resolved_provider, validated_type, server_image in resolved:
                 if not resolved_provider.supports_recycling:
                     continue
+                provider_ssh_keys = ssh_keys.get(resolved_provider.name, [])
                 for loc_name in server_locations:
                     server_location = resolved_provider.get_location(loc_name)
                     startup_script = get_startup_script(
@@ -1246,7 +1247,7 @@ def scale_up(
                                 ),
                                 server_volumes=server_volumes,
                                 server_net_config=server_net_config,
-                                ssh_key=ssh_keys[0] if ssh_keys else None,
+                                ssh_key=provider_ssh_keys[0] if provider_ssh_keys else None,
                             ):
                                 future = worker_pool.submit(
                                     recycle_server,
@@ -1261,7 +1262,7 @@ def scale_up(
                                     setup_script=setup_script,
                                     github_token=github_token,
                                     github_repository=github_repository,
-                                    ssh_key=ssh_keys[0] if ssh_keys else None,
+                                    ssh_key=provider_ssh_keys[0] if provider_ssh_keys else None,
                                     timeout=max_server_ready_time,
                                 )
                                 set_future_attributes(
@@ -1285,6 +1286,7 @@ def scale_up(
                                     pass
 
         for type_name, resolved_provider, validated_type, server_image in resolved:
+            provider_ssh_keys = ssh_keys.get(resolved_provider.name, [])
             for loc_name in server_locations:
                 server_location = resolved_provider.get_location(loc_name)
                 # pre-increment the attempt number that starts from 0
@@ -1375,7 +1377,7 @@ def scale_up(
                     startup_script=startup_script,
                     github_token=github_token,
                     github_repository=github_repository,
-                    ssh_keys=ssh_keys,
+                    ssh_keys=provider_ssh_keys,
                     volumes=volumes,
                     timeout=max_server_ready_time,
                     canceled=create_server_canceled,
