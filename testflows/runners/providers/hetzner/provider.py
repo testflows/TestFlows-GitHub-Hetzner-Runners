@@ -178,7 +178,7 @@ class HetznerCloudProvider(CloudProvider):
         native: BoundServer = server._native
         native.delete()
 
-    def get_server(self, name: str) -> "ProviderServer | None":
+    def get_server(self, name: str) -> ProviderServer | None:
         """Look up a server by name."""
         bound = self._client.servers.get_by_name(name=name)
         if bound is None:
@@ -274,7 +274,7 @@ class HetznerCloudProvider(CloudProvider):
             "github-hetzner-runner-os-version": os_version,
         }
 
-    def validate_labels(self, labels: dict[str, str]) -> "tuple[bool, str]":
+    def validate_labels(self, labels: dict[str, str]) -> tuple[bool, str]:
         """Validate labels against Hetzner's label constraints."""
         from hcloud.helpers.labels import LabelValidator
 
@@ -295,7 +295,7 @@ class HetznerCloudProvider(CloudProvider):
     # Tag / label operations
     # ---------------------------------------------------------------------------
 
-    def get_server_tag(self, server: ProviderServer, key: str) -> "str | None":
+    def get_server_tag(self, server: ProviderServer, key: str) -> str | None:
         """Return the value of a server label, or None."""
         return server.labels.get(key)
 
@@ -376,7 +376,7 @@ class HetznerCloudProvider(CloudProvider):
             return "arm64"
         return "x64"
 
-    def get_location(self, name, required: bool = False) -> "Location | None":
+    def get_location(self, name, required: bool = False) -> Location | None:
         """Validate and return the hcloud Location for *name*.
 
         Accepts either a ``Location`` object, a plain string, or None.
@@ -449,7 +449,7 @@ class HetznerCloudProvider(CloudProvider):
         native: BoundVolume = volume._native
         native.delete()
 
-    def get_volume(self, name: str) -> "ProviderVolume | None":
+    def get_volume(self, name: str) -> ProviderVolume | None:
         """Look up a volume by name."""
         bound = self._client.volumes.get_by_name(name=name)
         if bound is None:

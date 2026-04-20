@@ -152,7 +152,7 @@ class CloudProvider(ABC):
         """Delete the given server."""
 
     @abstractmethod
-    def get_server(self, name: str) -> "ProviderServer | None":
+    def get_server(self, name: str) -> ProviderServer | None:
         """Look up a server by name. Returns None if not found."""
 
     @abstractmethod
@@ -201,7 +201,7 @@ class CloudProvider(ABC):
     # ---------------------------------------------------------------------------
 
     @abstractmethod
-    def get_server_tag(self, server: ProviderServer, key: str) -> "str | None":
+    def get_server_tag(self, server: ProviderServer, key: str) -> str | None:
         """Return the value of a server tag/label, or None if not present."""
 
     @abstractmethod
@@ -247,7 +247,7 @@ class CloudProvider(ABC):
         """Return the tag/label dict to apply to a new runner volume."""
 
     @abstractmethod
-    def validate_labels(self, labels: dict[str, str]) -> "tuple[bool, str]":
+    def validate_labels(self, labels: dict[str, str]) -> tuple[bool, str]:
         """Validate that *labels* satisfy provider-specific constraints.
 
         Returns ``(True, "")`` if valid, ``(False, error_message)`` otherwise.
@@ -255,8 +255,8 @@ class CloudProvider(ABC):
 
     @abstractmethod
     def update_server(
-        self, server: "ProviderServer", name: str, labels: dict[str, str]
-    ) -> "ProviderServer":
+        self, server: ProviderServer, name: str, labels: dict[str, str]
+    ) -> ProviderServer:
         """Rename *server* and replace its labels atomically.
 
         Updates ``server.name`` and ``server.labels`` in-place and returns the
@@ -268,14 +268,14 @@ class CloudProvider(ABC):
     # ---------------------------------------------------------------------------
 
     @abstractmethod
-    def get_server_type(self, name: str) -> "ProviderServerType":
+    def get_server_type(self, name: str) -> ProviderServerType:
         """Validate and return a ProviderServerType for *name*.
 
         Raises an appropriate error if the type does not exist.
         """
 
     @abstractmethod
-    def get_server_arch(self, server_type: "ProviderServerType") -> str:
+    def get_server_arch(self, server_type: ProviderServerType) -> str:
         """Return the CPU architecture for *server_type* (``'x64'`` or ``'arm64'``)."""
 
     @abstractmethod
@@ -341,7 +341,7 @@ class CloudProvider(ABC):
             f"Provider '{self.name}' does not support volume deletion"
         )
 
-    def get_volume(self, name: str) -> "ProviderVolume | None":
+    def get_volume(self, name: str) -> ProviderVolume | None:
         """Look up a volume by name. Optional per provider."""
         raise NotImplementedError(
             f"Provider '{self.name}' does not support volume lookup"

@@ -302,8 +302,8 @@ def get_server_types(labels: list[str], default, label_prefix: str = "") -> list
 
 
 def get_server_locations(
-    labels: list[str], default: "str | None" = None, label_prefix: str = ""
-) -> "list[str | None]":
+    labels: list[str], default: str | None = None, label_prefix: str = ""
+) -> list[str | None]:
     """Get preferred server location names for the specified job.
 
     Returns plain location name strings so that each provider can interpret
@@ -532,7 +532,7 @@ def expand_meta_label(
     return list(dict.fromkeys(expanded_labels))
 
 
-def _loc_name(location) -> "str | None":
+def _loc_name(location) -> str | None:
     """Return the name string for a location regardless of whether it is a
     provider Location object (with a .name attribute) or already a plain string."""
     if location is None:
@@ -541,8 +541,8 @@ def _loc_name(location) -> "str | None":
 
 
 def _expand_locations(
-    locations: "list[str | None]", provider: "CloudProvider"
-) -> "list[str | None]":
+    locations: list[str | None], provider: CloudProvider
+) -> list[str | None]:
     """Expand each location in *locations* through the provider's
     ``expand_location_label`` and return a flat list.
 
@@ -559,7 +559,7 @@ def _expand_locations(
 
 def _resolve_provider(
     type_name: str, providers: list
-) -> "tuple[CloudProvider, ProviderServerType]":
+) -> tuple[CloudProvider, ProviderServerType]:
     """Return (provider, ProviderServerType) for the first provider that supports the type.
 
     Tries each provider in order. Raises ServerTypeError if none recognises the type.
@@ -1037,7 +1037,7 @@ def max_servers_in_workflow_run_reached(
 def recyclable_server_match(
     server: RunnerServer,
     server_type: str,
-    server_location: "str | None",
+    server_location: str | None,
     server_volumes: list[Volume],
     server_net_config: ServerCreatePublicNetwork,
     ssh_key: SSHKey,

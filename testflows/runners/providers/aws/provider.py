@@ -228,7 +228,7 @@ class AWSCloudProvider(CloudProvider):
     def delete_server(self, server: ProviderServer) -> None:
         self._ec2.terminate_instances(InstanceIds=[server.id])
 
-    def get_server(self, name: str) -> "ProviderServer | None":
+    def get_server(self, name: str) -> ProviderServer | None:
         response = self._ec2.describe_instances(
             Filters=[
                 {"Name": "tag:Name", "Values": [name]},
@@ -290,7 +290,7 @@ class AWSCloudProvider(CloudProvider):
     # Tag / label operations
     # ---------------------------------------------------------------------------
 
-    def get_server_tag(self, server: ProviderServer, key: str) -> "str | None":
+    def get_server_tag(self, server: ProviderServer, key: str) -> str | None:
         return server.labels.get(key)
 
     def set_server_tags(self, server: ProviderServer, tags: dict) -> None:
@@ -368,7 +368,7 @@ class AWSCloudProvider(CloudProvider):
             "github-runner-os-version": os_version,
         }
 
-    def validate_labels(self, labels: dict) -> "tuple[bool, str]":
+    def validate_labels(self, labels: dict) -> tuple[bool, str]:
         """Validate AWS EC2 tag key/value constraints.
 
         Enforces: key ≤ 128 chars, value ≤ 256 chars, key must not start with ``aws:``.
@@ -456,7 +456,7 @@ class AWSCloudProvider(CloudProvider):
             return "arm64"
         return "x64"
 
-    def get_location(self, name, required: bool = False) -> "str | None":
+    def get_location(self, name, required: bool = False) -> str | None:
         """Validate and return the AWS availability zone name for *name*."""
         if name is None:
             if required:
