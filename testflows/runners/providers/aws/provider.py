@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from ...cloud_provider import CloudProvider, ProviderServer, ProviderServerType
-from ...errors import ServerTypeError, ImageError, LocationError
+from ...errors import ServerTypeError, ImageError, ImageSpecFormatError, LocationError
 
 
 # AWS-specific tag keys used to identify and annotate runner instances.
@@ -503,7 +503,7 @@ class AWSCloudProvider(CloudProvider):
         elif spec.startswith("ami-"):
             ami_id = spec
         else:
-            raise ImageError(
+            raise ImageSpecFormatError(
                 f"unsupported AWS image spec '{spec}'; "
                 "expected 'ami-{{id}}' or 'resolve:ssm:{{path}}'"
             )

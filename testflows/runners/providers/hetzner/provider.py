@@ -31,6 +31,7 @@ from hcloud.locations.domain import Location
 from ...hclient import HClient
 from ...actions import Action
 from ...cloud_provider import CloudProvider, ProviderServer, ProviderServerType, ProviderVolume
+from ...errors import ImageSpecFormatError
 from . import config as hetzner_config
 from ...constants import github_runner_label
 
@@ -396,12 +397,20 @@ class HetznerCloudProvider(CloudProvider):
         - A raw spec string in ``arch:type:name`` (colon-separated) or
           ``arch-type-name`` (hyphen-separated) format, e.g.
           ``"x86:system:ubuntu-22.04"`` or ``"x86-system-ubuntu-22.04"``.
+
+        Raises ImageSpecFormatError if the string is not in a recognised Hetzner
+        format (e.g. an AWS AMI ID), so get_server_image can skip it when
+        resolving images for a multi-cloud job.
         """
         if isinstance(image_spec, str):
+            from argparse import ArgumentTypeError
             from ...args import image_type as _parse_hetzner_image
 
             sep = ":" if ":" in image_spec else "-"
-            image_spec = _parse_hetzner_image(image_spec, separator=sep)
+            try:
+                image_spec = _parse_hetzner_image(image_spec, separator=sep)
+            except ArgumentTypeError as e:
+                raise ImageSpecFormatError(str(e)) from e
         return hetzner_config.check_image(self._client, image_spec)
 
     def expand_location_label(self, name: str) -> list[str]:

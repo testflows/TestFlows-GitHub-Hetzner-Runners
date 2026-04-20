@@ -34,7 +34,7 @@ from testflows.runners.scale_up import (
     parse_volume_size,
 )
 from testflows.runners.cloud_provider import ProviderServerType
-from testflows.runners.errors import ServerTypeError
+from testflows.runners.errors import ServerTypeError, ImageSpecFormatError
 
 
 # ---------------------------------------------------------------------------
@@ -354,6 +354,34 @@ class TestGetServerImage:
 
         provider.get_image.assert_called_once()
         assert result is img
+
+    def test_skips_spec_with_wrong_format_and_uses_next(self):
+        """Provider raises ImageSpecFormatError for foreign spec; next label is used."""
+        img = MagicMock()
+        provider = MagicMock()
+        provider.get_image.side_effect = [ImageSpecFormatError("wrong format"), img]
+
+        result = get_server_image(
+            provider,
+            ["image-ami-0abcdef1234567890", "image-x86-system-ubuntu-22.04"],
+            default=None,
+        )
+
+        assert provider.get_image.call_count == 2
+        assert result is img
+
+    def test_falls_back_to_default_when_all_specs_are_wrong_format(self):
+        default = MagicMock()
+        provider = MagicMock()
+        provider.get_image.side_effect = ImageSpecFormatError("wrong format")
+
+        result = get_server_image(
+            provider,
+            ["image-ami-0abcdef1234567890"],
+            default=default,
+        )
+
+        assert result is default
 
 
 # ---------------------------------------------------------------------------

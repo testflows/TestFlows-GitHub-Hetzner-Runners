@@ -29,7 +29,7 @@ from .config import Config, check_startup_script, check_setup_script
 from .config import standby_runner as StandbyRunner
 from .utils import get_runner_server_type_and_location
 from .cloud_provider import CloudProvider, ProviderServer, ProviderServerType
-from .errors import ServerTypeError
+from .errors import ServerTypeError, ImageSpecFormatError
 from .constants import (
     server_name_prefix,
     runner_name_prefix,
@@ -346,7 +346,10 @@ def get_server_image(
     for label in labels:
         label = label.lower()
         if label.startswith(label_prefix):
-            server_image = provider.get_image(label.split(label_prefix, 1)[-1].lower())
+            try:
+                server_image = provider.get_image(label.split(label_prefix, 1)[-1].lower())
+            except ImageSpecFormatError:
+                pass  # spec not in this provider's format; try next label
 
     if server_image is None:
         server_image = default
