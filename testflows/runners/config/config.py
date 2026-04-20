@@ -269,6 +269,14 @@ class Config:
     config_file: str = None
 
     def __post_init__(self):
+        # Normalise: if the flat hetzner_token field is unset but the new-style
+        # providers.hetzner.token is set, promote it so that legacy code paths
+        # (cloud.py, servers.py, volumes.py, etc.) that read config.hetzner_token
+        # see the correct value without needing to be updated individually.
+        if not self.hetzner_token and self.providers and self.providers.hetzner:
+            if self.providers.hetzner.token:
+                self.hetzner_token = self.providers.hetzner.token
+
         if self.with_label is None:
             self.with_label = ["self-hosted"]
 
