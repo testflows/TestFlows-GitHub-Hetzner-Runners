@@ -600,7 +600,7 @@ def scale_down(
 
                     if powered_off_server.observed_interval != current_interval:
                         with Action(
-                            f"Forgetting about powered off server {server.name}",
+                            f"Forgetting about powered off server {server_name}",
                             server_name=server_name,
                             interval=interval,
                         ):
