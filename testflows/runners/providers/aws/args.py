@@ -20,10 +20,13 @@ from argparse import ArgumentTypeError
 
 
 def image_type(v):
-    """AWS AMI ID argument. Example: ami-0abcdef1234567890"""
+    """AWS AMI ID or SSM parameter path. Example: ami-0abcdef1234567890 or resolve:ssm:/path"""
+    if v.startswith("resolve:ssm:"):
+        return v
     if not v.startswith("ami-") or len(v) != 21:
         raise ArgumentTypeError(
-            f"invalid AWS AMI ID {v}, must be in format ami-xxxxxxxxxxxxxxxxx"
+            f"invalid AWS image '{v}': must be an AMI ID (ami-xxxxxxxxxxxxxxxxx) "
+            f"or an SSM parameter path (resolve:ssm:/path)"
         )
     return v
 

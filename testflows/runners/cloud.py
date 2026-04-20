@@ -176,7 +176,7 @@ def deploy(args, config: Config, redeploy=False):
         if version.strip().lower() == "latest":
             command = f"'sudo -u ubuntu pip3 install testflows.runners'"
             if redeploy:
-                command.replace("pip3 install", "pip3 install --upgrade")
+                command = command.replace("pip3 install", "pip3 install --upgrade")
 
         ssh(server, command, stacklevel=4)
 
