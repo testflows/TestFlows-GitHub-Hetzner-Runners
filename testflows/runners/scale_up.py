@@ -540,6 +540,23 @@ def _loc_name(location) -> "str | None":
     return location.name if hasattr(location, "name") else str(location)
 
 
+def _expand_locations(
+    locations: "list[str | None]", provider: "CloudProvider"
+) -> "list[str | None]":
+    """Expand each location in *locations* through the provider's
+    ``expand_location_label`` and return a flat list.
+
+    ``None`` entries (meaning "use provider default") are preserved as-is.
+    """
+    result = []
+    for loc in locations:
+        if loc is None:
+            result.append(None)
+        else:
+            result.extend(provider.expand_location_label(loc))
+    return result
+
+
 def _resolve_provider(
     type_name: str, providers: list
 ) -> "tuple[CloudProvider, ProviderServerType]":
@@ -1227,7 +1244,7 @@ def scale_up(
                 if not resolved_provider.supports_recycling:
                     continue
                 provider_ssh_keys = ssh_keys.get(resolved_provider.name, [])
-                for loc_name in server_locations:
+                for loc_name in _expand_locations(server_locations, resolved_provider):
                     effective_loc = loc_name if loc_name is not None else resolved_provider.default_location
                     server_location = resolved_provider.get_location(effective_loc)
                     startup_script = get_startup_script(
@@ -1306,7 +1323,7 @@ def scale_up(
 
         for type_name, resolved_provider, validated_type, server_image in resolved:
             provider_ssh_keys = ssh_keys.get(resolved_provider.name, [])
-            for loc_name in server_locations:
+            for loc_name in _expand_locations(server_locations, resolved_provider):
                 effective_loc = loc_name if loc_name is not None else resolved_provider.default_location
                 server_location = resolved_provider.get_location(effective_loc)
                 # pre-increment the attempt number that starts from 0

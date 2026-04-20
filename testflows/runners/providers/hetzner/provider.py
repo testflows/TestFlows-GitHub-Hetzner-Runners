@@ -17,6 +17,9 @@
 
 import base64
 import hashlib
+import re as _re
+
+_HETZNER_DC_CODE_RE = _re.compile(r"^[a-z]+\d+$")
 
 from hcloud.ssh_keys.domain import SSHKey
 from hcloud.servers.client import BoundServer, BoundVolume
@@ -400,6 +403,19 @@ class HetznerCloudProvider(CloudProvider):
             sep = ":" if ":" in image_spec else "-"
             image_spec = _parse_hetzner_image(image_spec, separator=sep)
         return hetzner_config.check_image(self._client, image_spec)
+
+    def expand_location_label(self, name: str) -> list[str]:
+        """Expand a composite Hetzner DC label into individual DC names.
+
+        A composite label like ``hel1-fsn1-nbg1`` means "any of these
+        datacentres" and is split into ``['hel1', 'fsn1', 'nbg1']`` so that
+        scale_up tries each location in order.  A simple label like ``nbg1``
+        is returned as ``['nbg1']``.
+        """
+        parts = name.split("-")
+        if len(parts) > 1 and all(_HETZNER_DC_CODE_RE.match(p) for p in parts):
+            return parts
+        return [name]
 
     # ---------------------------------------------------------------------------
     # Volume operations

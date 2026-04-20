@@ -298,6 +298,24 @@ class CloudProvider(ABC):
         Raises an appropriate error if the image does not exist.
         """
 
+    def expand_location_label(self, name: str) -> list[str]:
+        """Expand a (possibly composite) location label into individual location names.
+
+        The default implementation treats every label as a single location and
+        returns ``[name]``.  Providers that support composite location labels
+        (e.g. Hetzner's ``hel1-fsn1-nbg1`` shorthand for "any of these DCs")
+        should override this method to split the composite into its component
+        parts so that scale_up can try each location in preference order.
+
+        Args:
+            name: Raw location string extracted from an ``in-<name>`` job label.
+
+        Returns:
+            List of individual location name strings.  For simple labels this
+            is always a one-element list.
+        """
+        return [name]
+
     # ---------------------------------------------------------------------------
     # Volume operations (optional — providers that don't support volumes leave
     # the base NotImplementedError in place)

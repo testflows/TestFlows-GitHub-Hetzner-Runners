@@ -390,3 +390,38 @@ class TestServerLifecycle:
         ps, native = self._make_provider_server()
         provider.power_on_server(ps)
         native.power_on.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# expand_location_label
+# ---------------------------------------------------------------------------
+
+
+class TestExpandLocationLabel:
+    """Tests for HetznerCloudProvider.expand_location_label (pure method)."""
+
+    def _expand(self, name):
+        return HetznerCloudProvider.expand_location_label(None, name)
+
+    def test_simple_label_returned_as_single_element(self):
+        assert self._expand("nbg1") == ["nbg1"]
+
+    def test_composite_three_parts_expanded(self):
+        assert self._expand("hel1-fsn1-nbg1") == ["hel1", "fsn1", "nbg1"]
+
+    def test_composite_two_parts_expanded(self):
+        assert self._expand("hel1-fsn1") == ["hel1", "fsn1"]
+
+    def test_aws_az_not_expanded(self):
+        """AWS AZ names like us-east-1a must not be treated as composite."""
+        assert self._expand("us-east-1a") == ["us-east-1a"]
+
+    def test_aws_region_not_expanded(self):
+        assert self._expand("eu-west-1") == ["eu-west-1"]
+
+    def test_label_without_dash_returned_as_is(self):
+        assert self._expand("nbg1") == ["nbg1"]
+
+    def test_digits_only_part_not_treated_as_dc_code(self):
+        """A segment like '1a' does not match the pure-digit suffix pattern."""
+        assert self._expand("us-east-1a") == ["us-east-1a"]

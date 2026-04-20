@@ -163,10 +163,10 @@ class TestGetServerLocations:
         result = get_server_locations(["in-us-east-1a"])
         assert result == ["us-east-1a"]
 
-    def test_hetzner_location_with_dash_passthrough(self):
-        """A location name that contains a dash is returned as-is."""
-        result = get_server_locations(["in-nbg1-fsn1"])
-        assert result == ["nbg1-fsn1"]
+    def test_composite_location_passthrough(self):
+        """get_server_locations returns composite strings as-is; expansion is the provider's job."""
+        result = get_server_locations(["in-hel1-fsn1-nbg1"], default="nbg1")
+        assert result == ["hel1-fsn1-nbg1"]
 
     def test_label_prefix(self):
         result = get_server_locations(["myprefix-in-nbg1"], label_prefix="myprefix")
