@@ -17,7 +17,8 @@ from hcloud.servers.client import BoundServer
 
 from .hclient import HClient as Client
 from .actions import Action
-from .config import Config, check_ssh_key, check_setup_script
+from .config import Config, check_setup_script
+from .providers.hetzner.config import check_ssh_key
 from .server import wait_ready, wait_ssh, ssh
 
 

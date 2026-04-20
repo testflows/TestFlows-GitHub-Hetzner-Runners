@@ -13,11 +13,8 @@ from dataclasses import dataclass
 from hcloud.images.domain import Image
 from hcloud.server_types.domain import ServerType
 from hcloud.locations.domain import Location
-from hcloud.ssh_keys.domain import SSHKey
-
 import testflows.runners.args as args
 
-from ..hclient import HClient as Client
 from ..actions import Action
 from ..logger import default_format as logger_format
 from ..ordered_set import OrderedSet as set
@@ -387,107 +384,6 @@ def read(path: str):
 def write(file, doc: dict):
     """Write raw configuration document to file."""
     yaml.dump(doc, file)
-
-
-def check_ssh_key(client: Client, ssh_key: str, is_file=True):
-    """Check that ssh key exists if not create it."""
-
-    def fingerprint(ssh_key):
-        """Calculate fingerprint of a public SSH key."""
-        encoded_key = base64.b64decode(ssh_key.strip().split()[1].encode("utf-8"))
-        md5_digest = hashlib.md5(encoded_key).hexdigest()
-
-        return ":".join(a + b for a, b in zip(md5_digest[::2], md5_digest[1::2]))
-
-    if is_file:
-        with open(ssh_key, "r", encoding="utf-8") as ssh_key_file:
-            public_key = ssh_key_file.read()
-    else:
-        public_key = ssh_key
-
-    name = hashlib.md5(public_key.encode("utf-8")).hexdigest()
-    ssh_key: SSHKey = SSHKey(
-        name=name, public_key=public_key, fingerprint=fingerprint(public_key)
-    )
-
-    existing_ssh_key = client.ssh_keys.get_by_fingerprint(
-        fingerprint=ssh_key.fingerprint
-    )
-
-    if not existing_ssh_key:
-        with Action(
-            f"Creating SSH key {ssh_key.name} with fingerprint {ssh_key.fingerprint}",
-            stacklevel=3,
-        ):
-            ssh_key = client.ssh_keys.create(
-                name=ssh_key.name, public_key=ssh_key.public_key
-            )
-    else:
-        ssh_key = existing_ssh_key
-
-    return ssh_key
-
-
-def check_image(client: Client, image: Image):
-    """Check if image exists.
-    If image type is not 'system' then use image description to find it.
-    """
-
-    if image.type in ("system", "app"):
-        _image = client.images.get_by_name_and_architecture(
-            name=image.name, architecture=image.architecture
-        )
-        if not _image:
-            raise errors.ImageError(
-                f"image type:'{image.type}' name:'{image.name}' architecture:'{image.architecture}' not found"
-            )
-        return _image
-    else:
-        # backup or snapshot
-        try:
-            return [
-                i
-                for i in client.images.get_all(
-                    type=image.type, architecture=image.architecture
-                )
-                if i.description == image.description
-            ][0]
-        except IndexError:
-            raise errors.ImageError(
-                f"image type:'{image.type}' name:'{image.description}' architecture:'{image.architecture}' not found"
-            )
-
-
-def check_location(client: Client, location: Location, required=False):
-    """Check if location exists."""
-    if location is None:
-        if required:
-            raise errors.LocationError(f"location is not defined")
-        return None
-    _location = client.locations.get_by_name(location.name)
-    if not _location:
-        raise errors.LocationError(f"location '{location.name}' not found")
-    return _location
-
-
-def check_server_type(client: Client, server_type: ServerType):
-    """Check if server type exists."""
-    _type: ServerType = client.server_types.get_by_name(server_type.name)
-    if not _type:
-        raise errors.ServerTypeError(f"server type '{server_type.name}' not found")
-    return _type
-
-
-def check_prices(client: Client):
-    """Check server prices."""
-    server_types: list[ServerType] = client.server_types.get_all()
-    return {
-        t.name.lower(): {
-            price["location"]: float(price["price_hourly"]["gross"])
-            for price in t.prices
-        }
-        for t in server_types
-    }
 
 
 def check_scripts(scripts: str):

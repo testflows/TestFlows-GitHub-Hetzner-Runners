@@ -19,7 +19,7 @@ import github
 
 from .actions import Action
 from .config import Config
-from .config import check_prices
+from .providers.hetzner.config import check_prices
 from .streamingyaml import StreamingYAMLWriter
 from .hclient import HClient as Client
 from .utils import get_runner_server_type_and_location
