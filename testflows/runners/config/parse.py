@@ -13,6 +13,7 @@ from .config import (
     server_type,
     hetzner_provider,
     aws_provider,
+    provider_defaults,
     provider_list,
 )
 
@@ -489,13 +490,31 @@ def parse_config(filename: str):
                 assert isinstance(
                     a["secret_access_key"], str
                 ), "config.providers.aws.secret_access_key: is not a string"
-            _aws = aws_provider(
+            _aws_kwargs = dict(
                 access_key_id=a.get("access_key_id"),
                 secret_access_key=a.get("secret_access_key"),
                 security_group=a.get("security_group"),
                 subnet=a.get("subnet"),
                 key_name=a.get("key_name"),
+                ssh_user=a.get("ssh_user", "ubuntu"),
             )
+            _aws_defaults_raw = a.get("defaults")
+            if _aws_defaults_raw is not None:
+                assert isinstance(
+                    _aws_defaults_raw, dict
+                ), "config.providers.aws.defaults: is not a dictionary"
+                base = aws_provider().defaults
+                _aws_kwargs["defaults"] = provider_defaults(
+                    image=_aws_defaults_raw.get("image", base.image),
+                    server_type=_aws_defaults_raw.get("server_type", base.server_type),
+                    location=_aws_defaults_raw.get("location", base.location),
+                    volume_size=_aws_defaults_raw.get("volume_size", base.volume_size),
+                    volume_location=_aws_defaults_raw.get(
+                        "volume_location", base.volume_location
+                    ),
+                    volume_type=_aws_defaults_raw.get("volume_type", base.volume_type),
+                )
+            _aws = aws_provider(**_aws_kwargs)
 
         doc["providers"] = provider_list(hetzner=_hetzner, aws=_aws)
 
