@@ -136,6 +136,10 @@ class HetznerCloudProvider(CloudProvider):
     def supports_recycling(self) -> bool:
         return True
 
+    @property
+    def supports_volumes(self) -> bool:
+        return True
+
     # ---------------------------------------------------------------------------
     # Server lifecycle
     # ---------------------------------------------------------------------------

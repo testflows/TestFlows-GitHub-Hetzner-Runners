@@ -123,6 +123,15 @@ class CloudProvider(ABC):
     def supports_recycling(self) -> bool:
         """True if this provider supports server recycling (rebuild/repurpose)."""
 
+    @property
+    def supports_volumes(self) -> bool:
+        """True if this provider supports persistent volume operations.
+
+        Defaults to False. Providers that implement create/get/list_volume
+        should override this to return True.
+        """
+        return False
+
     # ---------------------------------------------------------------------------
     # Server lifecycle
     # ---------------------------------------------------------------------------

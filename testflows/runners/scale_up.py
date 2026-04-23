@@ -29,7 +29,7 @@ from .config import Config, check_startup_script, check_setup_script
 from .config import standby_runner as StandbyRunner
 from .utils import get_runner_server_type_and_location
 from .cloud_provider import CloudProvider, ProviderServer, ProviderServerType
-from .errors import ServerTypeError, ImageSpecFormatError
+from .errors import ServerTypeError, ImageSpecFormatError, LocationError
 from .constants import (
     server_name_prefix,
     runner_name_prefix,
@@ -1325,10 +1325,29 @@ def scale_up(
                                     pass
 
         for type_name, resolved_provider, validated_type, server_image in resolved:
+            if server_volumes and not resolved_provider.supports_volumes:
+                with Action(
+                    f"Skipping provider {resolved_provider.name} for {name}: job requires volumes but provider does not support them",
+                    stacklevel=3,
+                    level=logging.DEBUG,
+                    server_name=name,
+                ):
+                    pass
+                continue
             provider_ssh_keys = ssh_keys.get(resolved_provider.name, [])
             for loc_name in _expand_locations(server_locations, resolved_provider):
                 effective_loc = loc_name if loc_name is not None else resolved_provider.default_location
-                server_location = resolved_provider.get_location(effective_loc)
+                try:
+                    server_location = resolved_provider.get_location(effective_loc)
+                except LocationError:
+                    with Action(
+                        f"Skipping location {effective_loc!r} for provider {resolved_provider.name}: location not recognised",
+                        stacklevel=3,
+                        level=logging.DEBUG,
+                        server_name=name,
+                    ):
+                        pass
+                    continue
                 # pre-increment the attempt number that starts from 0
                 create_server_attempt += 1
 
