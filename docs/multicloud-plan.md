@@ -147,6 +147,10 @@ Consider migrating `config/parse.py` to Pydantic v2. Currently ~453 lines of man
 - [ ] Update meta-label examples in config/docs to show multi-provider patterns
 - [ ] Update `servers` CLI command to list across providers
 - [ ] Update dashboard to show provider per runner
+
+### Known gaps / backlog
+
+- [ ] **Server cost metrics broken for all providers** — `config.server_prices` is never populated at runtime (it's always `None`). The code path exists in `metrics.update_servers` but is never reached. Fix: add `get_prices()` to the `CloudProvider` ABC and call it at scale_up startup per provider; populate `server_prices` from the result. Volume cost works because `update_volumes` has a hardcoded default price. AWS has no pricing API wired up at all.
 - [ ] Update `README.rst` and `docs/requirements.md`
 - [ ] Document `cloud deploy` as Hetzner-only
 - [ ] Binary/package naming decision

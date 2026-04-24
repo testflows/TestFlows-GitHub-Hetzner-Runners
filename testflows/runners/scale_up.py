@@ -1788,55 +1788,58 @@ def scale_up(
                             pass
 
                         except Exception as exc:
-                            try:
-                                send_failure = False
+                            send_failure = False
 
-                                error_type = "error"
-                                error_details = {
-                                    "error": str(exc),
-                                    "server_type": future.server_type.name,
-                                    "location": (
-                                        _loc_name(future.server_location) or ""
-                                    ),
-                                    "labels": ",".join(future.server_labels),
-                                    "timestamp": time.time(),
-                                }
+                            error_type = "error"
+                            error_details = {
+                                "error": str(exc),
+                                "server_type": future.server_type.name,
+                                "location": (
+                                    _loc_name(future.server_location) or ""
+                                ),
+                                "labels": ",".join(future.server_labels),
+                                "timestamp": time.time(),
+                            }
 
-                                if isinstance(exc, MaxNumberOfServersReached):
+                            if isinstance(exc, MaxNumberOfServersReached):
+                                send_failure = True
+                                error_type = "max_servers_reached"
+
+                            if isinstance(exc, APIException):
+                                error_type = "api_exception"
+                                if exc.code == "resource_limit_exceeded":
                                     send_failure = True
-                                    error_type = "max_servers_reached"
+                                    error_type = "resource_limit_exceeded"
 
-                                if isinstance(exc, APIException):
-                                    error_type = "api_exception"
-                                    if exc.code == "resource_limit_exceeded":
-                                        send_failure = True
-                                        error_type = "resource_limit_exceeded"
+                            metrics.record_scale_up_failure(
+                                error_type=error_type,
+                                server_name=future.server_name,
+                                server_type=future.server_type.name,
+                                server_location=(
+                                    _loc_name(future.server_location) or ""
+                                ),
+                                error_details=error_details,
+                            )
 
-                                metrics.record_scale_up_failure(
-                                    error_type=error_type,
+                            if send_failure:
+                                with Action(
+                                    f"Adding scale up failure {exc} message to mailbox for {future.server_name}",
                                     server_name=future.server_name,
-                                    server_type=future.server_type.name,
-                                    server_location=(
-                                        _loc_name(future.server_location) or ""
-                                    ),
-                                    error_details=error_details,
-                                )
-
-                                if send_failure:
-                                    with Action(
-                                        f"Adding scale up failure {exc} message to mailbox for {future.server_name}",
-                                        server_name=future.server_name,
-                                        interval=interval,
-                                    ):
-                                        mailbox.put(
-                                            ScaleUpFailureMessage(
-                                                time=time.time(),
-                                                labels=future.server_labels,
-                                                server_name=future.server_name,
-                                                exception=exc,
-                                            )
+                                    interval=interval,
+                                ):
+                                    mailbox.put(
+                                        ScaleUpFailureMessage(
+                                            time=time.time(),
+                                            labels=future.server_labels,
+                                            server_name=future.server_name,
+                                            exception=exc,
                                         )
-                            finally:
+                                    )
+                                # Don't re-raise expected fallback errors — let
+                                # the loop continue so later futures for the same
+                                # server (e.g. a different provider) can succeed
+                                # and be added to servers.
+                            else:
                                 raise
 
             if scale_up_cycle.exc_value is None:
