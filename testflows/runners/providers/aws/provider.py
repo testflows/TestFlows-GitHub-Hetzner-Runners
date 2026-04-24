@@ -120,6 +120,8 @@ class AWSCloudProvider(CloudProvider):
         default_image_spec: str = None,
         default_location_spec: str = None,
         ssh_user: str = "ubuntu",
+        root_volume_size: int = 20,
+        root_volume_type: str = "gp3",
     ):
         """Initialise the provider.
 
@@ -148,6 +150,8 @@ class AWSCloudProvider(CloudProvider):
         self._default_image = default_image_spec
         self._default_location = default_location_spec
         self._ssh_user = ssh_user
+        self._root_volume_size = root_volume_size
+        self._root_volume_type = root_volume_type
 
     # ---------------------------------------------------------------------------
     # Identity
@@ -212,6 +216,11 @@ class AWSCloudProvider(CloudProvider):
                 kwargs["SecurityGroupIds"] = [self._security_group]
         if location:
             kwargs["Placement"] = {"AvailabilityZone": location}
+
+        ebs = {"VolumeSize": self._root_volume_size, "DeleteOnTermination": True}
+        if self._root_volume_type:
+            ebs["VolumeType"] = self._root_volume_type
+        kwargs["BlockDeviceMappings"] = [{"DeviceName": "/dev/sda1", "Ebs": ebs}]
 
         response = self._ec2.run_instances(**kwargs)
         instance_id = response["Instances"][0]["InstanceId"]

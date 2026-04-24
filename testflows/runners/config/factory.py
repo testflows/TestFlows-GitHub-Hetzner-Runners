@@ -87,6 +87,8 @@ def provider_factory(config: Config) -> list[CloudProvider]:
                 default_image_spec=aws_cfg.defaults.image,
                 default_location_spec=aws_cfg.defaults.location,
                 ssh_user=aws_cfg.ssh_user,
+                root_volume_size=aws_cfg.defaults.volume_size,
+                root_volume_type=aws_cfg.defaults.volume_type,
             )
         )
 
