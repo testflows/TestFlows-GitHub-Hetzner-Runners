@@ -129,7 +129,7 @@ The `cloud deploy` command (which provisions the runner service itself onto a cl
 - [x] Fix `get_server_image` to pass raw string to `provider.get_image()` (provider owns parsing)
 - [x] Fix resolved loop to use `rp.default_image` per provider with `config.default_image` fallback
 - [x] Run the shared provider test suite against `AWSCloudProvider` (66 tests, all passing)
-- [ ] Validate end-to-end with a real AWS account
+- [x] Validate end-to-end with a real AWS account
 
 ### Phase 5 — Config validation library (deferred)
 

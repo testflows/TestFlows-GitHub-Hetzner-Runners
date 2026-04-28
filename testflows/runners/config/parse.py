@@ -504,11 +504,15 @@ def parse_config(filename: str):
                     _aws_defaults_raw, dict
                 ), "config.providers.aws.defaults: is not a dictionary"
                 base = aws_provider().defaults
+                _aws_volume_size = _aws_defaults_raw.get("volume_size", base.volume_size)
+                assert isinstance(_aws_volume_size, int) and _aws_volume_size > 0, (
+                    "config.providers.aws.defaults.volume_size: must be an integer > 0 (in GB)"
+                )
                 _aws_kwargs["defaults"] = provider_defaults(
                     image=_aws_defaults_raw.get("image", base.image),
                     server_type=_aws_defaults_raw.get("server_type", base.server_type),
                     location=_aws_defaults_raw.get("location", base.location),
-                    volume_size=_aws_defaults_raw.get("volume_size", base.volume_size),
+                    volume_size=_aws_volume_size,
                     volume_location=_aws_defaults_raw.get(
                         "volume_location", base.volume_location
                     ),

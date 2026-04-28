@@ -1225,7 +1225,10 @@ def scale_up(
         # get_server_image is called per type since image specs are provider-specific.
         resolved = []
         for type_name in server_types:
-            rp, vt = _resolve_provider(type_name, providers)
+            try:
+                rp, vt = _resolve_provider(type_name, providers)
+            except ServerTypeError:
+                continue
             provider_default_image = (
                 rp.default_image if rp.default_image is not None else default_image
             )
@@ -1649,6 +1652,14 @@ def scale_up(
                                         if job.raw_data["runner_name"].startswith(
                                             standby_runner_name_prefix
                                         ):
+                                            continue
+
+                                        # Only replenish if standbys are configured.
+                                        # Without standbys, an in_progress job with no
+                                        # matching server is a race condition: the runner
+                                        # finished and was cleaned up by scale_down while
+                                        # GitHub still shows the job as in_progress.
+                                        if not standby_runners:
                                             continue
 
                                         with Action(
