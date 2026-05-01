@@ -1080,7 +1080,8 @@ def recyclable_server_match(
 
 
 def set_future_attributes(
-    future, name, server_type, server_location, server_volumes, labels, provider_name=None
+    future, name, server_type, server_location, server_volumes, labels,
+    provider_name=None, counts_toward_capacity=True,
 ):
     """Set common attributes on a future object.
 
@@ -1091,6 +1092,8 @@ def set_future_attributes(
         server_location: The server location
         labels: The server labels
         provider_name: Name of the provider that will create this server.
+        counts_toward_capacity: False for synthetic raise_exception futures
+            that represent a rejected attempt rather than a real server.
     """
     future.server_name = name
     future.server_type = server_type
@@ -1098,6 +1101,7 @@ def set_future_attributes(
     future.server_volumes = server_volumes
     future.server_labels = labels
     future.provider_name = provider_name
+    future.counts_toward_capacity = counts_toward_capacity
 
 
 def get_total_server_count(servers, futures=None):
@@ -1112,7 +1116,10 @@ def get_total_server_count(servers, futures=None):
     """
     count = len(servers)
     if futures:
-        count += len(futures)
+        count += sum(
+            1 for f in futures
+            if getattr(f, "counts_toward_capacity", True)
+        )
     return count
 
 
@@ -1123,6 +1130,7 @@ def get_provider_server_count(servers, futures, provider_name: str) -> int:
         count += sum(
             1 for f in futures
             if getattr(f, "provider_name", None) == provider_name
+            and getattr(f, "counts_toward_capacity", True)
         )
     return count
 
@@ -1408,6 +1416,7 @@ def scale_up(
                                 server_volumes,
                                 labels,
                                 provider_name=resolved_provider.name,
+                                counts_toward_capacity=False,
                             )
                             futures.append(future)
                             raise StopIteration("maximum number of servers reached")
@@ -1438,6 +1447,7 @@ def scale_up(
                                 server_volumes,
                                 labels,
                                 provider_name=resolved_provider.name,
+                                counts_toward_capacity=False,
                             )
                             futures.append(future)
                             continue
@@ -1468,6 +1478,7 @@ def scale_up(
                                 server_volumes,
                                 labels,
                                 provider_name=resolved_provider.name,
+                                counts_toward_capacity=False,
                             )
                             futures.append(future)
                             return
