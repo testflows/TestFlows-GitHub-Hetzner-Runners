@@ -76,7 +76,7 @@ class TestParseConfigAWSCredentials:
         finally:
             os.unlink(path)
 
-    def test_security_group_and_subnet_parsed(self):
+    def test_security_group_and_subnets_parsed(self):
         path = _write_config("""\
             ssh_key: /dev/null
             providers:
@@ -84,12 +84,29 @@ class TestParseConfigAWSCredentials:
                 access_key_id: AK
                 secret_access_key: SK
                 security_group: sg-abc
-                subnet: subnet-xyz
+                subnets:
+                  - subnet-xyz
+                  - subnet-abc
         """)
         try:
             cfg = parse_config(path)
             assert cfg.providers.aws.security_group == "sg-abc"
-            assert cfg.providers.aws.subnet == "subnet-xyz"
+            assert cfg.providers.aws.subnets == ["subnet-xyz", "subnet-abc"]
+        finally:
+            os.unlink(path)
+
+    def test_subnets_accepts_single_string(self):
+        path = _write_config("""\
+            ssh_key: /dev/null
+            providers:
+              aws:
+                access_key_id: AK
+                secret_access_key: SK
+                subnets: subnet-xyz
+        """)
+        try:
+            cfg = parse_config(path)
+            assert cfg.providers.aws.subnets == ["subnet-xyz"]
         finally:
             os.unlink(path)
 

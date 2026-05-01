@@ -73,6 +73,11 @@ def mock_ec2():
         MockSession.return_value = mock_session
         mock_client = MagicMock()
         mock_session.client.return_value = mock_client
+        mock_client.describe_subnets.return_value = {
+            "Subnets": [
+                {"SubnetId": "subnet-12345", "AvailabilityZone": "us-east-1a"},
+            ]
+        }
         yield mock_client
 
 
@@ -84,7 +89,7 @@ def provider(mock_ec2):
         secret_access_key="secret",
         region="us-east-1",
         security_group="sg-12345",
-        subnet="subnet-12345",
+        subnets=["subnet-12345"],
     )
     return p
 
@@ -307,9 +312,11 @@ class TestCreateServer:
         assert call_kwargs["ImageId"] == "ami-12345"
         assert call_kwargs["InstanceType"] == "t3.medium"
         assert call_kwargs["KeyName"] == "my-key-pair"
-        assert call_kwargs["Placement"] == {"AvailabilityZone": "us-east-1a"}
-        # When a subnet is configured, subnet and security group go into
-        # NetworkInterfaces so AssociatePublicIpAddress can be set.
+        # When a subnet is configured the AZ is implicit in the subnet;
+        # Placement is not set to avoid conflicts.
+        assert "Placement" not in call_kwargs
+        # Subnet and security group go into NetworkInterfaces so
+        # AssociatePublicIpAddress can be set.
         iface = call_kwargs["NetworkInterfaces"][0]
         assert iface["SubnetId"] == "subnet-12345"
         assert iface["Groups"] == ["sg-12345"]

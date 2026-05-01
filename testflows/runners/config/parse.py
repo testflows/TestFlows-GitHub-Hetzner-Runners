@@ -503,11 +503,18 @@ def parse_config(filename: str):
                 assert isinstance(
                     a["secret_access_key"], str
                 ), "config.providers.aws.secret_access_key: is not a string"
+            _subnets_raw = a.get("subnets")
+            if _subnets_raw is not None:
+                if isinstance(_subnets_raw, str):
+                    _subnets_raw = [_subnets_raw]
+                assert isinstance(_subnets_raw, list) and all(
+                    isinstance(s, str) for s in _subnets_raw
+                ), "config.providers.aws.subnets: must be a string or list of strings"
             _aws_kwargs = dict(
                 access_key_id=a.get("access_key_id"),
                 secret_access_key=a.get("secret_access_key"),
                 security_group=a.get("security_group"),
-                subnet=a.get("subnet"),
+                subnets=_subnets_raw,
                 key_name=a.get("key_name"),
                 ssh_user=a.get("ssh_user", "ubuntu"),
             )

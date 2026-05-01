@@ -116,7 +116,7 @@ class AWSCloudProvider(CloudProvider):
         secret_access_key: str,
         region: str,
         security_group: str = None,
-        subnet: str = None,
+        subnets: list[str] = None,
         default_image_spec: str = None,
         default_location_spec: str = None,
         ssh_user: str = "ubuntu",
@@ -132,11 +132,17 @@ class AWSCloudProvider(CloudProvider):
             secret_access_key: AWS secret access key.
             region: AWS region (e.g. ``us-east-1``).
             security_group: Security group ID to attach to new instances.
-            subnet: Subnet ID to launch instances into.
+            subnets: Subnet IDs to launch instances into.  Each subnet belongs
+                to exactly one AZ; the provider maps subnet → AZ at init time
+                and uses this to expand location labels and select the right
+                subnet for each create_server call.  When multiple subnets are
+                provided the scale-up loop will try each AZ in turn, giving
+                automatic fallback when one AZ has insufficient capacity.
             default_image_spec: Default AMI ID or SSM parameter path used when
                 no ``image-`` label is present on the job.
             default_location_spec: Default availability zone (e.g. ``us-east-1a``)
-                used when no ``in-`` label is present on the job.
+                used when no ``in-`` label is present on the job.  When None,
+                all configured subnet AZs are tried.
             max_runners: Per-provider runner cap (overrides global max_runners).
             end_of_life: Per-provider end-of-life in minutes (overrides global).
         """
@@ -150,7 +156,6 @@ class AWSCloudProvider(CloudProvider):
         self._ec2 = self._session.client("ec2")
         self._region = region
         self._security_group = security_group
-        self._subnet = subnet
         self._default_image = default_image_spec
         self._default_location = default_location_spec
         self._ssh_user = ssh_user
@@ -158,6 +163,15 @@ class AWSCloudProvider(CloudProvider):
         self._root_volume_type = root_volume_type
         self._max_runners = max_runners
         self._end_of_life = end_of_life
+
+        # Build subnet → AZ mapping from describe_subnets.
+        # This is a single API call at init time; the result is cached for the
+        # lifetime of the provider instance.
+        self._subnet_az_map: dict[str, str] = {}  # subnet_id → az
+        if subnets:
+            response = self._ec2.describe_subnets(SubnetIds=list(subnets))
+            for s in response.get("Subnets", []):
+                self._subnet_az_map[s["SubnetId"]] = s["AvailabilityZone"]
 
     # ---------------------------------------------------------------------------
     # Identity
@@ -205,13 +219,34 @@ class AWSCloudProvider(CloudProvider):
         }
         if ssh_keys:
             kwargs["KeyName"] = ssh_keys[0].name
-        if self._subnet:
+
+        # Pick the subnet for the requested AZ (if subnets are configured).
+        # The subnet implicitly pins the AZ, so no separate Placement kwarg
+        # is needed — and mixing SubnetId with Placement.AvailabilityZone
+        # causes an AWS error if they disagree.
+        subnet = None
+        if self._subnet_az_map:
+            if location:
+                # Find the first subnet in the requested AZ.
+                subnet = next(
+                    (sid for sid, az in self._subnet_az_map.items() if az == location),
+                    None,
+                )
+                if subnet is None:
+                    raise LocationError(
+                        f"No configured subnet found for availability zone '{location}'"
+                    )
+            else:
+                # No location preference — use the first configured subnet.
+                subnet = next(iter(self._subnet_az_map))
+
+        if subnet:
             # Use NetworkInterfaces to explicitly request a public IP.
             # SubnetId and SecurityGroupIds must live inside the interface
             # spec when NetworkInterfaces is used — they cannot be top-level.
             iface = {
                 "DeviceIndex": 0,
-                "SubnetId": self._subnet,
+                "SubnetId": subnet,
                 "AssociatePublicIpAddress": True,
             }
             if self._security_group:
@@ -220,8 +255,8 @@ class AWSCloudProvider(CloudProvider):
         else:
             if self._security_group:
                 kwargs["SecurityGroupIds"] = [self._security_group]
-        if location:
-            kwargs["Placement"] = {"AvailabilityZone": location}
+            if location:
+                kwargs["Placement"] = {"AvailabilityZone": location}
 
         ebs = {"VolumeSize": self._root_volume_size, "DeleteOnTermination": True}
         if self._root_volume_type:
@@ -471,12 +506,31 @@ class AWSCloudProvider(CloudProvider):
             return "arm64"
         return "x64"
 
+    def expand_location_label(self, name: str) -> list[str]:
+        """Expand a location label into a list of AZs to try.
+
+        If subnets are configured and *name* is None (no ``in-`` label on the
+        job), return all AZs covered by the configured subnets so the scale-up
+        loop tries each in turn.  Otherwise return ``[name]`` (the base class
+        behaviour).
+        """
+        if name is None and self._subnet_az_map:
+            # Deduplicate while preserving subnet order.
+            seen = {}
+            for az in self._subnet_az_map.values():
+                seen[az] = None
+            return list(seen)
+        return [name]
+
     def get_location(self, name, required: bool = False) -> str | None:
         """Validate and return the AWS availability zone name for *name*."""
         if name is None:
             if required:
                 raise LocationError("AWS availability zone is not defined")
             return None
+        # Accept AZs that we have a subnet for without an extra API call.
+        if name in self._subnet_az_map.values():
+            return name
         from botocore.exceptions import ClientError
 
         try:

@@ -110,7 +110,7 @@ class aws_provider:
     access_key_id: str = None
     secret_access_key: str = None
     security_group: str = None
-    subnet: str = None
+    subnets: list[str] = None
     key_name: str = None
     ssh_user: str = "ubuntu"
     max_runners: int = None

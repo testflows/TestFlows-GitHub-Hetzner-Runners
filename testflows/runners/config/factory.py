@@ -85,7 +85,7 @@ def provider_factory(config: Config) -> list[CloudProvider]:
                 secret_access_key=aws_cfg.secret_access_key,
                 region=region,
                 security_group=aws_cfg.security_group,
-                subnet=aws_cfg.subnet,
+                subnets=aws_cfg.subnets,
                 default_image_spec=aws_cfg.defaults.image,
                 default_location_spec=aws_cfg.defaults.location,
                 ssh_user=aws_cfg.ssh_user,
