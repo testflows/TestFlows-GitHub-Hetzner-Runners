@@ -90,6 +90,8 @@ class hetzner_provider:
     """Hetzner Cloud provider configuration."""
 
     token: str = None
+    max_runners: int = None
+    end_of_life: int = None
     defaults: provider_defaults = dataclasses.field(
         default_factory=lambda: provider_defaults(
             image="x86:system:ubuntu-22.04",
@@ -111,6 +113,8 @@ class aws_provider:
     subnet: str = None
     key_name: str = None
     ssh_user: str = "ubuntu"
+    max_runners: int = None
+    end_of_life: int = None
     defaults: provider_defaults = dataclasses.field(
         default_factory=lambda: provider_defaults(
             image="resolve:ssm:/aws/service/canonical/ubuntu/server/22.04/stable/current/amd64/hvm/ebs-gp3/ami-id",

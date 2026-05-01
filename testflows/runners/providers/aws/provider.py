@@ -122,6 +122,8 @@ class AWSCloudProvider(CloudProvider):
         ssh_user: str = "ubuntu",
         root_volume_size: int = 20,
         root_volume_type: str = "gp3",
+        max_runners: int = None,
+        end_of_life: int = None,
     ):
         """Initialise the provider.
 
@@ -135,6 +137,8 @@ class AWSCloudProvider(CloudProvider):
                 no ``image-`` label is present on the job.
             default_location_spec: Default availability zone (e.g. ``us-east-1a``)
                 used when no ``in-`` label is present on the job.
+            max_runners: Per-provider runner cap (overrides global max_runners).
+            end_of_life: Per-provider end-of-life in minutes (overrides global).
         """
         import boto3
 
@@ -152,6 +156,8 @@ class AWSCloudProvider(CloudProvider):
         self._ssh_user = ssh_user
         self._root_volume_size = root_volume_size
         self._root_volume_type = root_volume_type
+        self._max_runners = max_runners
+        self._end_of_life = end_of_life
 
     # ---------------------------------------------------------------------------
     # Identity

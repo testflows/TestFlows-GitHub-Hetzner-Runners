@@ -68,6 +68,8 @@ def provider_factory(config: Config) -> list[CloudProvider]:
             HetznerCloudProvider(
                 token=config.providers.hetzner.token,
                 ssh_key_path=config.ssh_key,
+                max_runners=config.providers.hetzner.max_runners,
+                end_of_life=config.providers.hetzner.end_of_life,
             )
         )
 
@@ -89,6 +91,8 @@ def provider_factory(config: Config) -> list[CloudProvider]:
                 ssh_user=aws_cfg.ssh_user,
                 root_volume_size=aws_cfg.defaults.volume_size,
                 root_volume_type=aws_cfg.defaults.volume_type,
+                max_runners=aws_cfg.max_runners,
+                end_of_life=aws_cfg.end_of_life,
             )
         )
 

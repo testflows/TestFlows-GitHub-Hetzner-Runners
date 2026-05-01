@@ -114,6 +114,7 @@ class RunnerServer:
     server_status: str = CloudProvider.STATUS_STARTING
     runner_status: str = "initializing"  # busy, ready
     server: ProviderServer = None
+    provider_name: str = None
 
     def __post_init__(self):
         if self.server_volumes is None:
@@ -1079,7 +1080,7 @@ def recyclable_server_match(
 
 
 def set_future_attributes(
-    future, name, server_type, server_location, server_volumes, labels
+    future, name, server_type, server_location, server_volumes, labels, provider_name=None
 ):
     """Set common attributes on a future object.
 
@@ -1089,12 +1090,14 @@ def set_future_attributes(
         server_type: The server type
         server_location: The server location
         labels: The server labels
+        provider_name: Name of the provider that will create this server.
     """
     future.server_name = name
     future.server_type = server_type
     future.server_location = server_location
     future.server_volumes = server_volumes
     future.server_labels = labels
+    future.provider_name = provider_name
 
 
 def get_total_server_count(servers, futures=None):
@@ -1110,6 +1113,17 @@ def get_total_server_count(servers, futures=None):
     count = len(servers)
     if futures:
         count += len(futures)
+    return count
+
+
+def get_provider_server_count(servers, futures, provider_name: str) -> int:
+    """Count servers and pending futures belonging to a specific provider."""
+    count = sum(1 for s in servers if s.provider_name == provider_name)
+    if futures:
+        count += sum(
+            1 for f in futures
+            if getattr(f, "provider_name", None) == provider_name
+        )
     return count
 
 
@@ -1315,6 +1329,7 @@ def scale_up(
                                     server_location,
                                     server_volumes,
                                     labels,
+                                    provider_name=resolved_provider.name,
                                 )
                                 futures.append(future)
                                 servers.pop(servers.index(server))
@@ -1392,9 +1407,40 @@ def scale_up(
                                 server_location,
                                 server_volumes,
                                 labels,
+                                provider_name=resolved_provider.name,
                             )
                             futures.append(future)
                             raise StopIteration("maximum number of servers reached")
+
+                # Check per-provider runner cap
+                provider_max = resolved_provider.max_runners
+                if provider_max is not None:
+                    provider_count = get_provider_server_count(
+                        servers, futures, resolved_provider.name
+                    )
+                    if provider_count >= provider_max:
+                        with Action(
+                            f"Maximum number of servers {provider_max} for provider {resolved_provider.name} has been reached",
+                            stacklevel=3,
+                            server_name=name,
+                        ):
+                            future = worker_pool.submit(
+                                raise_exception,
+                                exc=MaxNumberOfServersReached(
+                                    f"maximum number of servers for provider {resolved_provider.name} reached {provider_count}/{provider_max}"
+                                ),
+                            )
+                            set_future_attributes(
+                                future,
+                                name,
+                                validated_type,
+                                server_location,
+                                server_volumes,
+                                labels,
+                                provider_name=resolved_provider.name,
+                            )
+                            futures.append(future)
+                            continue
 
                 # Check label-specific limits
                 if max_servers_for_label:
@@ -1421,6 +1467,7 @@ def scale_up(
                                 server_location,
                                 server_volumes,
                                 labels,
+                                provider_name=resolved_provider.name,
                             )
                             futures.append(future)
                             return
@@ -1449,7 +1496,8 @@ def scale_up(
                     attempt=create_server_attempt,
                 )
                 set_future_attributes(
-                    future, name, validated_type, server_location, server_volumes, labels
+                    future, name, validated_type, server_location, server_volumes, labels,
+                    provider_name=resolved_provider.name,
                 )
                 futures.append(future)
 
@@ -1518,6 +1566,7 @@ def scale_up(
                                     for v in ps.volumes
                                 ],
                                 server=ps,
+                                provider_name=p.name,
                             )
                             for p in providers
                             for ps in p.list_runner_servers()

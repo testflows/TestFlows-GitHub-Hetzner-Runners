@@ -476,7 +476,20 @@ def parse_config(filename: str):
                 assert isinstance(
                     h["token"], str
                 ), "config.providers.hetzner.token: is not a string"
-            _hetzner = hetzner_provider(token=h.get("token"))
+            _hetzner_kwargs = {"token": h.get("token")}
+            if h.get("max_runners") is not None:
+                v = h["max_runners"]
+                assert isinstance(v, int) and v > 0, (
+                    "config.providers.hetzner.max_runners: must be an integer > 0"
+                )
+                _hetzner_kwargs["max_runners"] = v
+            if h.get("end_of_life") is not None:
+                v = h["end_of_life"]
+                assert isinstance(v, int) and v > 0, (
+                    "config.providers.hetzner.end_of_life: must be an integer > 0"
+                )
+                _hetzner_kwargs["end_of_life"] = v
+            _hetzner = hetzner_provider(**_hetzner_kwargs)
 
         _aws = None
         if _p.get("aws") is not None:
@@ -498,6 +511,18 @@ def parse_config(filename: str):
                 key_name=a.get("key_name"),
                 ssh_user=a.get("ssh_user", "ubuntu"),
             )
+            if a.get("max_runners") is not None:
+                v = a["max_runners"]
+                assert isinstance(v, int) and v > 0, (
+                    "config.providers.aws.max_runners: must be an integer > 0"
+                )
+                _aws_kwargs["max_runners"] = v
+            if a.get("end_of_life") is not None:
+                v = a["end_of_life"]
+                assert isinstance(v, int) and v > 0, (
+                    "config.providers.aws.end_of_life: must be an integer > 0"
+                )
+                _aws_kwargs["end_of_life"] = v
             _aws_defaults_raw = a.get("defaults")
             if _aws_defaults_raw is not None:
                 assert isinstance(

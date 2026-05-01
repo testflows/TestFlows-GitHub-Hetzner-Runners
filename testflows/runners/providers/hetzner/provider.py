@@ -108,7 +108,14 @@ class HetznerCloudProvider(CloudProvider):
     validation helpers in providers/hetzner/config.py.
     """
 
-    def __init__(self, token: str, ssh_key_path: str = None, default_image=None):
+    def __init__(
+        self,
+        token: str,
+        ssh_key_path: str = None,
+        default_image=None,
+        max_runners: int = None,
+        end_of_life: int = None,
+    ):
         """Initialise the provider.
 
         Args:
@@ -118,11 +125,15 @@ class HetznerCloudProvider(CloudProvider):
             default_image: Default image to use when no ``image-`` label is
                 present.  Accepts a validated hcloud ``Image`` object (from
                 ``config.default_image``) or a raw spec string.
+            max_runners: Per-provider runner cap (overrides global max_runners).
+            end_of_life: Per-provider end-of-life in minutes (overrides global).
         """
         self._token = token
         self._ssh_key_path = ssh_key_path
         self._client = HClient(token=token)
         self._default_image = default_image
+        self._max_runners = max_runners
+        self._end_of_life = end_of_life
 
     # ---------------------------------------------------------------------------
     # Identity

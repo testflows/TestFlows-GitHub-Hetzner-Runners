@@ -373,6 +373,11 @@ def scale_down(
     recycle: bool = config.recycle
     recycle_grace_period: int = config.recycle_grace_period
     end_of_life: int = config.end_of_life
+    def _effective_end_of_life(provider):
+        """Return the provider's end_of_life if set, otherwise the global value."""
+        if provider is not None and provider.end_of_life is not None:
+            return provider.end_of_life
+        return end_of_life
     max_powered_off_time: int = config.max_powered_off_time
     max_unused_runner_time: int = config.max_unused_runner_time
     max_runner_registration_time: int = config.max_runner_registration_time
@@ -617,7 +622,7 @@ def scale_down(
                                     reason="powered_off",
                                     server=powered_off_server.server._native,
                                     ssh_key=ssh_key,
-                                    end_of_life=end_of_life,
+                                    end_of_life=_effective_end_of_life(_sp),
                                     recycle_grace_period=recycle_grace_period,
                                 )
                             else:
@@ -666,7 +671,7 @@ def scale_down(
                                     reason="zombie",
                                     server=zombie_server.server._native,
                                     ssh_key=ssh_key,
-                                    end_of_life=end_of_life,
+                                    end_of_life=_effective_end_of_life(_sp),
                                     recycle_grace_period=recycle_grace_period,
                                 )
                             else:
@@ -731,7 +736,7 @@ def scale_down(
                                         reason="unused_runner",
                                         server=runner_server._native,
                                         ssh_key=ssh_key,
-                                        end_of_life=end_of_life,
+                                        end_of_life=_effective_end_of_life(runner_server_provider),
                                         recycle_grace_period=recycle_grace_period,
                                     )
                                 else:
@@ -776,7 +781,7 @@ def scale_down(
                         reason="unused_recyclable",
                         server=recyclable_server,
                         ssh_key=ssh_key,
-                        end_of_life=end_of_life,
+                        end_of_life=_effective_end_of_life(server_providers.get(server_name)),
                         recycle_grace_period=recycle_grace_period,
                     )
                     recyclable_servers.pop(server_name)

@@ -132,6 +132,16 @@ class CloudProvider(ABC):
         """
         return False
 
+    @property
+    def max_runners(self) -> int | None:
+        """Per-provider runner cap, or None to use the global limit."""
+        return getattr(self, "_max_runners", None)
+
+    @property
+    def end_of_life(self) -> int | None:
+        """Per-provider end-of-life in minutes, or None to use the global setting."""
+        return getattr(self, "_end_of_life", None)
+
     # ---------------------------------------------------------------------------
     # Server lifecycle
     # ---------------------------------------------------------------------------
