@@ -1394,7 +1394,9 @@ def scale_up(
                 ):
                     pass
 
-                if max_servers is not None:
+                # Global cap — skipped for this provider if it has its own cap,
+                # since the per-provider check below is the authoritative limit.
+                if max_servers is not None and resolved_provider.max_runners is None:
                     total_servers_count = get_total_server_count(servers, futures)
                     if total_servers_count >= max_servers:
                         with Action(
