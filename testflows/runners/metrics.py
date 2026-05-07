@@ -21,7 +21,6 @@ from datetime import datetime
 from github.WorkflowRun import WorkflowRun
 from github.WorkflowJob import WorkflowJob
 from prometheus_client import Counter, Gauge, Histogram, Info
-from .estimate import get_server_price
 from .constants import standby_server_name_prefix
 from .constants import recycle_server_name_prefix
 from .server import get_runner_server_name
@@ -324,8 +323,8 @@ GITHUB_API_RESET_TIME = Gauge(
 # Cost metrics
 COST_ESTIMATE = Gauge(
     "github_hetzner_runners_cost_estimate",
-    "Estimated cost in EUR",
-    ["server_type", "location"],
+    "Estimated hourly cost",
+    ["server_type", "location", "currency"],
 )
 
 # Service health metrics
@@ -527,11 +526,21 @@ def update_servers(servers, server_prices=None, ipv4_price=0.0008, ipv6_price=0.
     """Update all server-related metrics.
 
     Args:
-        servers: List of servers to track metrics for
-        server_prices: Dictionary of server prices by type and location
-        ipv4_price: Price per hour for IPv4 address (default: 0.0008 EUR)
-        ipv6_price: Price per hour for IPv6 address (default: 0.0000 EUR)
+        servers: List of RunnerServer objects to track metrics for.
+        server_prices: Per-provider price dict:
+            {provider_name: {"prices": {type: {location: float}}, "currency": "EUR"|"USD"}}
+            Pass None to skip cost tracking.
+        ipv4_price: Price per hour for IPv4 (Hetzner only, EUR)
+        ipv6_price: Price per hour for IPv6 (Hetzner only, EUR)
     """
+    from .providers.hetzner.estimate import get_server_price as hetzner_get_price
+    from .providers.aws.estimate import get_server_price as aws_get_price
+
+    _provider_fns = {
+        "hetzner": hetzner_get_price,
+        "aws": aws_get_price,
+    }
+
     # Clear all existing server metrics
     SERVER_INFO._metrics.clear()
     SERVER_LABELS._metrics.clear()
@@ -553,38 +562,57 @@ def update_servers(servers, server_prices=None, ipv4_price=0.0008, ipv6_price=0.
 
         # Calculate costs once
         total_cost = None
-        server_ipv4_cost = None
-        server_ipv6_cost = None
+        cost_currency = "EUR"
+
+        provider_name = getattr(server, "provider_name", None) or "hetzner"
 
         if server_prices:
             try:
-                server_type = server.server_type.name
-                location = server.server_location.name
-                server_ipv4_cost = (
-                    ipv4_price
-                    if nested_getattr(server, "server", "public_net", "ipv4", "ip")
-                    else 0
-                )
-                server_ipv6_cost = (
-                    ipv6_price
-                    if nested_getattr(server, "server", "public_net", "ipv6", "ip")
-                    else 0
-                )
+                provider_entry = server_prices.get(provider_name, {})
+                prices = provider_entry.get("prices")
+                cost_currency = provider_entry.get("currency", "EUR")
+                price_fn = _provider_fns.get(provider_name)
 
-                total_cost = get_server_price(
-                    server_prices,
-                    server_type,
-                    location,
-                    ipv4_price=server_ipv4_cost,
-                    ipv6_price=server_ipv6_cost,
-                )
+                if prices and price_fn:
+                    # server_type and server_location are plain strings on RunnerServer
+                    server_type = server.server_type
+                    location = server.server_location
 
-                # Set cost estimate metric
-                if total_cost is not None:
-                    COST_ESTIMATE.labels(
-                        server_type=server_type,
-                        location=location,
-                    ).set(total_cost)
+                    if provider_name == "hetzner":
+                        server_ipv4_cost = (
+                            ipv4_price
+                            if nested_getattr(
+                                server, "server", "public_net", "ipv4", "ip"
+                            )
+                            else 0
+                        )
+                        server_ipv6_cost = (
+                            ipv6_price
+                            if nested_getattr(
+                                server, "server", "public_net", "ipv6", "ip"
+                            )
+                            else 0
+                        )
+                        total_cost = price_fn(
+                            prices,
+                            server_type,
+                            location,
+                            ipv4_price=server_ipv4_cost,
+                            ipv6_price=server_ipv6_cost,
+                        )
+                    else:
+                        # Prices are keyed by region; location may be an AZ
+                        from .providers.aws.provider import _az_to_region
+                        total_cost = price_fn(
+                            prices, server_type, _az_to_region(location)
+                        )
+
+                    if total_cost is not None:
+                        COST_ESTIMATE.labels(
+                            server_type=server_type,
+                            location=location,
+                            currency=cost_currency,
+                        ).set(total_cost)
             except (KeyError, AttributeError):
                 pass
 
@@ -593,8 +621,8 @@ def update_servers(servers, server_prices=None, ipv4_price=0.0008, ipv6_price=0.
             server_info = {
                 "id": str(server.server.id),
                 "name": server.name,
-                "type": nested_getattr(server, "server_type", "name"),
-                "location": nested_getattr(server, "server_location", "name"),
+                "type": server.server_type if isinstance(server.server_type, str) else nested_getattr(server, "server_type", "name"),
+                "location": server.server_location if isinstance(server.server_location, str) else nested_getattr(server, "server_location", "name"),
                 "image": nested_getattr(server, "server", "image", "name"),
                 "architecture": nested_getattr(
                     server, "server", "image", "architecture"
@@ -611,7 +639,7 @@ def update_servers(servers, server_prices=None, ipv4_price=0.0008, ipv6_price=0.
                     else ""
                 ),
                 "cost_hourly": str(total_cost) if total_cost is not None else "",
-                "cost_currency": "EUR",
+                "cost_currency": cost_currency,
             }
 
             # Calculate total cost based on server lifetime

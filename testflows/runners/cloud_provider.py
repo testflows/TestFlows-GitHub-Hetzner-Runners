@@ -142,6 +142,11 @@ class CloudProvider(ABC):
         """Per-provider end-of-life in minutes, or None to use the global setting."""
         return getattr(self, "_end_of_life", None)
 
+    @property
+    def currency(self) -> str:
+        """ISO 4217 currency code for this provider's prices (e.g. 'EUR', 'USD')."""
+        return "EUR"
+
     # ---------------------------------------------------------------------------
     # Server lifecycle
     # ---------------------------------------------------------------------------

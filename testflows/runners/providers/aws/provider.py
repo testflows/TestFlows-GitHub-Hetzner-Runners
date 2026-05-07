@@ -182,6 +182,10 @@ class AWSCloudProvider(CloudProvider):
         return "aws"
 
     @property
+    def currency(self) -> str:
+        return "USD"
+
+    @property
     def supports_recycling(self) -> bool:
         return False
 

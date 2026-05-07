@@ -381,7 +381,14 @@ def scale_down(
     max_powered_off_time: int = config.max_powered_off_time
     max_unused_runner_time: int = config.max_unused_runner_time
     max_runner_registration_time: int = config.max_runner_registration_time
-    server_prices: dict[str, dict[str, float]] = config.server_prices
+    _provider_prices: dict[str, dict] = config.server_prices
+    # The recycle path (delete_random) is Hetzner-specific; extract the flat
+    # {type: {location: price}} dict that _delete_random_recyclable_server expects.
+    server_prices: dict[str, dict[str, float]] = (
+        (_provider_prices or {}).get("hetzner", {}).get("prices")
+        if _provider_prices
+        else None
+    )
     powered_off_servers: dict[str, PoweredOffServer] = {}
     unused_runners: dict[str, UnusedRunner] = {}
     zombie_servers: dict[str, ZombieServer] = {}

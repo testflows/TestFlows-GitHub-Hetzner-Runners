@@ -19,7 +19,9 @@ import github
 
 from .actions import Action
 from .config import Config
-from .providers.hetzner.config import check_prices
+from .providers.hetzner.config import check_prices as hetzner_check_prices
+from .providers.hetzner import estimate as hetzner_estimate
+from .providers.aws import estimate as aws_estimate
 from .streamingyaml import StreamingYAMLWriter
 from .hclient import HClient as Client
 from .utils import get_runner_server_type_and_location
@@ -108,65 +110,91 @@ def extend_workflow_run(run: WorkflowRun):
     return run
 
 
+def _is_aws_server_type(server_type: str) -> bool:
+    """Return True if server_type looks like an EC2 instance type (contains a dot)."""
+    return server_type is not None and "." in server_type
+
+
 def get_server_price(
     server_prices: dict[str, dict[str, float]],
     server_type: str,
     server_location: str,
-    ipv4_price: float,
-    ipv6_price: float,
+    ipv4_price: float = 0.0,
+    ipv6_price: float = 0.0,
 ) -> float:
-    """Get server price."""
-    price = None
-    if ipv4_price is None:
-        ipv4_price
-    try:
-        price = server_prices[server_type][server_location] + ipv4_price + ipv6_price
-    except KeyError:
-        pass
-    return price
+    """Get server price, dispatching to the right provider based on server type."""
+    if _is_aws_server_type(server_type):
+        return aws_estimate.get_server_price(server_prices, server_type, server_location)
+    return hetzner_estimate.get_server_price(
+        server_prices, server_type, server_location, ipv4_price, ipv6_price
+    )
 
 
 def get_runner_server_price_per_second(
     server_prices: dict[str, dict[str, float]],
     runner_name: str,
-    ipv4_price: float,
-    ipv6_price: float,
-) -> float:
-    """Get runner server price per second."""
-
-    price_per_second = None
+    ipv4_price: float = 0.0,
+    ipv6_price: float = 0.0,
+) -> tuple[float, str, str]:
+    """Get runner server price per second, dispatching to the right provider."""
 
     server_type, server_location = get_runner_server_type_and_location(runner_name)
-    server_price_per_hour = get_server_price(
-        server_prices, server_type, server_location, ipv4_price, ipv6_price
+
+    if _is_aws_server_type(server_type):
+        return aws_estimate.get_runner_server_price_per_second(
+            server_prices, runner_name
+        )
+    return hetzner_estimate.get_runner_server_price_per_second(
+        server_prices, runner_name, ipv4_price, ipv6_price
     )
-
-    if server_price_per_hour is not None:
-        price_per_second = server_price_per_hour / 3600
-
-    return price_per_second, server_type, server_location
 
 
 def login_and_get_prices(
     args, config: Config
 ) -> tuple[Repository, dict[str, dict[str, float]]]:
-    """Login and get prices."""
+    """Login to GitHub and fetch prices from all configured providers."""
 
     config.check("github_token")
     config.check("github_repository")
-    config.check("hetzner_token")
-
-    with Action("Logging in to Hetzner Cloud"):
-        client = Client(token=config.hetzner_token)
 
     with Action("Logging in to GitHub"):
-        github = Github(auth=Auth.Token(config.github_token), per_page=100)
+        github_client = Github(auth=Auth.Token(config.github_token), per_page=100)
 
     with Action(f"Getting repository {config.github_repository}"):
-        repo: Repository = github.get_repo(config.github_repository)
+        repo: Repository = github_client.get_repo(config.github_repository)
 
-    with Action("Getting current server prices"):
-        server_prices = check_prices(client)
+    server_prices: dict[str, dict[str, float]] = {}
+
+    hetzner_token = getattr(config, "hetzner_token", None)
+    if hetzner_token:
+        with Action("Getting Hetzner server prices"):
+            try:
+                client = Client(token=hetzner_token)
+                server_prices.update(hetzner_check_prices(client))
+            except Exception as e:
+                import logging
+                logging.warning(f"Could not fetch Hetzner prices: {e}")
+
+    # Determine AWS region from config if present, else from boto3 default session.
+    from .providers.aws.provider import _az_to_region
+    aws_cfg = getattr(getattr(config, "providers", None), "aws", None)
+    if aws_cfg is not None:
+        default_az = getattr(getattr(aws_cfg, "defaults", None), "location", None) or "us-east-1a"
+        aws_region = _az_to_region(default_az)
+    else:
+        try:
+            import boto3
+            aws_region = boto3.session.Session().region_name or "us-east-1"
+        except Exception:
+            aws_region = None
+
+    if aws_region:
+        with Action(f"Getting EC2 on-demand prices for {aws_region}"):
+            try:
+                server_prices.update(aws_estimate.check_prices(aws_region))
+            except Exception as e:
+                import logging
+                logging.warning(f"Could not fetch EC2 prices: {e}")
 
     return (repo, server_prices)
 

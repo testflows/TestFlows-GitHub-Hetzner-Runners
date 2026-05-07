@@ -1813,7 +1813,26 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
 
             if not config.delete_random:
                 with Action("Getting server prices"):
-                    config.server_prices = hetzner_provider.get_prices()
+                    hetzner_prices = hetzner_provider.get_prices()
+                    config.server_prices = config.server_prices or {}
+                    config.server_prices["hetzner"] = {
+                        "prices": hetzner_prices,
+                        "currency": hetzner_provider.currency,
+                    }
+
+        aws_provider = next((p for p in providers if p.name == "aws"), None)
+        if aws_provider is not None:
+            with Action("Getting EC2 on-demand prices"):
+                from testflows.runners.providers.aws.estimate import check_prices as aws_check_prices
+                try:
+                    aws_prices = aws_check_prices(aws_provider._region)
+                    config.server_prices = config.server_prices or {}
+                    config.server_prices["aws"] = {
+                        "prices": aws_prices,
+                        "currency": aws_provider.currency,
+                    }
+                except Exception as e:
+                    logging.warning(f"Could not fetch EC2 prices: {e}")
 
         for p in providers:
             with Action(f"Checking if SSH key exists ({p.name})"):

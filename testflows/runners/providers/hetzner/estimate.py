@@ -22,6 +22,7 @@ from ...actions import Action
 from ...config import Config
 from ...hclient import HClient as Client
 from ...utils import get_runner_server_type_and_location
+from .config import check_prices
 
 
 def get_server_price(

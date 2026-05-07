@@ -1191,7 +1191,7 @@ def scale_up(
     label_prefix: str = config.label_prefix
     meta_label: dict[str, set[str]] = config.meta_label
     scripts: str = config.scripts
-    server_prices: dict[str, dict[str, float]] = config.server_prices
+    server_prices: dict[str, dict] = config.server_prices
     interval: int = -1
 
     if providers is None:
