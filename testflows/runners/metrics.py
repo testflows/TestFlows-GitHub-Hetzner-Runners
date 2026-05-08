@@ -574,9 +574,9 @@ def update_servers(servers, server_prices=None, ipv4_price=0.0008, ipv6_price=0.
                 price_fn = _provider_fns.get(provider_name)
 
                 if prices and price_fn:
-                    # server_type and server_location are plain strings on RunnerServer
-                    server_type = server.server_type
-                    location = server.server_location
+                    # Normalise: may be a plain string or an object with .name
+                    server_type = getattr(server.server_type, "name", None) or str(server.server_type or "")
+                    location = getattr(server.server_location, "name", None) or str(server.server_location or "")
 
                     if provider_name == "hetzner":
                         server_ipv4_cost = (
@@ -621,8 +621,8 @@ def update_servers(servers, server_prices=None, ipv4_price=0.0008, ipv6_price=0.
             server_info = {
                 "id": str(server.server.id),
                 "name": server.name,
-                "type": server.server_type if isinstance(server.server_type, str) else nested_getattr(server, "server_type", "name"),
-                "location": server.server_location if isinstance(server.server_location, str) else nested_getattr(server, "server_location", "name"),
+                "type": getattr(server.server_type, "name", None) or str(server.server_type or ""),
+                "location": getattr(server.server_location, "name", None) or str(server.server_location or ""),
                 "image": nested_getattr(server, "server", "image", "name"),
                 "architecture": nested_getattr(
                     server, "server", "image", "architecture"

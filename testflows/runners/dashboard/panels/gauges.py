@@ -46,10 +46,18 @@ def render():
                 st.metric(label="Heartbeat", value="🔴", label_visibility="collapsed")
 
         with col2:
-            st.caption("Cost (€/h)")
+            if cost_summary:
+                parts = [
+                    f"{metrics.cost.CURRENCY_SYMBOLS.get(cur, cur)}{data['hourly']:.3f}"
+                    for cur, data in cost_summary.items()
+                ]
+                cost_value = " / ".join(parts)
+            else:
+                cost_value = "0.000"
+            st.caption("Cost/h")
             st.metric(
-                label="Cost (€/h)",
-                value=f"{cost_summary['hourly']:.3f}",
+                label="Cost/h",
+                value=cost_value,
                 label_visibility="collapsed",
             )
 

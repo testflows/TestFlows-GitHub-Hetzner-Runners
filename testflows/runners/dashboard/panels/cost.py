@@ -21,24 +21,25 @@ from .. import chart, renderers
 def render_cost_metrics():
     """Render the cost metrics header."""
 
-    # Get current cost summary for display
     cost_summary = metrics.cost.summary()
 
-    # Build metrics data
-    metrics_data = [
-        {
-            "label": "Hourly",
-            "value": f"€{cost_summary['hourly']:.3f}/h",
-        },
-        {
-            "label": "Daily",
-            "value": f"€{cost_summary['daily']:.2f}/day",
-        },
-        {
-            "label": "Monthly",
-            "value": f"€{cost_summary['monthly']:.2f}/month",
-        },
-    ]
+    metrics_data = []
+    for currency, data in cost_summary.items():
+        sym = metrics.cost.CURRENCY_SYMBOLS.get(currency, currency)
+        metrics_data.extend(
+            [
+                {"label": f"Hourly ({currency})", "value": f"{sym}{data['hourly']:.3f}/h"},
+                {"label": f"Daily ({currency})", "value": f"{sym}{data['daily']:.2f}/day"},
+                {"label": f"Monthly ({currency})", "value": f"{sym}{data['monthly']:.2f}/month"},
+            ]
+        )
+
+    if not metrics_data:
+        metrics_data = [
+            {"label": "Hourly", "value": "0.000/h"},
+            {"label": "Daily", "value": "0.00/day"},
+            {"label": "Monthly", "value": "0.00/month"},
+        ]
 
     renderers.render_metrics(metrics_data)
 
@@ -62,14 +63,14 @@ def render_cost_chart():
     df = metrics.history.dataframe_for_states(
         cost_data,
         time_column="Time",
-        value_column="Cost (€/h)",
+        value_column="Cost/h",
         status_column="Type",
         value_type=float,
     )
 
     # Convert values to float for price display
     if not df.empty:
-        df["Cost (€/h)"] = df["Cost (€/h)"].astype(float)
+        df["Cost/h"] = df["Cost/h"].astype(float)
 
     # Create color mapping for cost types
     color_domain = ["total", "servers", "volumes"]
@@ -79,13 +80,16 @@ def render_cost_chart():
         STREAMLIT_COLORS["info"],  # Cyan for volumes
     ]
 
+    mixed = len(metrics.cost.total_cost()) > 1
+    y_title = "Cost/h (mixed currencies)" if mixed else "Cost/h"
+
     def create_chart():
         return chart.create_time_series_chart(
             chart_id="cost",
             df=df,
             group_by="Type",
-            y_column="Cost (€/h)",
-            y_title="Cost (€/h)",
+            y_column="Cost/h",
+            y_title=y_title,
             names=color_domain,
             colors=color_range,
             y_type="price",

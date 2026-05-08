@@ -189,6 +189,10 @@ class AWSCloudProvider(CloudProvider):
     def supports_recycling(self) -> bool:
         return False
 
+    def get_prices(self) -> dict[str, dict[str, float]]:
+        from .estimate import check_prices
+        return check_prices(self._region, session=self._session)
+
     # ---------------------------------------------------------------------------
     # Server lifecycle
     # ---------------------------------------------------------------------------

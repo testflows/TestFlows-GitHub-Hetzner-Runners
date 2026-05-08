@@ -111,19 +111,21 @@ def formatted_details(volumes_info):
 
         # Add cost information if available
         cost_hourly = volume.get("cost_hourly")
+        cost_currency = volume.get("cost_currency") or "EUR"
+        cost_sym = "€" if cost_currency == "EUR" else ("$" if cost_currency == "USD" else cost_currency)
         if cost_hourly:
             try:
                 cost_value = float(cost_hourly)
-                formatted_volume["cost hourly"] = f"€{cost_value:.4f}/h"
-                formatted_volume["cost daily"] = f"€{cost_value * 24:.3f}/day"
-                formatted_volume["cost monthly"] = f"€{cost_value * 24 * 30:.2f}/month"
+                formatted_volume["cost hourly"] = f"{cost_sym}{cost_value:.4f}/h"
+                formatted_volume["cost daily"] = f"{cost_sym}{cost_value * 24:.3f}/day"
+                formatted_volume["cost monthly"] = f"{cost_sym}{cost_value * 24 * 30:.2f}/month"
             except (ValueError, TypeError):
                 pass
 
         cost_total = volume.get("cost_total")
         if cost_total:
             try:
-                formatted_volume["cost total"] = f"€{float(cost_total):.3f}"
+                formatted_volume["cost total"] = f"{cost_sym}{float(cost_total):.3f}"
             except (ValueError, TypeError):
                 pass
 

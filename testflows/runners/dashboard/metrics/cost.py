@@ -18,139 +18,134 @@ from . import get
 from . import history
 from . import tracker
 
-# Register cost metrics for tracking
-tracker.track("github_hetzner_runners_cost_total", compute_func=lambda: total_cost())
-tracker.track(
-    "github_hetzner_runners_cost_servers", compute_func=lambda: servers_cost()
-)
-tracker.track(
-    "github_hetzner_runners_cost_volumes", compute_func=lambda: volumes_cost()
-)
+CURRENCY_SYMBOLS = {"EUR": "€", "USD": "$"}
 
 
-def servers_cost():
-    """Compute total cost from all servers."""
-    total_cost = 0
-
-    # Add server costs
+def servers_cost() -> dict:
+    """Return {currency: total_hourly} for all servers."""
+    totals = {}
     servers_info = get.metric_info("github_hetzner_runners_server")
     if servers_info:
         for info in servers_info:
             try:
-                cost_hourly = float(info.get("cost_hourly", 0))
-                total_cost += cost_hourly
+                cost = float(info.get("cost_hourly") or 0)
+                if cost > 0:
+                    currency = info.get("cost_currency") or "EUR"
+                    totals[currency] = totals.get(currency, 0) + cost
             except (ValueError, TypeError):
                 continue
+    return totals
 
-    return total_cost
 
-
-def volumes_cost():
-    """Compute total cost from all volumes."""
-    total_cost = 0
-
-    # Add volume costs
+def volumes_cost() -> dict:
+    """Return {currency: total_hourly} for all volumes (always EUR)."""
+    total = 0
     volumes_info = get.metric_info("github_hetzner_runners_volume")
     if volumes_info:
         for info in volumes_info:
             try:
-                cost_hourly = float(info.get("cost_hourly", 0))
-                total_cost += cost_hourly
+                cost = float(info.get("cost_hourly") or 0)
+                total += cost
             except (ValueError, TypeError):
                 continue
-
-    return total_cost
-
-
-def total_cost():
-    """Compute total cost from all servers and volumes."""
-    return servers_cost() + volumes_cost()
+    return {"EUR": total} if total > 0 else {}
 
 
-def summary():
-    """Get cost summary data.
+def total_cost() -> dict:
+    """Return {currency: total_hourly} combining servers and volumes."""
+    totals = {}
+    for currency, amount in servers_cost().items():
+        totals[currency] = totals.get(currency, 0) + amount
+    for currency, amount in volumes_cost().items():
+        totals[currency] = totals.get(currency, 0) + amount
+    return totals
 
-    Returns:
-        dict: Summary of cost data
-    """
-    current_hourly_cost = total_cost()
 
-    return {
-        "hourly": current_hourly_cost,
-        "daily": current_hourly_cost * 24,
-        "monthly": current_hourly_cost * 24 * 30,
-    }
+def _servers_cost_scalar() -> float:
+    return sum(servers_cost().values())
+
+
+def _volumes_cost_scalar() -> float:
+    return sum(volumes_cost().values())
+
+
+def _total_cost_scalar() -> float:
+    return sum(total_cost().values())
+
+
+# Register cost metrics for tracking (scalar sums for history)
+tracker.track("github_hetzner_runners_cost_total", compute_func=lambda: _total_cost_scalar())
+tracker.track(
+    "github_hetzner_runners_cost_servers", compute_func=lambda: _servers_cost_scalar()
+)
+tracker.track(
+    "github_hetzner_runners_cost_volumes", compute_func=lambda: _volumes_cost_scalar()
+)
+
+
+def summary() -> dict:
+    """Return {currency: {hourly, daily, monthly}}."""
+    result = {}
+    for currency, hourly in total_cost().items():
+        result[currency] = {
+            "hourly": hourly,
+            "daily": hourly * 24,
+            "monthly": hourly * 24 * 30,
+        }
+    return result
 
 
 def servers_cost_history(cutoff_minutes=15):
-    """Get servers cost history data.
-
-    Returns the historical data for the last 15 minutes.
-
-    Returns:
-        tuple: (timestamps, values)
-    """
+    """Get servers cost history data."""
     return history.data(
         "github_hetzner_runners_cost_servers", cutoff_minutes=cutoff_minutes
     )
 
 
 def volumes_cost_history(cutoff_minutes=15):
-    """Get volumes cost history data.
-
-    Returns the historical data for the last 15 minutes.
-
-    Returns:
-        tuple: (timestamps, values)
-    """
+    """Get volumes cost history data."""
     return history.data(
         "github_hetzner_runners_cost_volumes", cutoff_minutes=cutoff_minutes
     )
 
 
 def formatted_details():
-    """Get formatted cost details for servers and volumes.
-
-    Returns:
-        list: List of dictionaries with cost details for each server and volume
-    """
+    """Get formatted cost details grouped by currency."""
     cost_details = []
 
-    # Get total costs for summary
-    total_cost_value = total_cost()
-    total_servers_cost = servers_cost()
-    total_volumes_cost = volumes_cost()
-
-    # Add total cost summary
-    if total_cost_value > 0:
+    totals = total_cost()
+    for currency, total_hourly in totals.items():
+        sym = CURRENCY_SYMBOLS.get(currency, currency)
         cost_details.append(
             {
-                "name": "Total",
-                "cost hourly": f"€{total_cost_value:.4f}/h",
-                "cost daily": f"€{total_cost_value * 24:.3f}/day",
-                "cost monthly": f"€{total_cost_value * 24 * 30:.2f}/month",
+                "name": f"Total ({currency})",
+                "cost hourly": f"{sym}{total_hourly:.4f}/h",
+                "cost daily": f"{sym}{total_hourly * 24:.3f}/day",
+                "cost monthly": f"{sym}{total_hourly * 24 * 30:.2f}/month",
             }
         )
 
-    # Add servers summary if there are any servers with cost
-    if total_servers_cost > 0:
+    sc = servers_cost()
+    for currency, servers_hourly in sc.items():
+        sym = CURRENCY_SYMBOLS.get(currency, currency)
         cost_details.append(
             {
-                "name": "Servers",
-                "cost hourly": f"€{total_servers_cost:.4f}/h",
-                "cost daily": f"€{total_servers_cost * 24:.3f}/day",
-                "cost monthly": f"€{total_servers_cost * 24 * 30:.2f}/month",
+                "name": f"Servers ({currency})",
+                "cost hourly": f"{sym}{servers_hourly:.4f}/h",
+                "cost daily": f"{sym}{servers_hourly * 24:.3f}/day",
+                "cost monthly": f"{sym}{servers_hourly * 24 * 30:.2f}/month",
             }
         )
 
-    # Add volumes summary if there are any volumes with cost
-    if total_volumes_cost > 0:
+    vc_total = _volumes_cost_scalar()
+    if vc_total > 0:
+        sym = CURRENCY_SYMBOLS.get("EUR", "€")
         cost_details.append(
             {
-                "name": "Volumes",
-                "cost hourly": f"€{total_volumes_cost:.4f}/h",
-                "cost daily": f"€{total_volumes_cost * 24:.3f}/day",
-                "cost monthly": f"€{total_volumes_cost * 24 * 30:.2f}/month",
+                "name": "Volumes (EUR)",
+                "cost hourly": f"{sym}{vc_total:.4f}/h",
+                "cost daily": f"{sym}{vc_total * 24:.3f}/day",
+                "cost monthly": f"{sym}{vc_total * 24 * 30:.2f}/month",
             }
         )
 
@@ -158,13 +153,7 @@ def formatted_details():
 
 
 def total_cost_history(cutoff_minutes=15):
-    """Get total cost history data.
-
-    Returns the historical data for the last 15 minutes.
-
-    Returns:
-        tuple: (timestamps, values)
-    """
+    """Get total cost history data."""
     return history.data(
         "github_hetzner_runners_cost_total", cutoff_minutes=cutoff_minutes
     )

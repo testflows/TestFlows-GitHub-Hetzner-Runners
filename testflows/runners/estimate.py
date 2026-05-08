@@ -175,12 +175,22 @@ def login_and_get_prices(
                 import logging
                 logging.warning(f"Could not fetch Hetzner prices: {e}")
 
-    # Determine AWS region from config if present, else from boto3 default session.
+    # Determine AWS region and session from config if present.
     from .providers.aws.provider import _az_to_region
     aws_cfg = getattr(getattr(config, "providers", None), "aws", None)
+    aws_session = None
     if aws_cfg is not None:
         default_az = getattr(getattr(aws_cfg, "defaults", None), "location", None) or "us-east-1a"
         aws_region = _az_to_region(default_az)
+        try:
+            import boto3
+            aws_session = boto3.Session(
+                aws_access_key_id=getattr(aws_cfg, "access_key_id", None),
+                aws_secret_access_key=getattr(aws_cfg, "secret_access_key", None),
+                region_name=aws_region,
+            )
+        except Exception:
+            pass
     else:
         try:
             import boto3
@@ -191,7 +201,7 @@ def login_and_get_prices(
     if aws_region:
         with Action(f"Getting EC2 on-demand prices for {aws_region}"):
             try:
-                server_prices.update(aws_estimate.check_prices(aws_region))
+                server_prices.update(aws_estimate.check_prices(aws_region, session=aws_session))
             except Exception as e:
                 import logging
                 logging.warning(f"Could not fetch EC2 prices: {e}")

@@ -26,17 +26,22 @@ from ...utils import get_runner_server_type_and_location
 
 
 def check_prices(
-    region: str, instance_types: list[str] = None
+    region: str, instance_types: list[str] = None, session=None
 ) -> dict[str, dict[str, float]]:
     """Fetch on-demand Linux prices from the AWS Pricing API.
 
     Returns a mapping of instance_type -> {region: hourly_usd_price}.
     The Pricing API endpoint is only available in us-east-1 regardless of
     which region the instances actually run in.
+
+    session: optional boto3.Session to use (uses provider credentials);
+             falls back to the default session when None.
     """
     import boto3
 
-    client = boto3.client("pricing", region_name="us-east-1")
+    if session is None:
+        session = boto3.Session()
+    client = session.client("pricing", region_name="us-east-1")
 
     filters = [
         {"Type": "TERM_MATCH", "Field": "operatingSystem", "Value": "Linux"},

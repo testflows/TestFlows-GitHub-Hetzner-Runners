@@ -147,6 +147,14 @@ class CloudProvider(ABC):
         """ISO 4217 currency code for this provider's prices (e.g. 'EUR', 'USD')."""
         return "EUR"
 
+    def get_prices(self) -> dict[str, dict[str, float]]:
+        """Fetch current prices for this provider's server types.
+
+        Returns a dict of {server_type: {location: hourly_price}}.
+        Providers that don't support price fetching return an empty dict.
+        """
+        return {}
+
     # ---------------------------------------------------------------------------
     # Server lifecycle
     # ---------------------------------------------------------------------------
