@@ -1832,7 +1832,7 @@ def main(config, worker_pool: ThreadPoolExecutor, terminate_timeout=60):
                         "currency": aws_provider.currency,
                     }
                 except Exception as e:
-                    logging.error(f"Could not fetch EC2 prices: {e}")
+                    logger.error(f"Could not fetch EC2 prices: {e}")
 
         for p in providers:
             with Action(f"Checking if SSH key exists ({p.name})"):

@@ -24,7 +24,7 @@ from .providers.hetzner import estimate as hetzner_estimate
 from .providers.aws import estimate as aws_estimate
 from .streamingyaml import StreamingYAMLWriter
 from .hclient import HClient as Client
-from .utils import get_runner_server_type_and_location
+from .utils import get_runner_server_type
 
 from datetime import timedelta
 from github import Auth, Github
@@ -135,10 +135,10 @@ def get_runner_server_price_per_second(
     runner_name: str,
     ipv4_price: float = 0.0,
     ipv6_price: float = 0.0,
-) -> tuple[float, str, str]:
+) -> tuple[float, str]:
     """Get runner server price per second, dispatching to the right provider."""
 
-    server_type, server_location = get_runner_server_type_and_location(runner_name)
+    server_type = get_runner_server_type(runner_name)
 
     if _is_aws_server_type(server_type):
         return aws_estimate.get_runner_server_price_per_second(
@@ -248,7 +248,7 @@ def get_estimate_for_jobs(
             "workflow_name": job.raw_data["workflow_name"],
         }
 
-        price, server_type, server_location = get_runner_server_price_per_second(
+        price, server_type = get_runner_server_price_per_second(
             server_prices, runner_name, ipv4_price, ipv6_price
         )
 
@@ -256,7 +256,6 @@ def get_estimate_for_jobs(
             "servers": [
                 {
                     "type": server_type,
-                    "location": server_location,
                     "price": (price * 3600) if price is not None else price,
                     "duration": None,
                     "worst": None,
@@ -267,15 +266,15 @@ def get_estimate_for_jobs(
             "best": None,
         }
 
-        if not (server_type, server_location) in servers:
-            servers[(server_type, server_location)] = {
+        if server_type not in servers:
+            servers[server_type] = {
                 "price": job_entry["estimate"]["servers"][0]["price"],
                 "duration": None,
                 "worst": None,
                 "best": None,
             }
 
-        server = servers[(server_type, server_location)]
+        server = servers[server_type]
 
         if duration is not None:
             if unknown_duration is None:
@@ -417,12 +416,11 @@ def workflow_run(
             "best": best_estimate,
         }
 
-        for server_type, server_location in servers:
-            server = servers[(server_type, server_location)]
+        for server_type in servers:
+            server = servers[server_type]
             workflow_totals["estimate"]["servers"].append(
                 {
                     "type": server_type,
-                    "location": server_location,
                     "price": server["price"],
                     "duration": duration_str(server["duration"]),
                     "worst": server["worst"],

@@ -22,7 +22,7 @@ from github.Repository import Repository
 
 from ...actions import Action
 from ...config import Config
-from ...utils import get_runner_server_type_and_location
+from ...utils import get_runner_server_type
 
 
 def check_prices(
@@ -108,18 +108,18 @@ def get_runner_server_price_per_second(
     runner_name: str,
     ipv4_price: float = 0.0,
     ipv6_price: float = 0.0,
-) -> tuple[float, str, str]:
+) -> tuple[float, str]:
     """Get runner server price per second for AWS."""
 
     price_per_second = None
 
-    server_type, server_location = get_runner_server_type_and_location(runner_name)
-    server_price_per_hour = get_server_price(server_prices, server_type, server_location)
+    server_type = get_runner_server_type(runner_name)
+    server_price_per_hour = get_server_price(server_prices, server_type, None)
 
     if server_price_per_hour is not None:
         price_per_second = server_price_per_hour / 3600
 
-    return price_per_second, server_type, server_location
+    return price_per_second, server_type
 
 
 def login_and_get_prices(

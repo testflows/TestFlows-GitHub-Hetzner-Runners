@@ -27,7 +27,7 @@ from .logger import logger
 from . import metrics
 from .config import Config, check_startup_script, check_setup_script
 from .config import standby_runner as StandbyRunner
-from .utils import get_runner_server_type_and_location
+from .utils import get_runner_server_type
 from .cloud_provider import CloudProvider, ProviderServer, ProviderServerType
 from .errors import ServerTypeError, ImageSpecFormatError, LocationError
 from .constants import (
@@ -131,15 +131,13 @@ def get_volume_name(name: str):
     return name.split("-", 1)[0]
 
 
-def get_runner_server_type_and_location(runner_name: str):
-    """Determine runner's server type, and location."""
-    server_type, server_location = None, None
-
+def get_runner_server_type(runner_name: str) -> str | None:
+    """Return the server type embedded in a runner name, or None."""
     if runner_name and runner_name.startswith(runner_name_prefix):
-        if len(runner_name.split("-")) == 7:
-            server_type, server_location = runner_name.split("-")[5:]
-
-    return server_type, server_location
+        parts = runner_name.split("-", 4)
+        if len(parts) == 5:
+            return parts[4]
+    return None
 
 
 def server_setup(
@@ -1191,7 +1189,8 @@ def scale_up(
     label_prefix: str = config.label_prefix
     meta_label: dict[str, set[str]] = config.meta_label
     scripts: str = config.scripts
-    server_prices: dict[str, dict] = config.server_prices
+    if not hasattr(config, "server_prices") or config.server_prices is None:
+        config.server_prices = {}
     interval: int = -1
 
     if providers is None:
@@ -1634,8 +1633,21 @@ def scale_up(
                                 filtered_runners.append(runner)
                     runners = filtered_runners
 
+                # Lazily fetch prices for any provider that is missing them
+                for _p in providers:
+                    if _p.name not in config.server_prices:
+                        try:
+                            _prices = _p.get_prices()
+                            if _prices:
+                                config.server_prices[_p.name] = {
+                                    "prices": _prices,
+                                    "currency": _p.currency,
+                                }
+                        except Exception as _e:
+                            logging.debug(f"Could not fetch prices for {_p.name}: {_e}")
+
                 # Update all metrics
-                metrics.update_servers(servers, server_prices)
+                metrics.update_servers(servers, config.server_prices)
                 metrics.update_runners(
                     runners,
                     github_repository,
@@ -1687,9 +1699,13 @@ def scale_up(
                                     pass
 
                                 labels = get_job_labels(job)
-                                server_name = (
-                                    f"{server_name_prefix}{job.run_id}-{job.id}"
+                                _type_names = get_server_types(
+                                    labels, default_server_type, label_prefix
                                 )
+                                _primary_type = (
+                                    _type_names[0] if _type_names else "unknown"
+                                )
+                                server_name = f"{server_name_prefix}{job.run_id}-{job.id}-{_primary_type}"
 
                                 if job.status != "completed":
                                     if server_name in [

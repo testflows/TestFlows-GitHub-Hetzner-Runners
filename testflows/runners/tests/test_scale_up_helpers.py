@@ -26,7 +26,7 @@ from testflows.runners.scale_up import (
     count_available_runners,
     count_present,
     get_job_labels,
-    get_runner_server_type_and_location,
+    get_runner_server_type,
     get_server_count_with_labels,
     get_total_server_count,
     get_volume_name,
@@ -41,7 +41,7 @@ from testflows.runners.constants import runner_name_prefix, server_ssh_key_label
 # Helpers
 # ---------------------------------------------------------------------------
 
-RUNNER_PREFIX = runner_name_prefix  # "github-hetzner-runner-"
+RUNNER_PREFIX = runner_name_prefix  # "github-runner-"
 
 
 def _runner_server(
@@ -57,7 +57,7 @@ def _runner_server(
     ps = MagicMock()  # ProviderServer
     ps._native = native or MagicMock()
     return RunnerServer(
-        name=f"{RUNNER_PREFIX}run1-0-{server_type_name}-{server_location_name}",
+        name=f"{RUNNER_PREFIX}run1-0-{server_type_name}",
         labels=set(labels or []),
         server_type=server_type_name,
         server_location=server_location_name,
@@ -94,40 +94,33 @@ class TestGetVolumeName:
 
 
 # ---------------------------------------------------------------------------
-# get_runner_server_type_and_location
+# get_runner_server_type
 # ---------------------------------------------------------------------------
 
 
-class TestGetRunnerServerTypeAndLocation:
-    def _name(self, server_type, location):
-        # prefix has 3 dashes → "github-hetzner-runner-{run}-{idx}-{type}-{loc}" = 7 parts
-        return f"{RUNNER_PREFIX}run1-0-{server_type}-{location}"
+class TestGetRunnerServerType:
+    def _name(self, server_type):
+        # "github-runner-{run}-{idx}-{type}" = 5 parts
+        return f"{RUNNER_PREFIX}run1-0-{server_type}"
 
-    def test_valid_name_returns_type_and_location(self):
-        stype, sloc = get_runner_server_type_and_location(self._name("cx22", "nbg1"))
-        assert stype == "cx22"
-        assert sloc == "nbg1"
+    def test_valid_name_returns_type(self):
+        assert get_runner_server_type(self._name("cx22")) == "cx22"
 
-    def test_wrong_prefix_returns_none_none(self):
-        stype, sloc = get_runner_server_type_and_location("other-runner-run1-0-cx22-nbg1")
-        assert stype is None
-        assert sloc is None
+    def test_aws_type_with_dot_preserved(self):
+        assert get_runner_server_type(self._name("c8g.2xlarge")) == "c8g.2xlarge"
 
-    def test_too_few_segments_returns_none_none(self):
-        # Only 6 parts — missing one field
-        stype, sloc = get_runner_server_type_and_location(f"{RUNNER_PREFIX}run1-cx22-nbg1")
-        assert stype is None
-        assert sloc is None
+    def test_wrong_prefix_returns_none(self):
+        assert get_runner_server_type("other-runner-run1-0-cx22") is None
 
-    def test_empty_string_returns_none_none(self):
-        stype, sloc = get_runner_server_type_and_location("")
-        assert stype is None
-        assert sloc is None
+    def test_too_few_segments_returns_none(self):
+        # Only 4 parts — missing type field
+        assert get_runner_server_type(f"{RUNNER_PREFIX}run1-cx22") is None
 
-    def test_none_returns_none_none(self):
-        stype, sloc = get_runner_server_type_and_location(None)
-        assert stype is None
-        assert sloc is None
+    def test_empty_string_returns_none(self):
+        assert get_runner_server_type("") is None
+
+    def test_none_returns_none(self):
+        assert get_runner_server_type(None) is None
 
 
 # ---------------------------------------------------------------------------

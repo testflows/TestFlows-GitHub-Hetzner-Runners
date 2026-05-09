@@ -1,5 +1,5 @@
 # Server and runner name prefixes
-server_name_prefix = "github-hetzner-runner-"
+server_name_prefix = "github-runner-"
 runner_name_prefix = server_name_prefix
 standby_server_name_prefix = f"{server_name_prefix}standby-"
 standby_runner_name_prefix = standby_server_name_prefix

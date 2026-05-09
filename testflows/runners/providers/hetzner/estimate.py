@@ -21,7 +21,7 @@ from github.Repository import Repository
 from ...actions import Action
 from ...config import Config
 from ...hclient import HClient as Client
-from ...utils import get_runner_server_type_and_location
+from ...utils import get_runner_server_type
 from .config import check_prices
 
 
@@ -48,20 +48,20 @@ def get_runner_server_price_per_second(
     runner_name: str,
     ipv4_price: float,
     ipv6_price: float,
-) -> tuple[float, str, str]:
+) -> tuple[float, str]:
     """Get runner server price per second for Hetzner Cloud."""
 
     price_per_second = None
 
-    server_type, server_location = get_runner_server_type_and_location(runner_name)
+    server_type = get_runner_server_type(runner_name)
     server_price_per_hour = get_server_price(
-        server_prices, server_type, server_location, ipv4_price, ipv6_price
+        server_prices, server_type, None, ipv4_price, ipv6_price
     )
 
     if server_price_per_hour is not None:
         price_per_second = server_price_per_hour / 3600
 
-    return price_per_second, server_type, server_location
+    return price_per_second, server_type
 
 
 def login_and_get_prices(
