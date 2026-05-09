@@ -1699,8 +1699,11 @@ def scale_up(
                                     pass
 
                                 labels = get_job_labels(job)
+                                _expanded = expand_meta_label(
+                                    meta_label=meta_label, labels=labels
+                                )
                                 _type_names = get_server_types(
-                                    labels, default_server_type, label_prefix
+                                    _expanded, default_server_type, label_prefix
                                 )
                                 _primary_type = (
                                     _type_names[0] if _type_names else "unknown"
