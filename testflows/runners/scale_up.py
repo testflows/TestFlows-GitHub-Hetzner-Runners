@@ -1395,8 +1395,13 @@ def scale_up(
 
                 # Global cap — skipped for this provider if it has its own cap,
                 # since the per-provider check below is the authoritative limit.
+                # Servers from providers that have their own cap are excluded from
+                # the global count so they don't crowd out uncapped providers.
                 if max_servers is not None and resolved_provider.max_runners is None:
-                    total_servers_count = get_total_server_count(servers, futures)
+                    _capped = {p.name for p in providers if p.max_runners is not None}
+                    _gs = [s for s in servers if getattr(s, "provider_name", None) not in _capped]
+                    _gf = [f for f in (futures or []) if getattr(f, "provider_name", None) not in _capped]
+                    total_servers_count = get_total_server_count(_gs, _gf)
                     if total_servers_count >= max_servers:
                         with Action(
                             f"Maximum number of servers {max_servers} has been reached",
