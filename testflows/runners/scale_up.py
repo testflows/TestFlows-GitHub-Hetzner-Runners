@@ -1740,11 +1740,16 @@ def scale_up(
                                         ):
                                             continue
 
+                                        # If the runner's own server is gone this is a
+                                        # race condition (runner finished, scale_down
+                                        # cleaned it up, GitHub API still shows in_progress)
+                                        # or an end-of-life termination — not a theft.
+                                        # Only proceed if the runner's server still exists.
+                                        _runner_server_names = {s.name for s in servers}
+                                        if job.raw_data["runner_name"] not in _runner_server_names:
+                                            continue
+
                                         # Only replenish if standbys are configured.
-                                        # Without standbys, an in_progress job with no
-                                        # matching server is a race condition: the runner
-                                        # finished and was cleaned up by scale_down while
-                                        # GitHub still shows the job as in_progress.
                                         if not standby_runners:
                                             continue
 
@@ -1822,7 +1827,11 @@ def scale_up(
                     try:
                         with Action("Checking standby runner pool", interval=interval):
                             for standby_runner in standby_runners:
-                                labels = list(dict.fromkeys(standby_runner.labels))
+                                labels = list(
+                                    dict.fromkeys(
+                                        standby_runner.labels + (with_label or [])
+                                    )
+                                )
                                 replenish_immediately = (
                                     standby_runner.replenish_immediately
                                 )
