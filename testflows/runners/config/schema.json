@@ -1,0 +1,869 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "JSON Schema for TestFlows GitHub Hetzner Runners configuration file.",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "config": {
+            "description": "TestFlows GitHub Hetzner Runners configuration object.",
+            "type": "object",
+            "properties": {
+                "github_token": {
+                    "description": "GitHub project token, default: ${GITHUB_TOKEN}",
+                    "type": "string",
+                    "examples": [
+                        "${GITHUB_TOKEN}"
+                    ]
+                },
+                "github_repository": {
+                    "description": "GitHub repository",
+                    "type": "string",
+                    "examples": [
+                        "${GITHUB_REPOSITORY}",
+                        "testflows/testflows-github-hetzner-runner"
+                    ]
+                },
+                "providers": {
+                    "description": "Multi-provider configurations. Each configured provider is enabled.",
+                    "type": "object",
+                    "properties": {
+                        "hetzner": {
+                            "description": "Hetzner Cloud provider configuration",
+                            "type": "object",
+                            "properties": {
+                                "token": {
+                                    "description": "Hetzner Cloud API token",
+                                    "type": "string",
+                                    "examples": [
+                                        "${HETZNER_TOKEN}"
+                                    ]
+                                },
+                                "defaults": {
+                                    "description": "Default server specifications for Hetzner",
+                                    "type": "object",
+                                    "properties": {
+                                        "image": {
+                                            "description": "Default server image (architecture:type:name_or_description)",
+                                            "type": "string",
+                                            "examples": [
+                                                "x86:system:ubuntu-22.04"
+                                            ]
+                                        },
+                                        "server_type": {
+                                            "description": "Default server type",
+                                            "type": "string",
+                                            "examples": [
+                                                "cx31"
+                                            ]
+                                        },
+                                        "location": {
+                                            "description": "Default server location",
+                                            "type": "string",
+                                            "examples": [
+                                                "nbg1"
+                                            ]
+                                        },
+                                        "volume_size": {
+                                            "description": "Default volume size in GB",
+                                            "type": "integer",
+                                            "examples": [
+                                                20
+                                            ]
+                                        },
+                                        "volume_location": {
+                                            "description": "Default volume location",
+                                            "type": "string",
+                                            "examples": [
+                                                "nbg1"
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            "required": [
+                                "token"
+                            ]
+                        },
+                        "aws": {
+                            "description": "AWS provider configuration",
+                            "type": "object",
+                            "properties": {
+                                "access_key_id": {
+                                    "description": "AWS access key ID",
+                                    "type": "string",
+                                    "examples": [
+                                        "${AWS_ACCESS_KEY_ID}"
+                                    ]
+                                },
+                                "secret_access_key": {
+                                    "description": "AWS secret access key",
+                                    "type": "string",
+                                    "examples": [
+                                        "${AWS_SECRET_ACCESS_KEY}"
+                                    ]
+                                },
+                                "security_group": {
+                                    "description": "AWS security group ID",
+                                    "type": "string",
+                                    "examples": [
+                                        "sg-12345678"
+                                    ]
+                                },
+                                "subnet": {
+                                    "description": "AWS subnet ID",
+                                    "type": "string",
+                                    "examples": [
+                                        "subnet-12345678"
+                                    ]
+                                },
+                                "key_name": {
+                                    "description": "AWS EC2 key pair name",
+                                    "type": "string",
+                                    "examples": [
+                                        "tfs-runners-keypair"
+                                    ]
+                                },
+                                "defaults": {
+                                    "description": "Default server specifications for AWS",
+                                    "type": "object",
+                                    "properties": {
+                                        "image": {
+                                            "description": "Default AMI ID or SSM parameter path",
+                                            "type": "string",
+                                            "examples": [
+                                                "resolve:ssm:/aws/service/canonical/ubuntu/server/22.04/stable/current/amd64/hvm/ebs-gp3/ami-id"
+                                            ]
+                                        },
+                                        "server_type": {
+                                            "description": "Default EC2 instance type",
+                                            "type": "string",
+                                            "examples": [
+                                                "t3.medium"
+                                            ]
+                                        },
+                                        "location": {
+                                            "description": "Default availability zone",
+                                            "type": "string",
+                                            "examples": [
+                                                "us-east-1a"
+                                            ]
+                                        },
+                                        "volume_size": {
+                                            "description": "Default volume size in GB",
+                                            "type": "integer",
+                                            "examples": [
+                                                20
+                                            ]
+                                        },
+                                        "volume_location": {
+                                            "description": "Default volume availability zone",
+                                            "type": "string",
+                                            "examples": [
+                                                "us-east-1a"
+                                            ]
+                                        },
+                                        "volume_type": {
+                                            "description": "Default EBS volume type",
+                                            "type": "string",
+                                            "examples": [
+                                                "gp3"
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            "required": [
+                                "access_key_id",
+                                "secret_access_key"
+                            ]
+                        },
+                        "azure": {
+                            "description": "Azure provider configuration",
+                            "type": "object",
+                            "properties": {
+                                "subscription_id": {
+                                    "description": "Azure subscription ID",
+                                    "type": "string",
+                                    "examples": [
+                                        "${AZURE_SUBSCRIPTION_ID}"
+                                    ]
+                                },
+                                "tenant_id": {
+                                    "description": "Azure tenant ID",
+                                    "type": "string",
+                                    "examples": [
+                                        "${AZURE_TENANT_ID}"
+                                    ]
+                                },
+                                "client_id": {
+                                    "description": "Azure client ID",
+                                    "type": "string",
+                                    "examples": [
+                                        "${AZURE_CLIENT_ID}"
+                                    ]
+                                },
+                                "client_secret": {
+                                    "description": "Azure client secret",
+                                    "type": "string",
+                                    "examples": [
+                                        "${AZURE_CLIENT_SECRET}"
+                                    ]
+                                },
+                                "resource_group": {
+                                    "description": "Azure resource group name",
+                                    "type": "string",
+                                    "examples": [
+                                        "tfs-runners-rg"
+                                    ]
+                                },
+                                "defaults": {
+                                    "description": "Default server specifications for Azure",
+                                    "type": "object",
+                                    "properties": {
+                                        "image": {
+                                            "description": "Default VM image URN",
+                                            "type": "string",
+                                            "examples": [
+                                                "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:latest"
+                                            ]
+                                        },
+                                        "server_type": {
+                                            "description": "Default VM size",
+                                            "type": "string",
+                                            "examples": [
+                                                "Standard_B2s"
+                                            ]
+                                        },
+                                        "location": {
+                                            "description": "Default Azure region",
+                                            "type": "string",
+                                            "examples": [
+                                                "East US"
+                                            ]
+                                        },
+                                        "volume_size": {
+                                            "description": "Default disk size in GB",
+                                            "type": "integer",
+                                            "examples": [
+                                                20
+                                            ]
+                                        },
+                                        "volume_location": {
+                                            "description": "Default disk region",
+                                            "type": "string",
+                                            "examples": [
+                                                "East US"
+                                            ]
+                                        },
+                                        "volume_type": {
+                                            "description": "Default disk tier",
+                                            "type": "string",
+                                            "examples": [
+                                                "Premium_LRS"
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            "required": [
+                                "subscription_id",
+                                "tenant_id",
+                                "client_id",
+                                "client_secret",
+                                "resource_group"
+                            ]
+                        },
+                        "gcp": {
+                            "description": "Google Cloud Platform provider configuration",
+                            "type": "object",
+                            "properties": {
+                                "project_id": {
+                                    "description": "GCP project ID",
+                                    "type": "string",
+                                    "examples": [
+                                        "${GCP_PROJECT_ID}"
+                                    ]
+                                },
+                                "service_account_key": {
+                                    "description": "Path to GCP service account key file",
+                                    "type": "string",
+                                    "examples": [
+                                        "${GCP_SERVICE_ACCOUNT_KEY}"
+                                    ]
+                                },
+                                "network": {
+                                    "description": "GCP network name",
+                                    "type": "string",
+                                    "examples": [
+                                        "default"
+                                    ]
+                                },
+                                "subnetwork": {
+                                    "description": "GCP subnetwork name",
+                                    "type": "string",
+                                    "examples": [
+                                        "default"
+                                    ]
+                                },
+                                "defaults": {
+                                    "description": "Default server specifications for GCP",
+                                    "type": "object",
+                                    "properties": {
+                                        "image": {
+                                            "description": "Default VM image",
+                                            "type": "string",
+                                            "examples": [
+                                                "projects/ubuntu-os-cloud/global/images/family/ubuntu-2204-lts"
+                                            ]
+                                        },
+                                        "server_type": {
+                                            "description": "Default machine type",
+                                            "type": "string",
+                                            "examples": [
+                                                "e2-medium"
+                                            ]
+                                        },
+                                        "location": {
+                                            "description": "Default zone",
+                                            "type": "string",
+                                            "examples": [
+                                                "us-central1-a"
+                                            ]
+                                        },
+                                        "volume_size": {
+                                            "description": "Default disk size in GB",
+                                            "type": "integer",
+                                            "examples": [
+                                                20
+                                            ]
+                                        },
+                                        "volume_location": {
+                                            "description": "Default disk zone",
+                                            "type": "string",
+                                            "examples": [
+                                                "us-central1-a"
+                                            ]
+                                        },
+                                        "volume_type": {
+                                            "description": "Default disk type",
+                                            "type": "string",
+                                            "examples": [
+                                                "pd-ssd"
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            "required": [
+                                "project_id",
+                                "service_account_key"
+                            ]
+                        },
+                        "scaleway": {
+                            "description": "Scaleway provider configuration",
+                            "type": "object",
+                            "properties": {
+                                "access_key": {
+                                    "description": "Scaleway access key",
+                                    "type": "string",
+                                    "examples": [
+                                        "${SCALEWAY_ACCESS_KEY}"
+                                    ]
+                                },
+                                "secret_key": {
+                                    "description": "Scaleway secret key",
+                                    "type": "string",
+                                    "examples": [
+                                        "${SCALEWAY_SECRET_KEY}"
+                                    ]
+                                },
+                                "organization_id": {
+                                    "description": "Scaleway organization ID",
+                                    "type": "string",
+                                    "examples": [
+                                        "${SCALEWAY_ORGANIZATION_ID}"
+                                    ]
+                                },
+                                "defaults": {
+                                    "description": "Default server specifications for Scaleway",
+                                    "type": "object",
+                                    "properties": {
+                                        "image": {
+                                            "description": "Default instance image",
+                                            "type": "string",
+                                            "examples": [
+                                                "ubuntu_jammy"
+                                            ]
+                                        },
+                                        "server_type": {
+                                            "description": "Default instance type",
+                                            "type": "string",
+                                            "examples": [
+                                                "DEV1-M"
+                                            ]
+                                        },
+                                        "location": {
+                                            "description": "Default zone",
+                                            "type": "string",
+                                            "examples": [
+                                                "par1"
+                                            ]
+                                        },
+                                        "volume_size": {
+                                            "description": "Default volume size in GB",
+                                            "type": "integer",
+                                            "examples": [
+                                                20
+                                            ]
+                                        },
+                                        "volume_location": {
+                                            "description": "Default volume zone",
+                                            "type": "string",
+                                            "examples": [
+                                                "par1"
+                                            ]
+                                        },
+                                        "volume_type": {
+                                            "description": "Default volume type",
+                                            "type": "string",
+                                            "examples": [
+                                                "b_ssd"
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            "required": [
+                                "access_key",
+                                "secret_key",
+                                "organization_id"
+                            ]
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "hetzner_token": {
+                    "description": "Hetzner project token",
+                    "type": "string",
+                    "examples": [
+                        "${HETZNER_TOKEN}"
+                    ]
+                },
+                "ssh_key": {
+                    "description": "Primary public SSH key for which you have private key that will be used to access the severs.",
+                    "type": "string",
+                    "examples": [
+                        "~/.ssh/id_rsa.pub"
+                    ]
+                },
+                "additional_ssh_keys": {
+                    "description": "Additional public SSH keys that will be added to the servers to provide access to additional users.",
+                    "type": "array",
+                    "items": {
+                        "description": "Additional public SSH key.",
+                        "type": "string",
+                        "examples": [
+                            "ssh-rsa AAAAB3NzaC1..."
+                        ]
+                    }
+                },
+                "with_label": {
+                    "description": "Only create runners for jobs that have the specified label, default: self-hosted.",
+                    "type": "array",
+                    "items": {
+                        "description": "Label name.",
+                        "type": "string",
+                        "examples": [
+                            "self-hosted"
+                        ]
+                    }
+                },
+                "label_prefix": {
+                    "description": "Support type, image, and location job labels with the specified prefix.",
+                    "type": "string"
+                },
+                "meta_label": {
+                    "description": "Meta labels.",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "recycle": {
+                    "description": "Turn on recycling of powered off servers, either 'true' or 'false', default: true.",
+                    "type": "boolean",
+                    "examples": [
+                        true,
+                        false
+                    ]
+                },
+                "recycle_grace_period": {
+                    "description": "Minimum time in seconds a recycled (powered off) server must wait before it becomes eligible for deletion. This gives the server a chance to be reused by a new job before being removed, default: 1200 (20 minutes).",
+                    "type": "integer",
+                    "examples": [
+                        1200,
+                        900,
+                        1800
+                    ]
+                },
+                "end_of_life": {
+                    "description": "Number of minutes in 1 hour (60 minutes) period after which a recyclable server is considered to have reached its end of life and thus is deleted, default: 50.",
+                    "type": "integer",
+                    "examples": [
+                        50
+                    ]
+                },
+                "delete_random": {
+                    "description": "delete random recyclable server when maximum number of servers is reached, by default uses server prices.",
+                    "type": "boolean",
+                    "examples": [
+                        true,
+                        false
+                    ]
+                },
+                "max_runners": {
+                    "description": "Maximum number of active runners, default: 10.",
+                    "type": "integer",
+                    "examples": [
+                        10
+                    ]
+                },
+                "max_runners_for_label": {
+                    "description": "Maximum number of runners for specific label combinations.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "labels": {
+                                "description": "List of labels that must be present on the runner.",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "max": {
+                                "description": "Maximum number of runners with these labels.",
+                                "type": "integer",
+                                "minimum": 1
+                            }
+                        },
+                        "required": [
+                            "labels",
+                            "max"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "examples": [
+                        {
+                            "labels": [
+                                "windows",
+                                "gpu"
+                            ],
+                            "max": 3
+                        },
+                        {
+                            "labels": [
+                                "linux"
+                            ],
+                            "max": 5
+                        }
+                    ]
+                },
+                "max_runners_in_workflow_run": {
+                    "description": "Maximum number of runners allowed to be created for a single workflow run, default: not set.",
+                    "type": "integer",
+                    "examples": [
+                        5
+                    ]
+                },
+                "default_image": {
+                    "description": "The architecture:type:name_or_description\nDefault runner server image type and name or description, where the architecture is either: 'x86' or 'arm' and the type is either: 'system','snapshot','backup','app', default: x86:system:ubuntu-22.04.",
+                    "type": "string",
+                    "examples": [
+                        "x86:system:ubuntu-22.04"
+                    ]
+                },
+                "default_server_type": {
+                    "description": "The default runner server type name, default: cx23.",
+                    "type": "string",
+                    "examples": [
+                        "cx23"
+                    ]
+                },
+                "default_location": {
+                    "description": "The default runner server location name, by default not specified.",
+                    "type": "string",
+                    "examples": [
+                        "ash"
+                    ]
+                },
+                "default_volume_size": {
+                    "description": "The default runner server volume size in GB, default: 10.",
+                    "type": "integer",
+                    "examples": [
+                        10
+                    ]
+                },
+                "default_volume_location": {
+                    "description": "The default runner server volume location name, by default 'nbg1' (must be specified).",
+                    "type": "string",
+                    "examples": [
+                        "nbg1"
+                    ]
+                },
+                "workers": {
+                    "description": "Number of concurrent thread workers, default: 10.",
+                    "type": "integer",
+                    "examples": [
+                        10
+                    ]
+                },
+                "scripts": {
+                    "description": "Path to the folder that contains custom server scripts.",
+                    "type": "string"
+                },
+                "max_powered_off_time": {
+                    "description": "The maximum time after which a powered off server is recycled or deleted, default: 60 sec.",
+                    "type": "integer",
+                    "examples": [
+                        60
+                    ]
+                },
+                "max_unused_runner_time": {
+                    "description": "The maximum time after which an unused runner is removed and its server deleted, default: 120 sec.",
+                    "type": "integer",
+                    "examples": [
+                        120
+                    ]
+                },
+                "max_runner_registration_time": {
+                    "description": "The maximum time after which the server will be deleted if it fails to register a runner, default: 120 sec.",
+                    "type": "integer",
+                    "examples": [
+                        120
+                    ]
+                },
+                "max_server_ready_time": {
+                    "description": "The maximum time to wait for the server to be in the running state, default: 120 sec.",
+                    "type": "integer",
+                    "examples": [
+                        120
+                    ]
+                },
+                "scale_up_interval": {
+                    "description": "The scale up service interval, default: 15 sec.",
+                    "type": "integer",
+                    "examples": [
+                        15
+                    ]
+                },
+                "scale_down_interval": {
+                    "description": "The scale down service interval, default: 15 sec.",
+                    "type": "integer",
+                    "examples": [
+                        15
+                    ]
+                },
+                "metrics_port": {
+                    "description": "Port for the prometheus metrics server, default: 9090.",
+                    "type": "integer",
+                    "examples": [
+                        9090
+                    ]
+                },
+                "metrics_host": {
+                    "description": "Host address to bind the prometheus metrics server to, default: '127.0.0.1'.",
+                    "type": "string",
+                    "examples": [
+                        "127.0.0.1"
+                    ]
+                },
+                "dashboard_port": {
+                    "description": "Port for the dashboard server, default: 8050.",
+                    "type": "integer",
+                    "examples": [
+                        8050
+                    ]
+                },
+                "dashboard_host": {
+                    "description": "Host address to bind the dashboard server to, default: '127.0.0.1'.",
+                    "type": "string",
+                    "examples": [
+                        "127.0.0.1"
+                    ]
+                },
+                "debug": {
+                    "description": "Enable debugging mode, default: false",
+                    "type": "boolean",
+                    "examples": [
+                        true,
+                        false
+                    ]
+                },
+                "logger_config": {
+                    "description": "Python logging module config. See https://docs.python.org/3/library/logging.config.html#logging-config-dictschema for details.",
+                    "type": "object"
+                },
+                "logger_format": {
+                    "description": "Logger format.",
+                    "type": "object",
+                    "properties": {
+                        "delimiter": {
+                            "description": "Column delimiter in the log line.",
+                            "type": "string",
+                            "examples": [
+                                ","
+                            ]
+                        },
+                        "default": {
+                            "description": "Default format columns.",
+                            "type": "array",
+                            "items": {
+                                "description": "Default column name and width object.",
+                                "type": "object",
+                                "properties": {
+                                    "column": {
+                                        "description": "Column name.",
+                                        "type": "string"
+                                    },
+                                    "width": {
+                                        "description": "Column width.",
+                                        "type": "integer"
+                                    }
+                                }
+                            }
+                        },
+                        "columns": {
+                            "description": "Columns definitions.",
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "description": "Column object.",
+                                "properties": {
+                                    "column": {
+                                        "description": "Name of the column in the log.",
+                                        "type": "string",
+                                        "examples": [
+                                            "date",
+                                            "time",
+                                            "level",
+                                            "interval",
+                                            "run_id",
+                                            "job_id",
+                                            "server_name",
+                                            "funcName",
+                                            "threadName",
+                                            "message"
+                                        ]
+                                    },
+                                    "index": {
+                                        "description": "Index of the column in the log line after splitting it by comma.",
+                                        "type": "integer"
+                                    },
+                                    "width": {
+                                        "description": "Allocated width of the column.",
+                                        "type": "integer"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "cloud": {
+                    "description": "Cloud service configuration object.",
+                    "type": "object",
+                    "properties": {
+                        "provider": {
+                            "description": "Cloud provider to use for service deployment, default: hetzner",
+                            "type": "string",
+                            "enum": [
+                                "hetzner",
+                                "aws",
+                                "azure",
+                                "gcp",
+                                "scaleway"
+                            ],
+                            "examples": [
+                                "hetzner"
+                            ]
+                        },
+                        "server_name": {
+                            "description": "The deployment server name, default: tfs-runners-service.",
+                            "type": "string",
+                            "examples": [
+                                "tfs-runners-service"
+                            ]
+                        },
+                        "deploy": {
+                            "description": "The cloud deploy command configuration.",
+                            "type": "object",
+                            "properties": {
+                                "server_type": {
+                                    "description": "The server type of the cloud service server, default: cx23.",
+                                    "type": "string",
+                                    "examples": [
+                                        "cx23"
+                                    ]
+                                },
+                                "image": {
+                                    "description": "The architecture:type:name_or_description\nthat specifies the image that will be used for the cloud service server, where the architecture is either: 'x86' or 'arm' and the type is either: 'system','snapshot','backup','app', default: x86:system:ubuntu-22.04.",
+                                    "type": "string",
+                                    "examples": [
+                                        "x86:system:ubuntu-22.04"
+                                    ]
+                                },
+                                "location": {
+                                    "description": "The name of the cloud service server location, default: not set.",
+                                    "type": "string",
+                                    "examples": [
+                                        "ash"
+                                    ]
+                                },
+                                "setup_script": {
+                                    "description": "Path to custom cloud service server's setup script.",
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "standby_runners": {
+                    "description": "Standby server pool configuration.",
+                    "type": "array",
+                    "items": {
+                        "description": "Standby server group definition.",
+                        "type": "object",
+                        "properties": {
+                            "labels": {
+                                "description": "Standby runner labels.",
+                                "type": "array",
+                                "items": {
+                                    "description": "Label name",
+                                    "type": "string"
+                                }
+                            },
+                            "count": {
+                                "description": "Number of runners in this group, default: 1.",
+                                "type": "integer",
+                                "examples": [
+                                    1
+                                ]
+                            },
+                            "replenish_immediately": {
+                                "description": "Enable replenishing standby runner pool immediately, default: true.",
+                                "type": "boolean",
+                                "examples": [
+                                    true,
+                                    false
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

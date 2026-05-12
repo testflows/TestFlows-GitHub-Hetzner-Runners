@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2023 Katteli Inc.
+# Copyright 2023-2025 Katteli Inc.
 # TestFlows.com Open-Source Software Testing Framework (http://testflows.com)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,9 +20,9 @@ with open("README.rst", "r", encoding="utf-8") as fd:
 
 
 setup(
-    name="testflows.github.hetzner.runners",
+    name="testflows.runners",
     version="__VERSION__",
-    description="Autoscaling GitHub Actions Runners Using Hetzner Cloud ",
+    description="Autoscaling GitHub Actions Runners",
     author="Vitaliy Zakaznikov",
     author_email="vzakaznikov@testflows.com",
     long_description=long_description,
@@ -31,27 +31,34 @@ setup(
     classifiers=[
         "Development Status :: 4 - Beta",
         "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: Apache Software License",
         "Operating System :: POSIX :: Linux",
     ],
     python_requires=">=3.8",
     license="Apache-2.0",
     packages=[
-        "testflows.github.hetzner.runners",
-        "testflows.github.hetzner.runners.bin",
-        "testflows.github.hetzner.runners.config",
-        "testflows.github.hetzner.runners.scripts",
-        "testflows.github.hetzner.runners.scripts.deploy",
-        "testflows.github.hetzner.runners.dashboard",
-        "testflows.github.hetzner.runners.dashboard.panels",
-        "testflows.github.hetzner.runners.dashboard.metrics",
+        "testflows.runners",
+        "testflows.runners.bin",
+        "testflows.runners.config",
+        "testflows.runners.scripts",
+        "testflows.runners.scripts.deploy",
+        "testflows.runners.dashboard",
+        "testflows.runners.dashboard.panels",
+        "testflows.runners.dashboard.metrics",
+        "testflows.runners.providers",
+        "testflows.runners.providers.hetzner",
+        "testflows.runners.providers.aws",
+        "testflows.runners.providers.azure",
+        "testflows.runners.providers.gcp",
+        "testflows.runners.providers.scaleway",
     ],
     package_data={
-        "testflows.github.hetzner.runners.config": ["*.json"],
-        "testflows.github.hetzner.runners.scripts": ["*.sh"],
-        "testflows.github.hetzner.runners.scripts.deploy": ["*.sh"],
-        "testflows.github.hetzner.runners.bin": ["github-hetzner-runners"],
+        "testflows.runners.config": ["*.json"],
+        "testflows.runners.scripts": ["*.sh"],
+        "testflows.runners.scripts.deploy": ["*.sh"],
+        "testflows.runners.bin": ["tfs-runners"],
     },
-    scripts=["testflows/github/hetzner/runners/bin/github-hetzner-runners"],
+    scripts=["testflows/runners/bin/tfs-runners"],
     zip_safe=False,
     install_requires=[
         "PyGithub==2.8.1",
@@ -62,5 +69,8 @@ setup(
         "streamlit==1.49.1",
         "psutil>=7.2.1",
     ],
-    extras_require={"dev": []},
+    extras_require={
+        "aws": ["boto3>=1.34"],
+        "dev": [],
+    },
 )

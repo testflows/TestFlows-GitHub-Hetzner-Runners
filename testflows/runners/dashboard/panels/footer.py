@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# Copyright 2023 Katteli Inc.
+# Copyright 2025 Katteli Inc.
 # TestFlows.com Open-Source Software Testing Framework (http://testflows.com)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +12,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import subprocess
+import streamlit as st
+from datetime import datetime
 
-subprocess.run("pip3 uninstall -y testflows.runners", shell=True)
-subprocess.run("pip3 install ./dist/*.tar.gz", shell=True)
+from testflows.runners import __version__
+from .. import renderers
+
+
+def render():
+    """Render the footer section with copyright and version information."""
+
+    with renderers.errors("rendering footer"):
+        with st.container(border=False, horizontal_alignment="center"):
+            st.caption(
+                f"© 2023-{datetime.now().year} Katteli Inc. All rights reserved.",
+                width="content",
+            )
+            st.caption(f"TestFlows Runners for GitHub v{__version__}", width="content")
