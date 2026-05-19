@@ -57,7 +57,7 @@ to avoid any cleanup. Server instances are not shared between jobs.
 
 :✋ Note:
    Currently, Hetzner Cloud server instances are billed on an hourly basis. So a job that takes 1 minute will be billed
-   the same way as for a job that takes 59 minutes. Therefore, unless server reuse is enabled using `server recycling <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Recycling-Powered%E2%80%90Off-Servers>`_, 
+   the same way as for a job that takes 59 minutes. Therefore, unless server reuse is enabled using `server recycling <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Recycling-Powered-Off-Servers>`_, 
    the minimal cost for any job is the cost of the server for one hour plus the cost of one public IPv4 address. 
    If server recycling is used, the amortized cost could be close to per-minute billing depending on server utilization.
 
@@ -153,7 +153,7 @@ The following projects are using **github-hetzner-runners** to enable self-hoste
 * `Basic Configuration <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Basic-Configuration>`_
 * `Specifying the Maximum Number of Runners <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-the-Maximum-Number-of-Runners>`_
 * `Specifying the Maximum Number of Runners Used in Workflow a Run <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-the-Maximum-Number-of-Runners-Used-in-Workflow-a-Run>`_
-* `Recycling Powered‐Off Servers <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Recycling-Powered‐Off-Servers>`_
+* `Recycling Powered‐Off Servers <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Recycling-Powered-Off-Servers>`_
 * `Recycling Powered‐Off Servers Without Rebuild <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Recycling-Powered-Off-Servers-Without-Rebuild>`_
 * `Skipping Jobs <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Skipping-Jobs>`_
 * `Using Custom Label Prefix <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Using-Custom-Label-Prefix>`_
