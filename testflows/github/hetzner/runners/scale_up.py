@@ -25,7 +25,7 @@ from .request import request
 from .args import image_type
 from .logger import logger
 from . import metrics
-from .config import Config, check_image, check_startup_script, check_setup_script
+from .config import Config, check_image, check_startup_script, check_setup_script, check_recycle_script
 from .config import standby_runner as StandbyRunner
 from .hclient import HClient as Client
 from .utils import get_runner_server_type_and_location
@@ -184,7 +184,7 @@ def server_setup(
             ssh(
                 server,
                 (
-                    f"'sudo mkdir /mnt/{volume_name} "
+                    f"'sudo mkdir -p /mnt/{volume_name} "
                     f"&& sudo umount {volume.linux_device} 2>/dev/null || true"
                     f"&& sudo e2fsck -f -y {volume.linux_device} || true "
                     f"&& sudo e2fsck -f -y {volume.linux_device} "
@@ -228,7 +228,7 @@ def server_setup(
                         stacklevel=5,
                     )
 
-    with Action("Executing setup.sh script", server_name=server.name):
+    with Action(f"Executing {os.path.basename(setup_script)} script", server_name=server.name):
         ssh(
             server,
             f'CACHE_DIR="/mnt/{cache_volume_name}" bash -s  < {setup_script}',
@@ -244,7 +244,7 @@ def server_setup(
                 stacklevel=5,
             )
 
-    with Action("Executing startup.sh script", server_name=server.name):
+    with Action(f"Executing {os.path.basename(startup_script)} script", server_name=server.name):
         ssh(
             server,
             f"'sudo -u ubuntu "
@@ -433,6 +433,32 @@ def get_setup_script(
     script = check_setup_script(os.path.join(scripts, script))
 
     return script
+
+
+def get_recycle_script(
+    scripts: str, labels: list[str], default: str = "recycle.sh", label_prefix: str = ""
+):
+    """Get recycle script.
+
+    Required when recycle_without_rebuild is enabled. Both label overrides
+    (recycle-<name>) and the default recycle.sh must point to an existing script.
+    """
+    script = None
+
+    if label_prefix and not label_prefix.endswith("-"):
+        label_prefix += "-"
+    label_prefix += "recycle-"
+    label_prefix = label_prefix.lower()
+
+    for label in labels:
+        label = label.lower()
+        if label.startswith(label_prefix):
+            script = label.split(label_prefix, 1)[-1] + ".sh"
+
+    if script is None:
+        script = default
+
+    return check_recycle_script(os.path.join(scripts, script))
 
 
 def get_startup_script(
@@ -871,12 +897,17 @@ def recycle_server(
     github_repository: str,
     ssh_key: SSHKey,
     timeout=60,
+    without_rebuild: bool = False,
+    recycle_script: str = None,
 ):
     """Repurpose a recycled server as an active runner.
 
     When recycling a server, we merge existing labels with the new runner labels
     to preserve any critical labels. The recycle timestamp label is removed since
     the server is now active again.
+
+    If without_rebuild is True, the server image is not rebuilt. Instead the server
+    is powered on and recycle_script is run in place of setup_script before startup.
     """
     client = Client(token=hetzner_token, poll_interval=1)
 
@@ -906,18 +937,28 @@ def recycle_server(
         server.name = name
         server.labels = merged_labels
 
-    with Action(f"Rebuilding recycled server {server.name} image", server_name=name):
-        try:
-            server.rebuild(image=server_image).action.wait_until_finished(
-                max_retries=timeout
-            )
-        except APIException as exc:
-            # Re-raise with context since Hetzner's server_error has message=None
-            raise APIException(
-                code=exc.code,
-                message=f"error while rebuilding recycled server {server.name}: {exc.message}",
-                details=getattr(exc, "details", None),
-            ) from exc
+    if without_rebuild:
+        with Action(
+            f"Powering on recycled server {server.name} without rebuild",
+            server_name=name,
+        ):
+            server.power_on().wait_until_finished(max_retries=timeout)
+        setup_script = recycle_script
+    else:
+        with Action(
+            f"Rebuilding recycled server {server.name} image", server_name=name
+        ):
+            try:
+                server.rebuild(image=server_image).action.wait_until_finished(
+                    max_retries=timeout
+                )
+            except APIException as exc:
+                # Re-raise with context since Hetzner's server_error has message=None
+                raise APIException(
+                    code=exc.code,
+                    message=f"error while rebuilding recycled server {server.name}: {exc.message}",
+                    details=getattr(exc, "details", None),
+                ) from exc
 
     setup_worker_pool.submit(
         server_setup,
@@ -1138,6 +1179,7 @@ def scale_up(
     debug: bool = config.debug
     standby_runners: list[StandbyRunner] = config.standby_runners
     recycle: bool = config.recycle
+    recycle_without_rebuild: bool = config.recycle_without_rebuild
     with_label: list[str] = config.with_label
     label_prefix: str = config.label_prefix
     meta_label: dict[str, set[str]] = config.meta_label
@@ -1237,6 +1279,11 @@ def scale_up(
                                 server_net_config=server_net_config,
                                 ssh_key=ssh_keys[0],
                             ):
+                                recycle_script = get_recycle_script(
+                                    scripts=scripts,
+                                    labels=labels,
+                                    label_prefix=label_prefix,
+                                ) if recycle_without_rebuild else None
                                 future = worker_pool.submit(
                                     recycle_server,
                                     server_name=server.name,
@@ -1252,6 +1299,8 @@ def scale_up(
                                     github_repository=github_repository,
                                     ssh_key=ssh_keys[0],
                                     timeout=max_server_ready_time,
+                                    without_rebuild=recycle_without_rebuild,
+                                    recycle_script=recycle_script,
                                 )
                                 set_future_attributes(
                                     future,

@@ -20,6 +20,7 @@ from .config import (
     check_server_type,
     check_ssh_key,
     check_setup_script,
+    check_recycle_script,
     check_startup_script,
 )
 from .config import standby_runner

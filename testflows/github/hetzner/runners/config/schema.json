@@ -65,6 +65,11 @@
                     "type": "boolean",
                     "examples": [true, false]
                 },
+                "recycle_without_rebuild": {
+                    "description": "Recycle powered off servers by powering them on and running the recycle script instead of rebuilding the image, either 'true' or 'false', default: false.",
+                    "type": "boolean",
+                    "examples": [true, false]
+                },
                 "recycle_grace_period": {
                     "description": "Minimum time in seconds a recycled (powered off) server must wait before it becomes eligible for deletion. This gives the server a chance to be reused by a new job before being removed, default: 1200 (20 minutes).",
                     "type": "integer",

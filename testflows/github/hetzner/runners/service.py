@@ -43,6 +43,9 @@ def command_options(
     command += f" --hetzner-token {hetzner_token}"
     command += f" --config {config.config_file}" if config.config_file else ""
     command += f" --recycle " + ("on" if config.recycle else "off")
+    command += f" --recycle-without-rebuild " + (
+        "on" if config.recycle_without_rebuild else "off"
+    )
     command += f" --end-of-life {config.end_of_life}" if config.end_of_life else ""
     for l in config.with_label:
         command += f' --with-label "{l}"' if l else ""

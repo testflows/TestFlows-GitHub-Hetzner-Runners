@@ -62,6 +62,10 @@ class SetupScriptError(Exception):
     pass
 
 
+class RecycleScriptError(Exception):
+    pass
+
+
 class StartupScriptError(Exception):
     pass
 
@@ -122,6 +126,7 @@ class Config:
     label_prefix: str = ""
     meta_label: dict[str, set[str]] = None
     recycle: bool = True
+    recycle_without_rebuild: bool = False
     recycle_grace_period: int = 1200
     end_of_life: int = 50
     delete_random: bool = False
@@ -324,6 +329,11 @@ def parse_config(filename: str):
 
     if doc.get("recycle") is not None:
         assert isinstance(doc["recycle"], bool), "config.recycle: is not a boolean"
+
+    if doc.get("recycle_without_rebuild") is not None:
+        assert isinstance(
+            doc["recycle_without_rebuild"], bool
+        ), "config.recycle_without_rebuild: is not a boolean"
 
     if doc.get("recycle_grace_period") is not None:
         v = doc["recycle_grace_period"]
@@ -798,6 +808,13 @@ def check_setup_script(script: str):
     """Check if setup script is valid."""
     if not os.path.exists(script):
         raise SetupScriptError(f"invalid setup script path '{script}'")
+    return script
+
+
+def check_recycle_script(script: str):
+    """Check if recycle script is valid."""
+    if not os.path.exists(script):
+        raise RecycleScriptError(f"invalid recycle script path '{script}'")
     return script
 
 
