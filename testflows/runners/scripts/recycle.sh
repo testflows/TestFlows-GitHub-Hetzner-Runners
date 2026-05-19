@@ -21,3 +21,44 @@ echo "Executing recycle clean up"
 #
 #   # Remove any credentials written to the home directory
 #   rm -f /home/ubuntu/.netrc /home/ubuntu/.docker/config.json
+
+# Fully remove any previous runner registration and local runner state.
+RUNNER_HOME="/home/ubuntu"
+if [ -d "${RUNNER_HOME}" ]; then
+  # Stop any leftover listener process/session from the previous run.
+  pkill -f '[r]un.sh' 2>/dev/null || true
+  screen -wipe >/dev/null 2>&1 || true
+
+  if [ -x "${RUNNER_HOME}/config.sh" ]; then
+    (
+      cd "${RUNNER_HOME}" || exit 0
+      ./config.sh remove --unattended || echo "warn: failed to deregister runner" >&2
+    )
+  fi
+
+  # Remove local runner metadata so next startup always re-registers cleanly.
+  rm -f \
+    "${RUNNER_HOME}/.runner" \
+    "${RUNNER_HOME}/.credentials" \
+    "${RUNNER_HOME}/.credentials_rsaparams" \
+    "${RUNNER_HOME}/.env" || echo "warn: failed to remove local runner metadata" >&2
+fi
+
+# Remove all contents of runner work dir, including hidden files/dirs, but keep root dir.
+if [ -d /home/ubuntu/_work ]; then
+  find /home/ubuntu/_work -mindepth 1 -delete || echo "warn: failed to clean _work directory" >&2
+fi
+
+# Prune all unused Docker containers
+docker container prune -f || echo "warn: docker container prune failed" >&2
+
+# Prune all unused Docker volumes
+docker volume prune -f || echo "warn: docker volume prune failed" >&2
+
+# Prune all dangling Docker images
+# Intentionally keeping base images for reuse
+docker image prune -f || echo "warn: docker image prune failed" >&2
+
+# Remove any credentials written to the home directory
+rm -f /home/ubuntu/.netrc /home/ubuntu/.docker/config.json || echo "warn: failed to remove credential files" >&2
+

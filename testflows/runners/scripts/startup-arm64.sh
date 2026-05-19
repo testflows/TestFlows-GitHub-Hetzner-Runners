@@ -53,7 +53,10 @@ fi
 tar xzf "./${ACTIONS_RUNNER_FILE}"
 
 echo "Configure runner"
-./config.sh --unattended --replace --url https://github.com/${GITHUB_REPOSITORY} --token ${GITHUB_RUNNER_TOKEN} --name "${GITHUB_RUNNER_NAME:-$(hostname)-${SERVER_TYPE_NAME}-${SERVER_LOCATION_NAME}}" --runnergroup "${GITHUB_RUNNER_GROUP}" --labels "${GITHUB_RUNNER_LABELS}" --work _work --ephemeral
+# Use SERVER_NAME when recycling without rebuild; keep GITHUB_RUNNER_NAME for compatibility.
+RUNNER_NAME_BASE="${SERVER_NAME:-${GITHUB_RUNNER_NAME:-$(hostname)}}"
+RUNNER_NAME="${RUNNER_NAME_BASE}-${SERVER_TYPE_NAME}-${SERVER_LOCATION_NAME}"
+./config.sh --unattended --replace --url https://github.com/${GITHUB_REPOSITORY} --token ${GITHUB_RUNNER_TOKEN} --name "${RUNNER_NAME}" --runnergroup "${GITHUB_RUNNER_GROUP}" --labels "${GITHUB_RUNNER_LABELS}" --work _work --ephemeral
 
 echo "Start runner"
 bash -c "screen -d -m bash -c './run.sh; sudo poweroff'"
