@@ -253,6 +253,7 @@ def server_setup(
             f'GITHUB_RUNNER_TOKEN="{GITHUB_RUNNER_TOKEN}" '
             f"GITHUB_RUNNER_GROUP=Default "
             f'GITHUB_RUNNER_LABELS="{runner_labels}" '
+            f'SERVER_NAME="{server.name}" '
             f'SERVER_ID="{server.id}" '
             f'SERVER_TYPE_NAME="{server.server_type.name}" '
             f'SERVER_LOCATION_NAME="{server.datacenter.location.name}" '
