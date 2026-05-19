@@ -124,7 +124,7 @@ The following projects are using **tfs-runners** to enable self-hosted, on-deman
 
 * ✅ simpler alternative to what GitHub lists in `Recommended Autoscaling Solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_
 * ✅ multi-cloud: cost-efficient on-demand runners on `Hetzner Cloud <https://www.hetzner.com/cloud>`_ and `AWS EC2 <https://aws.amazon.com/ec2/>`_
-* ✅ supports server recycling to minimize costs (Hetzner Cloud only)
+* ✅ supports server recycling to minimize costs (Hetzner Cloud only), with optional no-rebuild mode for trusted single-tenant setups
 * ✅ simple configuration, no Webhooks, no need for additional services, and no need to setup any GitHub application
 * ✅ supports specifying custom runner server types, images, and locations using job labels with fallback options for server types and locations
 * ✅ self-contained program that you can use to deploy, redeploy, and manage the service on a cloud instance
@@ -154,6 +154,7 @@ The following projects are using **tfs-runners** to enable self-hosted, on-deman
 * `Specifying the Maximum Number of Runners <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-the-Maximum-Number-of-Runners>`_
 * `Specifying the Maximum Number of Runners Used in Workflow a Run <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-the-Maximum-Number-of-Runners-Used-in-Workflow-a-Run>`_
 * `Recycling Powered‐Off Servers <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Recycling-Powered‐Off-Servers>`_
+* `Recycling Powered‐Off Servers Without Rebuild <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Recycling-Powered-Off-Servers-Without-Rebuild>`_
 * `Skipping Jobs <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Skipping-Jobs>`_
 * `Using Custom Label Prefix <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Using-Custom-Label-Prefix>`_
 * `Jobs That Require the Docker Engine <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Jobs-That-Require-the-Docker-Engine>`_
@@ -162,6 +163,7 @@ The following projects are using **tfs-runners** to enable self-hosted, on-deman
 * `Specifying The Runner Network <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Network>`_
 * `Specifying The Runner Image <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Image>`_
 * `Specifying The Custom Runner Server Setup Script <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Custom-Runner-Server-Setup-Script>`_
+* `Specifying The Custom Runner Server Recycle Script <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Custom-Runner-Server-Recycle-Script>`_
 * `Specifying The Custom Runner Server Startup Script <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Custom-Runner-Server-Startup-Script>`_
 * `Disabling Setup or Startup Scripts <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Disabling-Setup-Or-Startup-Scripts>`_
 * `Specifying Standby Runners <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-Standby-Runners>`_
