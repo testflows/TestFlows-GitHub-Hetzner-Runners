@@ -15,6 +15,7 @@
 from .config import Config, ConfigError
 from .config import (
     check_setup_script,
+    check_recycle_script,
     check_startup_script,
 )
 from ..providers.hetzner.config import (
@@ -23,6 +24,7 @@ from ..providers.hetzner.config import (
     check_prices,
     check_server_type,
     check_ssh_key,
+    check_recycle_script,
 )
 from .config import standby_runner
 from .config import read, write
@@ -40,6 +42,7 @@ __all__ = [
     "check_server_type",
     "check_ssh_key",
     "check_setup_script",
+    "check_recycle_script",
     "check_startup_script",
     "standby_runner",
     "read",

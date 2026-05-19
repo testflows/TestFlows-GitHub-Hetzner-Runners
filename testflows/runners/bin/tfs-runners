@@ -199,6 +199,13 @@ def argparser():
     )
 
     parser.add_argument(
+        "--recycle-without-rebuild",
+        metavar="on|off",
+        type=args.switch_type,
+        help="recycle powered off servers by powering them on and running the recycle script instead of rebuilding the image, either 'on' or 'off', default: off",
+    )
+
+    parser.add_argument(
         "--recycle-grace-period",
         metavar="sec",
         type=args.count_type,

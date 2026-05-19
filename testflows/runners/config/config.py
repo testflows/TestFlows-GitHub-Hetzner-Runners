@@ -62,6 +62,7 @@ ConfigError = errors.ConfigError
 LocationError = errors.LocationError
 ImageError = errors.ImageError
 SetupScriptError = errors.SetupScriptError
+RecycleScriptError = errors.RecycleScriptError
 StartupScriptError = errors.StartupScriptError
 ServerTypeError = errors.ServerTypeError
 
@@ -169,6 +170,7 @@ class Config:
     label_prefix: str = ""
     meta_label: dict[str, set[str]] = None
     recycle: bool = True
+    recycle_without_rebuild: bool = False
     recycle_grace_period: int = 1200
     end_of_life: int = 50
     delete_random: bool = False
@@ -345,4 +347,11 @@ def check_startup_script(script: str):
     """Check if startup script is valid."""
     if not os.path.exists(script):
         raise errors.StartupScriptError(f"invalid startup script path '{script}'")
+    return script
+
+
+def check_recycle_script(script: str):
+    """Check if recycle script is valid."""
+    if not os.path.exists(script):
+        raise errors.RecycleScriptError(f"invalid recycle script path '{script}'")
     return script

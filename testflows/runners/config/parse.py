@@ -105,6 +105,11 @@ def parse_config(filename: str):
     if doc.get("recycle") is not None:
         assert isinstance(doc["recycle"], bool), "config.recycle: is not a boolean"
 
+    if doc.get("recycle_without_rebuild") is not None:
+        assert isinstance(
+            doc["recycle_without_rebuild"], bool
+        ), "config.recycle_without_rebuild: is not a boolean"
+
     if doc.get("recycle_grace_period") is not None:
         v = doc["recycle_grace_period"]
         assert isinstance(v, int), "config.recycle_grace_period: is not integer"

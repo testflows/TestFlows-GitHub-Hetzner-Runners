@@ -25,6 +25,10 @@ class SetupScriptError(Exception):
     pass
 
 
+class RecycleScriptError(Exception):
+    pass
+
+
 class StartupScriptError(Exception):
     pass
 

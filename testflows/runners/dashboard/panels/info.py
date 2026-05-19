@@ -88,6 +88,11 @@ def get_config_data(config: Config):
             "link": None,
         },
         {
+            "label": "Recycle Without Rebuild (--recycle-without-rebuild)",
+            "value": "yes" if config.recycle_without_rebuild else "no",
+            "link": None,
+        },
+        {
             "label": "Recycle Grace Period (seconds) (--recycle-grace-period)",
             "value": config.recycle_grace_period,
             "link": None,
