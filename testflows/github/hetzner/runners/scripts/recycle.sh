@@ -32,7 +32,7 @@ if [ -d "${RUNNER_HOME}" ]; then
   if [ -x "${RUNNER_HOME}/config.sh" ]; then
     (
       cd "${RUNNER_HOME}" || exit 0
-      ./config.sh remove --unattended || echo "warn: failed to deregister runner" >&2
+      sudo -H -u ubuntu ./config.sh remove --local || echo "warn: failed to deregister runner locally" >&2
     )
   fi
 
@@ -44,9 +44,13 @@ if [ -d "${RUNNER_HOME}" ]; then
     "${RUNNER_HOME}/.env" || echo "warn: failed to remove local runner metadata" >&2
 fi
 
+# Stop and remove any leftover containers first so bind mounts are released.
+docker ps -q | xargs -r sudo docker stop || echo "warn: docker stop failed" >&2
+docker ps -aq | xargs -r sudo docker rm -f || echo "warn: docker rm failed" >&2
+
 # Remove all contents of runner work dir, including hidden files/dirs, but keep root dir.
 if [ -d /home/ubuntu/_work ]; then
-  find /home/ubuntu/_work -mindepth 1 -delete || echo "warn: failed to clean _work directory" >&2
+  sudo rm -rf /home/ubuntu/_work/* /home/ubuntu/_work/.[!.]* /home/ubuntu/_work/..?* || echo "warn: failed to clean _work directory" >&2
 fi
 
 # Prune all unused Docker containers
@@ -61,4 +65,3 @@ docker image prune -f || echo "warn: docker image prune failed" >&2
 
 # Remove any credentials written to the home directory
 rm -f /home/ubuntu/.netrc /home/ubuntu/.docker/config.json || echo "warn: failed to remove credential files" >&2
-
