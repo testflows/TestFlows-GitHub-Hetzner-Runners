@@ -73,8 +73,24 @@ class ProviderConformance:
         assert set(result) == set(sample_labels)
 
     def test_build_server_labels_returns_dict(self, provider, sample_labels):
-        result = provider.build_server_labels("test-runner-name", sample_labels)
+        result = provider.build_server_labels(sample_labels)
         assert isinstance(result, dict)
+
+    def test_build_server_labels_contains_active_marker(self, provider, sample_labels, active_marker_key):
+        result = provider.build_server_labels(sample_labels)
+        assert active_marker_key in result, (
+            f"active marker key {active_marker_key!r} missing from build_server_labels output"
+        )
+        assert result[active_marker_key] == "active"
+
+    def test_build_server_labels_values_roundtrip(self, provider, sample_labels):
+        """Every label passed in must appear as a value in the returned dict."""
+        result = provider.build_server_labels(sample_labels)
+        stored_values = set(result.values())
+        for lbl in sample_labels:
+            assert lbl in stored_values, (
+                f"label {lbl!r} not found in build_server_labels output values: {stored_values}"
+            )
 
     def test_validate_labels_accepts_valid(self, provider, valid_label_dict):
         """validate_labels takes a provider-format label dict, not a plain list."""
@@ -151,6 +167,10 @@ class TestAWSConformance(ProviderConformance):
         return d
 
     @pytest.fixture
+    def active_marker_key(self):
+        return "github-runner"
+
+    @pytest.fixture
     def sample_server_type(self):
         st = MagicMock(spec=ProviderServerType)
         st.name = "t3.medium"
@@ -205,6 +225,10 @@ class TestHetznerConformance(ProviderConformance):
         for i, lbl in enumerate(sample_labels):
             d[f"github-hetzner-runner-label-{i}"] = lbl
         return d
+
+    @pytest.fixture
+    def active_marker_key(self):
+        return "github-hetzner-runner"
 
     @pytest.fixture
     def sample_server_type(self):

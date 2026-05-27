@@ -128,74 +128,11 @@ class aws_provider:
 
 
 @dataclass
-class azure_provider:
-    """Azure provider configuration."""
-
-    subscription_id: str = None
-    tenant_id: str = None
-    client_id: str = None
-    client_secret: str = None
-    resource_group: str = None
-    defaults: provider_defaults = dataclasses.field(
-        default_factory=lambda: provider_defaults(
-            image="Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:latest",
-            server_type="Standard_B2s",
-            location="East US",
-            volume_size=20,
-            volume_location="East US",
-            volume_type="Premium_LRS",
-        )
-    )
-
-
-@dataclass
-class gcp_provider:
-    """GCP provider configuration."""
-
-    project_id: str = None
-    service_account_key: str = None
-    network: str = "default"
-    subnetwork: str = "default"
-    defaults: provider_defaults = dataclasses.field(
-        default_factory=lambda: provider_defaults(
-            image="projects/ubuntu-os-cloud/global/images/family/ubuntu-2204-lts",
-            server_type="e2-medium",
-            location="us-central1-a",
-            volume_size=20,
-            volume_location="us-central1-a",
-            volume_type="pd-ssd",
-        )
-    )
-
-
-@dataclass
-class scaleway_provider:
-    """Scaleway provider configuration."""
-
-    access_key: str = None
-    secret_key: str = None
-    organization_id: str = None
-    defaults: provider_defaults = dataclasses.field(
-        default_factory=lambda: provider_defaults(
-            image="ubuntu_jammy",
-            server_type="DEV1-M",
-            location="par1",
-            volume_size=20,
-            volume_location="par1",
-            volume_type="b_ssd",
-        )
-    )
-
-
-@dataclass
 class provider_list:
     """Multi-provider configuration."""
 
     hetzner: hetzner_provider = None
     aws: aws_provider = None
-    azure: azure_provider = None
-    gcp: gcp_provider = None
-    scaleway: scaleway_provider = None
 
 
 @dataclass
