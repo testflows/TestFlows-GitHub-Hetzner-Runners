@@ -75,7 +75,7 @@ def get_server_price(
     server_location may be an AZ (e.g. 'us-east-1a') or a region ('us-east-1');
     prices are always stored by region so we try both.
     """
-    from .provider import _az_to_region
+    from .utils import _az_to_region
 
     price = None
     try:

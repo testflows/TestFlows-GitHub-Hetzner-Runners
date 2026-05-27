@@ -117,10 +117,10 @@ def add_arguments(parser):
     )
 
     aws_group.add_argument(
-        "--aws-subnet",
+        "--aws-subnets",
         metavar="subnet-id",
-        type=str,
-        help="AWS subnet ID, default: project config",
+        nargs="+",
+        help="One or more AWS subnet IDs, default: project config",
     )
 
     aws_group.add_argument(

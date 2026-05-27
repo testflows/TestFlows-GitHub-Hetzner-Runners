@@ -60,7 +60,8 @@ def provider_factory(config: Config) -> list[CloudProvider]:
 
     aws_cfg = config.providers.aws
     if aws_cfg and aws_cfg.access_key_id and aws_cfg.secret_access_key:
-        from ..providers.aws.provider import AWSCloudProvider, _az_to_region
+        from ..providers.aws.provider import AWSCloudProvider
+        from ..providers.aws.utils import _az_to_region
 
         location = aws_cfg.defaults.location or "us-east-1a"
         region = _az_to_region(location)

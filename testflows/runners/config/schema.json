@@ -109,11 +109,12 @@
                                         "sg-12345678"
                                     ]
                                 },
-                                "subnet": {
-                                    "description": "AWS subnet ID",
-                                    "type": "string",
+                                "subnets": {
+                                    "description": "AWS subnet IDs (one per AZ for multi-AZ fallback)",
+                                    "type": "array",
+                                    "items": {"type": "string"},
                                     "examples": [
-                                        "subnet-12345678"
+                                        ["subnet-11111111", "subnet-22222222"]
                                     ]
                                 },
                                 "key_name": {

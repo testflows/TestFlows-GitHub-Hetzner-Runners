@@ -8,9 +8,8 @@ from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch, call
 
 from testflows.runners.cloud_provider import CloudProvider, ProviderServer, ProviderServerType
-from testflows.runners.providers.aws.provider import (
-    AWSCloudProvider,
-    AWSKeyPair,
+from testflows.runners.providers.aws.provider import AWSCloudProvider, AWSKeyPair
+from testflows.runners.providers.aws.utils import (
     _az_to_region,
     _tags_to_dict,
     _instance_to_provider,

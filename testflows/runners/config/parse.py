@@ -552,6 +552,12 @@ def parse_config(filename: str):
                 )
             _aws = aws_provider(**_aws_kwargs)
 
+        _unimplemented = set(_p.keys()) - {"hetzner", "aws"}
+        assert not _unimplemented, (
+            f"config.providers: {', '.join(sorted(_unimplemented))} "
+            f"{'is' if len(_unimplemented) == 1 else 'are'} not yet implemented"
+        )
+
         doc["providers"] = provider_list(hetzner=_hetzner, aws=_aws)
 
     try:

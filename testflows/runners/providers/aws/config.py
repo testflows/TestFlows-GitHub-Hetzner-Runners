@@ -16,7 +16,7 @@ def get_cli_fields():
         "access_key_id",
         "secret_access_key",
         "security_group",
-        "subnet",
+        "subnets",
         "key_name",
         "default_image",
         "default_server_type",
@@ -46,8 +46,8 @@ def update_from_args(provider_config, args):
         provider_config.secret_access_key = args.aws_secret_access_key
     if getattr(args, "aws_security_group", None) is not None:
         provider_config.security_group = args.aws_security_group
-    if getattr(args, "aws_subnet", None) is not None:
-        provider_config.subnet = args.aws_subnet
+    if getattr(args, "aws_subnets", None) is not None:
+        provider_config.subnets = args.aws_subnets
     if getattr(args, "aws_key_name", None) is not None:
         provider_config.key_name = args.aws_key_name
 

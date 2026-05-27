@@ -176,7 +176,7 @@ def login_and_get_prices(
                 logging.warning(f"Could not fetch Hetzner prices: {e}")
 
     # Determine AWS region and session from config if present.
-    from .providers.aws.provider import _az_to_region
+    from .providers.aws.utils import _az_to_region
     aws_cfg = getattr(getattr(config, "providers", None), "aws", None)
     aws_session = None
     if aws_cfg is not None:

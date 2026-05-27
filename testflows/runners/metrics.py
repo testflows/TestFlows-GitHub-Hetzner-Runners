@@ -602,7 +602,7 @@ def update_servers(servers, server_prices=None, ipv4_price=0.0008, ipv6_price=0.
                         )
                     else:
                         # Prices are keyed by region; location may be an AZ
-                        from .providers.aws.provider import _az_to_region
+                        from .providers.aws.utils import _az_to_region
                         total_cost = price_fn(
                             prices, server_type, _az_to_region(location)
                         )
