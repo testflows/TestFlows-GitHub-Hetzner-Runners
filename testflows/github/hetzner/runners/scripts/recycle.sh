@@ -59,8 +59,12 @@ docker container prune -f || echo "warn: docker container prune failed" >&2
 # Prune all unused Docker volumes
 docker volume prune -f || echo "warn: docker volume prune failed" >&2
 
-# Prune all dangling Docker images
-# Intentionally keeping base images for reuse
+# Prune Docker build cache. This is reported separately by `docker system df`
+# and is not removed by image/container/volume prune commands.
+docker builder prune -af || echo "warn: docker builder prune failed" >&2
+
+# Prune all dangling Docker images.
+# Intentionally keeping tagged/base images for reuse.
 docker image prune -f || echo "warn: docker image prune failed" >&2
 
 # Remove any credentials written to the home directory
