@@ -131,16 +131,9 @@ The `cloud deploy` command (which provisions the runner service itself onto a cl
 - [x] Run the shared provider test suite against `AWSCloudProvider` (66 tests, all passing)
 - [x] Validate end-to-end with a real AWS account
 
-### Phase 5 — Config validation library (deferred)
+### ~~Phase 5 — Config validation library~~ (scratched)
 
-Consider migrating `config/parse.py` to Pydantic v2. Currently ~453 lines of manual validation; a Pydantic `BaseModel` Config would reduce this by ~60%. The cost is that Config must change from a dataclass to a `BaseModel`, touching every construction site.
-
-**Do this after Phase 2**, once the dual-representation issue (flat `default_image`/`default_server_type` fields alongside `providers.X.defaults`) is resolved and Config has a stable final shape. Migrating before that means migrating twice.
-
-- [ ] Migrate `Config` to Pydantic `BaseModel`
-- [ ] Replace `parse.py` validation boilerplate with field annotations and `@field_validator`s
-- [ ] Preserve `config.field_name: error message` error format via custom error handling
-- [ ] Provider-specific config parsing moves to `providers/X/config.py` as Pydantic sub-models
+Not worth the dependency and migration churn. Much of `parse.py` is domain-specific validation (standby runner structure, meta-label shapes, script path checking, cross-field logic) that Pydantic field validators would still need to express explicitly. The file is already written and working; the realistic reduction is ~30%, not 60%.
 
 ### Phase 6 — Polish
 
@@ -150,7 +143,7 @@ Consider migrating `config/parse.py` to Pydantic v2. Currently ~453 lines of man
 
 ### Known gaps / backlog
 
-- [ ] **Server cost metrics broken for all providers** — `config.server_prices` is never populated at runtime (it's always `None`). The code path exists in `metrics.update_servers` but is never reached. Fix: add `get_prices()` to the `CloudProvider` ABC and call it at scale_up startup per provider; populate `server_prices` from the result. Volume cost works because `update_volumes` has a hardcoded default price. AWS has no pricing API wired up at all.
+- [x] **Server cost metrics** — `get_prices()` added to `CloudProvider` ABC, called per provider at scale_up startup; `config.server_prices` populated from the result.
 - [ ] Update `README.rst` and `docs/requirements.md`
 - [ ] Document `cloud deploy` as Hetzner-only
 - [ ] Binary/package naming decision
