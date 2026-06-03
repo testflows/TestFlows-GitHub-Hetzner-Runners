@@ -146,7 +146,7 @@ Not worth the dependency and migration churn. Much of `parse.py` is domain-speci
 - [x] **Server cost metrics** — `get_prices()` added to `CloudProvider` ABC, called per provider at scale_up startup; `config.server_prices` populated from the result.
 - [ ] Update `README.rst` and `docs/requirements.md`
 - [ ] Document `cloud deploy` as Hetzner-only
-- [ ] Binary/package naming decision
+- [x] Binary/package naming — `testflows.github.hetzner.runners` → `testflows.runners`, `github-hetzner-runners` → `tfs-runners`
 
 ---
 
