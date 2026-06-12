@@ -23,23 +23,23 @@
 
 
 :PyPi:
-   `Versions <https://pypi.org/project/testflows.github.hetzner.runners/>`_
+   `Versions <https://pypi.org/project/testflows.runners/>`_
 :License:
    `Apache-2.0 <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/blob/main/LICENSE>`_
 
-=====================================================================
-🛸 Autoscaling Self-Hosted GitHub Actions Runners on Hetzner Cloud 
-=====================================================================
+=========================================================================
+🛸 Autoscaling Self-Hosted GitHub Actions Runners (Hetzner Cloud & AWS)
+=========================================================================
 
 A simple alternative to Github's `Recommended autoscaling solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_.
 
 :🔍 Tip:
    See `Wiki <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki>`_ for full documentation.
 
-The **github-hetzner-runners** service program starts and monitors queued-up jobs for GitHub Actions workflows.
-When a new job is queued up, it creates a new Hetzner Cloud server instance
+The **tfs-runners** service program starts and monitors queued-up jobs for GitHub Actions workflows.
+When a new job is queued up, it creates a new cloud server instance (on `Hetzner Cloud <https://www.hetzner.com/cloud>`_ or `AWS EC2 <https://aws.amazon.com/ec2/>`_)
 that provides an ephemeral GitHub Actions runner. Each server instance is automatically
-powered off when the job completes, and then powered off servers are
+powered off or terminated when the job completes, and then inactive servers are
 automatically deleted. Both **x64** (*x86*) and **arm64** (*arm*) runners are supported.
 See `Features <#-features>`_ and `Limitations <#-limitations>`_ for more details.
 
@@ -108,7 +108,7 @@ to avoid any cleanup. Server instances are not shared between jobs.
 🧑 Who's using it?
 ==================
 
-The following projects are using **github-hetzner-runners** to enable self-hosted, on-demand runners for their CI/CD pipelines:
+The following projects are using **tfs-runners** to enable self-hosted, on-demand runners for their CI/CD pipelines:
 
 - `Altinity Antalya and Altinity Stable Builds® releases of ClickHouse® <https://github.com/Altinity/ClickHouse>`_ 
 - `Altinity Regression Tests for ClickHouse® <https://github.com/Altinity/clickhouse-regression/blob/main/.github/workflows/run-regression.yml>`_
@@ -123,16 +123,16 @@ The following projects are using **github-hetzner-runners** to enable self-hoste
 ===========
 
 * ✅ simpler alternative to what GitHub lists in `Recommended Autoscaling Solutions <https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/autoscaling-with-self-hosted-runners#recommended-autoscaling-solutions>`_
-* ✅ cost-efficient on-demand runners using `Hetzner Cloud <https://www.hetzner.com/cloud>`_
-* ✅ supports server recycling to minimize costs
-* ✅ simple configuration, no Webhooks, no need for AWS lambdas, and no need to setup any GitHub application
+* ✅ multi-cloud: cost-efficient on-demand runners on `Hetzner Cloud <https://www.hetzner.com/cloud>`_ and `AWS EC2 <https://aws.amazon.com/ec2/>`_
+* ✅ supports server recycling to minimize costs (Hetzner Cloud only)
+* ✅ simple configuration, no Webhooks, no need for additional services, and no need to setup any GitHub application
 * ✅ supports specifying custom runner server types, images, and locations using job labels with fallback options for server types and locations
 * ✅ self-contained program that you can use to deploy, redeploy, and manage the service on a cloud instance
 * ✅ supports x64 (x86) and ARM64 (arm) runners
-* ✅ supports IPv6 only runners
-* ✅ supports using any Hetzner Cloud server types
+* ✅ supports IPv6 only runners (Hetzner Cloud)
+* ✅ supports using any Hetzner Cloud server types and AWS EC2 instance types
 * ✅ supports runners with pre-installed Docker
-* ✅ supports using any standard Hetzner Cloud images and applications
+* ✅ supports using any standard Hetzner Cloud images, applications, and AWS AMIs
 * ✅ supports auto-replenishable fixed standby runner pools for jobs to be picked up immediately
 * ✅ supports limiting the maximum number of runners created for each workflow run
 * ✅ supports efficient GitHub API usage using HTTP caching and conditional requests
@@ -140,7 +140,7 @@ The following projects are using **github-hetzner-runners** to enable self-hoste
 * ✅ supports estimating the cost of a job, a run, or a set of runs
 * ✅ supports prometheus metrics endpoint and embedded dashboard for monitoring
 * ✅ supports project configuration files to help manage multiple runner projects
-* ✅ **supports upto sixteen 10TB persistent caching volumes per runner** (🔥 new in >= 1.9)
+* ✅ **supports upto sixteen 10TB persistent caching volumes per runner** (Hetzner Cloud only) (🔥 new in >= 1.9)
 
 ====================
 📝 Table of Contents
@@ -204,7 +204,7 @@ The following projects are using **github-hetzner-runners** to enable self-hoste
 
 * Linux OS (tested on Ubuntu 22.04)
 * Python >= 3.7
-* `Hetzner Cloud <https://www.hetzner.com/cloud>`_ account
+* `Hetzner Cloud <https://www.hetzner.com/cloud>`_ account and/or `AWS <https://aws.amazon.com/>`_ account
 * GitHub API classic token with privileges to manage self-hosted runners
 
 :❗Warning:
@@ -216,24 +216,24 @@ The following projects are using **github-hetzner-runners** to enable self-hoste
 
 .. code-block:: bash
 
-   pip3 install testflows.github.hetzner.runners
+   pip3 install testflows.runners
 
-Check that the **github-hetzner-runners** utility was installed correctly by executing the **github-hetzner-runners -v** command.
+Check that the **tfs-runners** utility was installed correctly by executing the **tfs-runners -v** command.
 
 .. code-block:: bash
 
-   github-hetzner-runners -v
+   tfs-runners -v
 
-The **github-hetzner-runners** utility is installed in the *~/.local/bin/* folder. Please make sure that this folder
+The **tfs-runners** utility is installed in the *~/.local/bin/* folder. Please make sure that this folder
 is part of the **PATH**.
 
 .. code-block:: bash
 
-   which github-hetzner-runners
+   which tfs-runners
 
 ::
 
-   ~/.local/bin/github-hetzner-runners
+   ~/.local/bin/tfs-runners
 
 If your **PATH** is missing this folder on Ubuntu, modify your *~/.profile* and add the following section:
 
@@ -268,11 +268,11 @@ Set environment variables corresponding to your GitHub repository and Hetzner Cl
    export GITHUB_REPOSITORY=testflows/testflows-github-hetzner-runners
    export HETZNER_TOKEN=GJzdc...
 
-Then, start the **github-hetzner-runners** program:
+Then, start the **tfs-runners** program:
 
 .. code-block:: bash
 
-   github-hetzner-runners
+   tfs-runners
 
 ::
 
@@ -288,7 +288,7 @@ Alternatively, you can pass the required options using the command line as follo
 
 .. code-block:: bash
 
-   github-hetzner-runners --github-token <GITHUB_TOKEN> --github-repository <GITHUB_REPOSITORY> --hetzner-token <HETZNER_TOKEN>
+   tfs-runners --github-token <GITHUB_TOKEN> --github-repository <GITHUB_REPOSITORY> --hetzner-token <HETZNER_TOKEN>
 
 ===========================
 🎯 Getting Started Tutorial
@@ -297,40 +297,40 @@ Alternatively, you can pass the required options using the command line as follo
 :✅ Launch your first self-hosted runner in:
    5 minutes
 
-This tutorial will guide you on how to use the **github-hetzner-runners** program to provide autoscaling GitHub Actions runners
+This tutorial will guide you on how to use the **tfs-runners** program to provide autoscaling GitHub Actions runners
 for a GitHub repository and a Hetzner Cloud project that you'll create.
 
 -----------------------------------
 Installing TestFlows Github Runners
 -----------------------------------
 
-❶ Before we get started, you will need to install **testflows.github.hetzner.runners** Python package. See the `Installation <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Installation>`_ section for more details.
+❶ Before we get started, you will need to install **testflows.runners** Python package. See the `Installation <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Installation>`_ section for more details.
 
 .. code-block:: bash
 
-  pip3 install testflows.github.hetzner.runners
+  pip3 install testflows.runners
 
-❷ Check that the **github-hetzner-runners** utility was installed correctly by executing the **github-hetzner-runners -v** command.
+❷ Check that the **tfs-runners** utility was installed correctly by executing the **tfs-runners -v** command.
 
 .. code-block:: bash
 
-   github-hetzner-runners -v
+   tfs-runners -v
 
 ::
 
    1.3.230731.1173142
 
 :✋ Note:
-   The **github-hetzner-runners** utility is installed in to the *~/.local/bin/* folder. Please make sure that this folder
+   The **tfs-runners** utility is installed in to the *~/.local/bin/* folder. Please make sure that this folder
    is part of the **PATH**.
 
    .. code-block:: bash
 
-      which github-hetzner-runners
+      which tfs-runners
 
    ::
 
-      ~/.local/bin/github-hetzner-runners
+      ~/.local/bin/tfs-runners
 
    If your **PATH** is missing this folder, on Ubuntu, you can modify your *~/.profile* and add the following section:
 
@@ -342,14 +342,14 @@ Installing TestFlows Github Runners
              PATH="$HOME/.local/bin:$PATH"
          fi
 
-In order to launch the **github-hetzner-runners** program, we'll need to specify the GitHub repository as well as GitHub and
+In order to launch the **tfs-runners** program, we'll need to specify the GitHub repository as well as GitHub and
 Hetzner Cloud tokens. So, let's create these.
 
 ------------------------------------------------------------
 Creating a GitHub Repository With Actions Workflow and Token
 ------------------------------------------------------------
 
-Before using the **github-hetzner-runners**, you need a GitHub repository with a GitHub Actions workflow set up.
+Before using the **tfs-runners**, you need a GitHub repository with a GitHub Actions workflow set up.
 
 ❶ First, create a GitHub repository named **demo-testflows-github-hetzner-runners** and note the repository name.
 
@@ -450,13 +450,17 @@ See these steps in action:
 Creating a Cloud Service
 ------------------------
 
-With the GitHub repository and GitHub and Hetzner Cloud tokens in hand, we can deploy the **github-hetzner-runners** service
+:✋ Note:
+   The ``cloud deploy`` command is **Hetzner Cloud only**. It provisions the **tfs-runners** service
+   on a Hetzner Cloud VM. If you are using AWS, run the service locally or on any Linux host instead.
+
+With the GitHub repository and GitHub and Hetzner Cloud tokens in hand, we can deploy the **tfs-runners** service
 to the Hetzner Cloud instance. This way, the service is not running on your local machine.
 
-During the deployment, we'll create a **github-hetzner-runners** instance in your Hetzner Cloud project on which the service will be running.
+During the deployment, we'll create a **tfs-runners** instance in your Hetzner Cloud project on which the service will be running.
 See the `Running as a Cloud Service <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Running-as-a-Cloud-Service>`_ section for details.
 
-❶ To deploy the service run the **github-hetzner-runners cloud deploy** command and specify your
+❶ To deploy the service run the **tfs-runners cloud deploy** command and specify your
 GitHub repository, GitHub, and Hetzner Cloud tokens using
 **GITHUB_REPOSITORY**, **GITHUB_TOKEN**, and **HETZNER_TOKEN** environment variables.
 
@@ -465,7 +469,7 @@ GitHub repository, GitHub, and Hetzner Cloud tokens using
    export GITHUB_REPOSITORY=
    export HETZNER_TOKEN=
    export GITHUB_TOKEN=
-   github-hetzner-runners cloud deploy
+   tfs-runners cloud deploy
 
 You should now have the cloud service up and running.
 
@@ -480,7 +484,7 @@ See these steps in action:
 Waiting for the GitHub Actions Job to Complete
 ----------------------------------------------
 
-❶ The **github-hetzner-runners** cloud service is now running. So, now you can just sit back and wait until **github-hetzner-runners**
+❶ The **tfs-runners** cloud service is now running. So, now you can just sit back and wait until **tfs-runners**
 spins up a new runner to complete any queued-up GitHub Actions jobs in your GitHub repository.
 
 See this step in action:
@@ -495,11 +499,11 @@ As you can see, our job was executed and completed using our own self-hosted run
 :✋ Note:
 
    If you run into any issues, you can check the cloud service log using the
-   **github-hetzner-runners cloud log -f** command. For other cloud service commands, see the `Running as a Cloud Service <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Running-as-a-Cloud-Service>`_ section.
+   **tfs-runners cloud log -f** command. For other cloud service commands, see the `Running as a Cloud Service <https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Running-as-a-Cloud-Service>`_ section.
 
    .. code-block:: bash
 
-      github-hetzner-runners cloud log -f
+      tfs-runners cloud log -f
 
 ================================
 📡 Embedded Monitoring Dashboard
@@ -531,4 +535,3 @@ See `Embedded Monitoring Dashboard <https://github.com/testflows/TestFlows-GitHu
 
 Developed and maintained by the `TestFlows <https://testflows.com>`_ team.
 
-.. _Config class: https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/blob/main/testflows/github/hetzner/runners/config.py#L45
