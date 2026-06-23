@@ -974,7 +974,7 @@ def recycle_server(
             f"Powering on recycled server {provider_server.name} without rebuild",
             server_name=name,
         ):
-            provider.power_on_server(provider_server)
+            provider.power_on_server(provider_server, timeout=timeout)
         setup_script = recycle_script
     else:
         with Action(

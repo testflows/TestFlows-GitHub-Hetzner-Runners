@@ -181,8 +181,15 @@ class CloudProvider(ABC):
         """Power off (stop) the given server."""
 
     @abstractmethod
-    def power_on_server(self, server: ProviderServer) -> None:
-        """Power on (start) the given server."""
+    def power_on_server(
+        self, server: ProviderServer, timeout: int | None = None
+    ) -> None:
+        """Power on (start) the given server.
+
+        Args:
+            server: Provider server descriptor.
+            timeout: Optional provider-specific max retries/time budget.
+        """
 
     @abstractmethod
     def rebuild_server(self, server: ProviderServer, image_spec: Any) -> None:

@@ -236,7 +236,9 @@ class AWSCloudProvider(CloudProvider):
     def power_off_server(self, server: ProviderServer) -> None:
         self._ec2.stop_instances(InstanceIds=[server.id])
 
-    def power_on_server(self, server: ProviderServer) -> None:
+    def power_on_server(
+        self, server: ProviderServer, timeout: int | None = None
+    ) -> None:
         self._ec2.start_instances(InstanceIds=[server.id])
 
     def rebuild_server(self, server: ProviderServer, image_spec) -> None:

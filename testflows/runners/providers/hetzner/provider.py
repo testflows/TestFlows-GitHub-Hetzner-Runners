@@ -127,10 +127,12 @@ class HetznerCloudProvider(CloudProvider):
         native: BoundServer = server._native
         native.power_off()
 
-    def power_on_server(self, server: ProviderServer) -> None:
-        """Power on the server."""
+    def power_on_server(
+        self, server: ProviderServer, timeout: int | None = None
+    ) -> None:
+        """Power on the server and wait for the action to finish."""
         native: BoundServer = server._native
-        native.power_on()
+        native.power_on().wait_until_finished(max_retries=timeout or 300)
 
     def rebuild_server(self, server: ProviderServer, image_spec) -> None:
         """Rebuild the server with the given image. Blocks until finished."""

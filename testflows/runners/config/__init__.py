@@ -24,7 +24,6 @@ from ..providers.hetzner.config import (
     check_prices,
     check_server_type,
     check_ssh_key,
-    check_recycle_script,
 )
 from .config import standby_runner
 from .config import read, write

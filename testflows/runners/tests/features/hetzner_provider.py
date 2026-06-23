@@ -359,10 +359,13 @@ def power_on_calls_native(self):
     with Given("a Hetzner provider and a server"):
         _, provider = hetzner_provider()
         native = MagicMock()
+        action = MagicMock()
+        native.power_on.return_value = action
     with When("I call power_on_server"):
         provider.power_on_server(_provider_server(native=native))
-    with Then("the native server's power_on is called"):
+    with Then("the native server's power_on is called and waited on"):
         native.power_on.assert_called_once()
+        action.wait_until_finished.assert_called_once_with(max_retries=300)
 
 
 # ---------------------------------------------------------------------------
