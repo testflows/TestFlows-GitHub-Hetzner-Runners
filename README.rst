@@ -77,24 +77,24 @@ to avoid any cleanup. Server instances are not shared between jobs.
   
   Everything is managed by a single command line utility — no Kubernetes, no CRDs, no controllers, no third-party services.
 
-- 💸 **Up to 75× cheaper than GitHub-hosted runners**  
+- 💸 **Up to 33× cheaper than GitHub-hosted runners**  
   
   Hetzner Cloud VMs (like CX or CPX) offer dramatic CI/CD cost savings with better performance and higher parallelism.
   
   +------------------------+-------------------+----------------------------+
   | Platform               | Specs             | Price                      |
   +========================+===================+============================+
-  | GitHub-hosted runner   | 2-core Linux      | $0.008 / minute            |
+  | GitHub-hosted runner   | 2-core Linux      | $0.006 / minute            |
   +------------------------+-------------------+----------------------------+
-  | Hetzner CX22           | 2-core VM         | €0.006 / hour              |
-  |                        |                   | (~$0.0001062 / minute)     |
+  | Hetzner CX23           | 2-core VM         | €0.0096 / hour             |
+  |                        |                   | (~$0.0001599 / minute)     |
   +------------------------+-------------------+----------------------------+
 
   :Calculation:
-     1/0.9411 USD/EUR × 0.006 EUR/hour × 1 hour / 60 minute = 0.0001062 USD / minute,
-     $0.008 / $0.0001062 = ~75.32
+     1/0.88 USD/EUR × 0.0096 EUR/hour × 1 hour / 60 minute = 0.0001818 USD / minute,
+     $0.006 / $0.0001818 = ~33
    
-  That’s the upper bound — based on full hourly utilization and exchange rate as of March 5, 2025.
+  That’s the upper bound — based on full hourly utilization and exchange rate as of June 24, 2026.
   But even if you only hit 10× cheaper in practice,
   you're still saving *a lot*. Best efficiency is when your jobs are frequent or long-lived
   (due to hourly billing).
