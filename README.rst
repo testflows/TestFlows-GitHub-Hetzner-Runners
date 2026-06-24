@@ -87,7 +87,7 @@ to avoid any cleanup. Server instances are not shared between jobs.
   | GitHub-hosted runner   | 2-core Linux      | $0.006 / minute            |
   +------------------------+-------------------+----------------------------+
   | Hetzner CX23           | 2-core VM         | €0.0096 / hour             |
-  |                        |                   | (~$0.0001599 / minute)     |
+  |                        |                   | (~$0.0001818 / minute)     |
   +------------------------+-------------------+----------------------------+
 
   :Calculation:
