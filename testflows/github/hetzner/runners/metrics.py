@@ -1122,7 +1122,7 @@ def update_zombie_servers(zombie_servers_dict):
     for server_name, zombie_server in zombie_servers_dict.items():
         server = zombie_server.server
         server_type = server.server_type.name
-        location = server.datacenter.location.name
+        location = server.location.name
         key = (server_type, location)
 
         # Count by type and location
@@ -1238,7 +1238,7 @@ def update_recycled_servers(servers):
         # Check if this is a recycled server by name prefix
         if server.name.startswith(recycle_server_name_prefix):
             server_type = server.server_type.name
-            location = server.datacenter.location.name
+            location = server.location.name
             key = (server_type, location)
 
             # Count by type and location

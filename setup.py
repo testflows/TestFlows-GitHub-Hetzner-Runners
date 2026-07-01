@@ -55,7 +55,7 @@ setup(
     zip_safe=False,
     install_requires=[
         "PyGithub==2.8.1",
-        "hcloud==2.3.0",
+        "hcloud==2.22.0",
         "requests-cache==1.3.2",
         "PyYAML==6.0.3",
         "prometheus_client==0.24.1",

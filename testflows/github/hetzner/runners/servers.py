@@ -170,7 +170,7 @@ def list(args, config: Config):
                 f"{server.id},",
                 f"{ip_address(server)},",
                 f"{server.server_type.name},",
-                f"{server.datacenter.location.name},",
+                f"{server.location.name},",
                 f"{server.image.name},",
                 f"{server.image.architecture},",
                 f"{server.image.os_flavor},",
@@ -279,7 +279,7 @@ def delete(args, config: Config):
 
     for server in delete_servers:
         with Action(
-            f"🗑️  Deleting server {server.name} with id {server.id} in {server.datacenter.location.name}"
+            f"🗑️  Deleting server {server.name} with id {server.id} in {server.location.name}"
         ):
             server.delete()
 
