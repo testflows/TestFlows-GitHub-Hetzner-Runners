@@ -256,7 +256,7 @@ def server_setup(
             f'SERVER_NAME="{server.name}" '
             f'SERVER_ID="{server.id}" '
             f'SERVER_TYPE_NAME="{server.server_type.name}" '
-            f'SERVER_LOCATION_NAME="{server.datacenter.location.name}" '
+            f'SERVER_LOCATION_NAME="{server.location.name}" '
             f"bash -s' < {startup_script}",
             stacklevel=5,
         )
@@ -1489,7 +1489,7 @@ def scale_up(
                                     ]
                                 ),
                                 server_type=server.server_type,
-                                server_location=server.datacenter.location,
+                                server_location=server.location,
                                 server_volumes=[
                                     Volume(
                                         name=get_volume_name(volume.name),
