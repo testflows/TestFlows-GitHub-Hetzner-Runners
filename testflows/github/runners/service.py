@@ -37,12 +37,17 @@ def command_options(
 
     Provider configuration (credentials, defaults) is not re-emitted as flags;
     the service reads it from the ``--config`` file, uniformly for every
-    provider.
+    provider. ``--provider`` is the one exception: it is CLI-only (the config
+    file rejects `enabled_providers`/`provider` keys), so it has no config-file
+    seam to be read back from and must be re-emitted here or an installed
+    service silently reverts to running every configured provider.
     """
     command = ""
     command += f" --github-token {github_token}"
     command += f" --github-repository {github_repository}"
     command += f" --config {config.config_file}" if config.config_file else ""
+    if config.enabled_providers:
+        command += f" --provider \"{','.join(config.enabled_providers)}\""
     command += f" --recycle " + ("on" if config.recycle else "off")
     command += f" --end-of-life {config.end_of_life}" if config.end_of_life else ""
     for l in config.with_label:
