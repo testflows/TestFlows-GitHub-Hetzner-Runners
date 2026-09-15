@@ -10,12 +10,14 @@ Covers:
   completeness, and the *parameters named-attribute form
 """
 import contextlib
+import importlib.util
 import io
 import json
 import os
 import subprocess
 import sys
 from argparse import ArgumentTypeError
+from importlib.machinery import SourceFileLoader
 from types import SimpleNamespace
 
 from testflows.core import *
@@ -35,11 +37,23 @@ from testflows.github.runners.config.parse import parse_config
 from testflows.github.runners.config.factory import provider_factory
 from testflows.github.runners.errors import ConfigError
 from testflows.github.runners.service import command_options
+from testflows.github.runners.tests.unit.steps.scaleway import mock_scaleway_sdk
 
 # Repo root so the CLI subprocess can find the package without an install.
 _REPO_ROOT = os.path.abspath(os.path.join(current_dir(), "..", "..", "..", "..", "..", ".."))
 _CLI_SCRIPT = os.path.join(_REPO_ROOT, "testflows", "github", "runners", "bin", "tfs-github-runners")
 _SCHEMA_PATH = os.path.join(_REPO_ROOT, "testflows", "github", "runners", "config", "schema.json")
+
+
+def _cli_module():
+    """Import bin/tfs-github-runners (no .py extension, so plain import can't
+    find it) so tests can call the real argparser() instead of hand-building
+    a SimpleNamespace, which would skip argparse entirely."""
+    loader = SourceFileLoader("tfs_cli_entrypoint", _CLI_SCRIPT)
+    spec = importlib.util.spec_from_loader(loader.name, loader)
+    module = importlib.util.module_from_spec(spec)
+    loader.exec_module(module)
+    return module
 
 
 def _run_help():
@@ -138,6 +152,36 @@ def service_command_does_not_inject_hetzner_provider(self):
     command = command_options(cfg)
     assert "--hetzner-token" not in command
     assert "--hetzner-recycle-with-rebuild" not in command
+
+
+@TestScenario
+def service_command_emits_provider_flag_when_set(self):
+    """--provider is CLI-only (no config-file seam), so unlike credentials and
+    defaults it must be re-emitted or an installed service silently runs
+    every configured provider instead of the requested subset."""
+    cfg = Config(
+        github_token="token",
+        github_repository="owner/repo",
+        providers=provider_list(hetzner=hetzner_provider(token="token")),
+        enabled_providers=["hetzner", "aws"],
+    )
+    with When("service command options are rendered"):
+        command = command_options(cfg)
+    with Then("--provider carries the enabled providers"):
+        assert '--provider "hetzner,aws"' in command, command
+
+
+@TestScenario
+def service_command_omits_provider_flag_when_unset(self):
+    cfg = Config(
+        github_token="token",
+        github_repository="owner/repo",
+        providers=provider_list(hetzner=hetzner_provider(token="token")),
+    )
+    with When("service command options are rendered"):
+        command = command_options(cfg)
+    with Then("--provider is absent"):
+        assert "--provider" not in command, command
 
 
 @TestScenario
@@ -1153,6 +1197,121 @@ def check_fully_valid_config_returns_none(self):
     with Then("it returns without exiting and without printing anything"):
         assert code is None, (code, stderr)
         assert stderr == "", stderr
+
+
+# ---------------------------------------------------------------------------
+# argparse round-trip: flag string -> argparser().parse_args() -> apply_args
+# -> Config. Every other flag test builds a SimpleNamespace by hand, which
+# skips argparse entirely -- an add_argument(type=...) mistake would be
+# invisible to the suite. These go through the real parser.
+# ---------------------------------------------------------------------------
+
+
+@TestScenario
+def argv_round_trip_sets_hetzner_provider_fields(self):
+    cli = _cli_module()
+    with When("real argv is parsed for hetzner"):
+        parsed = cli.argparser().parse_args(
+            [
+                "--github-token", "t",
+                "--github-repository", "o/r",
+                "--hetzner-token", "htok",
+            ]
+        )
+    with And("apply_args runs on a fresh Config"):
+        cfg = Config(providers=provider_list())
+        apply_args(cfg, parsed)
+    with Then("the value lands on the config as a plain string"):
+        assert cfg.providers.hetzner.token == "htok", cfg.providers.hetzner.token
+        assert isinstance(cfg.providers.hetzner.token, str)
+
+
+@TestScenario
+def argv_round_trip_sets_aws_provider_fields(self):
+    """Guards the six AWS/Scaleway defaults flags in particular: their
+    type= validators (image_type/server_type/location_type) live in
+    providers/aws/args.py and providers/scaleway/args.py, not argtypes.py,
+    so a mistaken import or wrong validator would only show up by actually
+    going through argparse."""
+    cli = _cli_module()
+    with When("real argv is parsed for aws"):
+        parsed = cli.argparser().parse_args(
+            [
+                "--github-token", "t",
+                "--github-repository", "o/r",
+                "--aws-access-key-id", "k",
+                "--aws-secret-access-key", "s",
+                "--aws-default-image", "ami-0abcdef1234567890",
+                "--aws-default-server-type", "t3.medium",
+                "--aws-default-location", "us-east-1a",
+            ]
+        )
+    with And("apply_args runs on a fresh Config"):
+        cfg = Config(providers=provider_list())
+        apply_args(cfg, parsed)
+    with Then("the aws provider section is created with plain-string values"):
+        defaults = cfg.providers.aws.defaults
+        assert defaults.image == "ami-0abcdef1234567890", defaults.image
+        assert defaults.server_type == "t3.medium", defaults.server_type
+        assert defaults.location == "us-east-1a", defaults.location
+        assert all(
+            isinstance(v, str)
+            for v in (defaults.image, defaults.server_type, defaults.location)
+        )
+    with And("provider_factory builds it"):
+        assert [p.name for p in provider_factory(cfg)] == ["aws"]
+
+
+@TestScenario
+def argv_round_trip_sets_scaleway_provider_fields(self):
+    cli = _cli_module()
+    with When("real argv is parsed for scaleway"):
+        parsed = cli.argparser().parse_args(
+            [
+                "--github-token", "t",
+                "--github-repository", "o/r",
+                "--scaleway-access-key", "k",
+                "--scaleway-secret-key", "s",
+                "--scaleway-project-id", "p",
+                "--scaleway-default-image", "ubuntu_jammy",
+                "--scaleway-default-server-type", "dev1.m",
+                "--scaleway-default-location", "fr-par-1",
+            ]
+        )
+    with And("apply_args runs on a fresh Config"):
+        cfg = Config(providers=provider_list())
+        apply_args(cfg, parsed)
+    with Then("the scaleway provider section is created with plain-string values"):
+        defaults = cfg.providers.scaleway.defaults
+        assert defaults.image == "ubuntu_jammy", defaults.image
+        assert defaults.server_type == "dev1.m", defaults.server_type
+        assert defaults.location == "fr-par-1", defaults.location
+        assert all(
+            isinstance(v, str)
+            for v in (defaults.image, defaults.server_type, defaults.location)
+        )
+    with And("provider_factory builds it (scaleway SDK is optional -> faked)"):
+        mock_scaleway_sdk()
+        assert [p.name for p in provider_factory(cfg)] == ["scaleway"]
+
+
+@TestScenario
+def argv_round_trip_sets_provider_flag(self):
+    cli = _cli_module()
+    with When("real argv is parsed with --provider"):
+        parsed = cli.argparser().parse_args(
+            [
+                "--github-token", "t",
+                "--github-repository", "o/r",
+                "--provider", "hetzner,aws",
+            ]
+        )
+    with And("apply_args runs on a fresh Config"):
+        cfg = Config(providers=provider_list())
+        apply_args(cfg, parsed)
+    with Then("enabled_providers lands on the config as a plain string list"):
+        assert cfg.enabled_providers == ["hetzner", "aws"], cfg.enabled_providers
+        assert all(isinstance(p, str) for p in cfg.enabled_providers)
 
 
 # ---------------------------------------------------------------------------
