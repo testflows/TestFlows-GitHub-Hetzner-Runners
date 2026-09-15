@@ -477,9 +477,14 @@ def provider_factory_raises_for_unconfigured_requested_provider(self):
             raised = None
         except ConfigError as e:
             raised = e
-    with Then("a ConfigError names the missing provider"):
+    with Then("a ConfigError names the missing provider's actual config section"):
         assert raised is not None
-        assert "aws" in str(raised), str(raised)
+        message = str(raised)
+        assert "providers.aws" in message, message
+    with And("no leftover <name> placeholder remains in the message"):
+        assert "<name>" not in message, message
+    with And("the message says what was built instead"):
+        assert "Built: hetzner" in message, message
 
 
 @TestScenario
@@ -536,9 +541,39 @@ def provider_factory_raises_for_requested_provider_missing_credentials(self):
             raised = None
         except ConfigError as e:
             raised = e
-    with Then("a ConfigError names aws, even though a providers.aws section exists"):
+    with Then("a ConfigError names providers.aws, even though the section exists"):
         assert raised is not None
-        assert "aws" in str(raised), str(raised)
+        message = str(raised)
+        assert "providers.aws" in message, message
+    with And("no leftover <name> placeholder remains in the message"):
+        assert "<name>" not in message, message
+
+
+@TestScenario
+def provider_factory_raises_when_nothing_could_be_built_at_all(self):
+    """Requesting providers when none of them are configured must not leave
+    the 'Built: ...' half of the message empty-looking ('Built: ' with
+    nothing after it) -- it must say plainly that nothing was built."""
+    with Given("no providers configured at all, but aws and scaleway requested"):
+        cfg = Config(
+            providers=provider_list(),
+            enabled_providers=["aws", "scaleway"],
+        )
+    with When("provider_factory runs"):
+        try:
+            provider_factory(cfg)
+            raised = None
+        except ConfigError as e:
+            raised = e
+    with Then("a ConfigError names both requested providers' config sections"):
+        assert raised is not None
+        message = str(raised)
+        assert "providers.aws" in message, message
+        assert "providers.scaleway" in message, message
+    with And("no leftover <name> placeholder remains in the message"):
+        assert "<name>" not in message, message
+    with And("the message says plainly that nothing was built"):
+        assert "Built: none" in message, message
 
 
 @TestScenario

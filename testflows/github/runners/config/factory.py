@@ -44,13 +44,19 @@ def provider_factory(config: Config) -> list[CloudProvider]:
     built_names = {p.name for p in built}
     missing = [name for name in config.enabled_providers if name not in built_names]
     if missing:
+        plural = len(missing) > 1
+        quoted = ", ".join(f"'{name}'" for name in missing)
+        sections = ", ".join(f"providers.{name}" for name in missing)
+        built_desc = ", ".join(sorted(built_names)) if built_names else "none"
         raise ConfigError(
-            f"--provider requested {', '.join(missing)}, but "
-            f"{'it has' if len(missing) == 1 else 'they have'} no providers.<name> "
-            "section, or the section is missing required credentials; only "
-            f"{', '.join(sorted(built_names)) or 'no providers'} were built. "
-            "Add or complete the matching providers.<name> section in the config "
-            "file, or remove it from --provider."
+            f"--provider requested {quoted}, but no "
+            f"{', '.join(missing)} {'providers' if plural else 'provider'} "
+            f"could be built. Either {sections} "
+            f"{'are' if plural else 'is'} missing from the config file, or "
+            f"{'they are' if plural else 'it is'} missing required "
+            f"credentials. Add or complete {sections}, or drop "
+            f"{'them' if plural else 'it'} from --provider. "
+            f"Built: {built_desc}."
         )
 
     return built
