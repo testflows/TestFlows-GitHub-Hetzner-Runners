@@ -4,6 +4,8 @@ import yaml
 
 from .. import errors
 from ..providers.hetzner import config as hetzner_config
+from ..providers.aws import config as aws_config
+from ..providers.scaleway import config as scaleway_config
 
 # Validators re-exported from the argtypes leaf under their historical names
 # (config.parse still does `from .config import path`).
@@ -126,6 +128,32 @@ def apply_args(config, args):
     elif getattr(args, "hetzner_token", None):
         config.providers.hetzner = hetzner_provider()
         hetzner_config.update_from_args(config.providers.hetzner, args)
+
+    # Apply AWS-specific CLI overrides through its provider update hook.
+    # Only create a section from flags alone once both credentials are
+    # present — the same guard AWSCloudProvider.from_config uses, so a
+    # section built here is one the factory will actually construct.
+    if config.providers.aws is not None:
+        aws_config.update_from_args(config.providers.aws, args)
+    elif getattr(args, "aws_access_key_id", None) and getattr(
+        args, "aws_secret_access_key", None
+    ):
+        config.providers.aws = aws_provider()
+        aws_config.update_from_args(config.providers.aws, args)
+
+    # Apply Scaleway-specific CLI overrides through its provider update hook.
+    # Only create a section from flags alone once all three required
+    # credentials are present — the same guard ScalewayCloudProvider.from_config
+    # uses, so a section built here is one the factory will actually construct.
+    if config.providers.scaleway is not None:
+        scaleway_config.update_from_args(config.providers.scaleway, args)
+    elif (
+        getattr(args, "scaleway_access_key", None)
+        and getattr(args, "scaleway_secret_key", None)
+        and getattr(args, "scaleway_project_id", None)
+    ):
+        config.providers.scaleway = scaleway_provider()
+        scaleway_config.update_from_args(config.providers.scaleway, args)
 
     if getattr(args, "cloud_server_name", None) is not None:
         config.cloud.server_name = args.cloud_server_name
