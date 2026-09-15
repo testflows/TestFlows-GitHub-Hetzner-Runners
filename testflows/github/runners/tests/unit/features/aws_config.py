@@ -411,6 +411,120 @@ def aws_parse_section_validates(self):
 
 
 # ---------------------------------------------------------------------------
+# update_from_args: CLI overrides reach cfg.providers.aws
+# ---------------------------------------------------------------------------
+
+
+@TestScenario
+def update_from_args_overrides_each_field(self):
+    """Every --aws-* flag lands on its matching aws_provider field."""
+    from types import SimpleNamespace
+    from testflows.github.runners.config.config import aws_provider
+    from testflows.github.runners.providers.aws import config as aws_config
+
+    cfg = aws_provider()
+    args = SimpleNamespace(
+        aws_access_key_id="AK",
+        aws_secret_access_key="SK",
+        aws_security_group="sg-1",
+        aws_subnets=["subnet-1", "subnet-2"],
+        aws_key_name="keypair-1",
+        aws_default_image="ami-0abcdef1234567890",
+        aws_default_server_type="c6g.large",
+        aws_default_location="us-east-1b",
+        aws_default_disk_size=50,
+        aws_default_disk_type="gp2",
+    )
+    with When("update_from_args runs"):
+        aws_config.update_from_args(cfg, args)
+    with Then("every field is overridden"):
+        assert cfg.access_key_id == "AK", cfg
+        assert cfg.secret_access_key == "SK", cfg
+        assert cfg.security_group == "sg-1", cfg
+        assert cfg.subnets == ["subnet-1", "subnet-2"], cfg
+        assert cfg.key_name == "keypair-1", cfg
+        assert cfg.defaults.image == "ami-0abcdef1234567890", cfg
+        assert cfg.defaults.server_type == "c6g.large", cfg
+        assert cfg.defaults.location == "us-east-1b", cfg
+        assert cfg.defaults.disk_size == 50, cfg
+        assert cfg.defaults.disk_type == "gp2", cfg
+
+
+@TestScenario
+def update_from_args_leaves_unset_fields_alone(self):
+    """An unset (None) CLI arg must not clobber an already-configured value."""
+    from types import SimpleNamespace
+    from testflows.github.runners.config.config import aws_provider, provider_defaults
+    from testflows.github.runners.providers.aws import config as aws_config
+
+    cfg = aws_provider(
+        access_key_id="configured-key",
+        secret_access_key="configured-secret",
+        security_group="sg-configured",
+        subnets=["subnet-configured"],
+        key_name="configured-keypair",
+        defaults=provider_defaults(
+            image="ami-configured",
+            server_type="t3.large",
+            location="us-east-1a",
+            disk_size=30,
+            disk_type="gp3",
+        ),
+    )
+    with When("update_from_args runs with every arg unset (None)"):
+        aws_config.update_from_args(cfg, SimpleNamespace())
+    with Then("every configured value survives untouched"):
+        assert cfg.access_key_id == "configured-key", cfg
+        assert cfg.secret_access_key == "configured-secret", cfg
+        assert cfg.security_group == "sg-configured", cfg
+        assert cfg.subnets == ["subnet-configured"], cfg
+        assert cfg.key_name == "configured-keypair", cfg
+        assert cfg.defaults.image == "ami-configured", cfg
+        assert cfg.defaults.server_type == "t3.large", cfg
+        assert cfg.defaults.location == "us-east-1a", cfg
+        assert cfg.defaults.disk_size == 30, cfg
+        assert cfg.defaults.disk_type == "gp3", cfg
+
+
+# ---------------------------------------------------------------------------
+# apply_args: create-from-flags-alone path (mirrors Hetzner's)
+# ---------------------------------------------------------------------------
+
+
+@TestScenario
+def apply_args_creates_aws_provider_from_flags_alone(self):
+    """With no providers.aws section, both credential flags create one that
+    provider_factory (from_config) would actually build."""
+    from types import SimpleNamespace
+    from testflows.github.runners.config.config import Config, provider_list, apply_args
+
+    cfg = Config(providers=provider_list())
+    with When("apply_args runs with both AWS credential flags set"):
+        apply_args(
+            cfg,
+            SimpleNamespace(aws_access_key_id="AK", aws_secret_access_key="SK"),
+        )
+    with Then("a providers.aws section is created with those credentials"):
+        assert cfg.providers.aws is not None, cfg.providers.aws
+        assert cfg.providers.aws.access_key_id == "AK", cfg.providers.aws
+        assert cfg.providers.aws.secret_access_key == "SK", cfg.providers.aws
+
+
+@TestScenario
+def apply_args_does_not_create_aws_provider_from_partial_flags(self):
+    """Only one of the two required credential flags must not create a
+    provider — it would never pass AWSCloudProvider.from_config's guard."""
+    from types import SimpleNamespace
+    from testflows.github.runners.config.config import Config, provider_list, apply_args
+
+    cfg = Config(providers=provider_list())
+    with When("apply_args runs with only aws_access_key_id set"):
+        apply_args(cfg, SimpleNamespace(aws_access_key_id="AK"))
+    with Then("no providers.aws section is created"):
+        assert cfg.providers.aws is None, cfg.providers.aws
+
+
+# ---------------------------------------------------------------------------
 # Feature entry point
 # ---------------------------------------------------------------------------
 

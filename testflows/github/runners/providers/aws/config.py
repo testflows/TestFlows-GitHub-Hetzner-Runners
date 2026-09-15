@@ -3,6 +3,36 @@
 from ...config_schema import aws_provider, provider_defaults
 
 
+def update_from_args(provider_config, args):
+    """Update AWS provider configuration from CLI arguments."""
+    if not provider_config:
+        return
+
+    # Update credentials
+    if getattr(args, "aws_access_key_id", None) is not None:
+        provider_config.access_key_id = args.aws_access_key_id
+    if getattr(args, "aws_secret_access_key", None) is not None:
+        provider_config.secret_access_key = args.aws_secret_access_key
+    if getattr(args, "aws_security_group", None) is not None:
+        provider_config.security_group = args.aws_security_group
+    if getattr(args, "aws_subnets", None) is not None:
+        provider_config.subnets = args.aws_subnets
+    if getattr(args, "aws_key_name", None) is not None:
+        provider_config.key_name = args.aws_key_name
+
+    # Update defaults
+    if getattr(args, "aws_default_image", None) is not None:
+        provider_config.defaults.image = args.aws_default_image
+    if getattr(args, "aws_default_server_type", None) is not None:
+        provider_config.defaults.server_type = args.aws_default_server_type
+    if getattr(args, "aws_default_location", None) is not None:
+        provider_config.defaults.location = args.aws_default_location
+    if getattr(args, "aws_default_disk_size", None) is not None:
+        provider_config.defaults.disk_size = args.aws_default_disk_size
+    if getattr(args, "aws_default_disk_type", None) is not None:
+        provider_config.defaults.disk_type = args.aws_default_disk_type
+
+
 def parse_config_section(section: dict) -> "aws_provider":
     """Validate and coerce a ``providers.aws`` config section into an
     ``aws_provider`` dataclass.
