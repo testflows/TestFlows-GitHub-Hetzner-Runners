@@ -6,7 +6,11 @@ Covers:
   not-yet-implemented ones (azure/gcp)
 - Config parser rejects azure/gcp with a clear message
 - schema.json lists hetzner, aws and scaleway under providers.properties
+- Config.check() startup gate: mandatory fields, per-provider credential
+  completeness, and the *parameters named-attribute form
 """
+import contextlib
+import io
 import json
 import os
 import subprocess
@@ -22,6 +26,8 @@ from testflows.github.runners.config.config import (
     hetzner_provider,
     aws_provider,
     scaleway_provider,
+    dedicated_static_provider,
+    dedicated_static_group,
     provider_list,
     apply_args,
 )
@@ -898,6 +904,255 @@ def version_is_valid_and_not_a_placeholder(self):
         assert "__VERSION__" not in __version__, __version__
     with And("it parses as a valid PEP 440 version"):
         assert Version(__version__), __version__
+
+
+# ---------------------------------------------------------------------------
+# Config.check() — startup gate
+# ---------------------------------------------------------------------------
+
+
+def _minimal_config(**overrides):
+    """A Config with the two mandatory top-level fields set and no providers,
+    unless overridden."""
+    kwargs = dict(github_token="tok", github_repository="owner/repo")
+    kwargs.update(overrides)
+    return Config(**kwargs)
+
+
+def _check(cfg, *parameters):
+    """Run cfg.check(*parameters), capturing stderr and the SystemExit code.
+
+    Returns (exit_code_or_None, stderr_text). exit_code is None if check()
+    returned normally (i.e. the config passed).
+    """
+    buf = io.StringIO()
+    try:
+        with contextlib.redirect_stderr(buf):
+            cfg.check(*parameters)
+        return None, buf.getvalue()
+    except SystemExit as e:
+        return e.code, buf.getvalue()
+
+
+@TestScenario
+def check_requires_github_token(self):
+    """github_token defaults from os.getenv('GITHUB_TOKEN'); explicitly clear
+    it so the check exercises the missing-value branch regardless of the
+    ambient environment."""
+    with Given("a config missing github_token but with everything else valid"):
+        cfg = Config(
+            # Load-bearing None: Config.github_token defaults to
+            # os.getenv("GITHUB_TOKEN"), so omitting this field lets the
+            # scenario pass for the wrong reason in any shell that has
+            # GITHUB_TOKEN set.
+            github_token=None,
+            github_repository="owner/repo",
+            providers=provider_list(hetzner=hetzner_provider(token="t")),
+        )
+    with When("check() runs with no arguments"):
+        code, stderr = _check(cfg)
+    with Then("it exits 1"):
+        assert code == 1, code
+    with And("the message names --github-token"):
+        assert "argument error: --github-token is not defined" in stderr, stderr
+
+
+@TestScenario
+def check_requires_github_repository(self):
+    with Given("a config missing github_repository but with everything else valid"):
+        cfg = Config(
+            github_token="tok",
+            github_repository=None,
+            providers=provider_list(hetzner=hetzner_provider(token="t")),
+        )
+    with When("check() runs with no arguments"):
+        code, stderr = _check(cfg)
+    with Then("it exits 1"):
+        assert code == 1, code
+    with And("the message names --github-repository"):
+        assert "argument error: --github-repository is not defined" in stderr, stderr
+
+
+@TestScenario
+def check_requires_at_least_one_provider(self):
+    with Given("a config with the mandatory fields but no providers configured"):
+        cfg = _minimal_config()
+    with When("check() runs with no arguments"):
+        code, stderr = _check(cfg)
+    with Then("it exits 1"):
+        assert code == 1, code
+    with And("the message guides toward configuring a provider"):
+        assert "no cloud provider configured" in stderr, stderr
+        assert "providers.hetzner.token" in stderr, stderr
+        assert "providers.aws" in stderr, stderr
+        assert "providers.scaleway" in stderr, stderr
+        assert "providers.dedicated_static.groups" in stderr, stderr
+
+
+@TestScenario
+def check_passes_with_hetzner_fully_credentialed(self):
+    with Given("a config with only hetzner.token set"):
+        cfg = _minimal_config(providers=provider_list(hetzner=hetzner_provider(token="t")))
+    with When("check() runs with no arguments"):
+        code, stderr = _check(cfg)
+    with Then("it returns without exiting"):
+        assert code is None, (code, stderr)
+
+
+@TestScenario
+def check_passes_with_aws_fully_credentialed(self):
+    with Given("a config with both aws credential fields set"):
+        cfg = _minimal_config(
+            providers=provider_list(
+                aws=aws_provider(access_key_id="k", secret_access_key="s")
+            )
+        )
+    with When("check() runs with no arguments"):
+        code, stderr = _check(cfg)
+    with Then("it returns without exiting"):
+        assert code is None, (code, stderr)
+
+
+@TestScenario
+def check_passes_with_scaleway_fully_credentialed(self):
+    with Given("a config with all three scaleway credential fields set"):
+        cfg = _minimal_config(
+            providers=provider_list(
+                scaleway=scaleway_provider(access_key="k", secret_key="s", project_id="p")
+            )
+        )
+    with When("check() runs with no arguments"):
+        code, stderr = _check(cfg)
+    with Then("it returns without exiting"):
+        assert code is None, (code, stderr)
+
+
+@TestScenario
+def check_passes_with_dedicated_static_fully_credentialed(self):
+    with Given("a config with a non-empty dedicated_static.groups"):
+        cfg = _minimal_config(
+            providers=provider_list(
+                dedicated_static=dedicated_static_provider(
+                    groups={
+                        "g1": dedicated_static_group(
+                            labels=["type-metal"], hosts=["10.0.0.1"]
+                        )
+                    }
+                )
+            )
+        )
+    with When("check() runs with no arguments"):
+        code, stderr = _check(cfg)
+    with Then("it returns without exiting"):
+        assert code is None, (code, stderr)
+
+
+@TestScenario
+def check_rejects_aws_missing_secret_access_key(self):
+    """The regression case: a section with some but not all required fields
+    must not count as configured."""
+    with Given("a config with aws.access_key_id set but secret_access_key missing"):
+        cfg = _minimal_config(
+            providers=provider_list(aws=aws_provider(access_key_id="k"))
+        )
+    with When("check() runs with no arguments"):
+        code, stderr = _check(cfg)
+    with Then("it exits 1"):
+        assert code == 1, (code, stderr)
+    with And("the message reports no provider configured"):
+        assert "no cloud provider configured" in stderr, stderr
+
+
+@TestScenario
+def check_rejects_scaleway_missing_any_one_field(self):
+    with Given("scaleway configs each missing exactly one of its three required fields"):
+        variants = {
+            "missing access_key": scaleway_provider(secret_key="s", project_id="p"),
+            "missing secret_key": scaleway_provider(access_key="k", project_id="p"),
+            "missing project_id": scaleway_provider(access_key="k", secret_key="s"),
+        }
+    for label, scaleway in variants.items():
+        with Check(label):
+            cfg = _minimal_config(providers=provider_list(scaleway=scaleway))
+            with When("check() runs with no arguments"):
+                code, stderr = _check(cfg)
+            with Then("it exits 1"):
+                assert code == 1, (label, code, stderr)
+            with And("the message reports no provider configured"):
+                assert "no cloud provider configured" in stderr, (label, stderr)
+
+
+@TestScenario
+def check_rejects_hetzner_empty_token(self):
+    with Given("a hetzner section present but with an empty token"):
+        cfg = _minimal_config(providers=provider_list(hetzner=hetzner_provider(token="")))
+    with When("check() runs with no arguments"):
+        code, stderr = _check(cfg)
+    with Then("it exits 1"):
+        assert code == 1, (code, stderr)
+    with And("the message reports no provider configured"):
+        assert "no cloud provider configured" in stderr, stderr
+
+
+@TestScenario
+def check_rejects_dedicated_static_empty_groups(self):
+    with Given("a dedicated_static section present but with empty groups"):
+        cfg = _minimal_config(
+            providers=provider_list(dedicated_static=dedicated_static_provider(groups={}))
+        )
+    with When("check() runs with no arguments"):
+        code, stderr = _check(cfg)
+    with Then("it exits 1"):
+        assert code == 1, (code, stderr)
+    with And("the message reports no provider configured"):
+        assert "no cloud provider configured" in stderr, stderr
+
+
+@TestScenario
+def check_named_parameter_passes_when_set(self):
+    with Given("a config with ssh_key set"):
+        cfg = _minimal_config(ssh_key="/home/user/.ssh/id_rsa.pub")
+    with When('check("ssh_key") runs'):
+        code, stderr = _check(cfg, "ssh_key")
+    with Then("it returns without exiting"):
+        assert code is None, (code, stderr)
+
+
+@TestScenario
+def check_named_parameter_fails_when_unset(self):
+    with Given("a config with ssh_key explicitly cleared"):
+        cfg = _minimal_config(ssh_key=None)
+    with When('check("ssh_key") runs'):
+        code, stderr = _check(cfg, "ssh_key")
+    with Then("it exits 1"):
+        assert code == 1, (code, stderr)
+    with And("the message names --ssh-key"):
+        assert "argument error: --ssh-key is not defined" in stderr, stderr
+
+
+@TestScenario
+def check_named_parameter_fails_when_empty_string(self):
+    with Given("a config with ssh_key set to an empty string"):
+        cfg = _minimal_config(ssh_key="")
+    with When('check("ssh_key") runs'):
+        code, stderr = _check(cfg, "ssh_key")
+    with Then("it exits 1"):
+        assert code == 1, (code, stderr)
+    with And("the message names --ssh-key"):
+        assert "argument error: --ssh-key is not defined" in stderr, stderr
+
+
+@TestScenario
+def check_fully_valid_config_returns_none(self):
+    with Given("a fully valid config with github fields and a credentialed provider"):
+        cfg = _minimal_config(
+            providers=provider_list(hetzner=hetzner_provider(token="t"))
+        )
+    with When("check() runs with no arguments"):
+        code, stderr = _check(cfg)
+    with Then("it returns without exiting and without printing anything"):
+        assert code is None, (code, stderr)
+        assert stderr == "", stderr
 
 
 # ---------------------------------------------------------------------------
