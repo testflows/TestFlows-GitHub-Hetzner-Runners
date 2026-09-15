@@ -19,13 +19,24 @@ PROVIDER_REGISTRY: list[type[CloudProvider]] = sorted(
 def provider_factory(config: Config) -> list[CloudProvider]:
     """Construct every configured provider, in precedence order.
 
-    If ``config.enabled_providers`` (--provider) is set, narrow the result to
-    that subset. The check for a requested-but-missing provider happens after
-    building, so it catches both "no providers.<name> section" and "a section
-    exists but from_config rejected it" (e.g. missing credentials) with one
-    error -- both mean the user will not get a provider they asked for.
+    If ``config.enabled_providers`` (--provider) is set, the registry is
+    narrowed to those classes *before* ``from_config`` runs -- an excluded
+    provider is never constructed. Provider construction is not free or safe
+    to attempt unconditionally (e.g. AWSCloudProvider.__init__ imports boto3
+    and opens a client), so a provider the user explicitly excluded must not
+    be touched at all, not built and then discarded.
+
+    The check for a requested-but-missing provider happens after building
+    the (narrowed) set, so it catches both "no providers.<name> section" and
+    "a section exists but from_config rejected it" (e.g. missing
+    credentials) with one error -- both mean the user will not get a
+    provider they asked for.
     """
-    built = [p for cls in PROVIDER_REGISTRY if (p := cls.from_config(config)) is not None]
+    registry = PROVIDER_REGISTRY
+    if config.enabled_providers is not None:
+        registry = [cls for cls in registry if cls.config_key in config.enabled_providers]
+
+    built = [p for cls in registry if (p := cls.from_config(config)) is not None]
 
     if config.enabled_providers is None:
         return built
@@ -42,4 +53,4 @@ def provider_factory(config: Config) -> list[CloudProvider]:
             "file, or remove it from --provider."
         )
 
-    return [p for p in built if p.name in config.enabled_providers]
+    return built

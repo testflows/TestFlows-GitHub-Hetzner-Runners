@@ -483,6 +483,41 @@ def provider_factory_raises_for_unconfigured_requested_provider(self):
 
 
 @TestScenario
+def provider_factory_never_constructs_an_excluded_provider(self):
+    """Excluded providers must not even be constructed -- from_config for a
+    provider not in enabled_providers is never called.
+
+    Asserting only on the returned list can't distinguish "never built" from
+    "built and discarded": both give the same final list. A spy on
+    AWSCloudProvider.from_config is the only way to tell them apart, and it's
+    the distinction that matters -- provider construction is not free or
+    safe to attempt unconditionally (e.g. AWSCloudProvider.__init__ imports
+    boto3 and opens a client), so an excluded provider must be skipped, not
+    built and filtered out afterwards.
+    """
+    from unittest.mock import patch
+    from testflows.github.runners.providers.aws.provider import AWSCloudProvider
+
+    with Given("hetzner and aws both configured, but only hetzner enabled"):
+        cfg = Config(
+            providers=provider_list(
+                hetzner=hetzner_provider(token="t"),
+                aws=aws_provider(access_key_id="k", secret_access_key="s"),
+            ),
+            enabled_providers=["hetzner"],
+        )
+    with When("provider_factory runs with AWSCloudProvider.from_config spied on"):
+        with patch.object(
+            AWSCloudProvider, "from_config", wraps=AWSCloudProvider.from_config
+        ) as spy:
+            providers = provider_factory(cfg)
+    with Then("only hetzner is returned"):
+        assert [p.name for p in providers] == ["hetzner"], [p.name for p in providers]
+    with And("AWSCloudProvider.from_config was never called -- aws was never built"):
+        assert spy.call_count == 0, spy.call_count
+
+
+@TestScenario
 def provider_factory_raises_for_requested_provider_missing_credentials(self):
     """A providers.aws: section that exists but lacks credentials makes
     from_config return None -- same observable failure as no section at all,
