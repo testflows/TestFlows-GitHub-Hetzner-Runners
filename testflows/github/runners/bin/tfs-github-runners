@@ -141,6 +141,7 @@ def argparser():
     # Provider selection
     parser.add_argument(
         "--provider",
+        dest="enabled_providers",
         metavar="name",
         type=args.provider_type,
         help="Enable specific providers using comma-separated list.\n"

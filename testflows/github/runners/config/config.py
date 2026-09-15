@@ -111,6 +111,7 @@ _CLI_OVERRIDABLE_FIELDS = (
     "debug",
     "service_mode",
     "embedded_mode",
+    "enabled_providers",
 )
 
 

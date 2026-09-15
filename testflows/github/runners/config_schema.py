@@ -200,6 +200,11 @@ class Config:
     # Multi-provider configuration
     providers: provider_list = dataclasses.field(default_factory=provider_list)
 
+    # CLI-only: restricts provider_factory to this subset of configured
+    # providers (--provider). None means "everything configured" — unchanged
+    # behavior. Not settable from the config file; see parse.py.
+    enabled_providers: list[str] = None
+
     # Provider-agnostic settings
     ssh_key: str = os.path.expanduser("~/.ssh/id_rsa.pub")
     additional_ssh_keys: list[str] = None

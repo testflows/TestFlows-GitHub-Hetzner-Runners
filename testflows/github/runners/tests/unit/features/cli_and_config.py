@@ -20,11 +20,14 @@ from testflows.github.runners.args import provider_type
 from testflows.github.runners.config.config import (
     Config,
     hetzner_provider,
+    aws_provider,
+    scaleway_provider,
     provider_list,
     apply_args,
 )
 from testflows.github.runners.config.parse import parse_config
 from testflows.github.runners.config.factory import provider_factory
+from testflows.github.runners.errors import ConfigError
 from testflows.github.runners.service import command_options
 
 # Repo root so the CLI subprocess can find the package without an install.
@@ -400,6 +403,110 @@ def factory_loops_registry_and_from_config_gates_on_config(self):
 
 
 @TestScenario
+def apply_args_wires_provider_flag_into_enabled_providers(self):
+    """The --provider CLI flag (dest=enabled_providers) reaches Config.enabled_providers
+    through the generic apply_args allow-list loop."""
+    with Given("a default config"):
+        cfg = Config()
+    with When("apply_args runs with enabled_providers set (as --provider would parse it)"):
+        apply_args(cfg, SimpleNamespace(enabled_providers=["hetzner", "aws"]))
+    with Then("the field is set on Config"):
+        assert cfg.enabled_providers == ["hetzner", "aws"], cfg.enabled_providers
+
+
+@TestScenario
+def apply_args_leaves_enabled_providers_alone_when_flag_unset(self):
+    with Given("a default config"):
+        cfg = Config()
+    with When("apply_args runs with enabled_providers unset (None)"):
+        apply_args(cfg, SimpleNamespace(enabled_providers=None))
+    with Then("enabled_providers stays None"):
+        assert cfg.enabled_providers is None, cfg.enabled_providers
+
+
+@TestScenario
+def provider_factory_filters_to_enabled_providers(self):
+    """enabled_providers restricts the factory to a subset of what's configured."""
+    with Given("hetzner and aws both configured, but only hetzner enabled"):
+        cfg = Config(
+            providers=provider_list(
+                hetzner=hetzner_provider(token="t"),
+                aws=aws_provider(access_key_id="k", secret_access_key="s"),
+            ),
+            enabled_providers=["hetzner"],
+        )
+    with When("provider_factory runs"):
+        providers = provider_factory(cfg)
+    with Then("only hetzner is built, aws is excluded despite being configured"):
+        assert [p.name for p in providers] == ["hetzner"], [p.name for p in providers]
+
+
+@TestScenario
+def provider_factory_none_enabled_providers_builds_everything_configured(self):
+    """enabled_providers=None (the default) means unchanged behavior: every
+    configured provider is built."""
+    with Given("hetzner and aws both configured, enabled_providers left at None"):
+        cfg = Config(
+            providers=provider_list(
+                hetzner=hetzner_provider(token="t"),
+                aws=aws_provider(access_key_id="k", secret_access_key="s"),
+            ),
+        )
+    with Then("enabled_providers defaults to None"):
+        assert cfg.enabled_providers is None
+    with When("provider_factory runs"):
+        providers = provider_factory(cfg)
+    with Then("both configured providers are built"):
+        assert sorted(p.name for p in providers) == ["aws", "hetzner"], [
+            p.name for p in providers
+        ]
+
+
+@TestScenario
+def provider_factory_raises_for_unconfigured_requested_provider(self):
+    """Requesting a provider with no providers.<name> section at all must fail,
+    not silently narrow to what happens to exist."""
+    with Given("only hetzner configured, but aws requested via enabled_providers"):
+        cfg = Config(
+            providers=provider_list(hetzner=hetzner_provider(token="t")),
+            enabled_providers=["hetzner", "aws"],
+        )
+    with When("provider_factory runs"):
+        try:
+            provider_factory(cfg)
+            raised = None
+        except ConfigError as e:
+            raised = e
+    with Then("a ConfigError names the missing provider"):
+        assert raised is not None
+        assert "aws" in str(raised), str(raised)
+
+
+@TestScenario
+def provider_factory_raises_for_requested_provider_missing_credentials(self):
+    """A providers.aws: section that exists but lacks credentials makes
+    from_config return None -- same observable failure as no section at all,
+    and must be rejected the same way, checked after building."""
+    with Given("an aws section with only a partial credential set"):
+        cfg = Config(
+            providers=provider_list(
+                hetzner=hetzner_provider(token="t"),
+                aws=aws_provider(access_key_id="k"),  # secret_access_key missing
+            ),
+            enabled_providers=["hetzner", "aws"],
+        )
+    with When("provider_factory runs"):
+        try:
+            provider_factory(cfg)
+            raised = None
+        except ConfigError as e:
+            raised = e
+    with Then("a ConfigError names aws, even though a providers.aws section exists"):
+        assert raised is not None
+        assert "aws" in str(raised), str(raised)
+
+
+@TestScenario
 def config_rejects_removed_top_level_defaults(self):
     """Top-level default_image/default_server_type/... are gone; they hard-error."""
     import tempfile
@@ -427,6 +534,54 @@ def config_rejects_removed_top_level_defaults(self):
                 assert "providers.hetzner.defaults" in str(raised), str(raised)
         finally:
             os.unlink(path)
+
+
+@TestScenario
+def config_rejects_enabled_providers_key(self):
+    """enabled_providers is CLI-only (--provider); it must not be settable,
+    unvalidated, from the config file."""
+    import tempfile
+
+    text = _MINIMAL_BASE + "  enabled_providers:\n    - hetzner\n"
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        f.write(text)
+        path = f.name
+    try:
+        with When("I parse a config with an enabled_providers key"):
+            try:
+                parse_config(path)
+                raised = None
+            except AssertionError as e:
+                raised = e
+        with Then("parsing is rejected and points at --provider"):
+            assert raised is not None
+            assert "--provider" in str(raised), str(raised)
+    finally:
+        os.unlink(path)
+
+
+@TestScenario
+def config_rejects_bare_provider_key(self):
+    """A bare `provider:` key (the name a user would try first) is rejected
+    the same way as enabled_providers."""
+    import tempfile
+
+    text = _MINIMAL_BASE + "  provider: hetzner\n"
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        f.write(text)
+        path = f.name
+    try:
+        with When("I parse a config with a bare provider key"):
+            try:
+                parse_config(path)
+                raised = None
+            except AssertionError as e:
+                raised = e
+        with Then("parsing is rejected and points at --provider"):
+            assert raised is not None
+            assert "--provider" in str(raised), str(raised)
+    finally:
+        os.unlink(path)
 
 
 @TestScenario

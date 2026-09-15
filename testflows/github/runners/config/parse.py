@@ -503,6 +503,18 @@ def parse_config(filename: str):
             "use config.providers.hetzner.token instead"
         )
 
+    if doc.get("enabled_providers") is not None:
+        assert False, (
+            "config.enabled_providers: is not supported in the config file; "
+            "use --provider on the command line instead"
+        )
+
+    if doc.get("provider") is not None:
+        assert False, (
+            "config.provider: is not supported in the config file; "
+            "use --provider on the command line instead"
+        )
+
     if doc.get("providers") is not None:
         _p = doc["providers"]
         assert isinstance(_p, dict), "config.providers: is not a dictionary"
