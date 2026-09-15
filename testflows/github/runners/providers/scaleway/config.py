@@ -3,6 +3,32 @@
 from ...config_schema import scaleway_provider, provider_defaults
 
 
+def update_from_args(provider_config, args):
+    """Update Scaleway provider configuration from CLI arguments."""
+    if not provider_config:
+        return
+
+    # Update credentials
+    if getattr(args, "scaleway_access_key", None) is not None:
+        provider_config.access_key = args.scaleway_access_key
+    if getattr(args, "scaleway_secret_key", None) is not None:
+        provider_config.secret_key = args.scaleway_secret_key
+    if getattr(args, "scaleway_project_id", None) is not None:
+        provider_config.project_id = args.scaleway_project_id
+    if getattr(args, "scaleway_organization_id", None) is not None:
+        provider_config.organization_id = args.scaleway_organization_id
+
+    # Update defaults
+    if getattr(args, "scaleway_default_image", None) is not None:
+        provider_config.defaults.image = args.scaleway_default_image
+    if getattr(args, "scaleway_default_server_type", None) is not None:
+        provider_config.defaults.server_type = args.scaleway_default_server_type
+    if getattr(args, "scaleway_default_location", None) is not None:
+        provider_config.defaults.location = args.scaleway_default_location
+    if getattr(args, "scaleway_default_disk_size", None) is not None:
+        provider_config.defaults.disk_size = args.scaleway_default_disk_size
+
+
 def parse_config_section(section: dict) -> "scaleway_provider":
     """Validate and coerce a ``providers.scaleway`` config section into a
     ``scaleway_provider`` dataclass.

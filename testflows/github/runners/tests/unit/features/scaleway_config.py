@@ -1484,6 +1484,115 @@ def get_prices_fans_out_across_zones(self):
 
 
 # ---------------------------------------------------------------------------
+# update_from_args: CLI overrides reach cfg.providers.scaleway
+# ---------------------------------------------------------------------------
+
+
+@TestScenario
+def update_from_args_overrides_each_field(self):
+    """Every --scaleway-* flag lands on its matching scaleway_provider field."""
+    from testflows.github.runners.providers.scaleway import config as scw_config
+
+    cfg = scaleway_provider_config()
+    args = SimpleNamespace(
+        scaleway_access_key="SCWK",
+        scaleway_secret_key="11111111-1111-1111-1111-111111111111",
+        scaleway_project_id="22222222-2222-2222-2222-222222222222",
+        scaleway_organization_id="33333333-3333-3333-3333-333333333333",
+        scaleway_default_image="ubuntu_jammy",
+        scaleway_default_server_type="dev1.m",
+        scaleway_default_location="fr-par-1",
+        scaleway_default_disk_size=40,
+    )
+    with When("update_from_args runs"):
+        scw_config.update_from_args(cfg, args)
+    with Then("every field is overridden"):
+        assert cfg.access_key == "SCWK", cfg
+        assert cfg.secret_key == "11111111-1111-1111-1111-111111111111", cfg
+        assert cfg.project_id == "22222222-2222-2222-2222-222222222222", cfg
+        assert cfg.organization_id == "33333333-3333-3333-3333-333333333333", cfg
+        assert cfg.defaults.image == "ubuntu_jammy", cfg
+        assert cfg.defaults.server_type == "dev1.m", cfg
+        assert cfg.defaults.location == "fr-par-1", cfg
+        assert cfg.defaults.disk_size == 40, cfg
+
+
+@TestScenario
+def update_from_args_leaves_unset_fields_alone(self):
+    """An unset (None) CLI arg must not clobber an already-configured value."""
+    from testflows.github.runners.config.config import provider_defaults
+    from testflows.github.runners.providers.scaleway import config as scw_config
+
+    cfg = scaleway_provider_config(
+        access_key="configured-key",
+        secret_key="configured-secret",
+        project_id="configured-project",
+        organization_id="configured-org",
+        defaults=provider_defaults(
+            image="ubuntu_configured",
+            server_type="dev1.l",
+            location="nl-ams-1",
+            disk_size=25,
+        ),
+    )
+    with When("update_from_args runs with every arg unset (None)"):
+        scw_config.update_from_args(cfg, SimpleNamespace())
+    with Then("every configured value survives untouched"):
+        assert cfg.access_key == "configured-key", cfg
+        assert cfg.secret_key == "configured-secret", cfg
+        assert cfg.project_id == "configured-project", cfg
+        assert cfg.organization_id == "configured-org", cfg
+        assert cfg.defaults.image == "ubuntu_configured", cfg
+        assert cfg.defaults.server_type == "dev1.l", cfg
+        assert cfg.defaults.location == "nl-ams-1", cfg
+        assert cfg.defaults.disk_size == 25, cfg
+
+
+# ---------------------------------------------------------------------------
+# apply_args: create-from-flags-alone path (mirrors Hetzner's)
+# ---------------------------------------------------------------------------
+
+
+@TestScenario
+def apply_args_creates_scaleway_provider_from_flags_alone(self):
+    """With no providers.scaleway section, all three required credential
+    flags create one that provider_factory (from_config) would build."""
+    from testflows.github.runners.config.config import apply_args
+
+    cfg = Config(providers=provider_list())
+    with When("apply_args runs with all three required Scaleway flags set"):
+        apply_args(
+            cfg,
+            SimpleNamespace(
+                scaleway_access_key="SCWK",
+                scaleway_secret_key="SCWS",
+                scaleway_project_id="proj-1",
+            ),
+        )
+    with Then("a providers.scaleway section is created with those credentials"):
+        assert cfg.providers.scaleway is not None, cfg.providers.scaleway
+        assert cfg.providers.scaleway.access_key == "SCWK", cfg.providers.scaleway
+        assert cfg.providers.scaleway.secret_key == "SCWS", cfg.providers.scaleway
+        assert cfg.providers.scaleway.project_id == "proj-1", cfg.providers.scaleway
+
+
+@TestScenario
+def apply_args_does_not_create_scaleway_provider_from_partial_flags(self):
+    """Missing project_id must not create a provider — it would never pass
+    ScalewayCloudProvider.from_config's guard."""
+    from testflows.github.runners.config.config import apply_args
+
+    cfg = Config(providers=provider_list())
+    with When("apply_args runs with only access_key and secret_key set"):
+        apply_args(
+            cfg,
+            SimpleNamespace(scaleway_access_key="SCWK", scaleway_secret_key="SCWS"),
+        )
+    with Then("no providers.scaleway section is created"):
+        assert cfg.providers.scaleway is None, cfg.providers.scaleway
+
+
+# ---------------------------------------------------------------------------
 # Feature entry point
 # ---------------------------------------------------------------------------
 
