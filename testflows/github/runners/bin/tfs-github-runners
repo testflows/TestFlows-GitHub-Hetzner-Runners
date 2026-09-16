@@ -146,7 +146,7 @@ def argparser():
         type=args.provider_type,
         help="Restrict which configured providers run, as a comma-separated list.\n"
              "Example: --provider hetzner,aws,scaleway,dedicated_static\n"
-             "default: every provider configured in the config file runs"
+             "default: every configured provider runs"
     )
 
     # Add provider-specific arguments
