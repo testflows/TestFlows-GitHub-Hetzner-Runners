@@ -6,8 +6,7 @@ Covers:
   not-yet-implemented ones (azure/gcp)
 - Config parser rejects azure/gcp with a clear message
 - schema.json lists hetzner, aws and scaleway under providers.properties
-- Config.check() startup gate: mandatory fields, per-provider credential
-  completeness, and the *parameters named-attribute form
+- Config.check() startup gate
 """
 import contextlib
 import importlib.util
@@ -47,9 +46,7 @@ _SCHEMA_PATH = os.path.join(_REPO_ROOT, "testflows", "github", "runners", "confi
 
 
 def _cli_module():
-    """Import bin/tfs-github-runners (no .py extension, so plain import can't
-    find it) so tests can call the real argparser() instead of hand-building
-    a SimpleNamespace, which would skip argparse entirely."""
+    """Import the CLI entrypoint (no .py suffix) so tests hit the real parser."""
     loader = SourceFileLoader("tfs_cli_entrypoint", _CLI_SCRIPT)
     spec = importlib.util.spec_from_loader(loader.name, loader)
     module = importlib.util.module_from_spec(spec)
@@ -157,9 +154,7 @@ def service_command_does_not_inject_hetzner_provider(self):
 
 @TestScenario
 def service_command_emits_provider_flag_when_set(self):
-    """--provider is CLI-only (no config-file seam), so unlike credentials and
-    defaults it must be re-emitted or an installed service silently runs
-    every configured provider instead of the requested subset."""
+    """Re-emit --provider: it has no config-file seam."""
     cfg = Config(
         github_token="token",
         github_repository="owner/repo",
@@ -455,8 +450,7 @@ def factory_loops_registry_and_from_config_gates_on_config(self):
 
 @TestScenario
 def apply_args_wires_provider_flag_into_enabled_providers(self):
-    """The --provider CLI flag (dest=enabled_providers) reaches Config.enabled_providers
-    through the generic apply_args allow-list loop."""
+    """--provider (dest=enabled_providers) reaches Config through apply_args."""
     with Given("a default config"):
         cfg = Config()
     with When("apply_args runs with enabled_providers set (as --provider would parse it)"):
@@ -494,8 +488,7 @@ def provider_factory_filters_to_enabled_providers(self):
 
 @TestScenario
 def provider_factory_none_enabled_providers_builds_everything_configured(self):
-    """enabled_providers=None (the default) means unchanged behavior: every
-    configured provider is built."""
+    """None (no --provider) still builds every configured provider."""
     with Given("mocked EC2 client"):
         mock_ec2()
     with Given("hetzner and aws both configured, enabled_providers left at None"):
@@ -517,8 +510,7 @@ def provider_factory_none_enabled_providers_builds_everything_configured(self):
 
 @TestScenario
 def provider_factory_raises_for_unconfigured_requested_provider(self):
-    """Requesting a provider with no providers.<name> section at all must fail,
-    not silently narrow to what happens to exist."""
+    """A requested provider with no config section must fail, not silently drop."""
     with Given("only hetzner configured, but aws requested via enabled_providers"):
         cfg = Config(
             providers=provider_list(hetzner=hetzner_provider(token="t")),
@@ -542,17 +534,7 @@ def provider_factory_raises_for_unconfigured_requested_provider(self):
 
 @TestScenario
 def provider_factory_never_constructs_an_excluded_provider(self):
-    """Excluded providers must not even be constructed -- from_config for a
-    provider not in enabled_providers is never called.
-
-    Asserting only on the returned list can't distinguish "never built" from
-    "built and discarded": both give the same final list. A spy on
-    AWSCloudProvider.from_config is the only way to tell them apart, and it's
-    the distinction that matters -- provider construction is not free or
-    safe to attempt unconditionally (e.g. AWSCloudProvider.__init__ imports
-    boto3 and opens a client), so an excluded provider must be skipped, not
-    built and filtered out afterwards.
-    """
+    """The returned list can't tell skip from build-then-drop; spy on from_config."""
     from unittest.mock import patch
     from testflows.github.runners.providers.aws.provider import AWSCloudProvider
 
@@ -577,9 +559,7 @@ def provider_factory_never_constructs_an_excluded_provider(self):
 
 @TestScenario
 def provider_factory_raises_for_requested_provider_missing_credentials(self):
-    """A providers.aws: section that exists but lacks credentials makes
-    from_config return None -- same observable failure as no section at all,
-    and must be rejected the same way, checked after building."""
+    """A present-but-incomplete section must fail the same as a missing one."""
     with Given("an aws section with only a partial credential set"):
         cfg = Config(
             providers=provider_list(
@@ -604,9 +584,7 @@ def provider_factory_raises_for_requested_provider_missing_credentials(self):
 
 @TestScenario
 def provider_factory_raises_when_nothing_could_be_built_at_all(self):
-    """Requesting providers when none of them are configured must not leave
-    the 'Built: ...' half of the message empty-looking ('Built: ' with
-    nothing after it) -- it must say plainly that nothing was built."""
+    """When nothing builds, the error must say 'Built: none', not 'Built: '."""
     with Given("no providers configured at all, but aws and scaleway requested"):
         cfg = Config(
             providers=provider_list(),
@@ -661,8 +639,7 @@ def config_rejects_removed_top_level_defaults(self):
 
 @TestScenario
 def config_rejects_enabled_providers_key(self):
-    """enabled_providers is CLI-only (--provider); it must not be settable,
-    unvalidated, from the config file."""
+    """enabled_providers is CLI-only; YAML must not set it."""
     import tempfile
 
     text = _MINIMAL_BASE + "  enabled_providers:\n    - hetzner\n"
@@ -685,8 +662,7 @@ def config_rejects_enabled_providers_key(self):
 
 @TestScenario
 def config_rejects_bare_provider_key(self):
-    """A bare `provider:` key (the name a user would try first) is rejected
-    the same way as enabled_providers."""
+    """A bare `provider:` key is rejected the same way as enabled_providers."""
     import tempfile
 
     text = _MINIMAL_BASE + "  provider: hetzner\n"
@@ -959,19 +935,14 @@ def version_is_valid_and_not_a_placeholder(self):
 
 
 def _minimal_config(**overrides):
-    """A Config with the two mandatory top-level fields set and no providers,
-    unless overridden."""
+    """Config with github fields set and no providers, unless overridden."""
     kwargs = dict(github_token="tok", github_repository="owner/repo")
     kwargs.update(overrides)
     return Config(**kwargs)
 
 
 def _check(cfg, *parameters):
-    """Run cfg.check(*parameters), capturing stderr and the SystemExit code.
-
-    Returns (exit_code_or_None, stderr_text). exit_code is None if check()
-    returned normally (i.e. the config passed).
-    """
+    """Returns (exit_code_or_None, stderr). None means check() passed."""
     buf = io.StringIO()
     try:
         with contextlib.redirect_stderr(buf):
@@ -983,15 +954,9 @@ def _check(cfg, *parameters):
 
 @TestScenario
 def check_requires_github_token(self):
-    """github_token defaults from os.getenv('GITHUB_TOKEN'); explicitly clear
-    it so the check exercises the missing-value branch regardless of the
-    ambient environment."""
     with Given("a config missing github_token but with everything else valid"):
         cfg = Config(
-            # Load-bearing None: Config.github_token defaults to
-            # os.getenv("GITHUB_TOKEN"), so omitting this field lets the
-            # scenario pass for the wrong reason in any shell that has
-            # GITHUB_TOKEN set.
+            # Field defaults to $GITHUB_TOKEN; None keeps a set env from hiding this.
             github_token=None,
             github_repository="owner/repo",
             providers=provider_list(hetzner=hetzner_provider(token="t")),
@@ -1096,8 +1061,7 @@ def check_passes_with_dedicated_static_fully_credentialed(self):
 
 @TestScenario
 def check_rejects_aws_missing_secret_access_key(self):
-    """The regression case: a section with some but not all required fields
-    must not count as configured."""
+    """A partial credential set must not count as configured."""
     with Given("a config with aws.access_key_id set but secret_access_key missing"):
         cfg = _minimal_config(
             providers=provider_list(aws=aws_provider(access_key_id="k"))
@@ -1204,9 +1168,7 @@ def check_fully_valid_config_returns_none(self):
 
 @TestScenario
 def check_enabled_providers_rejects_provider_not_credentialed(self):
-    """The install-gate regression case: only hetzner is credentialed, but
-    --provider requested aws. check() must reject this before install ever
-    writes an aws unit, not leave it to provider_factory at service start."""
+    """Install gate: --provider aws with only Hetzner credentialed must fail check()."""
     with Given("hetzner fully credentialed, but enabled_providers requests aws"):
         cfg = _minimal_config(
             providers=provider_list(hetzner=hetzner_provider(token="t")),
@@ -1223,8 +1185,7 @@ def check_enabled_providers_rejects_provider_not_credentialed(self):
 
 @TestScenario
 def check_enabled_providers_rejects_present_but_incomplete_provider(self):
-    """aws has a providers.aws section but is missing secret_access_key --
-    present-but-incomplete must be rejected the same as absent."""
+    """A present-but-incomplete aws section must fail the same as an absent one."""
     with Given("an aws section missing secret_access_key, requested via --provider"):
         cfg = _minimal_config(
             providers=provider_list(aws=aws_provider(access_key_id="k")),
@@ -1274,9 +1235,7 @@ def check_enabled_providers_passes_when_each_named_provider_is_complete(self):
 
 @TestScenario
 def check_enabled_providers_none_behaves_exactly_as_before(self):
-    """enabled_providers=None (the default, no --provider flag) must not
-    engage the per-name branch at all: any one complete provider passes,
-    exactly like before this fix."""
+    """No --provider: any one complete provider still passes."""
     with Given("only hetzner configured, enabled_providers left at None"):
         cfg = _minimal_config(
             providers=provider_list(hetzner=hetzner_provider(token="t")),
@@ -1290,10 +1249,7 @@ def check_enabled_providers_none_behaves_exactly_as_before(self):
 
 
 # ---------------------------------------------------------------------------
-# argparse round-trip: flag string -> argparser().parse_args() -> apply_args
-# -> Config. Every other flag test builds a SimpleNamespace by hand, which
-# skips argparse entirely -- an add_argument(type=...) mistake would be
-# invisible to the suite. These go through the real parser.
+# argparse round-trip through the real parser (SimpleNamespace skips type=)
 # ---------------------------------------------------------------------------
 
 
@@ -1318,11 +1274,7 @@ def argv_round_trip_sets_hetzner_provider_fields(self):
 
 @TestScenario
 def argv_round_trip_sets_aws_provider_fields(self):
-    """Guards the six AWS/Scaleway defaults flags in particular: their
-    type= validators (image_type/server_type/location_type) live in
-    providers/aws/args.py and providers/scaleway/args.py, not argtypes.py,
-    so a mistaken import or wrong validator would only show up by actually
-    going through argparse."""
+    """AWS default flags use provider-local type= validators; hit argparse."""
     cli = _cli_module()
     with When("real argv is parsed for aws"):
         parsed = cli.argparser().parse_args(

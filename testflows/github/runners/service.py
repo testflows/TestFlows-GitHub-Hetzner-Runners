@@ -35,12 +35,8 @@ def command_options(
     --github-repository
     --ssh-key
 
-    Provider configuration (credentials, defaults) is not re-emitted as flags;
-    the service reads it from the ``--config`` file, uniformly for every
-    provider. ``--provider`` is the one exception: it is CLI-only (the config
-    file rejects `enabled_providers`/`provider` keys), so it has no config-file
-    seam to be read back from and must be re-emitted here or an installed
-    service silently reverts to running every configured provider.
+    Provider credentials come from ``--config``. Re-emit --provider:
+    it is CLI-only, so without it the unit would run every configured provider.
     """
     command = ""
     command += f" --github-token {github_token}"

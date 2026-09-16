@@ -130,10 +130,7 @@ def apply_args(config, args):
         config.providers.hetzner = hetzner_provider()
         hetzner_config.update_from_args(config.providers.hetzner, args)
 
-    # Apply AWS-specific CLI overrides through its provider update hook.
-    # Only create a section from flags alone once both credentials are
-    # present — the same guard AWSCloudProvider.from_config uses, so a
-    # section built here is one the factory will actually construct.
+    # Apply AWS CLI overrides. Create from flags only with both keys.
     if config.providers.aws is not None:
         aws_config.update_from_args(config.providers.aws, args)
     elif getattr(args, "aws_access_key_id", None) and getattr(
@@ -142,10 +139,7 @@ def apply_args(config, args):
         config.providers.aws = aws_provider()
         aws_config.update_from_args(config.providers.aws, args)
 
-    # Apply Scaleway-specific CLI overrides through its provider update hook.
-    # Only create a section from flags alone once all three required
-    # credentials are present — the same guard ScalewayCloudProvider.from_config
-    # uses, so a section built here is one the factory will actually construct.
+    # Apply Scaleway CLI overrides. Create from flags only with all three credentials.
     if config.providers.scaleway is not None:
         scaleway_config.update_from_args(config.providers.scaleway, args)
     elif (
