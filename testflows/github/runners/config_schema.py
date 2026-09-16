@@ -309,6 +309,30 @@ class Config:
                 self.providers.dedicated_static is not None
                 and bool(self.providers.dedicated_static.groups)
             )
+            completeness = {
+                "hetzner": has_hetzner,
+                "aws": has_aws,
+                "scaleway": has_scaleway,
+                "dedicated_static": has_dedicated_static,
+            }
+            if self.enabled_providers is not None:
+                incomplete = [
+                    name for name in self.enabled_providers if not completeness.get(name)
+                ]
+                if incomplete:
+                    print(
+                        "argument error: --provider requested "
+                        f"{', '.join(incomplete)}, but "
+                        f"{'each is' if len(incomplete) > 1 else 'it is'} "
+                        "missing required credentials; add or complete "
+                        + ", ".join(f"providers.{name}" for name in incomplete)
+                        + " in the config file, or drop "
+                        + ("them" if len(incomplete) > 1 else "it")
+                        + " from --provider",
+                        file=sys.stderr,
+                    )
+                    sys.exit(1)
+                return
             if not (
                 has_hetzner or has_aws or has_scaleway or has_dedicated_static
             ):

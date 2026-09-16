@@ -38,6 +38,7 @@ from testflows.github.runners.config.factory import provider_factory
 from testflows.github.runners.errors import ConfigError
 from testflows.github.runners.service import command_options
 from testflows.github.runners.tests.unit.steps.scaleway import mock_scaleway_sdk
+from testflows.github.runners.tests.unit.steps.aws import mock_ec2
 
 # Repo root so the CLI subprocess can find the package without an install.
 _REPO_ROOT = os.path.abspath(os.path.join(current_dir(), "..", "..", "..", "..", "..", ".."))
@@ -495,6 +496,8 @@ def provider_factory_filters_to_enabled_providers(self):
 def provider_factory_none_enabled_providers_builds_everything_configured(self):
     """enabled_providers=None (the default) means unchanged behavior: every
     configured provider is built."""
+    with Given("mocked EC2 client"):
+        mock_ec2()
     with Given("hetzner and aws both configured, enabled_providers left at None"):
         cfg = Config(
             providers=provider_list(
@@ -1199,6 +1202,93 @@ def check_fully_valid_config_returns_none(self):
         assert stderr == "", stderr
 
 
+@TestScenario
+def check_enabled_providers_rejects_provider_not_credentialed(self):
+    """The install-gate regression case: only hetzner is credentialed, but
+    --provider requested aws. check() must reject this before install ever
+    writes an aws unit, not leave it to provider_factory at service start."""
+    with Given("hetzner fully credentialed, but enabled_providers requests aws"):
+        cfg = _minimal_config(
+            providers=provider_list(hetzner=hetzner_provider(token="t")),
+            enabled_providers=["aws"],
+        )
+    with When("check() runs with no arguments"):
+        code, stderr = _check(cfg)
+    with Then("it exits 1"):
+        assert code == 1, (code, stderr)
+    with And("the message names aws and its config section"):
+        assert "aws" in stderr, stderr
+        assert "providers.aws" in stderr, stderr
+
+
+@TestScenario
+def check_enabled_providers_rejects_present_but_incomplete_provider(self):
+    """aws has a providers.aws section but is missing secret_access_key --
+    present-but-incomplete must be rejected the same as absent."""
+    with Given("an aws section missing secret_access_key, requested via --provider"):
+        cfg = _minimal_config(
+            providers=provider_list(aws=aws_provider(access_key_id="k")),
+            enabled_providers=["aws"],
+        )
+    with When("check() runs with no arguments"):
+        code, stderr = _check(cfg)
+    with Then("it exits 1"):
+        assert code == 1, (code, stderr)
+    with And("the message names aws and its config section"):
+        assert "aws" in stderr, stderr
+        assert "providers.aws" in stderr, stderr
+
+
+@TestScenario
+def check_enabled_providers_rejects_when_one_of_several_is_missing(self):
+    """hetzner and aws are both requested; only hetzner is credentialed."""
+    with Given("hetzner credentialed, aws requested but not configured at all"):
+        cfg = _minimal_config(
+            providers=provider_list(hetzner=hetzner_provider(token="t")),
+            enabled_providers=["hetzner", "aws"],
+        )
+    with When("check() runs with no arguments"):
+        code, stderr = _check(cfg)
+    with Then("it exits 1"):
+        assert code == 1, (code, stderr)
+    with And("the message names the missing provider, not the satisfied one"):
+        assert "aws" in stderr, stderr
+        assert "providers.aws" in stderr, stderr
+
+
+@TestScenario
+def check_enabled_providers_passes_when_each_named_provider_is_complete(self):
+    with Given("hetzner and aws both fully credentialed and both requested"):
+        cfg = _minimal_config(
+            providers=provider_list(
+                hetzner=hetzner_provider(token="t"),
+                aws=aws_provider(access_key_id="k", secret_access_key="s"),
+            ),
+            enabled_providers=["hetzner", "aws"],
+        )
+    with When("check() runs with no arguments"):
+        code, stderr = _check(cfg)
+    with Then("it returns without exiting"):
+        assert code is None, (code, stderr)
+
+
+@TestScenario
+def check_enabled_providers_none_behaves_exactly_as_before(self):
+    """enabled_providers=None (the default, no --provider flag) must not
+    engage the per-name branch at all: any one complete provider passes,
+    exactly like before this fix."""
+    with Given("only hetzner configured, enabled_providers left at None"):
+        cfg = _minimal_config(
+            providers=provider_list(hetzner=hetzner_provider(token="t")),
+        )
+    with Then("enabled_providers defaults to None"):
+        assert cfg.enabled_providers is None
+    with When("check() runs with no arguments"):
+        code, stderr = _check(cfg)
+    with Then("it returns without exiting"):
+        assert code is None, (code, stderr)
+
+
 # ---------------------------------------------------------------------------
 # argparse round-trip: flag string -> argparser().parse_args() -> apply_args
 # -> Config. Every other flag test builds a SimpleNamespace by hand, which
@@ -1259,6 +1349,7 @@ def argv_round_trip_sets_aws_provider_fields(self):
             for v in (defaults.image, defaults.server_type, defaults.location)
         )
     with And("provider_factory builds it"):
+        mock_ec2()
         assert [p.name for p in provider_factory(cfg)] == ["aws"]
 
 
