@@ -524,6 +524,33 @@ def apply_args_does_not_create_aws_provider_from_partial_flags(self):
         assert cfg.providers.aws is None, cfg.providers.aws
 
 
+@TestScenario
+def apply_args_overrides_existing_aws_provider_section(self):
+    """A CLI flag must win over an already-present providers.aws section,
+    the same as the Hetzner nested-override case (hetzner_rebuild_cli_override_
+    updates_nested_config in cli_and_config.py) -- only the from-flags-alone
+    path had coverage for aws."""
+    from types import SimpleNamespace
+    from testflows.github.runners.config.config import (
+        Config,
+        provider_list,
+        apply_args,
+        aws_provider as aws_provider_config,
+    )
+
+    cfg = Config(
+        providers=provider_list(
+            aws=aws_provider_config(access_key_id="configured-key", secret_access_key="configured-secret")
+        )
+    )
+    with When("apply_args runs with --aws-access-key-id set"):
+        apply_args(cfg, SimpleNamespace(aws_access_key_id="AK-override"))
+    with Then("the flag overrides the configured value"):
+        assert cfg.providers.aws.access_key_id == "AK-override", cfg.providers.aws
+    with And("the untouched field survives"):
+        assert cfg.providers.aws.secret_access_key == "configured-secret", cfg.providers.aws
+
+
 # ---------------------------------------------------------------------------
 # Feature entry point
 # ---------------------------------------------------------------------------

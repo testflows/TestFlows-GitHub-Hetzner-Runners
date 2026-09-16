@@ -1592,6 +1592,32 @@ def apply_args_does_not_create_scaleway_provider_from_partial_flags(self):
         assert cfg.providers.scaleway is None, cfg.providers.scaleway
 
 
+@TestScenario
+def apply_args_overrides_existing_scaleway_provider_section(self):
+    """A CLI flag must win over an already-present providers.scaleway section,
+    the same as the Hetzner nested-override case (hetzner_rebuild_cli_override_
+    updates_nested_config in cli_and_config.py) -- only the from-flags-alone
+    path had coverage for scaleway."""
+    from testflows.github.runners.config.config import apply_args
+
+    cfg = Config(
+        providers=provider_list(
+            scaleway=scaleway_provider_config(
+                access_key="configured-key",
+                secret_key="configured-secret",
+                project_id="configured-project",
+            )
+        )
+    )
+    with When("apply_args runs with --scaleway-access-key set"):
+        apply_args(cfg, SimpleNamespace(scaleway_access_key="SCWK-override"))
+    with Then("the flag overrides the configured value"):
+        assert cfg.providers.scaleway.access_key == "SCWK-override", cfg.providers.scaleway
+    with And("the untouched fields survive"):
+        assert cfg.providers.scaleway.secret_key == "configured-secret", cfg.providers.scaleway
+        assert cfg.providers.scaleway.project_id == "configured-project", cfg.providers.scaleway
+
+
 # ---------------------------------------------------------------------------
 # Feature entry point
 # ---------------------------------------------------------------------------
