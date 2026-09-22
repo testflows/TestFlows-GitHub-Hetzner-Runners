@@ -127,9 +127,27 @@ class AWSCloudProvider(CloudProvider):
         # lifetime of the provider instance.
         self._subnet_az_map: dict[str, str] = {}  # subnet_id → az
         if subnets:
-            response = self._ec2.describe_subnets(SubnetIds=list(subnets))
+            import botocore.exceptions
+
+            requested = list(subnets)
+            try:
+                response = self._ec2.describe_subnets(SubnetIds=requested)
+            except botocore.exceptions.ClientError as exc:
+                raise LocationError(
+                    f"failed to look up subnet(s) {requested} in region "
+                    f"'{self._region}' (region comes from "
+                    f"providers.aws.defaults.location={default_location_spec!r}): {exc}"
+                ) from exc
             for s in response.get("Subnets", []):
                 self._subnet_az_map[s["SubnetId"]] = s["AvailabilityZone"]
+
+            missing = [sid for sid in requested if sid not in self._subnet_az_map]
+            if missing:
+                raise LocationError(
+                    f"subnet(s) {missing} were not returned by describe_subnets "
+                    f"in region '{self._region}' (region comes from "
+                    f"providers.aws.defaults.location={default_location_spec!r})"
+                )
 
     # ---------------------------------------------------------------------------
     # Identity

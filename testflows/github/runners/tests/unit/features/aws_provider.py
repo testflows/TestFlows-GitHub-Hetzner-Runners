@@ -965,6 +965,81 @@ def get_server_type_raises_when_empty_response(self):
 
 
 # ---------------------------------------------------------------------------
+# __init__: subnet -> AZ resolution
+# ---------------------------------------------------------------------------
+
+
+@TestScenario
+def init_wraps_describe_subnets_client_error(self):
+    """A botocore ClientError from describe_subnets at construction time must
+    become a LocationError naming the subnet(s), the region, and that the
+    region comes from providers.aws.defaults.location -- not a raw botocore
+    traceback the user has to decode."""
+    from botocore.exceptions import ClientError
+
+    with Given("mocked EC2 client whose describe_subnets raises ClientError"):
+        ec2 = mock_ec2()
+        ec2.describe_subnets.side_effect = ClientError(
+            {
+                "Error": {
+                    "Code": "InvalidSubnetID.NotFound",
+                    "Message": "The subnet ID 'subnet-0396ff8bbdcebd35d' does not exist",
+                }
+            },
+            "DescribeSubnets",
+        )
+    with When("I construct the provider with that subnet"):
+        try:
+            AWSCloudProvider(
+                access_key_id="AKIATEST",
+                secret_access_key="secret",
+                region="us-east-1",
+                subnets=["subnet-0396ff8bbdcebd35d"],
+            )
+            raised = None
+        except LocationError as exc:
+            raised = exc
+    with Then("a LocationError is raised, not the raw ClientError"):
+        assert raised is not None
+    with And("it names the requested subnet id"):
+        assert "subnet-0396ff8bbdcebd35d" in str(raised), raised
+    with And("it names the region and that it comes from defaults.location"):
+        assert "us-east-1" in str(raised), raised
+        assert "providers.aws.defaults.location" in str(raised), raised
+    with And("the original ClientError is chained"):
+        assert isinstance(raised.__cause__, ClientError), raised.__cause__
+
+
+@TestScenario
+def init_raises_when_a_requested_subnet_is_missing_from_response(self):
+    """describe_subnets normally raises for an unknown id, but if AWS ever
+    returns fewer subnets than requested, the gap must be caught explicitly
+    instead of silently shrinking self._subnet_az_map."""
+    with Given("mocked EC2 client that returns only one of two requested subnets"):
+        ec2 = mock_ec2()
+        ec2.describe_subnets.return_value = {
+            "Subnets": [
+                {"SubnetId": "subnet-aaa", "AvailabilityZone": "us-east-1a"},
+            ]
+        }
+    with When("I construct the provider requesting two subnets"):
+        try:
+            AWSCloudProvider(
+                access_key_id="AKIATEST",
+                secret_access_key="secret",
+                region="us-east-1",
+                subnets=["subnet-aaa", "subnet-bbb"],
+            )
+            raised = None
+        except LocationError as exc:
+            raised = exc
+    with Then("a LocationError is raised naming the missing subnet"):
+        assert raised is not None
+        assert "subnet-bbb" in str(raised), raised
+        assert "subnet-aaa" not in str(raised), raised
+
+
+# ---------------------------------------------------------------------------
 # get_location
 # ---------------------------------------------------------------------------
 
