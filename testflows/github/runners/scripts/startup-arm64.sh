@@ -10,8 +10,8 @@ cd /home/ubuntu
 
 # GitHub Actions Runner - update version and checksum when upgrading
 # https://github.com/actions/runner/releases
-ACTIONS_RUNNER_VERSION="2.331.0"
-ACTIONS_RUNNER_SHA256="f5863a211241436186723159a111f352f25d5d22711639761ea24c98caef1a9a"
+ACTIONS_RUNNER_VERSION="2.337.0"
+ACTIONS_RUNNER_SHA256="9b1dc70626422526e3c94767cf024896beb15da5342a3f4819bf2feac13e0393"
 
 ACTIONS_RUNNER_ARCH="arm64"
 ACTIONS_RUNNER_FILE="actions-runner-linux-${ACTIONS_RUNNER_ARCH}-${ACTIONS_RUNNER_VERSION}.tar.gz"
