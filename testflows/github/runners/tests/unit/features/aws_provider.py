@@ -971,14 +971,11 @@ def get_server_type_raises_when_empty_response(self):
 
 @TestScenario
 def init_wraps_describe_subnets_client_error(self):
-    """A botocore ClientError from describe_subnets at construction time must
-    become a LocationError naming the subnet(s), the region, that the region
-    is derived from providers.aws.defaults.location, why this happens (subnets
-    are region-scoped), and the fix -- not a raw botocore traceback the user
-    has to decode. default_location_spec="us-east-1a" mirrors the real
-    from_config path, where an unset defaults.location is already resolved to
-    "us-east-1a" before reaching this constructor -- so the message must note
-    that us-east-1a is only the default, not claim the user wrote it."""
+    """A ClientError from describe_subnets at construction must become a
+    LocationError naming the subnets, region, and fix, not a raw traceback.
+    us-east-1a mirrors the from_config path, which resolves an unset
+    location before this constructor, so the message must note it as the
+    default, not a value the user wrote."""
     from botocore.exceptions import ClientError
 
     with Given("a ClientError like the one AWS raises for an unknown subnet"):
@@ -1010,12 +1007,11 @@ def init_wraps_describe_subnets_client_error(self):
         assert raised is not None
         assert str(raised) == (
             "failed to look up subnet(s) ['subnet-0396ff8bbdcebd35d'] in "
-            "region 'us-east-1', derived from "
-            "providers.aws.defaults.location='us-east-1a' (us-east-1a is "
-            "the default when that field is unset). Subnets are "
-            "region-scoped -- check they are in that region, or set "
-            "providers.aws.defaults.location to the availability zone they "
-            f"are in. Original error: {client_error}"
+            "region 'us-east-1' from "
+            "providers.aws.defaults.location='us-east-1a' (the default). "
+            "Subnets are region-scoped -- set "
+            "providers.aws.defaults.location to an AZ in their region. "
+            f"Original error: {client_error}"
         ), raised
     with And("the original ClientError is chained"):
         assert raised.__cause__ is client_error, raised.__cause__
@@ -1023,11 +1019,10 @@ def init_wraps_describe_subnets_client_error(self):
 
 @TestScenario
 def init_raises_when_a_requested_subnet_is_missing_from_response(self):
-    """describe_subnets normally raises for an unknown id, but if AWS ever
-    returns fewer subnets than requested, the gap must be caught explicitly
-    instead of silently shrinking self._subnet_az_map. default_location_spec
-    ="us-east-1a" mirrors the real from_config path (see the sibling
-    ClientError-wrap scenario above for why)."""
+    """If describe_subnets returns fewer subnets than requested, the missing
+    ones must raise instead of silently shrinking _subnet_az_map.
+    default_location_spec mirrors the from_config path (see the sibling
+    scenario)."""
     with Given("mocked EC2 client that returns only one of two requested subnets"):
         ec2 = mock_ec2()
         ec2.describe_subnets.return_value = {
@@ -1051,10 +1046,9 @@ def init_raises_when_a_requested_subnet_is_missing_from_response(self):
         assert raised is not None
         assert str(raised) == (
             "describe_subnets did not return subnet(s) ['subnet-bbb'] in "
-            "region 'us-east-1', derived from "
-            "providers.aws.defaults.location='us-east-1a' (us-east-1a is "
-            "the default when that field is unset). Check those subnet "
-            "ids exist in that region."
+            "region 'us-east-1' from "
+            "providers.aws.defaults.location='us-east-1a' (the default). "
+            "Check those subnet ids exist in that region."
         ), raised
 
 

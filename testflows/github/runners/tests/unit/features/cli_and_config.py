@@ -1077,10 +1077,9 @@ def check_rejects_aws_missing_secret_access_key(self):
 
 @TestScenario
 def check_rejects_aws_subnets_without_location(self):
-    """subnets set but defaults.location unset must fail loudly at check()
-    time, before any provider is constructed or any AWS API call is made --
-    otherwise the region silently falls back to us-east-1 and subnets in any
-    other region come back InvalidSubnetID.NotFound."""
+    """subnets without location must fail at check() before any AWS call:
+    the region would silently default to us-east-1 and other regions'
+    subnets would fail with InvalidSubnetID.NotFound."""
     with Given("a config with aws.subnets set and defaults.location unset"):
         cfg = _minimal_config(
             providers=provider_list(
@@ -1097,12 +1096,11 @@ def check_rejects_aws_subnets_without_location(self):
         assert code == 1, (code, stderr)
     with And("the message is the exact what/why/next-step text"):
         assert (
-            "argument error: providers.aws.subnets is set but "
-            "providers.aws.defaults.location is not. The AWS region "
-            "comes from that field and defaults to us-east-1, so "
-            "subnets in any other region fail with "
-            "InvalidSubnetID.NotFound. Set it to the availability "
-            "zone your subnets are in, for example: "
+            "argument error: providers.aws.subnets requires "
+            "providers.aws.defaults.location. AWS derives the region "
+            "from that field, defaulting to us-east-1, so subnets in "
+            "other regions fail with InvalidSubnetID.NotFound. Set it "
+            "to their availability zone, e.g. "
             "providers.aws.defaults.location: us-west-2a"
         ) in stderr, stderr
 
@@ -1129,12 +1127,10 @@ def check_passes_with_aws_subnets_and_location_set(self):
 
 @TestScenario
 def check_passes_with_uncredentialed_aws_subnets_when_hetzner_is_complete(self):
-    """A leftover or dormant providers.aws stanza -- subnets set but no
-    credentials -- must not block startup when another provider (here
-    Hetzner) is fully configured. AWS can never be built without
-    credentials, so the subnets-without-location gate must not fire: no
-    AWSCloudProvider is constructed and describe_subnets is never called."""
-    with Given("hetzner fully credentialed and an uncredentialed aws.subnets stanza"):
+    """A dormant aws section with no credentials must not block startup
+    when another provider is configured: no AWSCloudProvider is built,
+    so the gate must not fire."""
+    with Given("hetzner fully credentialed and an uncredentialed aws.subnets section"):
         cfg = _minimal_config(
             providers=provider_list(
                 hetzner=hetzner_provider(token="t"),
@@ -1149,10 +1145,9 @@ def check_passes_with_uncredentialed_aws_subnets_when_hetzner_is_complete(self):
 
 @TestScenario
 def check_passes_with_uncredentialed_aws_subnets_when_provider_excludes_aws(self):
-    """Same dormant providers.aws stanza, but this time AWS is also filtered
-    out by --provider hetzner. Doubly not in play; the gate must still not
-    fire."""
-    with Given("hetzner-only --provider filtering plus a dormant aws.subnets stanza"):
+    """The same dormant section, now also filtered out by --provider
+    hetzner. The gate must still not fire."""
+    with Given("hetzner-only --provider filtering plus a dormant aws.subnets section"):
         cfg = _minimal_config(
             providers=provider_list(
                 hetzner=hetzner_provider(token="t"),
@@ -1168,10 +1163,9 @@ def check_passes_with_uncredentialed_aws_subnets_when_provider_excludes_aws(self
 
 @TestScenario
 def check_passes_with_credentialed_aws_subnets_when_provider_excludes_aws(self):
-    """Isolates the enabled_providers membership guard from has_aws: AWS is
-    fully credentialed here (has_aws is True), so only the membership check
-    against --provider hetzner can be what stops the gate from firing."""
-    with Given("a credentialed aws.subnets stanza filtered out by --provider hetzner"):
+    """Credentialed AWS filtered out by --provider hetzner: only the
+    enabled_providers check can stop the gate here."""
+    with Given("a credentialed aws.subnets section filtered out by --provider hetzner"):
         cfg = _minimal_config(
             providers=provider_list(
                 hetzner=hetzner_provider(token="t"),
@@ -1191,9 +1185,8 @@ def check_passes_with_credentialed_aws_subnets_when_provider_excludes_aws(self):
 
 @TestScenario
 def check_rejects_aws_subnets_without_location_when_provider_selects_aws(self):
-    """Guard the other way: a credentialed AWS section with subnets and no
-    location must still fail when --provider aws explicitly selects it, even
-    though other providers are also configured."""
+    """--provider aws with subnets and no location must still fail, even
+    with other providers configured."""
     with Given("hetzner configured, --provider aws, and aws.subnets without location"):
         cfg = _minimal_config(
             providers=provider_list(
@@ -1212,12 +1205,11 @@ def check_rejects_aws_subnets_without_location_when_provider_selects_aws(self):
         assert code == 1, (code, stderr)
     with And("the message is the exact what/why/next-step text"):
         assert (
-            "argument error: providers.aws.subnets is set but "
-            "providers.aws.defaults.location is not. The AWS region "
-            "comes from that field and defaults to us-east-1, so "
-            "subnets in any other region fail with "
-            "InvalidSubnetID.NotFound. Set it to the availability "
-            "zone your subnets are in, for example: "
+            "argument error: providers.aws.subnets requires "
+            "providers.aws.defaults.location. AWS derives the region "
+            "from that field, defaulting to us-east-1, so subnets in "
+            "other regions fail with InvalidSubnetID.NotFound. Set it "
+            "to their availability zone, e.g. "
             "providers.aws.defaults.location: us-west-2a"
         ) in stderr, stderr
 

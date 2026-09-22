@@ -328,10 +328,8 @@ def factory_passes_default_location(self):
 
 @TestScenario
 def factory_default_location_falls_back_when_unset(self):
-    """With no providers.aws.defaults.location in YAML, the provider must still
-    behave exactly as when the dataclass default was the literal "us-east-1a"
-    string: the region derived for the boto3 client and the AZ used for jobs
-    with no in- label both resolve to us-east-1a/us-east-1, not None."""
+    """An unset defaults.location still resolves to us-east-1a / us-east-1
+    in the provider, while the config field itself stays None."""
     with Given("mocked EC2 client"):
         mock_ec2()
     with Given("a config file with no defaults.location"):

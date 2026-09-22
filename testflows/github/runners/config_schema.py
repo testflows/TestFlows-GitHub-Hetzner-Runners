@@ -97,9 +97,9 @@ class aws_provider:
         default_factory=lambda: provider_defaults(
             image="ubuntu-22.04",
             server_type="t3.medium",
-            # None means "not set by the user" so from_config can tell that
-            # apart from an explicit us-east-1a (AWS region comes from this
-            # field; see AWSCloudProvider.from_config).
+            # None means "unset", distinct from an explicit us-east-1a.
+            # AWSCloudProvider.from_config derives the AWS region from this
+            # field and falls back to us-east-1a.
             location=None,
             disk_size=20,
             disk_type="gp3",
@@ -310,12 +310,11 @@ class Config:
                 )
             ):
                 print(
-                    "argument error: providers.aws.subnets is set but "
-                    "providers.aws.defaults.location is not. The AWS region "
-                    "comes from that field and defaults to us-east-1, so "
-                    "subnets in any other region fail with "
-                    "InvalidSubnetID.NotFound. Set it to the availability "
-                    "zone your subnets are in, for example: "
+                    "argument error: providers.aws.subnets requires "
+                    "providers.aws.defaults.location. AWS derives the region "
+                    "from that field, defaulting to us-east-1, so subnets in "
+                    "other regions fail with InvalidSubnetID.NotFound. Set it "
+                    "to their availability zone, e.g. "
                     "providers.aws.defaults.location: us-west-2a",
                     file=sys.stderr,
                 )
