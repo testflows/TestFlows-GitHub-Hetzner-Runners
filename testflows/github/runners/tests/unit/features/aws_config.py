@@ -327,6 +327,33 @@ def factory_passes_default_location(self):
 
 
 @TestScenario
+def factory_default_location_falls_back_when_unset(self):
+    """With no providers.aws.defaults.location in YAML, the provider must still
+    behave exactly as when the dataclass default was the literal "us-east-1a"
+    string: the region derived for the boto3 client and the AZ used for jobs
+    with no in- label both resolve to us-east-1a/us-east-1, not None."""
+    with Given("mocked EC2 client"):
+        mock_ec2()
+    with Given("a config file with no defaults.location"):
+        path = write_config(yaml_text="""\
+            ssh_key: /dev/null
+            providers:
+              aws:
+                access_key_id: AK
+                secret_access_key: SK
+        """)
+    with When("I parse the config and build the provider"):
+        cfg = parse_config(path)
+        provider = provider_factory(cfg)[0]
+    with Then("the config field itself stays None (distinguishable from 'set')"):
+        assert cfg.providers.aws.defaults.location is None, cfg.providers.aws.defaults.location
+    with And("the provider's resolved default_location is still us-east-1a"):
+        assert provider.default_location == "us-east-1a", provider.default_location
+    with And("the region used for the boto3 client is still us-east-1"):
+        assert provider._region == "us-east-1", provider._region
+
+
+@TestScenario
 def factory_passes_default_image(self):
     """defaults.image from YAML reaches AWSCloudProvider._default_image."""
     with Given("mocked EC2 client"):

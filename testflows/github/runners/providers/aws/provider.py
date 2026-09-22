@@ -46,7 +46,7 @@ class AWSCloudProvider(CloudProvider):
             security_group=cfg.security_group,
             subnets=cfg.subnets,
             default_image_spec=cfg.defaults.image,
-            default_location_spec=cfg.defaults.location,
+            default_location_spec=location,
             default_server_type_spec=cfg.defaults.server_type,
             ssh_user=cfg.ssh_user,
             root_disk_size=cfg.defaults.disk_size,

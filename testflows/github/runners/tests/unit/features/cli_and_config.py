@@ -27,6 +27,7 @@ from testflows.github.runners.config.config import (
     hetzner_provider,
     aws_provider,
     scaleway_provider,
+    provider_defaults,
     dedicated_static_provider,
     dedicated_static_group,
     provider_list,
@@ -1072,6 +1073,53 @@ def check_rejects_aws_missing_secret_access_key(self):
         assert code == 1, (code, stderr)
     with And("the message reports no provider configured"):
         assert "no cloud provider configured" in stderr, stderr
+
+
+@TestScenario
+def check_rejects_aws_subnets_without_location(self):
+    """subnets set but defaults.location unset must fail loudly at check()
+    time, before any provider is constructed or any AWS API call is made --
+    otherwise the region silently falls back to us-east-1 and subnets in any
+    other region come back InvalidSubnetID.NotFound."""
+    with Given("a config with aws.subnets set and defaults.location unset"):
+        cfg = _minimal_config(
+            providers=provider_list(
+                aws=aws_provider(
+                    access_key_id="k",
+                    secret_access_key="s",
+                    subnets=["subnet-0396ff8bbdcebd35d"],
+                )
+            )
+        )
+    with When("check() runs with no arguments"):
+        code, stderr = _check(cfg)
+    with Then("it exits 1"):
+        assert code == 1, (code, stderr)
+    with And("the message names providers.aws.defaults.location and its default"):
+        assert "providers.aws.defaults.location" in stderr, stderr
+        assert "us-east-1" in stderr, stderr
+    with And("the message gives a concrete fix"):
+        assert "us-west-2a" in stderr, stderr
+
+
+@TestScenario
+def check_passes_with_aws_subnets_and_location_set(self):
+    """The subnets-without-location gate must not fire once location is set."""
+    with Given("a config with aws.subnets and defaults.location both set"):
+        cfg = _minimal_config(
+            providers=provider_list(
+                aws=aws_provider(
+                    access_key_id="k",
+                    secret_access_key="s",
+                    subnets=["subnet-0396ff8bbdcebd35d"],
+                    defaults=provider_defaults(location="us-west-2a"),
+                )
+            )
+        )
+    with When("check() runs with no arguments"):
+        code, stderr = _check(cfg)
+    with Then("it returns without exiting"):
+        assert code is None, (code, stderr)
 
 
 @TestScenario
