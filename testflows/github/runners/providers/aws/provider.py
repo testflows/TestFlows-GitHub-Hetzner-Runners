@@ -135,8 +135,11 @@ class AWSCloudProvider(CloudProvider):
             except botocore.exceptions.ClientError as exc:
                 raise LocationError(
                     f"failed to look up subnet(s) {requested} in region "
-                    f"'{self._region}' (region comes from "
-                    f"providers.aws.defaults.location={default_location_spec!r}): {exc}"
+                    f"'{self._region}', derived from "
+                    f"providers.aws.defaults.location={default_location_spec!r}. "
+                    "Subnets are region-scoped -- check they are in that "
+                    "region, or set providers.aws.defaults.location to the "
+                    f"availability zone they are in. Original error: {exc}"
                 ) from exc
             for s in response.get("Subnets", []):
                 self._subnet_az_map[s["SubnetId"]] = s["AvailabilityZone"]
@@ -144,9 +147,10 @@ class AWSCloudProvider(CloudProvider):
             missing = [sid for sid in requested if sid not in self._subnet_az_map]
             if missing:
                 raise LocationError(
-                    f"subnet(s) {missing} were not returned by describe_subnets "
-                    f"in region '{self._region}' (region comes from "
-                    f"providers.aws.defaults.location={default_location_spec!r})"
+                    f"describe_subnets did not return subnet(s) {missing} in "
+                    f"region '{self._region}', derived from "
+                    f"providers.aws.defaults.location={default_location_spec!r}. "
+                    "Check those subnet ids exist in that region."
                 )
 
     # ---------------------------------------------------------------------------

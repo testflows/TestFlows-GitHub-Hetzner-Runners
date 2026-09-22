@@ -1095,11 +1095,16 @@ def check_rejects_aws_subnets_without_location(self):
         code, stderr = _check(cfg)
     with Then("it exits 1"):
         assert code == 1, (code, stderr)
-    with And("the message names providers.aws.defaults.location and its default"):
-        assert "providers.aws.defaults.location" in stderr, stderr
-        assert "us-east-1" in stderr, stderr
-    with And("the message gives a concrete fix"):
-        assert "us-west-2a" in stderr, stderr
+    with And("the message is the exact what/why/next-step text"):
+        assert (
+            "argument error: providers.aws.subnets is set but "
+            "providers.aws.defaults.location is not. The AWS region "
+            "comes from that field and defaults to us-east-1, so "
+            "subnets in any other region fail with "
+            "InvalidSubnetID.NotFound. Set it to the availability "
+            "zone your subnets are in, for example: "
+            "providers.aws.defaults.location: us-west-2a"
+        ) in stderr, stderr
 
 
 @TestScenario

@@ -307,11 +307,11 @@ class Config:
             ):
                 print(
                     "argument error: providers.aws.subnets is set but "
-                    "providers.aws.defaults.location is not; the AWS region is "
-                    "derived from providers.aws.defaults.location and defaults to "
-                    "us-east-1, so subnets in another region will fail with "
-                    "InvalidSubnetID.NotFound; set providers.aws.defaults.location "
-                    "to the availability zone the subnets are in, e.g. "
+                    "providers.aws.defaults.location is not. The AWS region "
+                    "comes from that field and defaults to us-east-1, so "
+                    "subnets in any other region fail with "
+                    "InvalidSubnetID.NotFound. Set it to the availability "
+                    "zone your subnets are in, for example: "
                     "providers.aws.defaults.location: us-west-2a",
                     file=sys.stderr,
                 )

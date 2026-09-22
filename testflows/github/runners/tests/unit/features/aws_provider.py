@@ -972,14 +972,14 @@ def get_server_type_raises_when_empty_response(self):
 @TestScenario
 def init_wraps_describe_subnets_client_error(self):
     """A botocore ClientError from describe_subnets at construction time must
-    become a LocationError naming the subnet(s), the region, and that the
-    region comes from providers.aws.defaults.location -- not a raw botocore
-    traceback the user has to decode."""
+    become a LocationError naming the subnet(s), the region, that the region
+    is derived from providers.aws.defaults.location, why this happens (subnets
+    are region-scoped), and the fix -- not a raw botocore traceback the user
+    has to decode."""
     from botocore.exceptions import ClientError
 
-    with Given("mocked EC2 client whose describe_subnets raises ClientError"):
-        ec2 = mock_ec2()
-        ec2.describe_subnets.side_effect = ClientError(
+    with Given("a ClientError like the one AWS raises for an unknown subnet"):
+        client_error = ClientError(
             {
                 "Error": {
                     "Code": "InvalidSubnetID.NotFound",
@@ -988,6 +988,9 @@ def init_wraps_describe_subnets_client_error(self):
             },
             "DescribeSubnets",
         )
+    with And("mocked EC2 client whose describe_subnets raises it"):
+        ec2 = mock_ec2()
+        ec2.describe_subnets.side_effect = client_error
     with When("I construct the provider with that subnet"):
         try:
             AWSCloudProvider(
@@ -999,15 +1002,18 @@ def init_wraps_describe_subnets_client_error(self):
             raised = None
         except LocationError as exc:
             raised = exc
-    with Then("a LocationError is raised, not the raw ClientError"):
+    with Then("a LocationError is raised with the exact what/why/next-step text"):
         assert raised is not None
-    with And("it names the requested subnet id"):
-        assert "subnet-0396ff8bbdcebd35d" in str(raised), raised
-    with And("it names the region and that it comes from defaults.location"):
-        assert "us-east-1" in str(raised), raised
-        assert "providers.aws.defaults.location" in str(raised), raised
+        assert str(raised) == (
+            "failed to look up subnet(s) ['subnet-0396ff8bbdcebd35d'] in "
+            "region 'us-east-1', derived from "
+            "providers.aws.defaults.location=None. Subnets are "
+            "region-scoped -- check they are in that region, or set "
+            "providers.aws.defaults.location to the availability zone they "
+            f"are in. Original error: {client_error}"
+        ), raised
     with And("the original ClientError is chained"):
-        assert isinstance(raised.__cause__, ClientError), raised.__cause__
+        assert raised.__cause__ is client_error, raised.__cause__
 
 
 @TestScenario
@@ -1033,10 +1039,14 @@ def init_raises_when_a_requested_subnet_is_missing_from_response(self):
             raised = None
         except LocationError as exc:
             raised = exc
-    with Then("a LocationError is raised naming the missing subnet"):
+    with Then("a LocationError is raised with the exact what/why/next-step text"):
         assert raised is not None
-        assert "subnet-bbb" in str(raised), raised
-        assert "subnet-aaa" not in str(raised), raised
+        assert str(raised) == (
+            "describe_subnets did not return subnet(s) ['subnet-bbb'] in "
+            "region 'us-east-1', derived from "
+            "providers.aws.defaults.location=None. Check those subnet ids "
+            "exist in that region."
+        ), raised
 
 
 # ---------------------------------------------------------------------------
