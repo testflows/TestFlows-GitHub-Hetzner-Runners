@@ -129,6 +129,20 @@ class AWSCloudProvider(CloudProvider):
         if subnets:
             import botocore.exceptions
 
+            # from_config always resolves an unset defaults.location to
+            # "us-east-1a" before it reaches this constructor, so this
+            # value can't tell us apart from a user who wrote us-east-1a
+            # explicitly. Rather than thread a new "was it defaulted"
+            # parameter through just for wording, note the default
+            # whenever the effective value matches it -- true either way,
+            # and the only case where the message would otherwise name a
+            # config value the user never wrote.
+            _location_note = (
+                " (us-east-1a is the default when that field is unset)"
+                if default_location_spec == "us-east-1a"
+                else ""
+            )
+
             requested = list(subnets)
             try:
                 response = self._ec2.describe_subnets(SubnetIds=requested)
@@ -136,10 +150,11 @@ class AWSCloudProvider(CloudProvider):
                 raise LocationError(
                     f"failed to look up subnet(s) {requested} in region "
                     f"'{self._region}', derived from "
-                    f"providers.aws.defaults.location={default_location_spec!r}. "
-                    "Subnets are region-scoped -- check they are in that "
-                    "region, or set providers.aws.defaults.location to the "
-                    f"availability zone they are in. Original error: {exc}"
+                    f"providers.aws.defaults.location={default_location_spec!r}"
+                    f"{_location_note}. Subnets are region-scoped -- check "
+                    "they are in that region, or set "
+                    "providers.aws.defaults.location to the availability "
+                    f"zone they are in. Original error: {exc}"
                 ) from exc
             for s in response.get("Subnets", []):
                 self._subnet_az_map[s["SubnetId"]] = s["AvailabilityZone"]
@@ -149,8 +164,9 @@ class AWSCloudProvider(CloudProvider):
                 raise LocationError(
                     f"describe_subnets did not return subnet(s) {missing} in "
                     f"region '{self._region}', derived from "
-                    f"providers.aws.defaults.location={default_location_spec!r}. "
-                    "Check those subnet ids exist in that region."
+                    f"providers.aws.defaults.location={default_location_spec!r}"
+                    f"{_location_note}. Check those subnet ids exist in "
+                    "that region."
                 )
 
     # ---------------------------------------------------------------------------
