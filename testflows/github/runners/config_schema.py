@@ -301,9 +301,13 @@ class Config:
                 and bool(self.providers.aws.secret_access_key)
             )
             if (
-                self.providers.aws is not None
+                has_aws
                 and self.providers.aws.subnets
                 and not self.providers.aws.defaults.location
+                and (
+                    self.enabled_providers is None
+                    or "aws" in self.enabled_providers
+                )
             ):
                 print(
                     "argument error: providers.aws.subnets is set but "

@@ -1128,6 +1128,101 @@ def check_passes_with_aws_subnets_and_location_set(self):
 
 
 @TestScenario
+def check_passes_with_uncredentialed_aws_subnets_when_hetzner_is_complete(self):
+    """A leftover or dormant providers.aws stanza -- subnets set but no
+    credentials -- must not block startup when another provider (here
+    Hetzner) is fully configured. AWS can never be built without
+    credentials, so the subnets-without-location gate must not fire: no
+    AWSCloudProvider is constructed and describe_subnets is never called."""
+    with Given("hetzner fully credentialed and an uncredentialed aws.subnets stanza"):
+        cfg = _minimal_config(
+            providers=provider_list(
+                hetzner=hetzner_provider(token="t"),
+                aws=aws_provider(subnets=["subnet-0396ff8bbdcebd35d"]),
+            )
+        )
+    with When("check() runs with no arguments"):
+        code, stderr = _check(cfg)
+    with Then("it returns without exiting"):
+        assert code is None, (code, stderr)
+
+
+@TestScenario
+def check_passes_with_uncredentialed_aws_subnets_when_provider_excludes_aws(self):
+    """Same dormant providers.aws stanza, but this time AWS is also filtered
+    out by --provider hetzner. Doubly not in play; the gate must still not
+    fire."""
+    with Given("hetzner-only --provider filtering plus a dormant aws.subnets stanza"):
+        cfg = _minimal_config(
+            providers=provider_list(
+                hetzner=hetzner_provider(token="t"),
+                aws=aws_provider(subnets=["subnet-0396ff8bbdcebd35d"]),
+            ),
+            enabled_providers=["hetzner"],
+        )
+    with When("check() runs with no arguments"):
+        code, stderr = _check(cfg)
+    with Then("it returns without exiting"):
+        assert code is None, (code, stderr)
+
+
+@TestScenario
+def check_passes_with_credentialed_aws_subnets_when_provider_excludes_aws(self):
+    """Isolates the enabled_providers membership guard from has_aws: AWS is
+    fully credentialed here (has_aws is True), so only the membership check
+    against --provider hetzner can be what stops the gate from firing."""
+    with Given("a credentialed aws.subnets stanza filtered out by --provider hetzner"):
+        cfg = _minimal_config(
+            providers=provider_list(
+                hetzner=hetzner_provider(token="t"),
+                aws=aws_provider(
+                    access_key_id="k",
+                    secret_access_key="s",
+                    subnets=["subnet-0396ff8bbdcebd35d"],
+                ),
+            ),
+            enabled_providers=["hetzner"],
+        )
+    with When("check() runs with no arguments"):
+        code, stderr = _check(cfg)
+    with Then("it returns without exiting"):
+        assert code is None, (code, stderr)
+
+
+@TestScenario
+def check_rejects_aws_subnets_without_location_when_provider_selects_aws(self):
+    """Guard the other way: a credentialed AWS section with subnets and no
+    location must still fail when --provider aws explicitly selects it, even
+    though other providers are also configured."""
+    with Given("hetzner configured, --provider aws, and aws.subnets without location"):
+        cfg = _minimal_config(
+            providers=provider_list(
+                hetzner=hetzner_provider(token="t"),
+                aws=aws_provider(
+                    access_key_id="k",
+                    secret_access_key="s",
+                    subnets=["subnet-0396ff8bbdcebd35d"],
+                ),
+            ),
+            enabled_providers=["aws"],
+        )
+    with When("check() runs with no arguments"):
+        code, stderr = _check(cfg)
+    with Then("it exits 1"):
+        assert code == 1, (code, stderr)
+    with And("the message is the exact what/why/next-step text"):
+        assert (
+            "argument error: providers.aws.subnets is set but "
+            "providers.aws.defaults.location is not. The AWS region "
+            "comes from that field and defaults to us-east-1, so "
+            "subnets in any other region fail with "
+            "InvalidSubnetID.NotFound. Set it to the availability "
+            "zone your subnets are in, for example: "
+            "providers.aws.defaults.location: us-west-2a"
+        ) in stderr, stderr
+
+
+@TestScenario
 def check_rejects_scaleway_missing_any_one_field(self):
     with Given("scaleway configs each missing exactly one of its three required fields"):
         variants = {
