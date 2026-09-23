@@ -97,7 +97,9 @@ class aws_provider:
         default_factory=lambda: provider_defaults(
             image="ubuntu-22.04",
             server_type="t3.medium",
-            location="us-east-1a",
+            # None means "unset"; from_config falls back to us-east-1a
+            # but can still tell the two apart for error messages.
+            location=None,
             disk_size=20,
             disk_type="gp3",
         )
@@ -297,6 +299,25 @@ class Config:
                 and bool(self.providers.aws.access_key_id)
                 and bool(self.providers.aws.secret_access_key)
             )
+            if (
+                has_aws
+                and self.providers.aws.subnets
+                and not self.providers.aws.defaults.location
+                and (
+                    self.enabled_providers is None
+                    or "aws" in self.enabled_providers
+                )
+            ):
+                print(
+                    "argument error: providers.aws.subnets requires "
+                    "providers.aws.defaults.location. AWS derives the region "
+                    "from that field, defaulting to us-east-1, so subnets in "
+                    "other regions fail with InvalidSubnetID.NotFound. Set it "
+                    "to their availability zone, e.g. "
+                    "providers.aws.defaults.location: us-west-2a",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
             has_scaleway = (
                 self.providers.scaleway is not None
                 and bool(self.providers.scaleway.access_key)

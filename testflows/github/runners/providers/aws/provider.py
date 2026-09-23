@@ -46,7 +46,7 @@ class AWSCloudProvider(CloudProvider):
             security_group=cfg.security_group,
             subnets=cfg.subnets,
             default_image_spec=cfg.defaults.image,
-            default_location_spec=cfg.defaults.location,
+            default_location_spec=location,
             default_server_type_spec=cfg.defaults.server_type,
             ssh_user=cfg.ssh_user,
             root_disk_size=cfg.defaults.disk_size,
@@ -127,9 +127,38 @@ class AWSCloudProvider(CloudProvider):
         # lifetime of the provider instance.
         self._subnet_az_map: dict[str, str] = {}  # subnet_id → az
         if subnets:
-            response = self._ec2.describe_subnets(SubnetIds=list(subnets))
+            import botocore.exceptions
+
+            # from_config already resolved the default, so the only way to
+            # flag it is a value match -- true whether or not it was set.
+            _location_note = (
+                " (the default)" if default_location_spec == "us-east-1a" else ""
+            )
+
+            requested = list(subnets)
+            try:
+                response = self._ec2.describe_subnets(SubnetIds=requested)
+            except botocore.exceptions.ClientError as exc:
+                raise LocationError(
+                    f"failed to look up subnet(s) {requested} in region "
+                    f"'{self._region}' from "
+                    f"providers.aws.defaults.location={default_location_spec!r}"
+                    f"{_location_note}. Subnets are region-scoped -- set "
+                    "providers.aws.defaults.location to an AZ in their "
+                    f"region. Original error: {exc}"
+                ) from exc
             for s in response.get("Subnets", []):
                 self._subnet_az_map[s["SubnetId"]] = s["AvailabilityZone"]
+
+            missing = [sid for sid in requested if sid not in self._subnet_az_map]
+            if missing:
+                raise LocationError(
+                    f"describe_subnets did not return subnet(s) {missing} "
+                    f"in region '{self._region}' from "
+                    f"providers.aws.defaults.location={default_location_spec!r}"
+                    f"{_location_note}. Check those subnet ids exist in "
+                    "that region."
+                )
 
     # ---------------------------------------------------------------------------
     # Identity
