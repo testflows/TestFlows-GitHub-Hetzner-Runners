@@ -129,11 +129,8 @@ class AWSCloudProvider(CloudProvider):
         if subnets:
             import botocore.exceptions
 
-            # from_config resolves an unset location to "us-east-1a", so a
-            # default can't be told from an explicit value here. Note the
-            # default whenever the value matches -- true either way, and
-            # the only case the message would name a value the user never
-            # wrote.
+            # from_config already resolved the default, so the only way to
+            # flag it is a value match -- true whether or not it was set.
             _location_note = (
                 " (the default)" if default_location_spec == "us-east-1a" else ""
             )

@@ -97,9 +97,8 @@ class aws_provider:
         default_factory=lambda: provider_defaults(
             image="ubuntu-22.04",
             server_type="t3.medium",
-            # None means "unset", distinct from an explicit us-east-1a.
-            # AWSCloudProvider.from_config derives the AWS region from this
-            # field and falls back to us-east-1a.
+            # None means "unset"; from_config falls back to us-east-1a
+            # but can still tell the two apart for error messages.
             location=None,
             disk_size=20,
             disk_type="gp3",
