@@ -1547,6 +1547,28 @@ def cli_provider_flags_covers_a_flag_added_later(self):
 
 
 @TestScenario
+def check_no_provider_flags_names_each_providers_own_section(self):
+    """The message names the real providers.<x> section per flag, not a
+    "providers.<name>" placeholder, and lists every provider involved when
+    flags from more than one are passed together."""
+    ns = SimpleNamespace(
+        aws_access_key_id="K",
+        aws_secret_access_key="S",
+        scaleway_access_key="k",
+        enabled_providers=None,
+    )
+    with Then("both real sections are named and no placeholder leaks"):
+        try:
+            service.check_no_provider_flags(ns)
+            assert False, "expected ValueError"
+        except ValueError as exc:
+            msg = str(exc)
+        assert "providers.aws" in msg, msg
+        assert "providers.scaleway" in msg, msg
+        assert "providers.<name>" not in msg, msg
+
+
+@TestScenario
 def service_install_refuses_provider_flag_from_cli(self):
     """Regression: an AWS-only-from-flags config used to pass config.check()
     (AWS was configured) and then write a unit that command_options() strips
@@ -1580,6 +1602,8 @@ def service_install_refuses_provider_flag_from_cli(self):
                 msg = str(exc)
             assert "--aws-access-key-id" in msg, msg
             assert "--aws-secret-access-key" in msg, msg
+            assert "providers.aws" in msg, msg
+            assert "providers.<name>" not in msg, msg
             mock_system.assert_not_called()
 
 
@@ -1636,6 +1660,8 @@ def cloud_install_refuses_provider_flag_from_cli(self):
         assert "--scaleway-access-key" in msg, msg
         assert "--scaleway-secret-key" in msg, msg
         assert "--scaleway-project-id" in msg, msg
+        assert "providers.scaleway" in msg, msg
+        assert "providers.<name>" not in msg, msg
 
 
 @TestScenario
@@ -1661,6 +1687,8 @@ def cloud_deploy_refuses_provider_flag_before_provisioning(self):
             except ValueError as exc:
                 msg = str(exc)
             assert "--aws-access-key-id" in msg, msg
+            assert "providers.aws" in msg, msg
+            assert "providers.<name>" not in msg, msg
             mock_deploy_provider.assert_not_called()
 
 

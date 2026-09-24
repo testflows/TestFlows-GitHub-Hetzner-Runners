@@ -63,16 +63,22 @@ def check_no_provider_flags(args):
     provider configured and, since the unit sets Restart=always, crash-loop.
     """
     flags = cli_provider_flags(args)
-    if flags:
-        raise ValueError(
-            "provider settings were passed as command-line flags: "
-            f"{', '.join(sorted(flags))}. These cannot be written into the "
-            "installed service unit (its ExecStart is visible to anyone on the "
-            "host via 'ps' or 'systemctl status', so credentials must not go "
-            "there) and would be silently dropped, which can leave the service "
-            "with no provider configured and crash-looping. Put them under "
-            "providers.<name> in the --config file instead, then retry."
-        )
+    if not flags:
+        return
+    # Each flag's provider is its own dashed-name prefix (--aws-... -> aws),
+    # the same prefix PROVIDER_ARG_PREFIXES matches on, so this names the real
+    # config section instead of a "providers.<name>" placeholder.
+    providers = sorted({flag[2:].split("-", 1)[0] for flag in flags})
+    sections = ", ".join(f"providers.{p}" for p in providers)
+    raise ValueError(
+        "provider settings were passed as command-line flags: "
+        f"{', '.join(sorted(flags))}. "
+        "ExecStart is visible to anyone on the host (via 'ps' or 'systemctl "
+        "status'), so credentials must not go there. "
+        "The installed service reads provider settings only from its config "
+        "file, so these would be dropped and the service could start with no "
+        f"provider. Put them under {sections} in the --config file, then retry."
+    )
 
 
 def command_options(
