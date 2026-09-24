@@ -2,6 +2,8 @@ import os
 import re
 import yaml
 
+from argparse import ArgumentTypeError
+
 from .. import errors
 from ..providers.hetzner import config as hetzner_config
 from ..providers.aws import config as aws_config
@@ -191,21 +193,25 @@ def apply_args(config, args):
 
     # -l/-t/-i arrive as raw strings (argtypes.py validators are Hetzner-typed
     # and would misparse an AWS/Scaleway spec); coerce only for a Hetzner
-    # deploy target, same as the config-file path in parse.py.
-    if getattr(args, "cloud_deploy_location", None) is not None:
-        config.cloud.deploy.location = coerce_deploy_field(
-            config.cloud.provider, "location", args.cloud_deploy_location
-        )
-
-    if getattr(args, "cloud_deploy_server_type", None) is not None:
-        config.cloud.deploy.server_type = coerce_deploy_field(
-            config.cloud.provider, "server_type", args.cloud_deploy_server_type
-        )
-
-    if getattr(args, "cloud_deploy_image", None) is not None:
-        config.cloud.deploy.image = coerce_deploy_field(
-            config.cloud.provider, "image", args.cloud_deploy_image
-        )
+    # deploy target, same as the config-file path in parse.py. A bad value is a
+    # bad CLI option, so raise ArgumentTypeError here (the CLI-only signal the
+    # --meta-label path also uses) rather than coerce_deploy_field's plain
+    # ValueError, which parse.py's config-file path keeps reporting as-is.
+    for dest, field in (
+        ("cloud_deploy_location", "location"),
+        ("cloud_deploy_server_type", "server_type"),
+        ("cloud_deploy_image", "image"),
+    ):
+        raw_value = getattr(args, dest, None)
+        if raw_value is not None:
+            try:
+                setattr(
+                    config.cloud.deploy,
+                    field,
+                    coerce_deploy_field(config.cloud.provider, field, raw_value),
+                )
+            except ValueError as e:
+                raise ArgumentTypeError(str(e)) from e
 
     if getattr(args, "cloud_deploy_setup_script", None) is not None:
         config.cloud.deploy.setup_script = args.cloud_deploy_setup_script

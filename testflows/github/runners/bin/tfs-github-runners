@@ -1793,7 +1793,10 @@ if __name__ == "__main__":
             config.config_file = project_config["config_file"]
 
     # Update with command line arguments (higher precedence)
-    apply_args(config, arguments)
+    try:
+        apply_args(config, arguments)
+    except ArgumentTypeError as e:
+        parser.error(str(e))
 
     if config.debug:
         Action.debug = True

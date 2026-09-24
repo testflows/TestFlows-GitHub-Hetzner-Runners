@@ -69,6 +69,19 @@ def _run_help():
     )
 
 
+def _run_cli(argv):
+    """Run the real entry point as a subprocess (not by import: the __main__
+    block only runs that way) and return the CompletedProcess."""
+    env = os.environ.copy()
+    env["PYTHONPATH"] = _REPO_ROOT + os.pathsep + env.get("PYTHONPATH", "")
+    return subprocess.run(
+        [sys.executable, _CLI_SCRIPT] + argv,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+
 # ---------------------------------------------------------------------------
 # 1. CLI smoke test
 # ---------------------------------------------------------------------------
@@ -1774,7 +1787,10 @@ def apply_args_coerces_hetzner_deploy_specs(self):
 @TestScenario
 def apply_args_rejects_bad_hetzner_image_with_clear_error(self):
     """Moving Hetzner coercion from parse time to merge time must not turn a
-    bad -i value into a traceback: it still names the option clearly."""
+    bad -i value into a traceback: it raises ArgumentTypeError (the same
+    CLI-only signal --meta-label uses), naming the option clearly, so the
+    __main__ block can route it through parser.error() instead of letting it
+    propagate as an uncaught exception."""
     cli = _cli_module()
     parsed = cli.argparser().parse_args(
         [
@@ -1785,12 +1801,50 @@ def apply_args_rejects_bad_hetzner_image_with_clear_error(self):
         ]
     )
     cfg = Config(providers=provider_list())  # defaults to hetzner
-    with Then("apply_args raises ValueError naming -i/--image, not a traceback"):
+    with Then("apply_args raises ArgumentTypeError naming -i/--image"):
         try:
             apply_args(cfg, parsed)
-            assert False, "expected ValueError for a bad Hetzner -i value"
-        except ValueError as exc:
+            assert False, "expected ArgumentTypeError for a bad Hetzner -i value"
+        except ArgumentTypeError as exc:
             assert "-i/--image" in str(exc), exc
+
+
+@TestScenario
+def cloud_deploy_bad_hetzner_image_is_a_clean_usage_error_not_a_traceback(self):
+    """The __main__ block calls apply_args() at top level with no handler
+    around it; importing the module skips __main__ entirely, so only running
+    the real entry point as a subprocess can prove the user-facing behavior.
+
+    Regression: before routing this through parser.error(), a bad Hetzner -i
+    value raised ValueError out of apply_args() and the user saw a full
+    Python traceback (that happened to end in a well-worded message) instead
+    of a normal argparse usage error.
+
+    `cloud deploy` fails while merging arguments, before dispatch, so no
+    cloud/ssh/systemd call is reachable on any branch.
+    """
+    import tempfile
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        f.write(_MINIMAL_BASE)
+        cfg_path = f.name
+    try:
+        with When("cloud deploy is run with a bad Hetzner -i value"):
+            result = _run_cli(
+                [
+                    "--config", cfg_path,
+                    "cloud", "deploy",
+                    "-i", "not-a-valid-image-spec",
+                ]
+            )
+        with Then("it exits 2 with a clean usage error, not a traceback"):
+            assert result.returncode == 2, result
+            assert "error:" in result.stderr, result.stderr
+            assert "-i/--image" in result.stderr, result.stderr
+            assert "Traceback" not in result.stderr, result.stderr
+            assert "Traceback" not in result.stdout, result.stdout
+    finally:
+        os.unlink(cfg_path)
 
 
 # ---------------------------------------------------------------------------
