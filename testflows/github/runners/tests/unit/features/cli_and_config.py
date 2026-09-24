@@ -1913,6 +1913,62 @@ def cloud_install_help_names_the_provider_flag_refusal(self):
 
 
 # ---------------------------------------------------------------------------
+# 8. coerce_deploy_field errors name only the bad value; callers add context
+# ---------------------------------------------------------------------------
+
+
+@TestScenario
+def yaml_deploy_image_error_does_not_mention_a_cli_flag(self):
+    """coerce_deploy_field() is shared by the CLI path (apply_args) and the
+    config-file path (parse.py). A bad value from the YAML file must not be
+    reported as a bad CLI option: the user never passed one."""
+    text = _MINIMAL_BASE.replace(
+        "ssh_key: /tmp/key\n",
+        "ssh_key: /tmp/key\n  cloud:\n    provider: hetzner\n    deploy:\n      image: not-a-valid-image-spec\n",
+    )
+    import tempfile
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        f.write(text)
+        cfg_path = f.name
+    try:
+        with When("a bad Hetzner image spec is parsed from the config file"):
+            try:
+                parse_config(cfg_path)
+                assert False, "expected AssertionError for a bad image spec"
+            except AssertionError as exc:
+                msg = str(exc)
+        with Then("the message names the config path but no CLI flag"):
+            assert "config.cloud.deploy.image" in msg, msg
+            assert "-i/--image" not in msg, msg
+            assert "--image" not in msg, msg
+    finally:
+        os.unlink(cfg_path)
+
+
+@TestScenario
+def cli_deploy_image_error_still_names_the_flag(self):
+    """The CLI path keeps naming the flag: only the shared helper's message
+    lost the flag name, not apply_args's own wrapping of it."""
+    cli = _cli_module()
+    parsed = cli.argparser().parse_args(
+        [
+            "--github-token", "t",
+            "--github-repository", "o/r",
+            "cloud", "deploy",
+            "-i", "not-a-valid-image-spec",
+        ]
+    )
+    cfg = Config(providers=provider_list())  # defaults to hetzner
+    with Then("apply_args still raises ArgumentTypeError naming -i/--image"):
+        try:
+            apply_args(cfg, parsed)
+            assert False, "expected ArgumentTypeError for a bad Hetzner -i value"
+        except ArgumentTypeError as exc:
+            assert "-i/--image" in str(exc), exc
+
+
+# ---------------------------------------------------------------------------
 # Feature entry point
 # ---------------------------------------------------------------------------
 
