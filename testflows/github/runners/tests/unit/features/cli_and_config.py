@@ -1766,6 +1766,31 @@ def apply_args_rejects_bad_hetzner_image_with_clear_error(self):
 
 
 # ---------------------------------------------------------------------------
+# 7. cloud deploy --help reflects real (multi-provider) behavior
+# ---------------------------------------------------------------------------
+
+
+@TestScenario
+def cloud_deploy_help_describes_real_provider_routing(self):
+    cli = _cli_module()
+    parser = cli.argparser()
+    buf = io.StringIO()
+    with When("`cloud deploy --help` is rendered"), contextlib.redirect_stdout(buf):
+        try:
+            parser.parse_args(["cloud", "deploy", "--help"])
+        except SystemExit:
+            pass
+    help_text = buf.getvalue()
+    with Then("it no longer claims deploy is Hetzner-only"):
+        assert "currently provisions the host on Hetzner Cloud" not in help_text
+        assert "Hetzner location/type/image formats" not in help_text
+    with And("it names the real routing and per-provider -l/-t/-i formats"):
+        assert "config.cloud.provider" in help_text
+        assert "aws" in help_text.lower()
+        assert "scaleway" in help_text.lower()
+
+
+# ---------------------------------------------------------------------------
 # Feature entry point
 # ---------------------------------------------------------------------------
 

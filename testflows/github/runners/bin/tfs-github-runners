@@ -592,8 +592,12 @@ def argparser():
         help="deploy cloud service",
         description=(
             "Deploy application as a service to a new server instance.\n\n"
-            "Note: deploy currently provisions the host on Hetzner Cloud; the\n"
-            "-l/-t/-i options use Hetzner location/type/image formats."
+            "The host is provisioned on whichever provider config.cloud.provider\n"
+            "names (hetzner, aws, or scaleway; default: hetzner). The -l/-t/-i\n"
+            "options take that provider's own location/type/image format\n"
+            "(e.g. an AWS availability zone, instance type, and AMI ID) and are\n"
+            "validated against it; only a Hetzner target uses the\n"
+            "architecture:type:name image format."
         ),
         formatter_class=RawTextHelpFormatter,
     )
