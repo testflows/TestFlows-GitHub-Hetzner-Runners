@@ -1872,6 +1872,46 @@ def cloud_deploy_help_describes_real_provider_routing(self):
         assert "scaleway" in help_text.lower()
 
 
+def _help_text(argv):
+    cli = _cli_module()
+    parser = cli.argparser()
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        try:
+            parser.parse_args(argv)
+        except SystemExit:
+            pass
+    return buf.getvalue()
+
+
+@TestScenario
+def service_install_help_names_the_provider_flag_refusal(self):
+    """`service install --help` used to claim every option is carried into
+    the installed unit, which is no longer true for provider flags: they are
+    refused outright."""
+    with When("`service install --help` is rendered"):
+        help_text = _help_text(["service", "install", "--help"])
+    with Then("it does not claim every option is carried into the unit"):
+        assert "will be the same options with which the service will be executed" not in help_text
+    with And("it names the config-file seam, the refusal, and the --provider exception"):
+        assert "--config" in help_text
+        assert "refused" in help_text
+        assert "--provider" in help_text
+
+
+@TestScenario
+def cloud_install_help_names_the_provider_flag_refusal(self):
+    """Same claim, same fix, on the `cloud install` path."""
+    with When("`cloud install --help` is rendered"):
+        help_text = _help_text(["cloud", "install", "--help"])
+    with Then("it does not claim every option is carried into the unit"):
+        assert "will be the same options with which the service will be executed" not in help_text
+    with And("it names the config-file seam, the refusal, and the --provider exception"):
+        assert "--config" in help_text
+        assert "refused" in help_text
+        assert "--provider" in help_text
+
+
 # ---------------------------------------------------------------------------
 # Feature entry point
 # ---------------------------------------------------------------------------

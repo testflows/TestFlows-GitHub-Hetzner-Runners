@@ -823,9 +823,10 @@ def argparser():
         description=(
             "Install cloud service.\n\n"
             "The `tfs-github-runners <options> service install` command will be executed on the cloud server instance.\n\n"
-            "Note: Just like with the `tfs-github-runners <options> service install` command,\n"
-            "      the options that are passed to the `tfs-github-runners <options> cloud install` command\n"
-            "      will be the same options with which the service will be executed."
+            "Note: same as `service install` -- most options passed here are carried\n"
+            "      into the installed service, and --provider is always carried into it,\n"
+            "      but provider settings (--hetzner-token, --aws-*, --scaleway-*) are\n"
+            "      refused: the service reads those only from the --config file."
         ),
         formatter_class=RawTextHelpFormatter,
     )
@@ -909,8 +910,10 @@ def argparser():
         description=(
             "Install service.\n\n"
             "The `/etc/systemd/system/tfs-github-runners.service` file will be created and service will be started.\n\n"
-            "Note: The options that are passed to the `tfs-github-runners <options> service install` command\n"
-            "      will be the same options with which the service will be executed."
+            "Note: most options passed here are carried into the installed service, and\n"
+            "      --provider is always carried into it, but provider settings\n"
+            "      (--hetzner-token, --aws-*, --scaleway-*) are refused: the service\n"
+            "      reads those only from the --config file."
         ),
         formatter_class=RawTextHelpFormatter,
     )
