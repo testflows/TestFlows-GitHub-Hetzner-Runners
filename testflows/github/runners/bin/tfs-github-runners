@@ -622,8 +622,12 @@ def argparser():
         "--location",
         metavar="name",
         dest="cloud_deploy_location",
-        type=args.location_type,
-        help="deployment server location",
+        type=str,
+        help=(
+            "deployment server location, in config.cloud.provider's own format\n"
+            "(a Hetzner location, an AWS availability zone, or a Scaleway zone);\n"
+            "validated against that provider at deploy time"
+        ),
     )
 
     deploy_cloud_parser.add_argument(
@@ -631,22 +635,29 @@ def argparser():
         "--type",
         metavar="name",
         dest="cloud_deploy_server_type",
-        type=args.server_type,
-        help="deployment server type, default: cx23",
+        type=str,
+        help=(
+            "deployment server type, in config.cloud.provider's own format\n"
+            "(a Hetzner server type, an AWS instance type, or a Scaleway\n"
+            "instance type); validated against that provider at deploy time,\n"
+            "default: cx23 (Hetzner)"
+        ),
     )
 
     deploy_cloud_parser.add_argument(
         "-i",
         "--image",
-        metavar="architecture:type:name_or_description",
+        metavar="image",
         dest="cloud_deploy_image",
-        type=args.image_type,
+        type=str,
         help=(
-            "deployment server image type and name or description,\n"
-            "where the architecture is either: 'x86' or 'arm', \n"
-            "the type is either: 'system','snapshot','backup','app', \n"
-            "followed by the name, "
-            "default: x86:system:ubuntu-22.04"
+            "deployment server image, in config.cloud.provider's own format;\n"
+            "validated against that provider at deploy time. For Hetzner this is\n"
+            "architecture:type:name_or_description, where the architecture is\n"
+            "either 'x86' or 'arm', the type is one of 'system','snapshot',\n"
+            "'backup','app', followed by the name (default: x86:system:ubuntu-22.04).\n"
+            "For AWS: an AMI ID, an Ubuntu release, or an SSM path.\n"
+            "For Scaleway: an image UUID or marketplace label."
         ),
     )
 

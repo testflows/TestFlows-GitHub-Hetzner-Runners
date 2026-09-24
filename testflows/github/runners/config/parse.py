@@ -13,10 +13,8 @@ from .config import (
     cloud,
     deploy_,
     path,
-    image,
-    location,
-    server_type,
     provider_list,
+    coerce_deploy_field,
 )
 
 logger = logging.getLogger("testflows.github.runners")
@@ -407,15 +405,13 @@ def parse_config(filename: str):
         if cloud_provider == "hetzner":
             # Hetzner deploy specs are hcloud-typed; coerce + keep the cx23/ubuntu
             # defaults from deploy_ when omitted.
-            for field, factory in (
-                ("server_type", server_type),
-                ("image", image),
-                ("location", location),
-            ):
+            for field in ("server_type", "image", "location"):
                 if raw_deploy.get(field) is not None:
                     try:
-                        raw_deploy[field] = factory(raw_deploy[field])
-                    except Exception as e:
+                        raw_deploy[field] = coerce_deploy_field(
+                            cloud_provider, field, raw_deploy[field]
+                        )
+                    except ValueError as e:
                         assert False, f"config.cloud.deploy.{field}: {e}"
             if raw_deploy.get("setup_script") is not None:
                 try:

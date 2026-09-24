@@ -115,6 +115,36 @@ _CLI_OVERRIDABLE_FIELDS = (
 )
 
 
+# Option name for each cloud.deploy field, used in coercion error messages.
+_DEPLOY_FIELD_OPTIONS = {
+    "server_type": "-t/--type",
+    "image": "-i/--image",
+    "location": "-l/--location",
+}
+
+
+def coerce_deploy_field(cloud_provider: str, field: str, value):
+    """Coerce one ``cloud.deploy.*`` value for *cloud_provider*.
+
+    Hetzner deploy specs are hcloud-typed (``Location``/``ServerType``/``Image``);
+    every other provider keeps its native string, validated later at deploy time
+    by that provider's own ``get_image``/``get_server_type``/``get_location``.
+    Shared by the CLI path (``-l``/``-t``/``-i``, applied below in ``apply_args``)
+    and the config-file path (``parse.py``), so a Hetzner deploy target is
+    validated the same way regardless of where the value came from.
+    """
+    if value is None or cloud_provider != "hetzner":
+        return value
+    factory = {"server_type": server_type, "image": image, "location": location}[
+        field
+    ]
+    try:
+        return factory(value)
+    except Exception as e:
+        option = _DEPLOY_FIELD_OPTIONS[field]
+        raise ValueError(f"invalid value for {option} ({value!r}): {e}") from e
+
+
 def apply_args(config, args):
     """Apply command-line argument overrides onto a Config."""
     for attr in _CLI_OVERRIDABLE_FIELDS:
@@ -159,14 +189,23 @@ def apply_args(config, args):
     if getattr(args, "cloud_user", None) is not None:
         config.cloud.ssh_user = args.cloud_user
 
+    # -l/-t/-i arrive as raw strings (argtypes.py validators are Hetzner-typed
+    # and would misparse an AWS/Scaleway spec); coerce only for a Hetzner
+    # deploy target, same as the config-file path in parse.py.
     if getattr(args, "cloud_deploy_location", None) is not None:
-        config.cloud.deploy.location = args.cloud_deploy_location
+        config.cloud.deploy.location = coerce_deploy_field(
+            config.cloud.provider, "location", args.cloud_deploy_location
+        )
 
     if getattr(args, "cloud_deploy_server_type", None) is not None:
-        config.cloud.deploy.server_type = args.cloud_deploy_server_type
+        config.cloud.deploy.server_type = coerce_deploy_field(
+            config.cloud.provider, "server_type", args.cloud_deploy_server_type
+        )
 
     if getattr(args, "cloud_deploy_image", None) is not None:
-        config.cloud.deploy.image = args.cloud_deploy_image
+        config.cloud.deploy.image = coerce_deploy_field(
+            config.cloud.provider, "image", args.cloud_deploy_image
+        )
 
     if getattr(args, "cloud_deploy_setup_script", None) is not None:
         config.cloud.deploy.setup_script = args.cloud_deploy_setup_script

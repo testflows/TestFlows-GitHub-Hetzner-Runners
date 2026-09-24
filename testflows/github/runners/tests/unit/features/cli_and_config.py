@@ -1665,6 +1665,107 @@ def cloud_deploy_refuses_provider_flag_before_provisioning(self):
 
 
 # ---------------------------------------------------------------------------
+# 6. cloud deploy -l/-t/-i are provider-native strings, coerced only for Hetzner
+# ---------------------------------------------------------------------------
+
+
+@TestScenario
+def argv_deploy_type_location_image_parse_as_plain_strings(self):
+    """-l/-t/-i must not be Hetzner-typed at parse time: an AWS AMI ID used to
+    be rejected outright by the Hetzner image_type validator."""
+    cli = _cli_module()
+    with When("cloud deploy -t/-l/-i are parsed with AWS-shaped values"):
+        parsed = cli.argparser().parse_args(
+            [
+                "--github-token", "t",
+                "--github-repository", "o/r",
+                "cloud", "deploy",
+                "-t", "t3.medium",
+                "-l", "us-east-1a",
+                "-i", "ami-0abcdef1234567890",
+            ]
+        )
+    with Then("all three parse as plain strings, not hcloud objects"):
+        assert parsed.cloud_deploy_server_type == "t3.medium"
+        assert parsed.cloud_deploy_location == "us-east-1a"
+        assert parsed.cloud_deploy_image == "ami-0abcdef1234567890"
+
+
+@TestScenario
+def apply_args_keeps_aws_deploy_specs_as_strings(self):
+    cli = _cli_module()
+    parsed = cli.argparser().parse_args(
+        [
+            "--github-token", "t",
+            "--github-repository", "o/r",
+            "cloud", "deploy",
+            "-t", "t3.medium",
+            "-l", "us-east-1a",
+            "-i", "ami-0abcdef1234567890",
+        ]
+    )
+    cfg = Config(providers=provider_list())
+    cfg.cloud.provider = "aws"
+    with When("apply_args merges -l/-t/-i against an AWS cloud.provider"):
+        apply_args(cfg, parsed)
+    with Then("the deploy spec stays provider-native strings"):
+        assert cfg.cloud.deploy.server_type == "t3.medium", cfg.cloud.deploy.server_type
+        assert cfg.cloud.deploy.location == "us-east-1a", cfg.cloud.deploy.location
+        assert cfg.cloud.deploy.image == "ami-0abcdef1234567890", cfg.cloud.deploy.image
+
+
+@TestScenario
+def apply_args_coerces_hetzner_deploy_specs(self):
+    from hcloud.images.domain import Image
+    from hcloud.locations.domain import Location
+    from hcloud.server_types.domain import ServerType
+
+    cli = _cli_module()
+    parsed = cli.argparser().parse_args(
+        [
+            "--github-token", "t",
+            "--github-repository", "o/r",
+            "cloud", "deploy",
+            "-t", "cx23",
+            "-l", "nbg1",
+            "-i", "x86:system:ubuntu-22.04",
+        ]
+    )
+    cfg = Config(providers=provider_list())  # cloud.provider defaults to "hetzner"
+    with When("apply_args merges -l/-t/-i against the (default) Hetzner cloud.provider"):
+        apply_args(cfg, parsed)
+    with Then("the deploy spec is coerced into hcloud types, same as the config-file path"):
+        assert isinstance(cfg.cloud.deploy.server_type, ServerType), cfg.cloud.deploy.server_type
+        assert cfg.cloud.deploy.server_type.name == "cx23"
+        assert isinstance(cfg.cloud.deploy.location, Location), cfg.cloud.deploy.location
+        assert cfg.cloud.deploy.location.name == "nbg1"
+        assert isinstance(cfg.cloud.deploy.image, Image), cfg.cloud.deploy.image
+        assert cfg.cloud.deploy.image.name == "ubuntu-22.04"
+
+
+@TestScenario
+def apply_args_rejects_bad_hetzner_image_with_clear_error(self):
+    """Moving Hetzner coercion from parse time to merge time must not turn a
+    bad -i value into a traceback: it still names the option clearly."""
+    cli = _cli_module()
+    parsed = cli.argparser().parse_args(
+        [
+            "--github-token", "t",
+            "--github-repository", "o/r",
+            "cloud", "deploy",
+            "-i", "not-a-valid-image-spec",
+        ]
+    )
+    cfg = Config(providers=provider_list())  # defaults to hetzner
+    with Then("apply_args raises ValueError naming -i/--image, not a traceback"):
+        try:
+            apply_args(cfg, parsed)
+            assert False, "expected ValueError for a bad Hetzner -i value"
+        except ValueError as exc:
+            assert "-i/--image" in str(exc), exc
+
+
+# ---------------------------------------------------------------------------
 # Feature entry point
 # ---------------------------------------------------------------------------
 
