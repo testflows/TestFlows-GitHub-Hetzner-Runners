@@ -185,9 +185,8 @@ def get_server(config: Config, provider: CloudProvider = None) -> ProviderServer
 
 def deploy(args, config: Config, redeploy=False):
     """Deploy or redeploy tfs-github-runners as a service to a cloud server instance."""
-    # Fail before provisioning anything: install() (called at the end of this
-    # function) checks this too, but only after a server has already been
-    # created and set up.
+    # Check before provisioning: install() at the end of this function checks
+    # too, but only after a server would already have been created and set up.
     check_no_provider_flags(args)
 
     version = args.version or __version__
@@ -360,12 +359,10 @@ def redeploy(args, config: Config):
 
 def install(args, config: Config, server: ProviderServer = None):
     """Install service on a cloud instance."""
-    # Same gap as `service install`: this runs `service install -f` on the
-    # remote host over ssh, built from command_options() (no provider flags)
-    # plus the config file copied to the remote — never from these local CLI
-    # args. A provider flag given to `cloud deploy`/`cloud install` would
-    # vanish just the same, so refuse here too rather than installing a
-    # service that starts with no provider configured.
+    # This runs `service install -f` on the remote host over ssh, built from
+    # command_options() (no provider flags) plus the config file copied to
+    # the remote — never from these local CLI args — so a provider flag given
+    # here would reach neither and must be refused just like service install.
     check_no_provider_flags(args)
 
     if server is None:

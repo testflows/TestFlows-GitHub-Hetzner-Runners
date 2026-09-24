@@ -26,12 +26,10 @@ from .config import config_vars
 
 # Provider CLI flags share a "<provider>_" argparse-dest prefix, one per
 # providers/*/args.py module (--aws-access-key-id -> aws_access_key_id, etc).
-# Matching on the prefix, rather than listing flags by name, means a flag added
-# to a provider's add_arguments next month is covered automatically as long as
-# it keeps that provider's prefix — which every existing provider flag does
-# (verified against providers/*/args.py; the only other place --hetzner-token
-# is registered is the unrelated `projects add/update` subcommands, whose args
-# namespace never reaches here).
+# Matching on the prefix covers a flag added to a provider later without
+# touching this code. No other flag in this parser shares these prefixes (the
+# `projects add/update` subcommands have their own separate --hetzner-token,
+# on a different args namespace that never reaches here).
 PROVIDER_ARG_PREFIXES = ("hetzner_", "aws_", "scaleway_")
 
 
@@ -66,8 +64,7 @@ def check_no_provider_flags(args):
     if not flags:
         return
     # Each flag's provider is its own dashed-name prefix (--aws-... -> aws),
-    # the same prefix PROVIDER_ARG_PREFIXES matches on, so this names the real
-    # config section instead of a "providers.<name>" placeholder.
+    # so this names the real config section for each one involved.
     providers = sorted({flag[2:].split("-", 1)[0] for flag in flags})
     sections = ", ".join(f"providers.{p}" for p in providers)
     raise ValueError(
