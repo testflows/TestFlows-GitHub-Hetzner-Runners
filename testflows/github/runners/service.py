@@ -24,6 +24,57 @@ from .logger import decode_message
 from .config import config_vars
 
 
+# Provider CLI flags share a "<provider>_" argparse-dest prefix, one per
+# providers/*/args.py module (--aws-access-key-id -> aws_access_key_id, etc).
+# Matching on the prefix, rather than listing flags by name, means a flag added
+# to a provider's add_arguments next month is covered automatically as long as
+# it keeps that provider's prefix — which every existing provider flag does
+# (verified against providers/*/args.py; the only other place --hetzner-token
+# is registered is the unrelated `projects add/update` subcommands, whose args
+# namespace never reaches here).
+PROVIDER_ARG_PREFIXES = ("hetzner_", "aws_", "scaleway_")
+
+
+def cli_provider_flags(args):
+    """Provider-setting flags actually supplied on the command line.
+
+    Returns {"--dashed-flag-name": value}, empty if none were passed. --provider
+    (dest enabled_providers) is not a provider setting in this sense: it is
+    already written into the unit by command_options() and must keep working.
+    """
+    flags = {}
+    for dest, value in vars(args).items():
+        if value is None:
+            continue
+        if not dest.startswith(PROVIDER_ARG_PREFIXES):
+            continue
+        flags["--" + dest.replace("_", "-")] = value
+    return flags
+
+
+def check_no_provider_flags(args):
+    """Refuse to proceed when provider settings were passed as CLI flags.
+
+    ExecStart is visible to anyone on the host (`ps`, `systemctl status`), so
+    command_options() deliberately never writes provider credentials into the
+    unit — the service reads them from --config instead. A provider flag given
+    here would silently vanish from the installed unit, and if it was the only
+    source of that provider's configuration, the service would start with no
+    provider configured and, since the unit sets Restart=always, crash-loop.
+    """
+    flags = cli_provider_flags(args)
+    if flags:
+        raise ValueError(
+            "provider settings were passed as command-line flags: "
+            f"{', '.join(sorted(flags))}. These cannot be written into the "
+            "installed service unit (its ExecStart is visible to anyone on the "
+            "host via 'ps' or 'systemctl status', so credentials must not go "
+            "there) and would be silently dropped, which can leave the service "
+            "with no provider configured and crash-looping. Put them under "
+            "providers.<name> in the --config file instead, then retry."
+        )
+
+
 def command_options(
     config,
     github_token="$GITHUB_TOKEN",
@@ -77,6 +128,7 @@ def command_options(
 
 def install(args, config):
     """Install service."""
+    check_no_provider_flags(args)
     config.check()
     force = args.force
 

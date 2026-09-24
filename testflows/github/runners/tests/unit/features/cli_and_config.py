@@ -18,6 +18,7 @@ import sys
 from argparse import ArgumentTypeError
 from importlib.machinery import SourceFileLoader
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from testflows.core import *
 
@@ -37,6 +38,8 @@ from testflows.github.runners.config.parse import parse_config
 from testflows.github.runners.config.factory import provider_factory
 from testflows.github.runners.errors import ConfigError
 from testflows.github.runners.service import command_options
+import testflows.github.runners.service as service
+import testflows.github.runners.cloud as cloud
 from testflows.github.runners.tests.unit.steps.scaleway import mock_scaleway_sdk
 from testflows.github.runners.tests.unit.steps.aws import mock_ec2
 
@@ -1495,6 +1498,170 @@ def argv_round_trip_sets_provider_flag(self):
     with Then("enabled_providers lands on the config as a plain string list"):
         assert cfg.enabled_providers == ["hetzner", "aws"], cfg.enabled_providers
         assert all(isinstance(p, str) for p in cfg.enabled_providers)
+
+
+# ---------------------------------------------------------------------------
+# 5. service install / cloud install refuse provider settings passed as flags
+# ---------------------------------------------------------------------------
+
+
+@TestScenario
+def cli_provider_flags_detects_configured_prefixes(self):
+    from testflows.github.runners.service import cli_provider_flags
+
+    ns = SimpleNamespace(
+        aws_access_key_id="K",
+        aws_secret_access_key="S",
+        aws_default_location=None,
+        hetzner_token=None,
+        scaleway_access_key=None,
+        enabled_providers=["aws"],
+        github_token="t",
+    )
+    with When("cli_provider_flags scans the namespace"):
+        flags = cli_provider_flags(ns)
+    with Then("only the set provider-prefixed flags are reported"):
+        assert flags == {"--aws-access-key-id": "K", "--aws-secret-access-key": "S"}, flags
+
+
+@TestScenario
+def cli_provider_flags_ignores_the_global_provider_flag(self):
+    """--provider (dest enabled_providers) is already written into the unit by
+    command_options(); it must not be treated as a dropped provider setting."""
+    from testflows.github.runners.service import cli_provider_flags
+
+    ns = SimpleNamespace(enabled_providers=["hetzner", "aws"], github_token="t")
+    with Then("no flags are reported"):
+        assert cli_provider_flags(ns) == {}
+
+
+@TestScenario
+def cli_provider_flags_covers_a_flag_added_later(self):
+    """Detection is by dest prefix, not a hardcoded flag list: a brand new
+    --aws-* flag is picked up with no change to this detection code."""
+    from testflows.github.runners.service import cli_provider_flags
+
+    ns = SimpleNamespace(aws_brand_new_setting="value", enabled_providers=None)
+    with Then("the new flag is still detected"):
+        assert cli_provider_flags(ns) == {"--aws-brand-new-setting": "value"}
+
+
+@TestScenario
+def service_install_refuses_provider_flag_from_cli(self):
+    """Regression: an AWS-only-from-flags config used to pass config.check()
+    (AWS was configured) and then write a unit that command_options() strips
+    those flags from — leaving an installed service with no provider
+    configured, which crash-loops under Restart=always. service install must
+    refuse before touching the filesystem."""
+    cli = _cli_module()
+    with When("`service install` is parsed with AWS credential flags"):
+        parsed = cli.argparser().parse_args(
+            [
+                "--github-token", "t",
+                "--github-repository", "o/r",
+                "--aws-access-key-id", "K",
+                "--aws-secret-access-key", "S",
+                "service", "install",
+            ]
+        )
+    cfg = Config(providers=provider_list())
+    with And("apply_args runs, configuring AWS purely from the flags"):
+        apply_args(cfg, parsed)
+        assert cfg.providers.aws is not None
+
+    with patch("testflows.github.runners.service.os.system") as mock_system, patch(
+        "testflows.github.runners.service.os.path.exists", return_value=False
+    ):
+        with Then("service.install refuses and never touches the filesystem"):
+            try:
+                service.install(parsed, cfg)
+                assert False, "expected ValueError"
+            except ValueError as exc:
+                msg = str(exc)
+            assert "--aws-access-key-id" in msg, msg
+            assert "--aws-secret-access-key" in msg, msg
+            mock_system.assert_not_called()
+
+
+@TestScenario
+def service_install_allows_config_file_only_providers(self):
+    """No provider flags on the command line: the gate must not fire even
+    though a provider is configured (from the config file)."""
+    cli = _cli_module()
+    with When("`service install` is parsed with no provider flags"):
+        parsed = cli.argparser().parse_args(
+            ["--github-token", "t", "--github-repository", "o/r", "service", "install"]
+        )
+    cfg = Config(
+        github_token="t",
+        github_repository="o/r",
+        ssh_key="/tmp/key",
+        providers=provider_list(aws=aws_provider(access_key_id="K", secret_access_key="S")),
+    )
+    cfg.logger_config = {
+        "handlers": {"rotating_logfile": {"filename": "/tmp/tfs-test.log"}}
+    }
+    with patch("testflows.github.runners.service.os.system") as mock_system, patch(
+        "testflows.github.runners.service.os.path.exists", return_value=False
+    ), patch("testflows.github.runners.service.config_vars", {}):
+        with Then("service.install proceeds (no ValueError from the gate)"):
+            service.install(parsed, cfg)
+            assert mock_system.called
+
+
+@TestScenario
+def cloud_install_refuses_provider_flag_from_cli(self):
+    """Same gap, different transport: `cloud install`/`cloud deploy` push the
+    unit over ssh via command_options() + 'service install -f', so a provider
+    flag given here would vanish the same way."""
+    cli = _cli_module()
+    with When("`cloud install` is parsed with Scaleway credential flags"):
+        parsed = cli.argparser().parse_args(
+            [
+                "--github-token", "t",
+                "--github-repository", "o/r",
+                "--scaleway-access-key", "k",
+                "--scaleway-secret-key", "s",
+                "--scaleway-project-id", "p",
+                "cloud", "install",
+            ]
+        )
+    cfg = Config(providers=provider_list())
+    with Then("cloud.install refuses, naming the flags, before resolving a server"):
+        try:
+            cloud.install(parsed, cfg)
+            assert False, "expected ValueError"
+        except ValueError as exc:
+            msg = str(exc)
+        assert "--scaleway-access-key" in msg, msg
+        assert "--scaleway-secret-key" in msg, msg
+        assert "--scaleway-project-id" in msg, msg
+
+
+@TestScenario
+def cloud_deploy_refuses_provider_flag_before_provisioning(self):
+    """cloud deploy must fail before spinning up a server, not after."""
+    cli = _cli_module()
+    with When("`cloud deploy` is parsed with AWS credential flags"):
+        parsed = cli.argparser().parse_args(
+            [
+                "--github-token", "t",
+                "--github-repository", "o/r",
+                "--aws-access-key-id", "K",
+                "--aws-secret-access-key", "S",
+                "cloud", "deploy",
+            ]
+        )
+    cfg = Config(providers=provider_list())
+    with patch.object(cloud, "deploy_provider") as mock_deploy_provider:
+        with Then("cloud.deploy refuses and never resolves a deploy provider"):
+            try:
+                cloud.deploy(parsed, cfg)
+                assert False, "expected ValueError"
+            except ValueError as exc:
+                msg = str(exc)
+            assert "--aws-access-key-id" in msg, msg
+            mock_deploy_provider.assert_not_called()
 
 
 # ---------------------------------------------------------------------------

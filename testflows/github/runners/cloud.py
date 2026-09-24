@@ -26,7 +26,7 @@ from . import __version__
 from .server import wait_ssh, ssh, scp, ip_address, ssh_tunnel
 from .servers import ssh_client as server_ssh_client
 from .servers import ssh_client_command as server_ssh_client_command
-from .service import command_options
+from .service import command_options, check_no_provider_flags
 
 current_dir = os.path.dirname(__file__)
 deploy_scripts_folder = "/home/ubuntu/.tfs-runners/scripts/"
@@ -185,6 +185,11 @@ def get_server(config: Config, provider: CloudProvider = None) -> ProviderServer
 
 def deploy(args, config: Config, redeploy=False):
     """Deploy or redeploy tfs-github-runners as a service to a cloud server instance."""
+    # Fail before provisioning anything: install() (called at the end of this
+    # function) checks this too, but only after a server has already been
+    # created and set up.
+    check_no_provider_flags(args)
+
     version = args.version or __version__
     server_name = config.cloud.server_name
     provider = deploy_provider(config)
@@ -355,6 +360,14 @@ def redeploy(args, config: Config):
 
 def install(args, config: Config, server: ProviderServer = None):
     """Install service on a cloud instance."""
+    # Same gap as `service install`: this runs `service install -f` on the
+    # remote host over ssh, built from command_options() (no provider flags)
+    # plus the config file copied to the remote — never from these local CLI
+    # args. A provider flag given to `cloud deploy`/`cloud install` would
+    # vanish just the same, so refuse here too rather than installing a
+    # service that starts with no provider configured.
+    check_no_provider_flags(args)
+
     if server is None:
         server = get_server(config)
 
