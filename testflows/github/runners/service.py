@@ -24,12 +24,9 @@ from .logger import decode_message
 from .config import config_vars
 
 
-# Provider CLI flags share a "<provider>_" argparse-dest prefix, one per
-# providers/*/args.py module (--aws-access-key-id -> aws_access_key_id, etc).
-# Matching on the prefix covers a flag added to a provider later without
-# touching this code. No other flag in this parser shares these prefixes (the
-# `projects add/update` subcommands have their own separate --hetzner-token,
-# on a different args namespace that never reaches here).
+# Every provider flag's argparse dest starts with its provider's name, so a flag
+# added later is covered without editing this. `projects add/update` parse their
+# own --hetzner-token in a separate namespace that never reaches here.
 PROVIDER_ARG_PREFIXES = ("hetzner_", "aws_", "scaleway_")
 
 

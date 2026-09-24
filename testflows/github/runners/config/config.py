@@ -193,11 +193,9 @@ def apply_args(config, args):
     if getattr(args, "cloud_user", None) is not None:
         config.cloud.ssh_user = args.cloud_user
 
-    # -l/-t/-i are validated for whichever provider will actually deploy to,
-    # not always Hetzner. A bad value is a bad CLI option, so it is reported
-    # as one: ArgumentTypeError naming the flag, not coerce_deploy_field's
-    # bare ValueError (parse.py's config-file path uses that one as-is, since
-    # there it's a bad YAML value rather than a bad flag).
+    # -l/-t/-i follow the deploy provider's formats. A bad one is a bad CLI
+    # option, so report it as ArgumentTypeError naming the flag; parse.py keeps
+    # the bare ValueError, where the same mistake is a bad YAML value.
     for dest, field in (
         ("cloud_deploy_location", "location"),
         ("cloud_deploy_server_type", "server_type"),

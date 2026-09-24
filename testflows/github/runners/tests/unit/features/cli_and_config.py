@@ -1785,11 +1785,8 @@ def apply_args_coerces_hetzner_deploy_specs(self):
 
 @TestScenario
 def apply_args_rejects_bad_hetzner_image_with_clear_error(self):
-    """Moving Hetzner coercion from parse time to merge time must not turn a
-    bad -i value into a traceback: it raises ArgumentTypeError (the same
-    CLI-only signal --meta-label uses), naming the option clearly, so the
-    __main__ block can route it through parser.error() instead of letting it
-    propagate as an uncaught exception."""
+    """A bad Hetzner -i value raises ArgumentTypeError naming the option, so the
+    __main__ block reports it through parser.error() instead of a traceback."""
     cli = _cli_module()
     parsed = cli.argparser().parse_args(
         [
@@ -1943,28 +1940,6 @@ def yaml_deploy_image_error_does_not_mention_a_cli_flag(self):
             assert "--image" not in msg, msg
     finally:
         os.unlink(cfg_path)
-
-
-@TestScenario
-def cli_deploy_image_error_still_names_the_flag(self):
-    """The CLI path keeps naming the flag: only the shared helper's message
-    lost the flag name, not apply_args's own wrapping of it."""
-    cli = _cli_module()
-    parsed = cli.argparser().parse_args(
-        [
-            "--github-token", "t",
-            "--github-repository", "o/r",
-            "cloud", "deploy",
-            "-i", "not-a-valid-image-spec",
-        ]
-    )
-    cfg = Config(providers=provider_list())  # defaults to hetzner
-    with Then("apply_args still raises ArgumentTypeError naming -i/--image"):
-        try:
-            apply_args(cfg, parsed)
-            assert False, "expected ArgumentTypeError for a bad Hetzner -i value"
-        except ArgumentTypeError as exc:
-            assert "-i/--image" in str(exc), exc
 
 
 # ---------------------------------------------------------------------------

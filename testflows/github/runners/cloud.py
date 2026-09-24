@@ -359,10 +359,8 @@ def redeploy(args, config: Config):
 
 def install(args, config: Config, server: ProviderServer = None):
     """Install service on a cloud instance."""
-    # This runs `service install -f` on the remote host over ssh, built from
-    # command_options() (no provider flags) plus the config file copied to
-    # the remote — never from these local CLI args — so a provider flag given
-    # here would reach neither and must be refused just like service install.
+    # The remote runs `service install` from command_options() and the copied
+    # config file, never these local args, so provider flags must be refused here.
     check_no_provider_flags(args)
 
     if server is None:
