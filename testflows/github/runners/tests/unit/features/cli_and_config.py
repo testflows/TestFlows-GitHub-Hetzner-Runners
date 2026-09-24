@@ -1583,10 +1583,9 @@ def check_no_provider_flags_names_each_providers_own_section(self):
 
 @TestScenario
 def service_install_refuses_provider_flag_from_cli(self):
-    """Regression: an AWS-only-from-flags config used to pass config.check()
-    (AWS was configured) and then write a unit that command_options() strips
-    those flags from — leaving an installed service with no provider
-    configured, which crash-loops under Restart=always. service install must
+    """An AWS config built from flags alone passes config.check(), but
+    command_options() never writes provider flags into the unit, so the
+    installed service would start with no provider. service install must
     refuse before touching the filesystem."""
     cli = _cli_module()
     with When("`service install` is parsed with AWS credential flags"):

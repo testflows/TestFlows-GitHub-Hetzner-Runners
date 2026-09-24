@@ -58,7 +58,8 @@ def check_no_provider_flags(args):
     unit — the service reads them from --config instead. A provider flag given
     here would silently vanish from the installed unit, and if it was the only
     source of that provider's configuration, the service would start with no
-    provider configured and, since the unit sets Restart=always, crash-loop.
+    provider configured and exit; systemd gives up after a few quick restarts
+    and leaves the unit failed.
     """
     flags = cli_provider_flags(args)
     if not flags:
