@@ -46,6 +46,7 @@ from .hclient import HClient as Client
 from .ordered_set import OrderedSet as set
 
 from github import Auth, Github
+from github.GithubException import UnknownObjectException
 from github.Repository import Repository
 from github.SelfHostedActionsRunner import SelfHostedActionsRunner
 
@@ -142,7 +143,45 @@ def delete_server(server: BoundServer, action: str = "delete"):
         raise
 
 
+def get_fresh_recyclable_server(
+    client: Client, server: BoundServer, server_name: str = None, stack_level=2
+):
+    """Get the current state of a recyclable server or None if it is no longer recyclable.
+
+    The server list is fetched at the start of the scale down pass, so scale up
+    might have already claimed the server (renamed and powered it on) for a job.
+    Hetzner has no conditional delete so check right before deleting.
+    """
+    fresh_server = None
+
+    with Action(
+        f"Re-checking that {server.name} is still recyclable",
+        ignore_fail=True,
+        stacklevel=stack_level + 1,
+        level=logging.DEBUG,
+        server_name=server_name or server.name,
+    ):
+        fresh_server = client.servers.get_by_name(server.name)
+
+    if (
+        fresh_server is None
+        or fresh_server.id != server.id
+        or fresh_server.status != fresh_server.STATUS_OFF
+        or not fresh_server.name.startswith(recycle_server_name_prefix)
+    ):
+        with Action(
+            f"Skipping {server.name} as it is no longer recyclable",
+            stacklevel=stack_level + 1,
+            level=logging.DEBUG,
+            server_name=server_name or server.name,
+        ):
+            return None
+
+    return fresh_server
+
+
 def delete_recyclable_server(
+    client: Client,
     server_name,
     recyclable_servers: list[BoundServer],
     server_prices: dict[str, dict[str, float]],
@@ -169,15 +208,26 @@ def delete_recyclable_server(
                 recycle_ts = 0
 
             if recycle_ts <= 0:
+                # update from fresh labels so we don't overwrite the labels
+                # of a server that scale up has just claimed
+                fresh_server = get_fresh_recyclable_server(
+                    client=client,
+                    server=server,
+                    server_name=server_name,
+                    stack_level=stack_level + 1,
+                )
+                if fresh_server is None:
+                    continue
+
                 with Action(
                     f"Setting recycle timestamp for {server.name} before deletion",
                     stacklevel=stack_level + 1,
                     level=logging.DEBUG,
                     server_name=server_name,
                 ):
-                    updated_labels = dict(server.labels)
+                    updated_labels = dict(fresh_server.labels)
                     updated_labels[recycle_timestamp_label] = str(now_ts)
-                    server.update(labels=updated_labels)
+                    fresh_server.update(labels=updated_labels)
                 continue
 
             time_since_recycle = now_ts - recycle_ts
@@ -225,6 +275,15 @@ def delete_recyclable_server(
         recyclable_servers.sort(key=sorting_key, reverse=True)
 
     recyclable_server = recyclable_servers.pop()
+
+    recyclable_server = get_fresh_recyclable_server(
+        client=client,
+        server=recyclable_server,
+        server_name=server_name,
+        stack_level=stack_level,
+    )
+    if recyclable_server is None:
+        return
 
     with Action(
         f"Deleting {picking} recyclable server {recyclable_server.name} with type "
@@ -601,7 +660,7 @@ def scale_down(
 
                     if powered_off_server.observed_interval != current_interval:
                         with Action(
-                            f"Forgetting about powered off server {server.name}",
+                            f"Forgetting about powered off server {server_name}",
                             server_name=server_name,
                             interval=interval,
                         ):
@@ -659,6 +718,31 @@ def scale_down(
                             current_interval - zombie_server.time
                             > max_runner_registration_time
                         ):
+                            # The runner list was fetched at the start of the pass,
+                            # so the runner might have registered and got a job since.
+                            # If we can't tell, don't delete the server.
+                            runner_registered = True
+
+                            with Action(
+                                f"Re-checking that server {server_name} has no runner",
+                                ignore_fail=True,
+                                server_name=server_name,
+                                interval=interval,
+                            ):
+                                runner_registered = any(
+                                    runner.name.startswith(server_name)
+                                    for runner in repo.get_self_hosted_runners()
+                                )
+
+                            if runner_registered:
+                                with Action(
+                                    f"Keeping server {server_name} as its runner is registered",
+                                    server_name=server_name,
+                                    interval=interval,
+                                ):
+                                    zombie_servers.pop(server_name)
+                                continue
+
                             if recycle:
                                 recycle_server(
                                     reason="zombie",
@@ -705,6 +789,52 @@ def scale_down(
                             current_interval - unused_runner.time
                             > max_unused_runner_time
                         ):
+                            # The runner list was fetched at the start of the pass,
+                            # so GitHub might have assigned a job to the runner since.
+                            # Check that the runner is not busy and then remove it
+                            # from GitHub first: GitHub refuses to remove a busy runner,
+                            # which makes the removal itself the atomic check.
+                            # Only delete the server once the runner is gone.
+                            runner_removed = False
+
+                            with Action(
+                                f"Removing self-hosted runner {runner_name}",
+                                ignore_fail=True,
+                                server_name=get_runner_server_name(runner_name),
+                                interval=interval,
+                            ):
+                                try:
+                                    runner_is_busy = repo.get_self_hosted_runner(
+                                        unused_runner.runner.id
+                                    ).busy
+                                except UnknownObjectException:
+                                    # already gone from GitHub
+                                    runner_removed = True
+                                else:
+                                    if not runner_is_busy:
+                                        runner_removed = repo.remove_self_hosted_runner(
+                                            unused_runner.runner
+                                        )
+                                        if not runner_removed:
+                                            # refused (busy) or already gone (404)
+                                            try:
+                                                repo.get_self_hosted_runner(
+                                                    unused_runner.runner.id
+                                                )
+                                            except UnknownObjectException:
+                                                runner_removed = True
+
+                            if not runner_removed:
+                                # runner is busy or its state is unknown, keep the server
+                                with Action(
+                                    f"Keeping runner {runner_name} as it could not be removed",
+                                    server_name=get_runner_server_name(runner_name),
+                                    interval=interval,
+                                ):
+                                    unused_runners.pop(runner_name)
+                                continue
+
+                            unused_runners.pop(runner_name)
                             runner_server = None
 
                             with Action(
@@ -743,16 +873,6 @@ def scale_down(
                                         )
                                 runner_server = None
 
-                            if runner_server is None:
-                                with Action(
-                                    f"Removing self-hosted runner {runner_name}",
-                                    ignore_fail=True,
-                                    server_name=get_runner_server_name(runner_name),
-                                    interval=interval,
-                                ):
-                                    repo.remove_self_hosted_runner(unused_runner.runner)
-                                    unused_runners.pop(runner_name)
-
             with Action(
                 "Checking which recyclable servers need to be deleted",
                 level=logging.DEBUG,
@@ -762,6 +882,25 @@ def scale_down(
                     if terminate.is_set():
                         break
                     recyclable_server = recyclable_servers[server_name]
+
+                    # Nothing to do for a recyclable server unless it has a bad
+                    # SSH key label or reached end of life (see recycle_server),
+                    # so only then pay for the fresh lookup.
+                    if (
+                        server_ssh_key_label in recyclable_server.labels
+                        and recyclable_server.labels[server_ssh_key_label]
+                        == ssh_key.name
+                        and age(server=recyclable_server).minutes < end_of_life
+                    ):
+                        recyclable_servers.pop(server_name)
+                        continue
+
+                    recyclable_server = get_fresh_recyclable_server(
+                        client=client, server=recyclable_server
+                    )
+                    if recyclable_server is None:
+                        recyclable_servers.pop(server_name)
+                        continue
                     recycle_server(
                         reason="unused_recyclable",
                         server=recyclable_server,
@@ -825,6 +964,7 @@ def scale_down(
                             ):
                                 deleted_recyclable_server_name = (
                                     delete_recyclable_server(
+                                        client=client,
                                         recyclable_servers=list(
                                             recyclable_servers.values()
                                         ),
