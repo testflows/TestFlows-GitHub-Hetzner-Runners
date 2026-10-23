@@ -22,16 +22,15 @@ import sys
 import weakref
 from typing import Any, Final
 
-from streamlit import cli_util, config, env_util, file_util, secrets
-from streamlit.git_util import MIN_GIT_VERSION, GitRepo
+from streamlit import cli_util, config, file_util, secrets
+from streamlit.errors import StreamlitSecretNotFoundError
 from streamlit.logger import get_logger
 from streamlit.watcher import report_watchdog_availability, watch_file
 from streamlit.web.server import server_address_is_unix_socket, server_util
 from streamlit.web.server import Server as BaseServer
-from streamlit.web.server.server import start_listening
 
-from tornado.web import RequestHandler
-from tornado.routing import Rule, PathMatches
+from starlette.responses import FileResponse, Response
+from starlette.routing import Route
 
 _LOGGER: Final = get_logger(__name__)
 
@@ -46,56 +45,28 @@ MAX_APP_STATIC_FOLDER_SIZE = 1 * 1024 * 1024 * 1024  # 1 GB
 
 
 def download_handler(file: str):
-    """Return tornado handler for downloading a file."""
+    """Return starlette endpoint for downloading a file."""
 
-    class DownloadHandler(RequestHandler):
-        async def get(self):
-            if not os.path.exists(file):
-                self.set_status(404)
-                self.finish()
-                return
-            self.set_header("Content-Type", "application/octet-stream")
-            self.set_header(
-                "Content-Disposition",
-                f'attachment; filename="{os.path.basename(file)}"',
-            )
-            self.set_header("Content-Length", str(os.path.getsize(file)))
+    async def endpoint(request):
+        if not os.path.exists(file):
+            return Response(status_code=404)
+        return FileResponse(
+            file,
+            media_type="application/octet-stream",
+            filename=os.path.basename(file),
+        )
 
-            with open(file, "rb") as f:
-                while True:
-                    chunk = f.read(1024 * 1024 * 10)  # 10 MB
-                    if not chunk:
-                        break
-                    self.write(chunk)
-                    await self.flush()
-            self.finish()
-
-    return DownloadHandler
+    return endpoint
 
 
 class Server(BaseServer):
     def add_download_handler(self, endpoint: str, file: str):
         """Add a download handler for a file."""
 
-        self.app.default_router.rules.insert(
-            0, Rule(PathMatches(f"/download/{endpoint}"), download_handler(file))
+        app = self._starlette_server._server.config.app
+        app.router.routes.insert(
+            0, Route(f"/download/{endpoint}", download_handler(file))
         )
-
-    async def start(self) -> None:
-        """Start the server.
-
-        When this returns, Streamlit is ready to accept new sessions.
-        """
-
-        _LOGGER.debug("Starting server...")
-
-        self.app = self._create_app()
-        start_listening(self.app)
-
-        port = config.get_option("server.port")
-        _LOGGER.debug("Server started on port %s", port)
-
-        await self._runtime.start()
 
 
 def _fix_sys_path(main_script_path: str) -> None:
@@ -105,38 +76,6 @@ def _fix_sys_path(main_script_path: str) -> None:
     ourselves we need to do it instead.
     """
     sys.path.insert(0, os.path.dirname(main_script_path))
-
-
-def _fix_tornado_crash() -> None:
-    """Set default asyncio policy to be compatible with Tornado 6.
-
-    Tornado 6 (at least) is not compatible with the default
-    asyncio implementation on Windows. So here we
-    pick the older SelectorEventLoopPolicy when the OS is Windows
-    if the known-incompatible default policy is in use.
-
-    This has to happen as early as possible to make it a low priority and
-    overridable
-
-    See: https://github.com/tornadoweb/tornado/issues/2608
-
-    FIXME: if/when tornado supports the defaults in asyncio,
-    remove and bump tornado requirement for py38
-    """
-    if env_util.IS_WINDOWS:
-        try:
-            from asyncio import (  # type: ignore[attr-defined]
-                WindowsProactorEventLoopPolicy,
-                WindowsSelectorEventLoopPolicy,
-            )
-        except ImportError:
-            pass
-            # Not affected
-        else:
-            if type(asyncio.get_event_loop_policy()) is WindowsProactorEventLoopPolicy:
-                # WindowsProactorEventLoopPolicy is not compatible with
-                # Tornado 6 fallback to the pre-3.8 default of Selector
-                asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())
 
 
 def _fix_sys_argv(main_script_path: str, args: list[str]) -> None:
@@ -149,7 +88,6 @@ def _fix_sys_argv(main_script_path: str, args: list[str]) -> None:
 
 
 def _on_server_start(server: Server) -> None:
-    _maybe_print_old_git_warning(server.main_script_path)
     _maybe_print_static_folder_warning(server.main_script_path)
     report_watchdog_availability()
 
@@ -157,7 +95,10 @@ def _on_server_start(server: Server) -> None:
     # function will return without raising an exception. We catch any parse
     # errors and display them here.
     try:
-        secrets.load_if_toml_exists()
+        secrets._parse()
+    except StreamlitSecretNotFoundError as exc:
+        if exc.error_id != "no-secrets-found":
+            _LOGGER.error("Failed to load secrets: %s", exc)
     except Exception:
         _LOGGER.exception("Failed to load secrets.toml file")
 
@@ -172,7 +113,7 @@ def _on_server_start(server: Server) -> None:
             if server_address_is_unix_socket():
                 # Don't open browser when server address is an unix socket
                 return
-            addr = config.get_option("server.address")
+            addr = server_util.get_display_address(config.get_option("server.address"))
         else:
             addr = "localhost"
 
@@ -183,12 +124,8 @@ def _on_server_start(server: Server) -> None:
 
 
 def _fix_pydeck_mapbox_api_warning() -> None:
-    """Sets MAPBOX_API_KEY environment variable needed for PyDeck otherwise it
-    will throw an exception.
-    """
-
-    if "MAPBOX_API_KEY" not in os.environ:
-        os.environ["MAPBOX_API_KEY"] = config.get_option("mapbox.token")
+    """Prevent PyDeck from throwing when MAPBOX_API_KEY is unset."""
+    os.environ.setdefault("MAPBOX_API_KEY", "")
 
 
 def _maybe_print_static_folder_warning(main_script_path: str) -> None:
@@ -214,35 +151,6 @@ def _maybe_print_static_folder_warning(main_script_path: str) -> None:
                     "Static file serving has been disabled.",
                     fg="yellow",
                 )
-
-
-def _maybe_print_old_git_warning(main_script_path: str) -> None:
-    """If our script is running in a Git repo, and we're running a very old
-    Git version, print a warning that Git integration will be unavailable.
-    """
-    repo = GitRepo(main_script_path)
-    if (
-        not repo.is_valid()
-        and repo.git_version is not None
-        and repo.git_version < MIN_GIT_VERSION
-    ):
-        git_version_string = ".".join(str(val) for val in repo.git_version)
-        min_version_string = ".".join(str(val) for val in MIN_GIT_VERSION)
-        cli_util.print_to_cli("")
-        cli_util.print_to_cli("  Git integration is disabled.", fg="yellow", bold=True)
-        cli_util.print_to_cli("")
-        cli_util.print_to_cli(
-            f"  Streamlit requires Git {min_version_string} or later, "
-            f"but you have {git_version_string}.",
-            fg="yellow",
-        )
-        cli_util.print_to_cli(
-            "  Git is used by Streamlit Cloud (https://streamlit.io/cloud).",
-            fg="yellow",
-        )
-        cli_util.print_to_cli(
-            "  To enable this feature, please update Git.", fg="yellow"
-        )
 
 
 def load_config_options(flag_options: dict[str, Any]) -> None:
@@ -309,7 +217,6 @@ def run_in_thread(
         Server: The server instance
     """
     _fix_sys_path(main_script_path)
-    _fix_tornado_crash()
     _fix_pydeck_mapbox_api_warning()
     _install_config_watchers(flag_options)
 
